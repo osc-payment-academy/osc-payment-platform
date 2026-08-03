@@ -1,0 +1,16 @@
+OSC ACADEMY BASELINE v2.8
+
+POS Virtual
+- Escenarios de respuesta movidos al panel medio.
+- Historial de transacciones ampliado a todo el ancho inferior.
+- Panel derecho alineado con la estructura visual del ATM.
+- Un único mensaje seleccionado controla MTI, Bitmap y Data Elements.
+
+Constructor ISO8583
+- Bitmap del modo Sin Plantilla reducido para convivir con el detalle.
+- DE3 descompuesto en Tipo de transacción, Cuenta origen y Cuenta destino.
+- Cada subcampo incluye desplegable de valores posibles.
+
+Curso Interactivo
+- Galería de seis gráficos interactivos para revisión y depuración.
+- Lecciones visuales habilitadas como previsualizaciones.

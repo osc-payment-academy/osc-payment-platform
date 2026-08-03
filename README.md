@@ -1,3 +1,7 @@
+## Baseline v2.8
+
+Ajustes POS, Constructor y Curso Interactivo.
+
 ## Baseline v2.6 Consolidada
 
 # OSC Payment Academy — Baseline v2.4

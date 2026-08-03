@@ -241,7 +241,7 @@
     const secondary=document.getElementById('selectedBitmapSecondaryBits');
     if(secondary) secondary.innerHTML=bitmapBitsHtml(fields,65,64);
     const wrap=document.getElementById('selectedBitmapSecondaryWrap');
-    if(wrap) wrap.classList.toggle('hidden',!hasSecondary);
+    if(wrap) wrap.classList.add('hidden');
     const pHex=document.getElementById('selectedBitmapPrimaryHex');
     if(pHex) pHex.textContent=primaryHex;
     const sHex=document.getElementById('selectedBitmapSecondaryHex');
@@ -318,11 +318,10 @@
     $('deTable').innerHTML=fields.length
       ?fields.map(r=>`<tr>${r.map(c=>`<td>${c}</td>`).join('')}</tr>`).join('')
       :`<tr><td colspan="6" style="text-align:center;color:#7f93a8;padding:22px">Los campos se activarán paso a paso durante la operación.</td></tr>`;
-    $('deCount').textContent=fields.length;
+    $('deCount').textContent=fields.length; const fc=document.getElementById('fieldCount'); if(fc) fc.textContent=fields.length;
     $('totalLength').textContent=fields.length?`${fields.reduce((a,r)=>a+(parseInt(r[3])||8),0)} bytes`:'0 bytes';
     const bits=activeBits(fields);
     const shown=[1,2,3,4,7,11,14,22,25,35,37,38,39,41,42,48,49,52,53,55,60,64,90];
-    $('bitmapRow').innerHTML=shown.map(bit=>`<span class="bit ${bits.has(bit)?'on':''}"><b>${bit}</b><i></i></span>`).join('');
     $('bitmap').textContent=fields.length?bitmapHex(fields):'0000000000000000';
   }
 

@@ -233,7 +233,7 @@
         </div>
 
 
-        <section class="pos-middle-section"><h3>ESCENARIO</h3><div class="pos-scenario-mini"><button class="active">00 · Aprobada</button><button>51 · Fondos insuficientes</button><button>05 · No aprobar</button><button>91 · Emisor no disponible</button></div></section>
+        <section class="pos-middle-section pos-scenario-full"><h3>ESCENARIOS DE RESPUESTA</h3><div class="scenario-grid" id="scenarioGrid"><button class="selected success" data-code="00">✓ 00 - APROBADA</button><button class="danger" data-code="51">◉ 51 - FONDOS INSUFICIENTES</button><button class="purple" data-code="54">◉ 54 - TARJETA VENCIDA</button><button class="warning" data-code="05">◉ 05 - NO APROBAR</button><button class="blue" data-code="91">◉ 91 - EMISOR NO DISPONIBLE</button><button class="neutral" data-code="TO">◉ TIME OUT - SIN RESPUESTA</button></div><div class="scenario-actions"><label>Respuesta Automática <span class="switch"></span></label><button id="sendResponse" type="button">Enviar Respuesta ▷</button></div></section>
         <section class="pos-middle-section"><h3>MODO TÉCNICO · EVENTOS EN TIEMPO REAL</h3><div class="pos-tech-events" id="posTechEvents"><div>Esperando inicio de operación.</div><div>El POS construirá la solicitud 0200.</div></div></section>
         <div class="result-box" id="resultBox">
           <h3>RESULTADO</h3>
@@ -245,32 +245,10 @@
       </section>
 
       <section class="iso-panel">
-        <div class="iso-header">
-          <div><h2>MENSAJE ISO8583 SELECCIONADO</h2><p id="messageSubtitle">0200 - Financial Transaction Request</p></div>
-          <div><button type="button">‹/› Ver Hexadecimal</button><button type="button" id="copyBtn">▣ Copiar</button><button type="button" id="analyzeBtn">◉ Analizar en Parser</button></div>
-        </div>
-
-        <div class="iso-summary">
-          <div><span>MTI</span><strong id="mti">0200</strong></div>
-          <div><span>BITMAP</span><strong id="bitmap">723A400108040000</strong></div>
-          <div class="bitmap-row" id="bitmapRow"></div>
-        </div>
-
-        <section class="selected-bitmap-panel">
-          <div class="selected-bitmap-title">
-            <div><h3>BITMAP DEL MENSAJE SELECCIONADO</h3><p>Seleccione una trama del historial para visualizar su MTI, Bitmap y Data Elements.</p></div>
-            <span id="selectedBitmapFields">Sin mensaje seleccionado</span>
-          </div>
-          <article class="bitmap-card selected-message-bitmap">
-            <div class="bitmap-card-head"><strong>BITMAP PRIMARIO · POSICIONES 1–64</strong><span id="selectedBitmapPrimaryHex">0000000000000000</span></div>
-            <div class="bitmap-64" id="selectedBitmapPrimaryBits"></div>
-          </article>
-          <article class="bitmap-card selected-message-bitmap hidden" id="selectedBitmapSecondaryWrap">
-            <div class="bitmap-card-head"><strong>BITMAP SECUNDARIO · POSICIONES 65–128</strong><span id="selectedBitmapSecondaryHex">0000000000000000</span></div>
-            <div class="bitmap-64" id="selectedBitmapSecondaryBits"></div>
-          </article>
-        </section>
-
+        <div class="atm-like-message-head"><h2>MENSAJE ISO8583</h2><p id="messageSubtitle">Esperando operación</p></div>
+        <div class="atm-like-summary"><div><span>MTI</span><strong id="mti">----</strong></div><div><span>BITMAP</span><strong id="bitmap">0000000000000000</strong></div><div><span>CAMPOS</span><strong id="fieldCount">0</strong></div></div>
+        <section class="atm-like-bitmaps"><div class="atm-like-section-title"><h3>BITMAPS ISO8583</h3><p>Las posiciones presentes se resaltan en verde.</p></div><div class="bitmap-title"><span>BITMAP PRIMARIO (1–64)</span><span id="selectedBitmapPrimaryHex">0000000000000000</span></div><div class="bitmap-64 atm-grid" id="selectedBitmapPrimaryBits"></div><div class="bitmap-title"><span>BITMAP SECUNDARIO (65–128)</span><span id="selectedBitmapSecondaryHex">0000000000000000</span></div><div class="bitmap-64 atm-grid" id="selectedBitmapSecondaryBits"></div><span id="selectedBitmapFields" class="hidden"></span><div id="selectedBitmapSecondaryWrap" class="hidden"></div></section>
+        <div class="atm-like-section-title data-title"><h3>DATA ELEMENTS</h3><p>Detalle completo de cada dato que compone el mensaje seleccionado.</p></div>
         <div class="tabs">
           <button class="active">DATA ELEMENTS</button><button>VISTA TLV</button><button>EXPLICACIÓN</button><button>VALIDACIONES</button>
         </div>
@@ -287,22 +265,6 @@
     </section>
 
     <section class="bottom-grid">
-      <div class="scenarios-panel">
-        <h2>ESCENARIOS DE RESPUESTA</h2>
-        <div class="scenario-grid" id="scenarioGrid">
-          <button class="selected success" data-code="00">✓ 00 - APROBADA</button>
-          <button class="danger" data-code="51">◉ 51 - FONDOS INSUFICIENTES</button>
-          <button class="purple" data-code="54">◉ 54 - TARJETA VENCIDA</button>
-          <button class="warning" data-code="05">◉ 05 - NO APROBAR</button>
-          <button class="blue" data-code="91">◉ 91 - EMISOR NO DISPONIBLE</button>
-          <button class="neutral" data-code="TO">◉ TIME OUT - SIN RESPUESTA</button>
-        </div>
-        <div class="scenario-actions">
-          <label>Respuesta Automática <span class="switch"></span></label>
-          <button id="sendResponse" type="button">Enviar Respuesta ▷</button>
-        </div>
-      </div>
-
       <div class="history-panel">
         <div class="history-title"><h2>HISTORIAL DE TRANSACCIONES</h2><button type="button">Ver Todas</button></div>
         <table>
@@ -348,6 +310,6 @@
 </script>
 <script src="js/permissions.js"></script>
 
-<div id="osc-version-badge" style="position:fixed;right:14px;bottom:12px;z-index:99999;background:#0d2238;border:1px solid #2f83ff;color:#9fd0ff;padding:7px 11px;border-radius:999px;font:600 12px/1.1 Inter,Segoe UI,Arial,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.28)">Baseline v2.7</div>
+<div id="osc-version-badge" style="position:fixed;right:14px;bottom:12px;z-index:99999;background:#0d2238;border:1px solid #2f83ff;color:#9fd0ff;padding:7px 11px;border-radius:999px;font:600 12px/1.1 Inter,Segoe UI,Arial,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.28)">Baseline v2.8</div>
 </body>
 </html>
