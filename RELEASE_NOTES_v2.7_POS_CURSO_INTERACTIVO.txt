@@ -1,0 +1,15 @@
+OSC Payment Academy - Baseline v2.7
+
+POS Virtual
+- Se elimina la comparación simultánea 0200/0210.
+- Se muestra un único bitmap correspondiente al mensaje seleccionado.
+- Al seleccionar una trama del historial, se actualizan MTI, bitmap y Data Elements del panel derecho.
+- Bitmap primario 1-64 y secundario 65-128 cuando corresponde.
+
+Curso Interactivo
+- Pantalla más compacta para mantener Siguiente y Anterior visibles.
+- Iconos ampliados y nuevo icono neutral para Cliente.
+- Botón Anterior más visible y sincronizado con la escena previa.
+- Refresco automático del panel derecho en cada paso.
+- Navegador interactivo de las 12 escenas para revisión directa.
+- Corrección de la percepción de doble avance en el paso 3 mediante refresco visual y animación del actor activo.

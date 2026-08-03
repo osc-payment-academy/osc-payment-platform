@@ -256,30 +256,19 @@
           <div class="bitmap-row" id="bitmapRow"></div>
         </div>
 
-        <section class="dual-bitmap-panel">
-          <div class="dual-bitmap-title">
-            <div><h3>BITMAPS DE LA TRANSACCIÓN</h3><p>Solicitud y respuesta se actualizan automáticamente.</p></div>
-            <button type="button" id="compareMessagesBtn">Comparar 0200 ↔ 0210</button>
+        <section class="selected-bitmap-panel">
+          <div class="selected-bitmap-title">
+            <div><h3>BITMAP DEL MENSAJE SELECCIONADO</h3><p>Seleccione una trama del historial para visualizar su MTI, Bitmap y Data Elements.</p></div>
+            <span id="selectedBitmapFields">Sin mensaje seleccionado</span>
           </div>
-          <div class="dual-bitmap-grid">
-            <article class="bitmap-card request">
-              <div class="bitmap-card-head"><strong id="requestBitmapTitle">0200 · Solicitud</strong><span id="requestBitmapHex">0000000000000000</span></div>
-              <div class="bitmap-64" id="requestBitmapBits"></div>
-              <small id="requestBitmapFields">Sin mensaje generado</small>
-            </article>
-            <article class="bitmap-card response">
-              <div class="bitmap-card-head"><strong id="responseBitmapTitle">0210 · Respuesta</strong><span id="responseBitmapHex">0000000000000000</span></div>
-              <div class="bitmap-64" id="responseBitmapBits"></div>
-              <small id="responseBitmapFields">Sin respuesta recibida</small>
-            </article>
-          </div>
-          <div class="compare-panel hidden" id="comparePanel">
-            <div class="compare-columns">
-              <div><strong>Solo en solicitud</strong><p id="onlyRequestFields">—</p></div>
-              <div><strong>Presentes en ambos</strong><p id="sharedFields">—</p></div>
-              <div><strong>Solo en respuesta</strong><p id="onlyResponseFields">—</p></div>
-            </div>
-          </div>
+          <article class="bitmap-card selected-message-bitmap">
+            <div class="bitmap-card-head"><strong>BITMAP PRIMARIO · POSICIONES 1–64</strong><span id="selectedBitmapPrimaryHex">0000000000000000</span></div>
+            <div class="bitmap-64" id="selectedBitmapPrimaryBits"></div>
+          </article>
+          <article class="bitmap-card selected-message-bitmap hidden" id="selectedBitmapSecondaryWrap">
+            <div class="bitmap-card-head"><strong>BITMAP SECUNDARIO · POSICIONES 65–128</strong><span id="selectedBitmapSecondaryHex">0000000000000000</span></div>
+            <div class="bitmap-64" id="selectedBitmapSecondaryBits"></div>
+          </article>
         </section>
 
         <div class="tabs">
@@ -359,6 +348,6 @@
 </script>
 <script src="js/permissions.js"></script>
 
-<div id="osc-version-badge" style="position:fixed;right:14px;bottom:12px;z-index:99999;background:#0d2238;border:1px solid #2f83ff;color:#9fd0ff;padding:7px 11px;border-radius:999px;font:600 12px/1.1 Inter,Segoe UI,Arial,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.28)">Baseline v2.5.1</div>
+<div id="osc-version-badge" style="position:fixed;right:14px;bottom:12px;z-index:99999;background:#0d2238;border:1px solid #2f83ff;color:#9fd0ff;padding:7px 11px;border-radius:999px;font:600 12px/1.1 Inter,Segoe UI,Arial,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.28)">Baseline v2.7</div>
 </body>
 </html>

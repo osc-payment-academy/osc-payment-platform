@@ -283,3 +283,12 @@ button{font:inherit;color:inherit}
 .compare-columns strong{font-size:.58rem;color:#79bfff}.compare-columns p{margin:5px 0 0;font-size:.57rem;color:#c7d4df;line-height:1.45}
 .de-highlight td{background:#3e3510!important;color:#ffe38a!important}
 @media(max-width:900px){.dual-bitmap-grid,.compare-columns{grid-template-columns:1fr}.ticket-learning-note{display:block}}
+
+/* Baseline v2.7 - bitmap único seleccionado desde historial */
+.selected-bitmap-panel{margin:12px 0;border:1px solid #1b3a56;border-radius:9px;background:#081827;padding:10px}
+.selected-bitmap-title{display:flex;justify-content:space-between;align-items:start;gap:12px;margin-bottom:9px}
+.selected-bitmap-title h3{margin:0;font-size:.7rem}.selected-bitmap-title p{margin:3px 0 0;color:#8ea3b7;font-size:.58rem}
+.selected-bitmap-title>span{border:1px solid #28547b;background:#0e2940;border-radius:99px;padding:6px 10px;color:#6fc3ff;font-size:.58rem;white-space:nowrap}
+.selected-message-bitmap{margin-top:8px}.selected-message-bitmap.hidden{display:none}
+.history-panel tbody tr.selected{box-shadow:inset 4px 0 #2f83ff}
+@media(max-width:1100px){.selected-bitmap-title{flex-direction:column}.selected-bitmap-title>span{white-space:normal}}

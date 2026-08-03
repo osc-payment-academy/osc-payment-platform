@@ -212,11 +212,11 @@
   }
 
 
-  function bitmapBitsHtml(fields){
+  function bitmapBitsHtml(fields,startBit=1,count=64){
     const bits=activeBits(fields);
     if([...bits].some(bit=>bit>64)) bits.add(1);
-    return Array.from({length:64},(_,index)=>{
-      const bit=index+1;
+    return Array.from({length:count},(_,index)=>{
+      const bit=startBit+index;
       return `<i data-bit="${bit}" class="${bits.has(bit)?'on':''}" title="Bit ${bit}${bits.has(bit)?' presente':' ausente'}"></i>`;
     }).join('');
   }
@@ -231,27 +231,23 @@
   }
 
   function updateDualBitmaps(){
-    const request=latestMessage('0200') || latestMessage('0400') || latestMessage('0500');
-    const response=latestMessage('0210') || latestMessage('0410') || latestMessage('0510');
-
-    $('requestBitmapTitle').textContent=request?`${request.mti} · ${request.operation}`:'0200 · Solicitud';
-    $('requestBitmapHex').textContent=request?.bitmap||'0000000000000000';
-    $('requestBitmapBits').innerHTML=bitmapBitsHtml(request?.fields||[]);
-    $('requestBitmapFields').textContent=request?fieldsLabel(request.fields):'Sin mensaje generado';
-
-    $('responseBitmapTitle').textContent=response?`${response.mti} · ${response.operation}`:'0210 · Respuesta';
-    $('responseBitmapHex').textContent=response?.bitmap||'0000000000000000';
-    $('responseBitmapBits').innerHTML=bitmapBitsHtml(response?.fields||[]);
-    $('responseBitmapFields').textContent=response?fieldsLabel(response.fields):'Sin respuesta recibida';
-
-    const req=new Set((request?.fields||[]).map(row=>Number(row[0])));
-    const res=new Set((response?.fields||[]).map(row=>Number(row[0])));
-    const onlyReq=[...req].filter(x=>!res.has(x)).sort((a,b)=>a-b);
-    const shared=[...req].filter(x=>res.has(x)).sort((a,b)=>a-b);
-    const onlyRes=[...res].filter(x=>!req.has(x)).sort((a,b)=>a-b);
-    $('onlyRequestFields').textContent=onlyReq.length?onlyReq.map(x=>`DE${x}`).join(', '):'—';
-    $('sharedFields').textContent=shared.length?shared.map(x=>`DE${x}`).join(', '):'—';
-    $('onlyResponseFields').textContent=onlyRes.length?onlyRes.map(x=>`DE${x}`).join(', '):'—';
+    const message=state.messages.find(item=>item.id===state.selectedMessageId) || state.messages[0];
+    const fields=message?.fields||[];
+    const hasSecondary=fields.some(row=>Number(row[0])>64);
+    const primaryHex=message?.bitmap?.slice(0,16)||'0000000000000000';
+    const secondaryHex=hasSecondary?(message?.bitmap?.slice(16,32)||'0000000000000000'):'0000000000000000';
+    const primary=document.getElementById('selectedBitmapPrimaryBits');
+    if(primary) primary.innerHTML=bitmapBitsHtml(fields,1,64);
+    const secondary=document.getElementById('selectedBitmapSecondaryBits');
+    if(secondary) secondary.innerHTML=bitmapBitsHtml(fields,65,64);
+    const wrap=document.getElementById('selectedBitmapSecondaryWrap');
+    if(wrap) wrap.classList.toggle('hidden',!hasSecondary);
+    const pHex=document.getElementById('selectedBitmapPrimaryHex');
+    if(pHex) pHex.textContent=primaryHex;
+    const sHex=document.getElementById('selectedBitmapSecondaryHex');
+    if(sHex) sHex.textContent=secondaryHex;
+    const label=document.getElementById('selectedBitmapFields');
+    if(label) label.textContent=message?`${message.mti} · ${fields.length} campos presentes`:'Sin mensaje seleccionado';
   }
 
   function highlightDataElement(de){
@@ -662,7 +658,7 @@
     $('resultText').textContent='EN ESPERA';$('resultCode').textContent='--';$('resultDetail').textContent='Ingrese una compra para comenzar.';$('authCode').textContent='------';
     renderFields([]);
     updateDualBitmaps();
-    $('comparePanel').classList.add('hidden');
+    document.getElementById('comparePanel')?.classList.add('hidden');
     document.querySelectorAll('.operation-card').forEach(b=>b.classList.toggle('active',b.dataset.operation==='purchase'));
   }
 
@@ -726,10 +722,7 @@ ${rawMessage(msg)}`;
   $('closeBatchModal').addEventListener('click',()=>$('batchModal').classList.add('hidden'));
   $('cancelBatchClose').addEventListener('click',()=>$('batchModal').classList.add('hidden'));
   $('confirmBatchClose').addEventListener('click',closeBatch);
-  $('compareMessagesBtn').addEventListener('click',()=>{
-    $('comparePanel').classList.toggle('hidden');
-    updateDualBitmaps();
-  });
+  document.getElementById('compareMessagesBtn')?.addEventListener('click',()=>document.getElementById('comparePanel')?.classList.toggle('hidden'));
   $('downloadTicket').addEventListener('click',downloadTicket);
 
   setInterval(()=>{
