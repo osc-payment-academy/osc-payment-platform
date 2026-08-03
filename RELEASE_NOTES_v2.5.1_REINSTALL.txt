@@ -1,0 +1,17 @@
+OSC PAYMENT ACADEMY - BASELINE v2.5.1 REINSTALL
+
+Objetivo
+- Reinstalación completa de la Baseline v2.5 con archivos reales.
+- Evitar caché de HTML/CSS/JS mediante public/_headers.
+- Mostrar un distintivo visible “Baseline v2.5.1” en todas las páginas.
+
+Implementado
+- Constructor ISO8583: botón SIN PLANTILLA.
+- Modo estudio de un Data Element por vez.
+- Bitmap primario/secundario inicialmente apagado.
+- Resaltado verde del DE elegido.
+- Visualización por colores para fijo, LLVAR, LLLVAR y compuesto/TLV.
+- Acciones Estudiar nuevo campo y Salir.
+
+Nota
+- Esta reinstalación no incluye todavía el rediseño pendiente del ATM/POS ni las correcciones del Curso Interactivo; esos cambios permanecen en backlog para una siguiente versión.
