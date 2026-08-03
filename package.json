@@ -1,6 +1,6 @@
 {
   "name": "osc-payment-platform",
-  "version": "0.1.0",
+  "version": "2.4.0-baseline",
   "private": true,
   "scripts": {
     "dev": "wrangler dev",

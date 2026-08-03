@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OSC Academy · ATM Virtual</title>
+<style>
+:root{
+  --bg:#06111d;--sidebar:#071522;--panel:#0b1827;--panel2:#0e1f31;--line:#173149;
+  --text:#f5f8fc;--muted:#9dafc2;--blue:#2f83ff;--cyan:#24c8f2;--green:#18d17e;
+  --purple:#9d68ff;--amber:#f7b51c;--red:#ff5267;--shadow:0 18px 42px rgba(0,0,0,.28)
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;font-family:Inter,Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--text)}
+button,input,select{font:inherit;color:inherit}
+a{text-decoration:none;color:inherit}
+.app{display:grid;grid-template-columns:225px minmax(0,1fr);min-height:100vh}
+.sidebar{position:sticky;top:0;height:100vh;padding:18px 14px;background:linear-gradient(180deg,#071522,#06131f);border-right:1px solid var(--line);display:flex;flex-direction:column}
+.brand{padding:2px 7px 20px}.brand-main{font-size:1.2rem;font-weight:800}.brand-main span{color:#38a7ff}.brand-sub{margin-top:4px;color:#b5c4d2;font-size:.7rem}
+nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-size:.8rem}.nav:hover{background:#10263b}.nav.active{background:linear-gradient(135deg,#153b68,#19579b)}
+.section{margin:17px 9px 7px;color:#8192a6;text-transform:uppercase;letter-spacing:.07em;font-size:.65rem}
+.tip{margin-top:auto;border:1px solid #1b4a73;background:#0c2032;border-radius:9px;padding:12px}.tip strong{color:#5db0ff;font-size:.72rem}.tip p{margin:6px 0 0;color:#aebed0;font-size:.66rem;line-height:1.45}
+.main{min-width:0}.topbar{height:78px;padding:0 24px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;background:rgba(6,17,29,.95)}
+.title{display:flex;align-items:center;gap:12px}.title-icon{font-size:1.7rem;color:#43a5ff}.topbar h1{margin:0;font-size:1.18rem}.topbar p{margin:4px 0 0;color:var(--muted);font-size:.72rem}
+.top-actions{display:flex;gap:8px}.top-actions a,.top-actions button{border:1px solid #225a8a;background:#0c2235;border-radius:7px;padding:9px 11px;color:#61b4ff;font-size:.7rem;cursor:pointer}
+.content{padding:14px}.atm-grid{display:grid;grid-template-columns:420px 300px minmax(0,1fr);gap:12px}
+.panel{background:linear-gradient(180deg,#0b1928,#091725);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);padding:13px}
+.panel h2{margin:0;font-size:.8rem}.panel-sub{margin:4px 0 12px;color:var(--muted);font-size:.67rem}
+.atm-machine{width:100%;border-radius:22px;background:linear-gradient(160deg,#4a5057,#1b1e22 50%,#33383e);border:2px solid #5a6168;padding:18px;box-shadow:inset 0 0 0 4px #111417,0 24px 40px rgba(0,0,0,.45)}
+.atm-brand{text-align:center;font-weight:800;letter-spacing:.08em;margin-bottom:10px}
+.atm-screen{position:relative;background:#d9eff7;border:8px solid #101317;border-radius:8px;color:#0c2230;min-height:255px;padding:14px}
+.screen-clock{text-align:right;font-size:.6rem}.screen-title{text-align:center;font-weight:800;font-size:1rem;margin-top:4px}
+.screen-body{min-height:150px;display:flex;align-items:center;justify-content:center;flex-direction:column;text-align:center;gap:9px}
+.screen-body strong{font-size:1.25rem}.screen-body small{font-size:.72rem}
+.soft-options{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}.soft-options button{border:1px solid #275a79;background:#eaf7fb;color:#0e3045;border-radius:6px;padding:8px;font-size:.64rem;cursor:pointer}
+.card-slot,.cash-slot,.receipt-slot{margin:12px auto 0;border-radius:8px;background:#090b0d;box-shadow:inset 0 2px 5px #000}
+.card-slot{width:190px;height:18px}.cash-slot{width:230px;height:26px}.receipt-slot{width:150px;height:10px}
+.keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin:16px auto 0;width:250px}.keypad button{height:42px;border:1px solid #090b0d;border-radius:6px;background:linear-gradient(180deg,#5b6066,#262a2e);box-shadow:0 3px 0 #0b0d0f;font-weight:700}
+.actions{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin:10px auto 0;width:250px}.actions button{height:46px;border-radius:7px;border:1px solid #151719;font-size:.62rem;font-weight:700}.cancel{background:#b52a2a}.clear{background:#d4a31e;color:#1c1500}.accept{background:#208a4d}
+.card-animation{height:75px;position:relative;overflow:hidden}.atm-card{position:absolute;left:50%;transform:translateX(-50%);width:105px;height:64px;border-radius:9px;background:linear-gradient(135deg,#286ee4,#7834d1);bottom:-70px}.atm-card::before{content:"";position:absolute;left:14px;top:16px;width:24px;height:18px;border-radius:3px;background:#d6b658}.atm-card.insert{animation:insertCard 1.2s forwards}@keyframes insertCard{to{bottom:7px}}
+.cash-animation{height:95px;position:relative;overflow:hidden}.banknotes{position:absolute;left:50%;transform:translateX(-50%);top:-90px;display:grid;gap:3px}.banknotes span{display:block;width:150px;height:30px;background:#d6ead0;border:1px solid #5f8d52;color:#2e5c2b;font-size:.56rem;padding:7px}.banknotes.dispense{animation:dispense 1.5s forwards}@keyframes dispense{to{top:12px}}
+.flow{display:grid;gap:8px}.flow article{display:grid;grid-template-columns:32px 1fr auto;gap:8px;align-items:center;border:1px solid #1b3b58;background:#0d1d2d;border-radius:8px;padding:9px}.flow article>span{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:#214c76}.flow article.active{border-color:#2f83ff}.flow article.done>span{background:#168b52}.flow strong,.flow small{display:block}.flow strong{font-size:.67rem}.flow small{margin-top:3px;color:#99adbf;font-size:.59rem}.flow b{color:#28dc8c;opacity:0}.flow article.done b{opacity:1}
+.scenario-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:10px}.scenario-grid button{border:1px solid #284760;background:#0d2133;border-radius:7px;padding:9px;text-align:left;font-size:.63rem}.scenario-grid button.selected{border-color:#2f83ff;background:#12375b}
+.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.summary div{border:1px solid #193953;background:#0d1e2f;border-radius:7px;padding:9px}.summary span,.summary strong{display:block}.summary span{color:#8fa3b6;font-size:.57rem;text-transform:uppercase}.summary strong{margin-top:4px;color:#55aaff;font:700 .74rem "Courier New",monospace;word-break:break-all}
+.bitmap{display:grid;grid-template-columns:repeat(16,1fr);gap:4px;margin-top:11px}.bit{aspect-ratio:1;border:1px solid #20394e;background:#102030;border-radius:4px;display:grid;place-items:center;color:#718598;font-size:.52rem}.bit.on{border-color:#18d17e;background:rgba(24,209,126,.13);color:#2ae18d;font-weight:700}
+.table-wrap{overflow:auto;max-height:370px;margin-top:10px}table{width:100%;border-collapse:collapse;font-size:.61rem}th,td{padding:7px;border-bottom:1px solid #152b40;text-align:left}th{color:#9dafc2;font-weight:500}
+.history{margin-top:12px}.history table tr{cursor:pointer}.history table tr:hover{background:#10283d}.history table tr.selected{background:#12375b}
+.output-actions{display:flex;gap:8px;margin-top:10px}.output-actions button{border:1px solid #285a87;background:#12375a;border-radius:7px;padding:9px 11px;font-size:.65rem}
+.notice{margin-top:10px;border:1px solid #5d4d1a;background:#2a2412;border-radius:8px;padding:9px;color:#f2c845;font-size:.62rem;line-height:1.45}
+@media(max-width:1250px){.atm-grid{grid-template-columns:380px 280px minmax(500px,1fr)}}
+@media(max-width:1000px){.app{grid-template-columns:1fr}.sidebar{display:none}.atm-grid{grid-template-columns:1fr}.content{padding:9px}}
+
+/* v2.1 - ATM full size inspirado en Diebold Nixdorf */
+.atm-grid{grid-template-columns:520px 300px minmax(0,1fr)}
+.atm-full-wrap{display:flex;justify-content:center;padding:8px 0 18px}
+.atm-machine{position:relative;width:455px;min-height:840px;padding:0;border-radius:30px 30px 18px 18px;background:linear-gradient(145deg,#d8dde2 0%,#9aa3ac 18%,#59616a 48%,#242a30 100%);border:3px solid #68727b;box-shadow:inset 0 0 0 7px #20262c,inset 0 0 55px rgba(255,255,255,.18),0 30px 55px rgba(0,0,0,.56);overflow:visible}
+.atm-machine::before{content:"";position:absolute;inset:12px;border:1px solid rgba(255,255,255,.18);border-radius:22px 22px 12px 12px;pointer-events:none}
+.atm-crown{height:84px;display:flex;align-items:center;justify-content:space-between;padding:0 25px;background:linear-gradient(180deg,#22282e,#11161a);border-bottom:3px solid #6f7880}
+.atm-crown .atm-brand{text-align:left;margin:0;letter-spacing:.13em;font-size:1.05rem;color:#f4f8fb}.atm-crown .atm-model{font-size:.62rem;color:#90a1af;text-align:right;line-height:1.45}.atm-crown .atm-model b{display:block;color:#48b4ff;font-size:.72rem}
+.atm-upper{padding:20px 24px 10px;background:linear-gradient(180deg,#59626a,#343b42 78%,#252b30);border-bottom:2px solid #11171b}
+.screen-bezel{position:relative;padding:14px 18px 18px;background:linear-gradient(145deg,#171b20,#050708);border-radius:14px;box-shadow:inset 0 0 0 2px #69737d,0 8px 18px rgba(0,0,0,.55)}
+.atm-screen{min-height:290px;border:3px solid #171c21;border-radius:6px;padding:16px 18px;background:linear-gradient(180deg,#eef9fd,#cfe6ef);box-shadow:inset 0 0 25px rgba(25,90,118,.17)}
+.screen-status{position:absolute;left:8px;right:8px;bottom:4px;display:flex;justify-content:space-between;color:#76838c;font-size:.48rem;letter-spacing:.05em}
+.screen-side-buttons{position:absolute;top:40px;bottom:44px;width:17px;display:flex;flex-direction:column;justify-content:space-around}.screen-side-buttons.left{left:-21px}.screen-side-buttons.right{right:-21px}.screen-side-buttons i{display:block;height:24px;border-radius:3px;background:linear-gradient(180deg,#8f979e,#353b40);border:1px solid #161a1e;box-shadow:0 2px 3px rgba(0,0,0,.55)}
+.atm-mid{display:grid;grid-template-columns:1fr 152px;gap:18px;padding:18px 28px 14px;background:linear-gradient(180deg,#3b4248,#252b30)}
+.device-column{display:grid;gap:13px}.device{position:relative;border:1px solid #0c0f12;background:linear-gradient(180deg,#20252a,#0d1114);border-radius:8px;padding:9px;box-shadow:inset 0 0 0 2px #4f5961,0 5px 9px rgba(0,0,0,.45)}.device-label{font-size:.48rem;color:#9ba7af;letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px}.device-led{position:absolute;right:8px;top:8px;width:7px;height:7px;border-radius:50%;background:#19dc82;box-shadow:0 0 8px #19dc82}.receipt-slot,.card-slot{margin:0;width:100%;height:14px;border-radius:4px;background:#030405;box-shadow:inset 0 2px 5px #000}.card-slot{height:18px;border:1px solid #0dcf76;box-shadow:inset 0 2px 5px #000,0 0 7px rgba(13,207,118,.4)}
+.card-animation{height:76px;overflow:visible}.atm-card{bottom:-56px;z-index:5}.atm-card.insert{animation:insertCardFull 1.25s forwards}@keyframes insertCardFull{to{bottom:11px}}
+.pin-pad-box{border:1px solid #15191c;background:linear-gradient(145deg,#5b636a,#272d32);border-radius:10px;padding:11px;box-shadow:inset 0 0 0 2px #7f8991,0 8px 14px rgba(0,0,0,.45)}
+.pin-shield{padding:10px 7px 14px;background:linear-gradient(180deg,#252b30,#11161a);border-radius:8px 8px 16px 16px;border-left:5px solid #6e777f;border-right:5px solid #6e777f}
+.keypad{width:auto;margin:0;gap:6px}.keypad button{height:38px;font-size:.75rem;background:linear-gradient(180deg,#d5d8da,#777e84);color:#111;border-color:#34393e;box-shadow:0 2px 0 #111}
+.actions{width:auto;margin:8px 0 0;gap:5px}.actions button{height:37px;font-size:.5rem}
+.atm-lower{padding:14px 28px 26px;background:linear-gradient(180deg,#242a2f,#15191d 55%,#0e1114);border-top:2px solid #545d64}
+.cash-module{position:relative;padding:14px 18px 18px;border-radius:11px;background:linear-gradient(180deg,#4b535a,#1e2429);border:1px solid #080b0d;box-shadow:inset 0 0 0 2px #6e7880}.cash-door{height:56px;border-radius:8px;background:linear-gradient(180deg,#14191d,#050708);box-shadow:inset 0 2px 8px #000;border:1px solid #737d84;display:flex;align-items:center;justify-content:center}.cash-slot{margin:0;width:275px;height:22px;border:1px solid #23c57a;box-shadow:inset 0 2px 5px #000,0 0 8px rgba(35,197,122,.35)}
+.cash-animation{height:105px;margin-top:-5px}.banknotes{z-index:3}.banknotes span{width:180px;height:34px}
+.deposit-module{margin-top:13px;display:grid;grid-template-columns:1fr 1fr;gap:10px}.deposit-cell{border:1px solid #333c43;background:#151a1e;border-radius:8px;padding:10px;text-align:center;color:#7f8d98;font-size:.53rem}.deposit-cell.disabled{opacity:.48}.deposit-cell strong{display:block;color:#aab6bf;font-size:.57rem;margin-bottom:4px}
+.service-panel{position:absolute;right:-15px;top:420px;width:28px;height:122px;background:linear-gradient(180deg,#40474d,#171c20);border:1px solid #0c0f11;border-radius:0 9px 9px 0;box-shadow:4px 5px 10px rgba(0,0,0,.4)}
+.atm-foot{height:18px;margin:0 25px;background:#080a0c;border-radius:0 0 13px 13px;box-shadow:0 7px 8px rgba(0,0,0,.45)}
+.full-caption{margin-top:10px;text-align:center;color:#8395a4;font-size:.58rem}.full-caption b{color:#59b5ff}
+@media(max-width:1250px){.atm-grid{grid-template-columns:500px 280px minmax(500px,1fr)}}
+@media(max-width:1000px){.atm-machine{transform:scale(.94);transform-origin:top center;margin-bottom:-50px}.atm-grid{grid-template-columns:1fr}}
+
+
+/* v2.2 - ATM táctil, tarjeta demo Visa y entrega USD temporizada */
+.atm-screen{cursor:pointer;user-select:none}
+.soft-options{grid-template-columns:1fr 1fr;gap:10px}
+.soft-options button{
+  min-height:48px;border:1px solid #1d5f91;background:linear-gradient(180deg,#0d5fa7,#073b6b);
+  color:#fff;font-weight:700;box-shadow:0 3px 0 rgba(2,25,45,.35);transition:.15s
+}
+.soft-options button:hover{transform:translateY(-1px);filter:brightness(1.08)}
+.soft-options button:active{transform:translateY(1px)}
+.touch-hint{font-size:.56rem;color:#28506a;margin-top:7px}
+.atm-card{
+  width:116px;height:72px;border-radius:10px;
+  background:linear-gradient(135deg,#052b79 0%,#0f62be 62%,#0a2c69 100%);
+  border:1px solid rgba(255,255,255,.42);box-shadow:0 8px 15px rgba(0,0,0,.35);overflow:hidden
+}
+.atm-card::before{left:13px;top:23px;width:25px;height:19px;background:linear-gradient(135deg,#e9cf74,#b88e27);box-shadow:inset 0 0 0 1px rgba(70,45,0,.35)}
+.atm-card::after{content:'VISA';position:absolute;right:9px;top:8px;color:#fff;font:italic 900 16px Arial;letter-spacing:-1px;text-shadow:0 1px 2px #001a42}
+.card-pan{position:absolute;left:12px;bottom:17px;color:#e8f2ff;font:700 7px monospace;letter-spacing:.6px}
+.card-demo{position:absolute;left:12px;bottom:7px;color:#b9dcff;font:600 5px Arial;letter-spacing:.5px}
+.card-contactless{position:absolute;right:12px;bottom:10px;color:#fff;font-size:10px;transform:rotate(90deg)}
+.cash-module{overflow:hidden}
+.cash-door{position:relative;transition:.35s}.cash-door.open{transform:translateY(7px);box-shadow:inset 0 8px 16px #000,0 0 12px rgba(35,197,122,.35)}
+.cash-door::after{content:'DISPENSADOR CERRADO';position:absolute;inset:auto 0 4px;text-align:center;font-size:.46rem;color:#71808a;letter-spacing:.08em}
+.cash-door.open::after{content:'RETIRE LOS DÓLARES';color:#4de69b}
+.cash-animation{height:118px;pointer-events:none}
+.banknotes{top:118px;display:block;width:210px;height:100px;transition:1s ease;opacity:0}
+.banknotes.dispense{top:8px;opacity:1}
+.banknotes.retract{top:118px;opacity:0}
+.usd-note{position:absolute;left:15px;width:180px;height:72px;border-radius:3px;background:linear-gradient(90deg,#dbe9cc,#f4f0d8 48%,#cbdcb9);border:1px solid #6e8961;color:#33452f;box-shadow:0 3px 6px rgba(0,0,0,.35);overflow:hidden}
+.usd-note::before{content:'100';position:absolute;left:8px;top:5px;font:900 12px Georgia;color:#315b37}
+.usd-note::after{content:'UNITED STATES · DEMO';position:absolute;right:8px;bottom:5px;font:700 5px Arial;color:#436148;letter-spacing:.4px}
+.usd-note .portrait{position:absolute;left:73px;top:14px;width:38px;height:43px;border-radius:50%;border:2px solid #66806a;background:radial-gradient(circle at 50% 36%,#aab9a0 0 28%,#6d806c 29% 45%,#d4dfc8 46%)}
+.usd-note .seal{position:absolute;right:18px;top:21px;width:25px;height:25px;border-radius:50%;border:2px solid #5a795b}
+.usd-note.n1{transform:rotate(-3deg);top:20px}.usd-note.n2{transform:rotate(1deg);top:12px;left:10px}.usd-note.n3{transform:rotate(4deg);top:4px;left:20px}
+.dispense-countdown{display:none;margin-top:8px;text-align:center;color:#9bcbb3;font-size:.55rem}.dispense-countdown.show{display:block}
+.deposit-module{display:none!important}
+.atm-lower{padding-bottom:24px}
+.screen-amount-note{margin-top:8px;color:#2a5269;font-size:.58rem}
+
+
+/* v2.3 - USD mejorado, retiro/retracción, transferencia y modo técnico */
+.usd-note{
+  background:
+    radial-gradient(circle at 50% 48%,rgba(34,73,47,.18) 0 17%,transparent 18%),
+    repeating-linear-gradient(90deg,rgba(43,92,55,.12) 0 1px,transparent 1px 7px),
+    linear-gradient(100deg,#a9c59a 0%,#d8e3be 18%,#b8d1a7 38%,#e3e0b2 55%,#a8c58f 77%,#d0ddb6 100%)!important;
+  border:2px solid #56704d!important;
+  color:#263c29!important;
+  filter:saturate(1.25) contrast(1.08);
+}
+.usd-note::before{
+  content:'100'!important;
+  font-size:16px!important;
+  color:#204a2a!important;
+  text-shadow:0 1px rgba(255,255,255,.55)
+}
+.usd-note::after{
+  content:'OSC BANK · USD DEMO · SIN VALOR'!important;
+  color:#23482a!important;
+  font-size:5.5px!important
+}
+.usd-note .portrait{
+  width:43px!important;height:48px!important;left:69px!important;top:11px!important;
+  background:
+    radial-gradient(circle at 48% 28%,#d7c69f 0 13%,transparent 14%),
+    radial-gradient(ellipse at 50% 49%,#7d6b4e 0 23%,#5d6f57 24% 38%,#cad9b5 39% 58%,#6f8965 59%);
+  border:2px solid #355b3c!important;
+}
+.usd-note .seal{
+  background:radial-gradient(circle,#327443 0 24%,#c7dcae 26% 46%,#2a6538 48% 52%,transparent 54%);
+  border:1px solid #315f38!important
+}
+.usd-note .serial{
+  position:absolute;left:16px;bottom:8px;font:700 7px "Courier New",monospace;color:#24552f;letter-spacing:.5px
+}
+.usd-note .hundred{
+  position:absolute;right:9px;top:4px;font:900 15px Georgia;color:#265f31
+}
+.usd-note.n1{top:28px!important;left:4px!important;transform:rotate(-5deg)}
+.usd-note.n2{top:17px!important;left:14px!important;transform:rotate(0deg)}
+.usd-note.n3{top:6px!important;left:25px!important;transform:rotate(5deg)}
+.cash-actions{display:none;justify-content:center;gap:8px;margin-top:8px}
+.cash-actions.show{display:flex}
+.cash-actions button{border:1px solid #237a50;background:#104a31;border-radius:7px;padding:8px 12px;color:#58e9a1;font-size:.59rem;cursor:pointer}
+.cash-actions button.secondary{border-color:#6c5a20;background:#30280f;color:#f2ca58}
+.transfer-review{width:100%;display:grid;gap:7px;text-align:left}
+.transfer-review div{display:flex;justify-content:space-between;border-bottom:1px solid #9cb9c5;padding:5px 0;font-size:.64rem}
+.transfer-review b{color:#103d56}
+.tech-mode{margin-top:12px;border:1px solid #1d4260;background:#081827;border-radius:9px;padding:10px}
+.tech-mode h3{margin:0;font-size:.7rem;color:#69baff}
+.tech-events{display:grid;gap:6px;margin-top:8px;max-height:210px;overflow:auto}
+.tech-event{border-left:3px solid #2f83ff;background:#0d2031;border-radius:5px;padding:7px 8px;font-size:.59rem;color:#b9cad7}
+.tech-event.done{border-left-color:#18d17e;color:#68e5a6}
+.tech-event.warn{border-left-color:#f7b51c;color:#f1cf6b}
+.compare-ops{margin-top:12px;border:1px solid #1b3b56;border-radius:8px;overflow:auto}
+.compare-ops table{min-width:560px}
+.compare-ops td.on{color:#42df96;font-weight:700}
+.compare-ops td.off{color:#617589}
+.touch-operation-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:100%}
+.touch-operation-grid button{min-height:72px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;font-weight:700}
+.touch-operation-grid span{font-size:1.25rem}
+@media(max-width:550px){.touch-operation-grid{grid-template-columns:1fr}}
+
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand"><div class="brand-main"><span>OSC</span> ACADEMY</div><div class="brand-sub">Laboratorio de Medios de Pago</div></div>
+    <nav>
+      <a class="nav" href="index.html">⌂ Dashboard</a>
+      <a class="nav" href="curso_interactivo.html">🎓 Curso Interactivo</a>
+      <a class="nav" href="pos.html">▣ POS Virtual</a>
+      <a class="nav" href="constructor.html">⌘ Constructor ISO8583</a>
+      <a class="nav active" href="atm.html">🏧 ATM Virtual</a>
+      <a class="nav" href="parser.html">◉ Parser ISO8583</a>
+    <a class="nav" href="mastercard_iso.html">◉ Mastercard ISO</a>
+<a class="nav" href="compensacion_mastercard.html">▤ Mastercard IPM</a>
+</nav>
+    <div class="section">Operaciones ATM</div>
+    <nav>
+      <a class="nav" href="#" data-op="withdrawal">Extracción</a>
+      <a class="nav" href="#" data-op="balance">Consulta de saldo</a>
+      <a class="nav" href="#" data-op="transfer">Transferencia</a>
+      <a class="nav" href="#" data-op="reversal">Reversa técnica</a>
+    </nav>
+    <div class="tip"><strong>Consejo OSC</strong><p>La extracción permite mostrar el caso más didáctico: aprobación del host y falla del dispensador, seguida de reversa 0400.</p></div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <div class="title"><span class="title-icon">🏧</span><div><h1>ATM Virtual · Full Size v2.3</h1><p>Pantalla táctil, teclado físico, transferencia y dispensación USD</p></div></div>
+      <div class="top-actions"><a href="pos.html">← POS</a><a href="parser.html">Parser →</a><button id="newOperation">Nueva operación</button></div>
+    </header>
+
+    <div class="content">
+      <div class="atm-grid">
+        <section class="panel">
+          <h2>CAJERO FULL SIZE</h2>
+          <p class="panel-sub">Interactuá con la pantalla, teclado y dispensador.</p>
+
+          <div class="atm-full-wrap">
+          <div>
+            <div class="atm-machine">
+              <div class="atm-crown">
+                <div class="atm-brand">OSC BANK</div>
+                <div class="atm-model"><b>ATM FULL</b>Prototipo full size<br>interfaz táctil</div>
+              </div>
+
+              <div class="atm-upper">
+                <div class="screen-bezel">
+                  <div class="screen-side-buttons left"><i></i><i></i><i></i><i></i></div>
+                  <div class="screen-side-buttons right"><i></i><i></i><i></i><i></i></div>
+                  <div class="atm-screen">
+                    <div class="screen-clock" id="atmClock">--:--:--</div>
+                    <div class="screen-title" id="screenTitle">BIENVENIDO</div>
+                    <div class="screen-body" id="screenBody">
+                      <strong>Inserte su tarjeta</strong>
+                      <small>Para comenzar una operación</small>
+                    </div>
+                    <div class="soft-options" id="softOptions"></div>
+                  </div>
+                  <div class="screen-status"><span>ATM00001 · EN LÍNEA</span><span>RED SEGURA</span></div>
+                </div>
+              </div>
+
+              <div class="atm-mid">
+                <div class="device-column">
+                  <div class="device receipt-device">
+                    <span class="device-led"></span>
+                    <div class="device-label">Impresora de comprobantes</div>
+                    <div class="receipt-slot"></div>
+                  </div>
+                  <div class="device card-device">
+                    <span class="device-led"></span>
+                    <div class="device-label">Lector de tarjeta EMV</div>
+                    <div class="card-animation"><div id="atmCard" class="atm-card"><span class="card-pan">4111 1111 1111 1111</span><span class="card-demo">OSC ACADEMY · TARJETA DE PRUEBA</span><span class="card-contactless">)))</span></div></div>
+                    <div class="card-slot"></div>
+                  </div>
+                </div>
+
+                <div class="pin-pad-box">
+                  <div class="device-label">Teclado PIN cifrado</div>
+                  <div class="pin-shield">
+                    <div class="keypad" id="keypad">
+                      <button data-key="1">1</button><button data-key="2">2</button><button data-key="3">3</button>
+                      <button data-key="4">4</button><button data-key="5">5</button><button data-key="6">6</button>
+                      <button data-key="7">7</button><button data-key="8">8</button><button data-key="9">9</button>
+                      <button data-key="0">0</button><button data-key="00">00</button><button data-key="000">000</button>
+                    </div>
+                    <div class="actions">
+                      <button class="cancel" data-action="cancel">CANCELAR</button>
+                      <button class="clear" data-action="clear">BORRAR</button>
+                      <button class="accept" data-action="accept">ACEPTAR</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="atm-lower">
+                <div class="cash-module">
+                  <div class="device-label">Módulo dispensador de efectivo</div>
+                  <div class="cash-animation"><div id="banknotes" class="banknotes">
+      <div class="usd-note n1"><i class="portrait"></i><i class="seal"></i><span class="serial">LB 45440071 A</span><span class="hundred">100</span></div>
+      <div class="usd-note n2"><i class="portrait"></i><i class="seal"></i><span class="serial">OSC 00000123</span><span class="hundred">100</span></div>
+      <div class="usd-note n3"><i class="portrait"></i><i class="seal"></i><span class="serial">DEMO 8583 USD</span><span class="hundred">100</span></div>
+    </div></div>
+                  <div id="cashDoor" class="cash-door"><div class="cash-slot"></div></div>
+                  <div id="dispenseCountdown" class="dispense-countdown">Retire el efectivo. Si no lo hace, el ATM lo retractará en <b id="countdownValue">6</b> segundos.</div>
+       <div id="cashActions" class="cash-actions"><button id="takeCash">Retirar efectivo</button><button id="leaveCash" class="secondary">No retirar (simular retracto)</button></div>
+                </div>
+              </div>
+              <div class="service-panel"></div>
+              <div class="atm-foot"></div>
+            </div>
+            <div class="full-caption"><b>OSC BANK ATM FULL</b> · Diseño educativo full size con pantalla táctil y dispensación USD.</div>
+          </div>
+        </div>
+        </section>
+
+        <section class="panel">
+          <h2>FLUJO ATM</h2>
+          <p class="panel-sub">Visualización paso a paso de la transacción.</p>
+
+          <div class="flow" id="flow">
+            <article data-step="1" class="active"><span>1</span><div><strong>Lectura de tarjeta</strong><small>Chip EMV</small></div><b>✓</b></article>
+            <article data-step="2"><span>2</span><div><strong>Ingreso de PIN</strong><small>DE52 / DE53</small></div><b>✓</b></article>
+            <article data-step="3"><span>3</span><div><strong>Selección de operación</strong><small>Extracción, consulta de saldo o transferencia</small></div><b>✓</b></article>
+            <article data-step="4"><span>4</span><div><strong>Construcción ISO8583</strong><small>0200 / 0210</small></div><b>✓</b></article>
+            <article data-step="5"><span>5</span><div><strong>Respuesta del host</strong><small id="hostStatus">Pendiente</small></div><b>✓</b></article>
+            <article data-step="6"><span>6</span><div><strong>Dispositivo físico</strong><small id="deviceStatus">Pendiente</small></div><b>✓</b></article>
+            <article data-step="7"><span>7</span><div><strong>Reversa técnica</strong><small id="reversalStatus">No requerida</small></div><b>✓</b></article>
+          </div>
+
+          <h2 style="margin-top:14px">ESCENARIO</h2>
+          <div class="scenario-grid" id="scenarioGrid">
+            <button class="selected" data-scenario="approved">00 - Aprobada</button>
+            <button data-scenario="insufficient">51 - Fondos insuficientes</button>
+            <button data-scenario="issuerDown">91 - Emisor no disponible</button>
+            <button data-scenario="dispenserFail">00 + falla dispensador</button>
+          </div>
+
+          <div class="notice">Los códigos, MTI y campos se presentan con fines didácticos. Incluye extracción, consulta de saldo y transferencia. No incorpora depósitos, cheques ni cambio de PIN.</div>
+          <div class="tech-mode">
+            <h3>MODO TÉCNICO · EVENTOS EN TIEMPO REAL</h3>
+            <div class="tech-events" id="techEvents"><div class="tech-event">Esperando inserción de tarjeta.</div></div>
+          </div>
+          <div class="compare-ops">
+            <table>
+              <thead><tr><th>OPERACIÓN</th><th>DE3</th><th>DE4</th><th>DE52</th><th>DE54</th><th>DE102</th><th>DE103</th></tr></thead>
+              <tbody>
+                <tr><td>Extracción</td><td>010000</td><td class="on">Sí</td><td class="on">Sí</td><td class="off">No</td><td class="on">Origen</td><td class="off">No</td></tr>
+                <tr><td>Consulta saldo</td><td>310000</td><td class="off">No</td><td class="on">Sí</td><td class="on">Respuesta</td><td class="on">Cuenta</td><td class="off">No</td></tr>
+                <tr><td>Transferencia</td><td>400000</td><td class="on">Sí</td><td class="on">Sí</td><td class="off">No</td><td class="on">Origen</td><td class="on">Destino</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="panel">
+          <h2>MENSAJE ISO8583</h2>
+          <p class="panel-sub" id="messageSubtitle">Esperando operación</p>
+
+          <div class="summary">
+            <div><span>MTI</span><strong id="mti">----</strong></div>
+            <div><span>Bitmap</span><strong id="bitmapValue">0000000000000000</strong></div>
+            <div><span>Campos</span><strong id="fieldCount">0</strong></div>
+          </div>
+
+          <div class="bitmap" id="bitmap"></div>
+
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>DE</th><th>NOMBRE</th><th>VALOR</th><th>FORMATO</th><th>ORIGEN</th></tr></thead>
+              <tbody id="deTable"></tbody>
+            </table>
+          </div>
+
+          <div class="output-actions">
+            <button id="copyMessage">Copiar trama</button>
+            <button id="openParser">Analizar en Parser</button>
+          </div>
+
+          <div class="history">
+            <h2>HISTORIAL DE MENSAJES</h2>
+            <table>
+              <thead><tr><th>HORA</th><th>MTI</th><th>OPERACIÓN</th><th>RESP.</th><th>STAN</th></tr></thead>
+              <tbody id="historyBody"></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+
+  const state = {
+    step:'card',
+    pin:'',
+    amount:'',
+    destination:'',
+    operation:'withdrawal',
+    scenario:'approved',
+    stan:null,
+    auth:null,
+    messages:[],
+    selectedMessageId:null
+  };
+
+  const field = (de,name,value,format,origin) => [String(de),name,String(value),format,origin];
+  const now = () => new Date();
+  const timeNow = () => now().toLocaleTimeString('es-AR',{hour12:false});
+  const de7Now = () => {
+    const d=now();
+    return [
+      String(d.getMonth()+1).padStart(2,'0'),
+      String(d.getDate()).padStart(2,'0'),
+      String(d.getHours()).padStart(2,'0'),
+      String(d.getMinutes()).padStart(2,'0'),
+      String(d.getSeconds()).padStart(2,'0')
+    ].join('');
+  };
+  const random6 = () => String(Math.floor(100000+Math.random()*900000));
+  const pinBlock = () => Array.from({length:16},()=>Math.floor(Math.random()*16).toString(16).toUpperCase()).join('');
+  const formatAmount = digits => (Number(digits||0)/100).toLocaleString('es-AR',{style:'currency',currency:'USD'});
+
+  function activeBits(fields){return new Set(fields.map(r=>Number(r[0])))}
+  function bitmapHex(fields){
+    const bits=activeBits(fields);let binary='';
+    for(let i=1;i<=64;i++)binary+=bits.has(i)?'1':'0';
+    return binary.match(/.{4}/g).map(n=>parseInt(n,2).toString(16).toUpperCase()).join('');
+  }
+
+  function processingCode(){
+    if(state.operation==='withdrawal') return '010000';
+    if(state.operation==='balance') return '310000';
+    if(state.operation==='transfer') return '400000';
+    return '010000';
+  }
+
+  function requestFields(){
+    const fields=[
+      field(2,'Primary Account Number','4556123412341234','LLVAR','Tarjeta'),
+      field(3,'Processing Code',processingCode(),'N6','Aplicación ATM'),
+      field(7,'Transmission Date & Time',de7Now(),'N10','Reloj del sistema'),
+      field(11,'System Trace Audit Number',state.stan,'N6','ATM'),
+      field(14,'Expiration Date','2912','N4','Tarjeta'),
+      field(22,'POS Entry Mode','051','N3','Lectura chip'),
+      field(25,'POS Condition Code','00','N2','ATM'),
+      field(35,'Track 2 Data','4556123412341234=2912201','LLVAR','Chip EMV'),
+      field(41,'Terminal ID','ATM00001','ANS8','Configuración ATM'),
+      field(49,'Currency Code','840','N3','Configuración ATM'),
+      field(52,'PIN Data',pinBlock(),'B64','PIN cifrado'),
+      field(53,'Security Control Information','2000000000000000','N16','Seguridad PIN')
+    ];
+    if(state.operation!=='balance') fields.splice(3,0,field(4,'Transaction Amount',String(state.amount||0).padStart(12,'0'),'N12','Usuario'));
+    fields.push(field(102,'Account Identification 1','001234567890','LLVAR','Cuenta origen'));
+    if(state.operation==='transfer') fields.push(field(103,'Account Identification 2',state.destination||'009876543210','LLVAR','Cuenta destino'));
+    return fields.sort((a,b)=>Number(a[0])-Number(b[0]));
+  }
+
+  function responseFields(code){
+    const fields=[
+      field(2,'Primary Account Number','4556123412341234','LLVAR','Eco de solicitud'),
+      field(3,'Processing Code',processingCode(),'N6','Eco de solicitud'),
+      field(7,'Transmission Date & Time',de7Now(),'N10','Host'),
+      field(11,'System Trace Audit Number',state.stan,'N6','Eco de solicitud'),
+      field(37,'Retrieval Reference Number',`${state.stan}123456`,'AN12','Host'),
+      field(39,'Response Code',code,'AN2','Host'),
+      field(41,'Terminal ID','ATM00001','ANS8','Eco de solicitud'),
+      field(49,'Currency Code','840','N3','Eco de solicitud')
+    ];
+    if(state.operation!=='balance') fields.splice(3,0,field(4,'Transaction Amount',String(state.amount||0).padStart(12,'0'),'N12','Eco de solicitud'));
+    if(code==='00') fields.splice(6,0,field(38,'Authorization ID Response',state.auth,'AN6','Host emisor'));
+    if(state.operation==='balance' && code==='00') fields.push(field(54,'Additional Amounts','1001840C000000125000','LLLVAR','Saldo disponible'));
+    fields.push(field(102,'Account Identification 1','001234567890','LLVAR','Cuenta origen'));
+    if(state.operation==='transfer') fields.push(field(103,'Account Identification 2',state.destination||'009876543210','LLVAR','Cuenta destino'));
+    return fields.sort((a,b)=>Number(a[0])-Number(b[0]));
+  }
+
+  function reversalFields(){
+    return [
+      field(2,'Primary Account Number','4556123412341234','LLVAR','Operación original'),
+      field(3,'Processing Code',processingCode(),'N6','Operación original'),
+      field(4,'Transaction Amount',String(state.amount||0).padStart(12,'0'),'N12','Operación original'),
+      field(7,'Transmission Date & Time',de7Now(),'N10','Reloj del sistema'),
+      field(11,'System Trace Audit Number',random6(),'N6','Nueva reversa'),
+      field(37,'Retrieval Reference Number',`${state.stan}123456`,'AN12','Operación original'),
+      field(41,'Terminal ID','ATM00001','ANS8','Configuración ATM'),
+      field(49,'Currency Code','840','N3','Operación original'),
+      field(90,'Original Data Elements',`0200${state.stan}${de7Now()}12345678901`.padEnd(42,'0').slice(0,42),'N42','Relación con 0200 original')
+    ];
+  }
+
+  function addTechEvent(text,type=''){
+    const box=$('techEvents');
+    const item=document.createElement('div');
+    item.className=`tech-event ${type}`;
+    item.textContent=`${timeNow()} · ${text}`;
+    box.prepend(item);
+    while(box.children.length>10) box.lastElementChild.remove();
+  }
+
+  function setScreen(title,html,options=[]){
+    $('screenTitle').textContent=title;
+    $('screenBody').innerHTML=html;
+    $('softOptions').innerHTML=options.map(o=>`<button data-option="${o.value}">${o.label}</button>`).join('');
+    document.querySelectorAll('[data-option]').forEach(b=>b.addEventListener('click',()=>handleOption(b.dataset.option)));
+  }
+
+  function setFlow(step){
+    document.querySelectorAll('#flow article').forEach((el,i)=>{
+      el.classList.toggle('active',i===step-1);
+      el.classList.toggle('done',i<step-1);
+    });
+  }
+
+  function insertCard(){
+    addTechEvent('Tarjeta insertada · lectura chip EMV · DE22=051','done');
+    $('atmCard').classList.remove('insert');
+    requestAnimationFrame(()=>$('atmCard').classList.add('insert'));
+    setTimeout(()=>{
+      state.step='pin';setFlow(2);addTechEvent('PIN solicitado · al confirmar se generarán DE52 y DE53');
+      setScreen('INGRESE PIN','<strong id="pinDisplay">••••</strong><small>Luego presione ACEPTAR</small>');
+    },1200);
+  }
+
+  function handleOption(value){
+    if(value==='withdrawal'||value==='balance'||value==='transfer'){
+      state.operation=value;
+      addTechEvent(`Operación seleccionada en pantalla táctil: ${labelOperation()}`,'done');
+      setFlow(4);
+      if(value==='balance'){
+        state.amount='0';
+        send0200();
+      } else if(value==='transfer'){
+        state.step='destination';
+        setScreen('CUENTA DESTINO','<strong id="destDisplay">—</strong><small>Digite la cuenta utilizando el teclado físico</small><div class="screen-amount-note">ACEPTAR confirma la cuenta destino</div>');
+      } else {
+        state.step='amount';
+        setScreen('INGRESE IMPORTE','<strong id="amountDisplay">US$ 0,00</strong><small>Use exclusivamente el teclado físico</small><div class="screen-amount-note">BORRAR corrige · ACEPTAR confirma</div>');
+      }
+    }
+  }
+
+  function accept(){
+    if(state.step==='card'){insertCard();return}
+    if(state.step==='pin'){
+      if(state.pin.length<4)return;
+      state.step='operation';setFlow(3);
+      addTechEvent('PIN capturado en forma cifrada · DE52/DE53 activos','done');
+      setScreen('PANTALLA TÁCTIL','<small>Toque la operación deseada</small><div class="touch-hint">La selección se realiza directamente sobre la pantalla.</div>',[
+        {value:'withdrawal',label:'💵 Extracción'},
+        {value:'balance',label:'📄 Consulta de saldo'},
+        {value:'transfer',label:'↔ Transferencia'}
+      ]);
+      $('softOptions').classList.add('touch-operation-grid');
+      return;
+    }
+    if(state.step==='destination'){
+      if(state.destination.length<6)return;
+      addTechEvent(`Cuenta destino capturada: ****${state.destination.slice(-4)}`,'done');
+      state.step='amount';
+      setScreen('IMPORTE TRANSFERENCIA','<strong id="amountDisplay">US$ 0,00</strong><small>Digite el importe con el teclado físico</small>');
+      return;
+    }
+    if(state.step==='amount'){
+      if(!state.amount||Number(state.amount)===0)return;
+      if(state.operation==='transfer'){
+        setScreen('CONFIRMAR TRANSFERENCIA',`<div class="transfer-review"><div><span>Cuenta origen</span><b>****7890</b></div><div><span>Cuenta destino</span><b>****${state.destination.slice(-4)}</b></div><div><span>Importe</span><b>${formatAmount(state.amount)}</b></div></div><small>Presione ACEPTAR para enviar</small>`);
+        state.step='transferConfirm';return;
+      }
+      send0200();return;
+    }
+    if(state.step==='transferConfirm'){
+      addTechEvent('Transferencia confirmada · DE102 y DE103 incorporados','done');
+      send0200();return;
+    }
+    }
+
+  function pressKey(value){
+    if(state.step==='pin'){
+      if(state.pin.length<6)state.pin+=value.slice(0,1);
+      const el=$('pinDisplay');if(el)el.textContent='•'.repeat(state.pin.length);
+    }else if(state.step==='amount'){
+      state.amount=(state.amount+value).slice(0,12);
+      const el=$('amountDisplay');if(el)el.textContent=formatAmount(state.amount);
+    }else if(state.step==='destination'){
+      state.destination=(state.destination+value).slice(0,18);
+      const el=$('destDisplay');if(el)el.textContent=state.destination;
+    }
+  }
+
+  function clearKey(){
+    if(state.step==='pin')state.pin=state.pin.slice(0,-1);
+    if(state.step==='amount')state.amount=state.amount.slice(0,-1);
+    if(state.step==='destination')state.destination=state.destination.slice(0,-1);
+    if($('pinDisplay'))$('pinDisplay').textContent='•'.repeat(state.pin.length);
+    if($('amountDisplay'))$('amountDisplay').textContent=formatAmount(state.amount);
+    if($('destDisplay'))$('destDisplay').textContent=state.destination||'—';
+  }
+
+  function addMessage(mti,operation,responseCode,fields){
+    const message={id:`MSG-${Date.now()}-${mti}`,mti,operation,responseCode,fields,bitmap:bitmapHex(fields),stan:fields.find(r=>r[0]==='11')?.[2]||state.stan,time:timeNow()};
+    state.messages.unshift(message);
+    const tr=document.createElement('tr');
+    tr.dataset.id=message.id;
+    tr.innerHTML=`<td>${message.time}</td><td>${mti}</td><td>${operation}</td><td>${responseCode||'—'}</td><td>${message.stan}</td>`;
+    tr.addEventListener('click',()=>renderMessage(message));
+    $('historyBody').prepend(tr);
+    renderMessage(message);
+  }
+
+  function renderMessage(message){
+    state.selectedMessageId=message.id;
+    $('mti').textContent=message.mti;
+    $('bitmapValue').textContent=message.bitmap;
+    $('fieldCount').textContent=message.fields.length;
+    $('messageSubtitle').textContent=`${message.mti} · ${message.operation}`;
+    $('deTable').innerHTML=message.fields.map(r=>`<tr>${r.map(c=>`<td>${c}</td>`).join('')}</tr>`).join('');
+    const bits=activeBits(message.fields);
+    $('bitmap').innerHTML=Array.from({length:64},(_,i)=>`<span class="bit ${bits.has(i+1)?'on':''}">${i+1}</span>`).join('');
+    document.querySelectorAll('#historyBody tr').forEach(tr=>tr.classList.toggle('selected',tr.dataset.id===message.id));
+  }
+
+  let cashTimer=null;
+  function finishCash(reason){
+    clearInterval(cashTimer);cashTimer=null;
+    const notes=$('banknotes'),door=$('cashDoor'),counter=$('dispenseCountdown'),actions=$('cashActions');
+    notes.classList.remove('dispense');notes.classList.add('retract');actions.classList.remove('show');
+    addTechEvent(reason==='taken'?'Efectivo retirado por el cliente':'Efectivo no retirado · retracto automático','warn');
+    setTimeout(()=>{
+      door.classList.remove('open');counter.classList.remove('show');
+      $('deviceStatus').textContent=reason==='taken'?'Efectivo retirado · dispensador cerrado':'Efectivo retractado · revisar conciliación ATM';
+      setScreen(reason==='taken'?'OPERACIÓN FINALIZADA':'EFECTIVO RETRACTADO',
+        reason==='taken'?'<strong>Retire su tarjeta</strong><small>Gracias por utilizar OSC BANK</small>':'<strong>Los billetes volvieron al ATM</strong><small>Se registró un evento interno de retracto</small>');
+    },900);
+  }
+
+  function dispenseCash(){
+    const notes=$('banknotes'),door=$('cashDoor'),counter=$('dispenseCountdown'),value=$('countdownValue'),actions=$('cashActions');
+    notes.classList.remove('retract');door.classList.add('open');counter.classList.add('show');actions.classList.add('show');
+    requestAnimationFrame(()=>notes.classList.add('dispense'));
+    addTechEvent('Dispensador abierto · billetes USD presentados','done');
+    let remaining=6;value.textContent=remaining;
+    cashTimer=setInterval(()=>{
+      remaining-=1;value.textContent=Math.max(remaining,0);
+      if(remaining<=0) finishCash('retracted');
+    },1000);
+  }
+
+  function send0200(){
+    state.step='processing';state.stan=random6();setFlow(4);
+    setScreen('PROCESANDO','<strong>Enviando 0200</strong><small>Aguarde</small>');addTechEvent(`0200 construido · DE3=${processingCode()} · Bitmap calculado`,'done');
+    const req=requestFields();addMessage('0200',labelOperation(),' ',req);
+
+    setTimeout(()=>{
+      setFlow(5);
+      let code='00';
+      if(state.scenario==='insufficient')code='51';
+      if(state.scenario==='issuerDown')code='91';
+      state.auth=code==='00'?random6():'-';
+      $('hostStatus').textContent=`${code} - ${code==='00'?'Aprobada':code==='51'?'Fondos insuficientes':'Emisor no disponible'}`;
+      const res=responseFields(code);addMessage('0210',labelOperation(),code,res);addTechEvent(`0210 recibido · DE39=${code}`,'done');
+
+      if(code!=='00'){
+        setScreen('OPERACIÓN RECHAZADA',`<strong>${code}</strong><small>${$('hostStatus').textContent}</small>`);
+        state.step='done';return;
+      }
+
+      setFlow(6);
+      if(state.operation==='balance'){
+        $('deviceStatus').textContent='Saldo mostrado';
+        setScreen('SALDO DISPONIBLE','<strong>US$ 1.250,00</strong><small>Retire su tarjeta</small>');
+        addTechEvent('DE54 interpretado · saldo disponible mostrado','done');
+        state.step='done';return;
+      }
+
+      if(state.operation==='transfer'){
+        $('deviceStatus').textContent='Transferencia registrada';
+        setScreen('TRANSFERENCIA APROBADA',`<strong>${formatAmount(state.amount)}</strong><small>Destino ****${state.destination.slice(-4)} · Autorización ${state.auth}</small>`);
+        addTechEvent('Transferencia completada · DE102 origen / DE103 destino','done');
+        state.step='done';return;
+      }
+
+      if(state.scenario==='dispenserFail'){
+        $('deviceStatus').textContent='Falla del dispensador';
+        setScreen('ERROR DE DISPENSADOR','<strong>No se entregó efectivo</strong><small>Generando reversa</small>');
+        setTimeout(sendReversal,850);
+      }else{
+        $('deviceStatus').textContent='Abriendo dispensador';
+        setScreen('RETIRE SUS DÓLARES',`<strong>${formatAmount(state.amount)}</strong><small>Los billetes permanecerán visibles durante unos segundos</small>`);
+        dispenseCash();
+        state.step='done';
+      }
+    },900);
+  }
+
+  function sendReversal(){
+    setFlow(7);$('reversalStatus').textContent='0400 en proceso';
+    const req=reversalFields();addMessage('0400','Reversa técnica','',req);
+    setTimeout(()=>{
+      const res=req.filter(r=>r[0]!=='90');
+      res.push(field(39,'Response Code','00','AN2','Host'));
+      res.sort((a,b)=>Number(a[0])-Number(b[0]));
+      addMessage('0410','Reversa técnica','00',res);
+      $('reversalStatus').textContent='0410 aprobada';
+      setScreen('OPERACIÓN REVERSADA','<strong>Saldo restituido</strong><small>Retire su tarjeta</small>');
+      state.step='done';
+    },850);
+  }
+
+  function labelOperation(){
+    if(state.operation==='withdrawal') return 'Extracción';
+    if(state.operation==='balance') return 'Consulta de saldo';
+    if(state.operation==='transfer') return 'Transferencia';
+    return 'Operación ATM';
+  }
+
+  function serializeField(row){
+    const value=String(row[2]);const format=row[3];
+    if(format.startsWith('LLLVAR'))return String(value.length).padStart(3,'0')+value;
+    if(format.startsWith('LLVAR'))return String(value.length).padStart(2,'0')+value;
+    return value;
+  }
+
+  function annotated(message){
+    return `${message.mti}|${message.bitmap}|${message.fields.map(r=>`${r[0]}=${r[2]}`).join('|')}`;
+  }
+  function raw(message){
+    return message.mti+message.bitmap+message.fields.map(serializeField).join('');
+  }
+
+  function selectedMessage(){
+    return state.messages.find(m=>m.id===state.selectedMessageId);
+  }
+
+  function copyMessage(){
+    const m=selectedMessage();if(!m)return;
+    const payload=`TRAMA DIDÁCTICA
+${annotated(m)}
+
+TRAMA COMO VIAJA
+${raw(m)}`;
+    navigator.clipboard?.writeText(payload);
+    $('copyMessage').textContent='✓ Copiado';setTimeout(()=>$('copyMessage').textContent='Copiar trama',1100);
+  }
+
+  function openParser(){
+    const m=selectedMessage();if(!m){alert('Seleccione un mensaje.');return}
+    localStorage.setItem('oscAcademyParserPayload',JSON.stringify({source:'ATM Virtual',mti:m.mti,annotated:annotated(m),raw:raw(m),createdAt:new Date().toISOString()}));
+    location.href='parser.html';
+  }
+
+  function reset(){
+    state.step='card';state.pin='';state.amount='';state.destination='';state.stan=null;state.auth=null;state.selectedMessageId=null;
+    clearInterval(cashTimer);cashTimer=null;
+    $('atmCard').classList.remove('insert');$('banknotes').classList.remove('dispense','retract');$('cashDoor').classList.remove('open');$('dispenseCountdown').classList.remove('show');$('cashActions').classList.remove('show');
+    $('softOptions').classList.remove('touch-operation-grid');
+    $('techEvents').innerHTML='<div class="tech-event">Esperando inserción de tarjeta.</div>';
+    $('hostStatus').textContent='Pendiente';$('deviceStatus').textContent='Pendiente';$('reversalStatus').textContent='No requerida';
+    setFlow(1);setScreen('BIENVENIDO','<strong>Inserte su tarjeta</strong><small>Para comenzar una operación</small>');
+    $('mti').textContent='----';$('bitmapValue').textContent='0000000000000000';$('fieldCount').textContent='0';$('messageSubtitle').textContent='Esperando operación';
+    $('deTable').innerHTML='';$('bitmap').innerHTML=Array.from({length:64},(_,i)=>`<span class="bit">${i+1}</span>`).join('');
+  }
+
+  document.querySelectorAll('[data-key]').forEach(b=>b.addEventListener('click',()=>pressKey(b.dataset.key)));
+  document.querySelector('[data-action="accept"]').addEventListener('click',accept);
+  document.querySelector('[data-action="clear"]').addEventListener('click',clearKey);
+  document.querySelector('[data-action="cancel"]').addEventListener('click',reset);
+  document.querySelectorAll('[data-scenario]').forEach(b=>b.addEventListener('click',()=>{
+    document.querySelectorAll('[data-scenario]').forEach(x=>x.classList.remove('selected'));
+    b.classList.add('selected');state.scenario=b.dataset.scenario;
+  }));
+  document.querySelectorAll('[data-op]').forEach(a=>a.addEventListener('click',e=>{
+    e.preventDefault();state.operation=a.dataset.op;
+    if(state.step==='operation')handleOption(state.operation);
+  }));
+  $('copyMessage').addEventListener('click',copyMessage);
+  $('openParser').addEventListener('click',openParser);
+  $('newOperation').addEventListener('click',reset);
+  $('takeCash').addEventListener('click',()=>finishCash('taken'));
+  $('leaveCash').addEventListener('click',()=>finishCash('retracted'));
+
+  setInterval(()=>$('atmClock').textContent=timeNow(),1000);
+  reset();
+})();
+</script>
+<script src="js/permissions.js"></script>
+</body>
+</html>

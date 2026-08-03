@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OSC Academy · Laboratorio de Compensación BASE II</title>
+<style>
+:root{
+  --bg:#06111d;--sidebar:#071522;--panel:#0b1827;--panel2:#0e1f31;--line:#173149;
+  --text:#f5f8fc;--muted:#9dafc2;--blue:#2f83ff;--cyan:#24c8f2;--green:#18d17e;
+  --purple:#9d68ff;--amber:#f7b51c;--red:#ff5267;--shadow:0 18px 42px rgba(0,0,0,.28)
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;font-family:Inter,Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--text)}
+button,input,select{font:inherit;color:inherit}
+a{text-decoration:none;color:inherit}
+.app{display:grid;grid-template-columns:225px minmax(0,1fr);min-height:100vh}
+.sidebar{position:sticky;top:0;height:100vh;padding:18px 14px;background:linear-gradient(180deg,#071522,#06131f);border-right:1px solid var(--line);display:flex;flex-direction:column}
+.brand{padding:2px 7px 20px}.brand-main{font-size:1.2rem;font-weight:800}.brand-main span{color:#38a7ff}.brand-sub{margin-top:4px;color:#b5c4d2;font-size:.7rem}
+nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-size:.8rem}.nav:hover{background:#10263b}.nav.active{background:linear-gradient(135deg,#5a4110,#8a620d)}
+.section{margin:17px 9px 7px;color:#8192a6;text-transform:uppercase;letter-spacing:.07em;font-size:.65rem}
+.tip{margin-top:auto;border:1px solid #67541c;background:#28220f;border-radius:9px;padding:12px}.tip strong{color:#f5c74b;font-size:.72rem}.tip p{margin:6px 0 0;color:#c7bd9d;font-size:.66rem;line-height:1.45}
+.main{min-width:0}.topbar{height:78px;padding:0 24px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;background:rgba(6,17,29,.95)}
+.title{display:flex;align-items:center;gap:12px}.title-icon{font-size:1.7rem;color:#f5bd32}.topbar h1{margin:0;font-size:1.18rem}.topbar p{margin:4px 0 0;color:var(--muted);font-size:.72rem}
+.top-actions{display:flex;gap:8px}.top-actions a,.top-actions button{border:1px solid #6f561d;background:#2a220e;border-radius:7px;padding:9px 11px;color:#f0c95f;font-size:.7rem;cursor:pointer}
+.content{padding:14px}.grid{display:grid;grid-template-columns:330px minmax(0,1fr) 390px;gap:12px}
+.panel{background:linear-gradient(180deg,#0b1928,#091725);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);padding:13px}
+.panel h2{margin:0;font-size:.8rem}.panel-sub{margin:4px 0 12px;color:var(--muted);font-size:.67rem}
+.workflow{display:grid;gap:8px}.stage{border:1px solid #1d3c56;background:#0d1d2d;border-radius:9px;padding:10px;display:grid;grid-template-columns:34px 1fr auto;gap:9px;align-items:center}
+.stage span{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:#213c55}.stage.active{border-color:#f1b82f;background:#2a2312}.stage.done span{background:#17884f}.stage strong,.stage small{display:block}.stage strong{font-size:.68rem}.stage small{margin-top:3px;color:#9dafc2;font-size:.59rem}.stage b{opacity:0;color:#2add8c}.stage.done b{opacity:1}
+.controls{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}.controls button,.controls select{border:1px solid #31516c;background:#0d2133;border-radius:7px;padding:9px;font-size:.64rem}.controls button.primary{border-color:#8a6c20;background:#55410d;color:#ffd86d}
+.tc-list{display:grid;gap:7px;max-height:540px;overflow:auto}.tc-card{border:1px solid #1c3951;background:#0c1c2b;border-radius:8px;padding:9px;cursor:pointer}.tc-card:hover,.tc-card.active{border-color:#f1b82f;background:#29220f}.tc-card strong,.tc-card small{display:block}.tc-card strong{font-size:.69rem}.tc-card small{color:#9cafc0;margin-top:3px;font-size:.58rem;line-height:1.35}
+.file-visual{border:1px solid #1f405b;background:#071522;border-radius:9px;padding:10px;min-height:260px}
+.record{display:grid;grid-template-columns:60px 52px 1fr 86px;gap:8px;align-items:center;border:1px solid #1a354c;background:#0c1d2c;border-radius:7px;padding:8px;margin-bottom:6px;font-size:.61rem}
+.record.header{border-color:#2d6da4;background:#0d2a44}.record.trailer{border-color:#80661f;background:#2b2512}.record.detail{border-color:#1b6a48;background:#0d281e}.record.reversal{border-color:#744d8d;background:#24172d}
+.badge{padding:3px 6px;border-radius:5px;background:#193c5a;color:#6abbff;font-weight:700;text-align:center}.record.detail .badge{background:#145034;color:#45e69a}.record.trailer .badge{background:#59460f;color:#ffd261}.record.reversal .badge{background:#563468;color:#d39aff}
+.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}.summary div{border:1px solid #1c3b56;background:#0d1f30;border-radius:7px;padding:9px}.summary span,.summary strong{display:block}.summary span{color:#92a5b8;font-size:.56rem;text-transform:uppercase}.summary strong{margin-top:5px;font-size:.77rem;color:#f1c85f}
+.tabs{display:flex;gap:15px;border-bottom:1px solid var(--line);margin-top:12px}.tabs button{border:0;background:transparent;padding:9px 0;color:#91a4b7;font-size:.62rem;cursor:pointer}.tabs button.active{color:#f2c957;border-bottom:2px solid #f1b82f}
+.table-wrap{overflow:auto;max-height:310px;margin-top:10px}table{width:100%;border-collapse:collapse;font-size:.61rem}th,td{padding:7px;border-bottom:1px solid #152b40;text-align:left}th{color:#9dafc2;font-weight:500}
+.output{margin-top:10px;border:1px solid #1f405b;background:#071522;border-radius:8px;padding:10px}.output pre{margin:0;white-space:pre-wrap;word-break:break-all;color:#47dc96;font: .66rem/1.5 "Courier New",monospace}
+.validation{display:grid;gap:6px;margin-top:10px}.validation div{border:1px solid #1f5b42;background:#0e2b20;border-radius:7px;padding:8px;color:#42dc94;font-size:.61rem}.validation .warn{border-color:#745f1d;background:#2c2511;color:#f1c84b}
+.edu{margin-top:10px;border:1px solid #24445f;background:#0b1d2d;border-radius:8px;padding:10px}.edu h3{margin:0;color:#f1c95b;font-size:.67rem}.edu p{margin:6px 0 0;color:#b0c0ce;font-size:.61rem;line-height:1.45}
+@media(max-width:1250px){.grid{grid-template-columns:300px minmax(0,1fr)}.right{grid-column:1/-1}}
+@media(max-width:900px){.app{grid-template-columns:1fr}.sidebar{display:none}.grid{grid-template-columns:1fr}.content{padding:9px}}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand"><div class="brand-main"><span>OSC</span> ACADEMY</div><div class="brand-sub">Laboratorio de Medios de Pago</div></div>
+    <nav>
+      <a class="nav" href="index.html">⌂ Dashboard</a>
+      <a class="nav" href="curso_interactivo.html">🎓 Curso Interactivo</a>
+      <a class="nav" href="pos.html">▣ POS Virtual</a>
+      <a class="nav" href="constructor.html">⌘ Constructor ISO8583</a>
+      <a class="nav" href="atm.html">🏧 ATM Virtual</a>
+      <a class="nav" href="parser.html">◉ Parser ISO8583</a>
+      <a class="nav active" href="compensacion.html">▤ Compensación BASE II</a>
+    <a class="nav" href="mastercard_iso.html">◉ Mastercard ISO</a>
+<a class="nav" href="compensacion_mastercard.html">▤ Mastercard IPM</a>
+</nav>
+    <div class="section">Conceptos</div>
+    <nav>
+      <a class="nav" href="#" data-section="workflow">Flujo de clearing</a>
+      <a class="nav" href="#" data-section="file">Archivo CTF</a>
+      <a class="nav" href="#" data-section="codes">TC y TCR</a>
+      <a class="nav" href="#" data-section="settlement">Liquidación</a>
+    </nav>
+    <div class="tip"><strong>Consejo OSC</strong><p>BASE II trabaja con archivos y registros de compensación. No es una trama ISO 8583 en línea.</p></div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <div class="title"><span class="title-icon">▤</span><div><h1>Laboratorio de Compensación BASE II</h1><p>Construcción y validación didáctica de archivos de clearing</p></div></div>
+      <div class="top-actions"><a href="pos.html">← POS</a><button id="newFile">Nuevo archivo</button><button id="downloadFile">Descargar TXT</button></div>
+    </header>
+
+    <div class="content">
+      <div class="grid">
+        <section class="panel">
+          <h2>1. FLUJO DE COMPENSACIÓN</h2>
+          <p class="panel-sub">Simulá el recorrido desde el comercio hasta el emisor.</p>
+
+          <div class="workflow" id="workflow">
+            <article class="stage active" data-step="1"><span>1</span><div><strong>Comercio</strong><small>Reconcilia y transmite ventas</small></div><b>✓</b></article>
+            <article class="stage" data-step="2"><span>2</span><div><strong>Adquirente / Procesador</strong><small>Valida y construye interchange</small></div><b>✓</b></article>
+            <article class="stage" data-step="3"><span>3</span><div><strong>Archivo saliente</strong><small>TC 90 + lotes + TC 92</small></div><b>✓</b></article>
+            <article class="stage" data-step="4"><span>4</span><div><strong>Visa BASE II</strong><small>Edita, clasifica y compensa</small></div><b>✓</b></article>
+            <article class="stage" data-step="5"><span>5</span><div><strong>Archivo entrante</strong><small>Interchange para el emisor</small></div><b>✓</b></article>
+            <article class="stage" data-step="6"><span>6</span><div><strong>Emisor</strong><small>Contabiliza transacciones</small></div><b>✓</b></article>
+            <article class="stage" data-step="7"><span>7</span><div><strong>Settlement</strong><small>Posición neta y liquidación</small></div><b>✓</b></article>
+          </div>
+
+          <div class="controls">
+            <button class="primary" id="nextStep">Avanzar flujo</button>
+            <button id="resetFlow">Reiniciar</button>
+            <select id="fileType"><option value="CTF">CTF - Center Transaction File</option><option value="ITF">ITF - Interchange Transaction File</option></select>
+            <select id="profile"><option value="sale">Venta TC 05</option><option value="credit">Crédito TC 06</option><option value="cash">Cash TC 07</option><option value="reversal">Reversa TC 25</option></select>
+          </div>
+
+          <div class="edu"><h3>BASE II versus autorización</h3><p>La autorización decide en línea si una operación se aprueba. BASE II procesa posteriormente registros de clearing, calcula posiciones y alimenta la liquidación.</p></div>
+        </section>
+
+        <section class="panel">
+          <h2>2. CONSTRUCTOR DE ARCHIVO</h2>
+          <p class="panel-sub">Agregá transacciones y observá la estructura de control.</p>
+
+          <div class="summary">
+            <div><span>Archivo</span><strong id="fileId">CTF-000001</strong></div>
+            <div><span>Registros</span><strong id="recordCount">0</strong></div>
+            <div><span>Total fuente</span><strong id="sourceTotal">$ 0,00</strong></div>
+          </div>
+
+          <div class="file-visual" id="fileVisual"></div>
+
+          <div class="controls">
+            <button class="primary" id="addSale">Agregar venta TC 05</button>
+            <button id="addCredit">Agregar crédito TC 06</button>
+            <button id="addCash">Agregar cash TC 07</button>
+            <button id="addReversal">Agregar reversa TC 25</button>
+            <button id="closeBatch">Cerrar lote TC 91</button>
+            <button id="closeFile">Cerrar archivo TC 92</button>
+          </div>
+
+          <div class="tabs"><button class="active">ESTRUCTURA</button><button>VALIDACIONES</button><button>EXPLICACIÓN</button></div>
+          <div class="validation" id="validation"></div>
+        </section>
+
+        <section class="panel right">
+          <h2>3. EXPLORADOR TC / TCR</h2>
+          <p class="panel-sub">Seleccioná un código para ver su finalidad didáctica.</p>
+
+          <div class="tc-list" id="tcList"></div>
+
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>CAMPO</th><th>VALOR</th><th>EXPLICACIÓN</th></tr></thead>
+              <tbody id="recordTable"></tbody>
+            </table>
+          </div>
+
+          <div class="output"><pre id="rawOutput"></pre></div>
+          <div class="controls">
+            <button id="copyRecord">Copiar registro</button>
+            <button id="copyFile">Copiar archivo</button>
+          </div>
+
+          <div class="edu"><h3>Modelo didáctico</h3><p>La pantalla reproduce la organización por Transaction Code (TC), Transaction Component Record (TCR), encabezados y trailers. No reemplaza una certificación ni el layout productivo vigente de Visa.</p></div>
+        </section>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const money = cents => (cents/100).toLocaleString('es-AR',{style:'currency',currency:'ARS'});
+  const pad = (v,n,c='0') => String(v).padStart(n,c);
+  const rand = n => Array.from({length:n},()=>Math.floor(Math.random()*10)).join('');
+
+  const CODES = [
+    {tc:'05',name:'Sales Draft or Representment',tcr:'TCR 0 Draft Data; TCR 1 Additional Data; TCR 7 Chip Card Data',kind:'detail',desc:'Registro financiero de venta o representment.'},
+    {tc:'06',name:'Credit Voucher or Representment',tcr:'TCR 0 Credit Voucher; TCR 1 Additional Data',kind:'detail',desc:'Crédito o devolución al tarjetahabiente.'},
+    {tc:'07',name:'Cash Disbursement or Representment',tcr:'TCR 0 Cash Disbursement',kind:'detail',desc:'Desembolso de efectivo.'},
+    {tc:'15',name:'Sales Draft Chargeback',tcr:'TCR 0 Chargeback',kind:'reversal',desc:'Contracargo sobre una venta.'},
+    {tc:'25',name:'Sales Draft Reversal',tcr:'TCR 0 Reversal',kind:'reversal',desc:'Reversa de una venta en clearing.'},
+    {tc:'44',name:'Collection Batch Acknowledgment',tcr:'TCR 0 Batch Disposition',kind:'header',desc:'Acuse de lote aceptado o rechazado.'},
+    {tc:'57',name:'Data Capture Advice',tcr:'Batch Header, Transaction Detail, Batch Trailer',kind:'detail',desc:'Datos de captura por lote.'},
+    {tc:'90',name:'File Header',tcr:'TCR 0 Outgoing / Incoming CTF o ITF',kind:'header',desc:'Encabezado de control del archivo.'},
+    {tc:'91',name:'Batch Trailer',tcr:'TCR 0 CTF o ITF',kind:'trailer',desc:'Control y totales del lote.'},
+    {tc:'92',name:'File Trailer',tcr:'TCR 0 CTF o ITF',kind:'trailer',desc:'Control y totales del archivo.'}
+  ];
+
+  const state = {
+    step:1,fileSeq:1,fileType:'CTF',batchNo:1,batchOpen:true,fileClosed:false,
+    records:[],selected:null
+  };
+
+  function recordBase(tc,tcr='0'){
+    return {
+      id:`R-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+      tc,tcr,bin:'123456',source:'123456789',destination:'654321',
+      amount:0,currency:'032',account:'455612******1234',reference:rand(12),
+      batch:state.batchNo,created:new Date().toISOString()
+    };
+  }
+
+  function createHeader(){
+    const r=recordBase('90');
+    r.kind='header';r.label=`${state.fileType} Outgoing Header`;
+    r.raw=`90${r.tcr}${pad(state.fileSeq,6)}${state.fileType}${r.bin}${new Date().toISOString().slice(0,10).replaceAll('-','')}`.padEnd(168,' ');
+    return r;
+  }
+
+  function createDetail(tc,amount){
+    const r=recordBase(tc);
+    r.kind=tc==='25'?'reversal':'detail';
+    r.amount=amount;
+    r.label=CODES.find(c=>c.tc===tc)?.name||`TC ${tc}`;
+    r.raw=`${tc}0${r.account.replaceAll('*','0')}${pad(amount,12)}${r.currency}${r.bin}${r.reference}${pad(r.batch,6)}`.padEnd(168,' ');
+    return r;
+  }
+
+  function createBatchTrailer(){
+    const tx=state.records.filter(r=>r.batch===state.batchNo && ['05','06','07','25'].includes(r.tc));
+    const total=tx.reduce((a,r)=>a+(r.tc==='06'||r.tc==='25'?-r.amount:r.amount),0);
+    const r=recordBase('91');r.kind='trailer';r.label='Batch Trailer';
+    r.amount=total;
+    r.raw=`910${pad(state.batchNo,6)}${pad(tx.length,12)}${pad(Math.abs(total),18)}${total<0?'-':'+'}`.padEnd(168,' ');
+    return r;
+  }
+
+  function createFileTrailer(){
+    const tx=state.records.filter(r=>['05','06','07','25'].includes(r.tc));
+    const total=tx.reduce((a,r)=>a+(r.tc==='06'||r.tc==='25'?-r.amount:r.amount),0);
+    const r=recordBase('92');r.kind='trailer';r.label='File Trailer';r.amount=total;
+    r.raw=`920${pad(state.records.length+1,12)}${pad(tx.length,12)}${pad(Math.abs(total),18)}${total<0?'-':'+'}`.padEnd(168,' ');
+    return r;
+  }
+
+  function ensureHeader(){
+    if(!state.records.some(r=>r.tc==='90')) state.records.push(createHeader());
+  }
+
+  function addTransaction(tc){
+    if(state.fileClosed){alert('El archivo está cerrado. Inicie uno nuevo.');return}
+    ensureHeader();
+    if(!state.batchOpen){state.batchNo++;state.batchOpen=true}
+    const base={ '05':12550,'06':5000,'07':20000,'25':12550 }[tc];
+    state.records.push(createDetail(tc,base+Math.floor(Math.random()*5000)));
+    render();
+  }
+
+  function closeBatch(){
+    if(state.fileClosed)return;
+    ensureHeader();
+    if(!state.batchOpen){alert('El lote actual ya está cerrado.');return}
+    state.records.push(createBatchTrailer());
+    state.batchOpen=false;render();
+  }
+
+  function closeFile(){
+    if(state.fileClosed)return;
+    ensureHeader();
+    if(state.batchOpen) closeBatch();
+    state.records.push(createFileTrailer());
+    state.fileClosed=true;render();
+  }
+
+  function total(){
+    return state.records.filter(r=>['05','06','07','25'].includes(r.tc))
+      .reduce((a,r)=>a+(r.tc==='06'||r.tc==='25'?-r.amount:r.amount),0);
+  }
+
+  function renderFile(){
+    $('fileVisual').innerHTML=state.records.length?state.records.map(r=>`
+      <div class="record ${r.kind}" data-id="${r.id}">
+        <span class="badge">TC ${r.tc}</span>
+        <span>TCR ${r.tcr}</span>
+        <span>${r.label}</span>
+        <strong>${r.amount?money(r.amount):'CONTROL'}</strong>
+      </div>`).join(''):'<div style="color:#8094a7;font-size:.67rem;text-align:center;padding:70px 10px">Agregá una transacción para construir el archivo.</div>';
+    document.querySelectorAll('.record[data-id]').forEach(el=>el.addEventListener('click',()=>{
+      state.selected=state.records.find(r=>r.id===el.dataset.id);renderSelected();
+    }));
+  }
+
+  function renderSelected(){
+    const r=state.selected||state.records[state.records.length-1];
+    if(!r){$('recordTable').innerHTML='';$('rawOutput').textContent='';return}
+    const def=CODES.find(c=>c.tc===r.tc);
+    $('recordTable').innerHTML=[
+      ['Transaction Code',r.tc,def?.name||r.label],
+      ['TCR',r.tcr,def?.tcr||'Componente del registro'],
+      ['Batch',r.batch,'Número de lote didáctico'],
+      ['BIN',r.bin,'Centro originador simulado'],
+      ['Cuenta',r.account,'PAN enmascarado'],
+      ['Importe',r.amount?money(r.amount):'No aplica','Importe fuente o total de control'],
+      ['Referencia',r.reference,'Referencia didáctica']
+    ].map(x=>`<tr><td>${x[0]}</td><td>${x[1]}</td><td>${x[2]}</td></tr>`).join('');
+    $('rawOutput').textContent=r.raw;
+  }
+
+  function validate(){
+    const msgs=[];
+    if(!state.records.length) msgs.push(['warn','Todavía no existe un archivo.']);
+    if(state.records.length && state.records[0].tc!=='90') msgs.push(['warn','El archivo debe iniciar con TC 90.']);
+    if(state.fileClosed && state.records[state.records.length-1]?.tc!=='92') msgs.push(['warn','El archivo cerrado debe terminar con TC 92.']);
+    const details=state.records.filter(r=>['05','06','07','25'].includes(r.tc));
+    if(details.length) msgs.push(['ok',`${details.length} transacciones listas para clearing.`]);
+    const batches=state.records.filter(r=>r.tc==='91').length;
+    if(batches) msgs.push(['ok',`${batches} lote(s) con trailer TC 91.`]);
+    $('validation').innerHTML=msgs.map(([t,m])=>`<div class="${t==='warn'?'warn':''}">${t==='ok'?'✓':'•'} ${m}</div>`).join('');
+  }
+
+  function render(){
+    $('fileId').textContent=`${state.fileType}-${pad(state.fileSeq,6)}`;
+    $('recordCount').textContent=state.records.length;
+    $('sourceTotal').textContent=money(total());
+    renderFile();renderSelected();validate();
+  }
+
+  function renderCodes(){
+    $('tcList').innerHTML=CODES.map(c=>`
+      <div class="tc-card" data-tc="${c.tc}">
+        <strong>TC ${c.tc} - ${c.name}</strong>
+        <small>${c.tcr}</small>
+      </div>`).join('');
+    document.querySelectorAll('.tc-card').forEach(el=>el.addEventListener('click',()=>{
+      document.querySelectorAll('.tc-card').forEach(x=>x.classList.remove('active'));el.classList.add('active');
+      const c=CODES.find(x=>x.tc===el.dataset.tc);
+      $('recordTable').innerHTML=[
+        ['TC',c.tc,c.name],['TCR relacionados','-',c.tcr],['Finalidad','-',c.desc]
+      ].map(x=>`<tr><td>${x[0]}</td><td>${x[1]}</td><td>${x[2]}</td></tr>`).join('');
+      $('rawOutput').textContent=`TC ${c.tc} | ${c.name}\n${c.tcr}\n${c.desc}`;
+    }));
+  }
+
+  function advance(){
+    if(state.step<7)state.step++;
+    document.querySelectorAll('.stage').forEach((el,i)=>{
+      el.classList.toggle('active',i===state.step-1);
+      el.classList.toggle('done',i<state.step-1);
+    });
+  }
+
+  function resetFlow(){
+    state.step=1;
+    document.querySelectorAll('.stage').forEach((el,i)=>{
+      el.classList.toggle('active',i===0);el.classList.remove('done');
+    });
+  }
+
+  function newFile(){
+    state.fileSeq++;state.batchNo=1;state.batchOpen=true;state.fileClosed=false;state.records=[];state.selected=null;render();
+  }
+
+  function fileText(){return state.records.map(r=>r.raw).join('\n')}
+
+  function copy(text,btn){
+    navigator.clipboard?.writeText(text);
+    const old=btn.textContent;btn.textContent='✓ Copiado';setTimeout(()=>btn.textContent=old,1000);
+  }
+
+  function download(){
+    const blob=new Blob([fileText()],{type:'text/plain;charset=utf-8'});
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+    a.download=`OSC_BASEII_${state.fileType}_${pad(state.fileSeq,6)}.txt`;a.click();URL.revokeObjectURL(a.href);
+  }
+
+  $('nextStep').addEventListener('click',advance);
+  $('resetFlow').addEventListener('click',resetFlow);
+  $('fileType').addEventListener('change',e=>{state.fileType=e.target.value;render()});
+  $('addSale').addEventListener('click',()=>addTransaction('05'));
+  $('addCredit').addEventListener('click',()=>addTransaction('06'));
+  $('addCash').addEventListener('click',()=>addTransaction('07'));
+  $('addReversal').addEventListener('click',()=>addTransaction('25'));
+  $('closeBatch').addEventListener('click',closeBatch);
+  $('closeFile').addEventListener('click',closeFile);
+  $('newFile').addEventListener('click',newFile);
+  $('downloadFile').addEventListener('click',download);
+  $('copyRecord').addEventListener('click',e=>copy((state.selected||state.records.at(-1))?.raw||'',e.target));
+  $('copyFile').addEventListener('click',e=>copy(fileText(),e.target));
+
+  renderCodes();render();
+})();
+</script>
+<script src="js/permissions.js"></script>
+</body>
+</html>

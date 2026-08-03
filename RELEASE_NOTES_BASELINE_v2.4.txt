@@ -1,0 +1,16 @@
+OSC Payment Academy — Baseline v2.4
+
+BASE
+- Parte de OSC-ACADEMY_Lab_v2.3_ATM_Transferencia_USD.
+
+CONSOLIDACIÓN
+- Se recuperan los assets CSS/JS del POS v1.3 que faltaban en el ZIP v2.3.
+- Se integra un Dashboard principal.
+- Se mantiene toda la funcionalidad de módulos v2.3.
+- Se agrega eBook ISO 8583 Desde Cero.
+- Se agrega Roadmap Próximamente.
+- Se prepara Repositorio Técnico exclusivo de Instructor.
+- Se agrega configuración para Cloudflare.
+
+NOTA
+- Los permisos actuales son demostrativos en el frontend. La seguridad real seguirá dependiendo del backend/Apps Script o del futuro servicio de autenticación.

@@ -1,0 +1,4 @@
+﻿Identificador;Rol;Parser;POS;Constructor;ATM;Compensacion;Estado;FechaInicio;FechaVencimiento
+osc;Administrador;SI;SI;SI;SI;SI;ACTIVO;;
+alumno@ejemplo.com;Alumno Parser;SI;NO;NO;NO;NO;ACTIVO;;
+@empresa.com;Empresa;SI;SI;SI;NO;NO;ACTIVO;01/08/2026;31/07/2027

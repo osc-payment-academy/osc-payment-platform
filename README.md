@@ -1,19 +1,18 @@
-# OSC Payment Platform v0.1
+# OSC Payment Academy — Baseline v2.4
 
-Primera versión desplegable de OSC Payment Academy.
+Baseline consolidada a partir de **OSC-ACADEMY Lab v2.3 ATM Transferencia USD**.
 
 ## Incluye
-- Landing pública.
-- Login demo.
-- Dashboard responsivo.
-- Usuarios y permisos por módulo.
-- Contenedores para Constructor, POS, ATM, Parser, Compensación y Curso interactivo.
-- Configuración para Cloudflare Workers & Pages.
+- Dashboard “Del manual a la práctica”.
+- Curso interactivo con modo instructor.
+- Constructor y Parser ISO 8583.
+- POS Virtual con compra, reversa, anulación, cierre, ticket y bitmaps.
+- ATM Full v2.3 con extracción, consulta, transferencia, USD y reversa técnica.
+- Visa BASE II, Mastercard ISO y Mastercard IPM.
+- eBook `ISO 8583 Desde Cero` en EPUB.
+- Roadmap Próximamente: Tokenización, e-Commerce, Contactless, QR, Wallets, Google Pay, Seguridad e ISO 20022.
+- Área privada de Instructor preparada para los manuales técnicos.
+- Configuración Cloudflare Workers Static Assets.
 
-## Usuarios demo
-- Instructor: `oscar@oscpaymentacademy.com` / `demo1234`
-- Solo Parser: `parser@oscpaymentacademy.com` / `parser123`
-- Alumno: `alumno@oscpaymentacademy.com` / `alumno123`
-
-## Cloudflare
-Cloudflare ejecuta `npx wrangler deploy` y sirve los archivos de `./public`.
+## Despliegue
+Subir todo el contenido del ZIP a la raíz del repositorio. Cloudflare usará `wrangler.jsonc` y publicará `./public`.

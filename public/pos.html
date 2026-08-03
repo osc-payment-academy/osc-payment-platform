@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OSC Academy · POS Virtual</title>
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-main"><span>OSC</span> ACADEMY</div>
+      <div class="brand-sub">Laboratorio de Medios de Pago</div>
+    </div>
+
+    <div class="section">Módulos</div>
+    <nav>
+      <a class="nav" href="curso_interactivo.html">🎓 Curso Interactivo</a>
+      <a href="index.html">⌂ <span>Dashboard</span></a>
+      <a href="constructor.html">⌘ <span>Constructor ISO8583</span></a>
+      <a class="active" href="pos.html">▣ <span>POS Virtual</span></a>
+      <a href="atm.html">🏧 <span>ATM Virtual</span></a>
+      <a href="parser.html">◉ <span>Parser ISO8583</span></a>
+      <a href="compensacion.html">▤ <span>Laboratorio de Compensación</span></a>
+      <a href="#">⌁ <span>Escenarios y Respuestas</span></a>
+    <a class="nav" href="mastercard_iso.html">◉ Mastercard ISO</a>
+<a class="nav" href="compensacion_mastercard.html">▤ Mastercard IPM</a>
+</nav>
+
+    <div class="section">Recursos</div>
+    <nav>
+      <a href="#">▥ <span>Biblioteca Técnica</span></a>
+      <a href="#">▱ <span>Mis Cursos</span></a>
+      <a href="#">☑ <span>Ejercicios</span></a>
+      <a href="#">◷ <span>Historial de Transacciones</span></a>
+      <a href="#">◇ <span>Certificaciones</span></a>
+    </nav>
+
+    <div class="sidebar-bottom">
+      <div class="user-card">
+        <span class="avatar">OS</span>
+        <div><strong>Oscar Sanchez</strong><small>Instructor</small><em>● Online</em></div>
+      </div>
+      <div class="session-card">
+        <strong>Info de sesión</strong>
+        <p><span>Alumnos conectados</span><b>28</b></p>
+        <p><span>Transacciones hoy</span><b id="sessionTx">0</b></p>
+        <p><span>Tiempo de sesión</span><b id="sessionTime">00:00:00</b></p>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <div class="title-block">
+        <span class="title-icon">▣</span>
+        <div><h1>POS VIRTUAL</h1><p>Simulador de Terminal de Pago</p></div>
+      </div>
+      <div class="top-actions">
+        <span class="connected">● Conectado al Switch de Laboratorio</span>
+        <button type="button" id="operationMenuButton">▤ Operaciones</button>
+        <button type="button">▣ Escenarios⌄</button>
+        <button type="button">⚙ Configuración</button>
+        <button class="danger" type="button">⇥ Finalizar Sesión</button>
+      </div>
+    </header>
+
+    
+    <section id="operationDrawer" class="operation-drawer hidden">
+      <div class="operation-drawer-head">
+        <div>
+          <h2>OPERACIONES DEL POS</h2>
+          <p>Seleccioná la operación que querés simular.</p>
+        </div>
+        <button id="closeOperationDrawer" type="button">✕</button>
+      </div>
+
+      <div class="operation-cards">
+        <button class="operation-card active" data-operation="purchase">
+          <span>▣</span><div><strong>Compra</strong><small>0200 → 0210</small></div>
+        </button>
+        <button class="operation-card" data-operation="reversal">
+          <span>↶</span><div><strong>Reversa</strong><small>0400 → 0410</small></div>
+        </button>
+        <button class="operation-card" data-operation="void">
+          <span>⊘</span><div><strong>Anulación</strong><small>Sobre compra aprobada</small></div>
+        </button>
+        <button class="operation-card" data-operation="batch">
+          <span>▤</span><div><strong>Cierre de lote</strong><small>Totales y confirmación</small></div>
+        </button>
+      </div>
+    </section>
+
+    <section class="workspace">
+      <div class="terminal-column">
+        <div class="terminal">
+          <div class="terminal-model-select"><label for="terminalModel">Modelo</label><select id="terminalModel"><option value="ingenico">Ingenico ICT250</option><option value="verifone">Verifone VX520</option><option value="pax">PAX A920</option><option value="android">POS Android</option></select></div><div class="terminal-brand" id="terminalBrand">ingenico</div>
+          <div class="terminal-screen">
+            <div class="status-icons">▂▃▅ ◉ ⌁ <span id="posClock">--:--:--</span></div>
+            <div class="screen-title" id="screenTitle">COMPRA</div>
+            <div class="screen-content" id="screenContent">
+              <small>Ingrese Importe</small>
+              <strong id="screenAmount">$ 0,00</strong>
+              <span>Presione VERDE para continuar</span>
+            </div>
+            <div class="screen-footer"><span>MENÚ</span><span>SALIR</span></div>
+          </div>
+
+          <div class="model">ICT250</div>
+
+          <div id="entryModePanel" class="entry-mode-panel hidden">
+            <strong>Seleccione forma de captura</strong>
+            <div class="entry-mode-grid">
+              <button type="button" data-entry="chip">▣ Chip EMV</button>
+              <button type="button" data-entry="contactless">⌁ Contactless</button>
+              <button type="button" data-entry="magstripe">▰ Banda</button>
+              <button type="button" data-entry="manual">⌨ Manual</button>
+            </div>
+          </div>
+
+          <div class="softkeys">
+            <button>F1</button><button>F2</button><button>F3</button><button>F4</button>
+          </div>
+
+          <div class="keypad" id="keypad">
+            <button data-key="1">1 <small>QZ</small></button>
+            <button data-key="2">2 <small>ABC</small></button>
+            <button data-key="3">3 <small>DEF</small></button>
+            <button data-key="4">4 <small>GHI</small></button>
+            <button data-key="5">5 <small>JKL</small></button>
+            <button data-key="6">6 <small>MNO</small></button>
+            <button data-key="7">7 <small>PRS</small></button>
+            <button data-key="8">8 <small>TUV</small></button>
+            <button data-key="9">9 <small>WXY</small></button>
+            <button data-key="f">F</button>
+            <button data-key="0">0 <small>—</small></button>
+            <button data-key="hash">.#*</button>
+          </div>
+
+          <div class="action-keys">
+            <button class="cancel" data-action="cancel">CANCEL<br>✕</button>
+            <button class="clear" data-action="clear">BORRAR<br>⌫</button>
+            <button class="accept" data-action="accept">ACEPTAR<br>○</button>
+          </div>
+        </div>
+
+
+        <div id="captureStage" class="capture-stage hidden" aria-live="polite">
+          <div class="capture-stage-title" id="captureStageTitle">Lectura de tarjeta</div>
+
+          <div id="captureChip" class="capture-scene hidden">
+            <div class="capture-terminal">
+              <div class="capture-screen"></div>
+              <div class="capture-slot"></div>
+            </div>
+            <div class="capture-card chip-card">
+              <span class="card-chip"></span>
+              <strong>VISA</strong>
+            </div>
+            <div class="capture-caption">Insertando tarjeta con chip…</div>
+          </div>
+
+          <div id="captureContactless" class="capture-scene hidden">
+            <div class="capture-terminal">
+              <div class="capture-screen"></div>
+              <div class="nfc-symbol">)))</div>
+            </div>
+            <div class="capture-card nfc-card">
+              <span class="card-chip"></span>
+              <strong>VISA</strong>
+            </div>
+            <div class="nfc-wave wave-1"></div>
+            <div class="nfc-wave wave-2"></div>
+            <div class="nfc-wave wave-3"></div>
+            <div class="capture-caption">Acercando tarjeta contactless…</div>
+          </div>
+
+          <div id="captureMagstripe" class="capture-scene hidden">
+            <div class="capture-terminal">
+              <div class="capture-screen"></div>
+              <div class="magstripe-slot"></div>
+            </div>
+            <div class="capture-card swipe-card">
+              <span class="stripe"></span>
+              <strong>VISA</strong>
+            </div>
+            <div class="swipe-guide"></div>
+            <div class="capture-caption">Deslizando la banda magnética…</div>
+          </div>
+
+          <div id="captureManual" class="capture-scene hidden">
+            <div class="manual-entry-card">
+              <div><span>PAN</span><strong>4556 1234 1234 1234</strong></div>
+              <div><span>Vencimiento</span><strong>25/12</strong></div>
+              <div><span>CVV</span><strong>•••</strong></div>
+            </div>
+            <div class="capture-caption">Ingresando los datos manualmente…</div>
+          </div>
+
+          <div class="capture-status">
+            <span class="capture-loader"></span>
+            <strong id="captureStatusText">Leyendo datos…</strong>
+          </div>
+        </div>
+
+        <div class="ticket-learning-note" id="ticketLearningNote">
+          <strong>TICKET INTERACTIVO</strong>
+          <span>Hacé clic en un dato del comprobante para ubicar su Data Element.</span>
+        </div>
+        <div class="receipt-printer" id="receiptPrinter">
+          <div class="printer-slot"></div>
+          <div class="receipt-paper" id="receiptPaper"></div>
+        </div>
+
+        <div class="terminal-tools">
+          <button type="button">🔊 Sonidos <span class="switch on"></span></button>
+          <button type="button" id="printAgain">▣ Reimprimir ticket</button>
+          <button type="button" id="downloadTicket">⇩ Descargar ticket</button>
+          <button type="button">⛶ Pantalla Completa</button>
+        </div>
+      </div>
+
+      <section class="flow-panel">
+        <h2>FLUJO DE TRANSACCIÓN</h2>
+        <div class="flow-list">
+          <article id="step1" class="active"><span>1</span><div><strong>Ingreso de Importe</strong><small id="flowAmount">$ 0,00</small><time id="time1">—</time></div><b>✓</b></article>
+          <article id="step2"><span>2</span><div><strong>Lectura de Tarjeta</strong><small>VISA Débito</small><time id="time2">—</time></div><b>✓</b></article>
+          <article id="step3"><span>3</span><div><strong>Ingreso de PIN</strong><small id="flowPin">••••</small><time id="time3">—</time></div><b>✓</b></article>
+          <article id="step4"><span>4</span><div><strong>Procesando...</strong><small>Enviando 0200</small><time id="time4">—</time></div><b>✓</b></article>
+          <article id="step5" class="host"><span>5</span><div><strong>Respuesta del Host</strong><small id="flowResponse">Pendiente</small><time id="time5">—</time></div><b>✓</b></article>
+          <article id="step6"><span>6</span><div><strong>Impresión</strong><small>Comprobante</small><time id="time6">—</time></div><b>✓</b></article>
+        </div>
+
+        <div class="result-box" id="resultBox">
+          <h3>RESULTADO</h3>
+          <div class="result-content"><span>✓</span><div><strong id="resultText">EN ESPERA</strong><b id="resultCode">--</b></div></div>
+          <p id="resultDetail">Ingrese una compra para comenzar.</p>
+          <small>Código de Autorización: <b id="authCode">------</b></small>
+          <button id="newTest" class="new-test" type="button">＋ Nueva prueba</button>
+        </div>
+      </section>
+
+      <section class="iso-panel">
+        <div class="iso-header">
+          <div><h2>MENSAJE ISO8583 SELECCIONADO</h2><p id="messageSubtitle">0200 - Financial Transaction Request</p></div>
+          <div><button type="button">‹/› Ver Hexadecimal</button><button type="button" id="copyBtn">▣ Copiar</button><button type="button" id="analyzeBtn">◉ Analizar en Parser</button></div>
+        </div>
+
+        <div class="iso-summary">
+          <div><span>MTI</span><strong id="mti">0200</strong></div>
+          <div><span>BITMAP</span><strong id="bitmap">723A400108040000</strong></div>
+          <div class="bitmap-row" id="bitmapRow"></div>
+        </div>
+
+        <section class="dual-bitmap-panel">
+          <div class="dual-bitmap-title">
+            <div><h3>BITMAPS DE LA TRANSACCIÓN</h3><p>Solicitud y respuesta se actualizan automáticamente.</p></div>
+            <button type="button" id="compareMessagesBtn">Comparar 0200 ↔ 0210</button>
+          </div>
+          <div class="dual-bitmap-grid">
+            <article class="bitmap-card request">
+              <div class="bitmap-card-head"><strong id="requestBitmapTitle">0200 · Solicitud</strong><span id="requestBitmapHex">0000000000000000</span></div>
+              <div class="bitmap-64" id="requestBitmapBits"></div>
+              <small id="requestBitmapFields">Sin mensaje generado</small>
+            </article>
+            <article class="bitmap-card response">
+              <div class="bitmap-card-head"><strong id="responseBitmapTitle">0210 · Respuesta</strong><span id="responseBitmapHex">0000000000000000</span></div>
+              <div class="bitmap-64" id="responseBitmapBits"></div>
+              <small id="responseBitmapFields">Sin respuesta recibida</small>
+            </article>
+          </div>
+          <div class="compare-panel hidden" id="comparePanel">
+            <div class="compare-columns">
+              <div><strong>Solo en solicitud</strong><p id="onlyRequestFields">—</p></div>
+              <div><strong>Presentes en ambos</strong><p id="sharedFields">—</p></div>
+              <div><strong>Solo en respuesta</strong><p id="onlyResponseFields">—</p></div>
+            </div>
+          </div>
+        </section>
+
+        <div class="tabs">
+          <button class="active">DATA ELEMENTS</button><button>VISTA TLV</button><button>EXPLICACIÓN</button><button>VALIDACIONES</button>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>DE</th><th>NOMBRE</th><th>VALOR</th><th>LONG.</th><th>FORMATO</th><th>ORIGEN</th></tr></thead>
+            <tbody id="deTable"></tbody>
+          </table>
+        </div>
+
+        <div class="table-footer"><span>Total Data Elements: <b id="deCount">12</b></span><span>Longitud Total: <b id="totalLength">123 bytes</b></span></div>
+      </section>
+    </section>
+
+    <section class="bottom-grid">
+      <div class="scenarios-panel">
+        <h2>ESCENARIOS DE RESPUESTA</h2>
+        <div class="scenario-grid" id="scenarioGrid">
+          <button class="selected success" data-code="00">✓ 00 - APROBADA</button>
+          <button class="danger" data-code="51">◉ 51 - FONDOS INSUFICIENTES</button>
+          <button class="purple" data-code="54">◉ 54 - TARJETA VENCIDA</button>
+          <button class="warning" data-code="05">◉ 05 - NO APROBAR</button>
+          <button class="blue" data-code="91">◉ 91 - EMISOR NO DISPONIBLE</button>
+          <button class="neutral" data-code="TO">◉ TIME OUT - SIN RESPUESTA</button>
+        </div>
+        <div class="scenario-actions">
+          <label>Respuesta Automática <span class="switch"></span></label>
+          <button id="sendResponse" type="button">Enviar Respuesta ▷</button>
+        </div>
+      </div>
+
+      <div class="history-panel">
+        <div class="history-title"><h2>HISTORIAL DE TRANSACCIONES</h2><button type="button">Ver Todas</button></div>
+        <table>
+          <thead><tr><th>FECHA/HORA</th><th>DIRECCIÓN</th><th>MTI</th><th>OPERACIÓN</th><th>IMPORTE</th><th>RESP.</th><th>STAN</th><th>LOTE</th><th>ESTADO</th></tr></thead>
+          <tbody id="historyBody"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+</div>
+
+
+<div id="transactionModal" class="transaction-modal hidden">
+  <div class="transaction-dialog">
+    <div class="transaction-dialog-head">
+      <div><h2 id="transactionModalTitle">Seleccionar operación</h2><p id="transactionModalSubtitle"></p></div>
+      <button id="closeTransactionModal" type="button">✕</button>
+    </div>
+    <div id="transactionSelectionList" class="transaction-selection-list"></div>
+    <div class="transaction-dialog-actions">
+      <button id="cancelTransactionSelection" type="button">Cancelar</button>
+      <button id="confirmTransactionSelection" type="button">Continuar</button>
+    </div>
+  </div>
+</div>
+
+<div id="batchModal" class="transaction-modal hidden">
+  <div class="transaction-dialog batch-dialog">
+    <div class="transaction-dialog-head">
+      <div><h2>CIERRE DE LOTE</h2><p>Revisá los totales antes de confirmar.</p></div>
+      <button id="closeBatchModal" type="button">✕</button>
+    </div>
+    <div id="batchSummary" class="batch-summary"></div>
+    <div class="transaction-dialog-actions">
+      <button id="cancelBatchClose" type="button">Cancelar</button>
+      <button id="confirmBatchClose" type="button">Confirmar cierre</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/app.js"></script>
+<script src="js/permissions.js"></script>
+</body>
+</html>
