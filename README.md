@@ -16,3 +16,7 @@ Baseline consolidada a partir de **OSC-ACADEMY Lab v2.3 ATM Transferencia USD**.
 
 ## Despliegue
 Subir todo el contenido del ZIP a la raíz del repositorio. Cloudflare usará `wrangler.jsonc` y publicará `./public`.
+
+
+## Baseline v2.5
+Se incorpora el modo **Sin plantilla** del Constructor ISO8583 para estudiar Data Elements individualmente desde el bitmap.

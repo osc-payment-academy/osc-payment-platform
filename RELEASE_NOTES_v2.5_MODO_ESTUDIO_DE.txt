@@ -1,0 +1,16 @@
+OSC Academy Baseline v2.5 - Modo Estudio de Data Elements
+
+NOVEDADES
+- Nuevo botón SIN PLANTILLA en Constructor ISO8583.
+- Bitmap primario y secundario nacen apagados.
+- El alumno selecciona un único Data Element y su bit se ilumina en verde.
+- Reinicio completo mediante Estudiar nuevo campo.
+- Representación visual por colores para campos fijos, LLVAR, LLLVAR y compuestos.
+- Azul: identificador/Tag. Amarillo: longitud. Verde: valor. Violeta: componente interno. Celeste: origen. Rojo: dato sensible.
+- Estructuras didácticas iniciales detalladas para DE2, DE3, DE11, DE22, DE35, DE48, DE52, DE54, DE55, DE60, DE62, DE63, DE90, DE95, DE102 y DE103.
+- DE55 incluye visualización TLV y tabla de tags EMV.
+- Botones Estudiar nuevo campo y Salir.
+- Se conserva toda la Baseline v2.4 y sus módulos.
+
+ALCANCE
+Este modo no construye una trama. Está diseñado para estudiar un Data Element por vez.
