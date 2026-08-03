@@ -1,0 +1,7 @@
+OSC ACADEMY — BASELINE v2.6 CONSOLIDADA
+
+Incluye:
+- Constructor ISO8583 v2.5.2 con valores expandibles.
+- ATM: panel ISO8583 reencuadrado; resumen MTI/Bitmap/Campos; bitmaps primario y secundario; tabla DE con DE, Nombre, Valor, Long., Formato y Origen; historial inferior; dispensación ampliada.
+- POS: parte central basada en la estructura del ATM (Flujo, Escenario y Modo Técnico); historial inferior de ancho completo.
+- Curso Interactivo: icono Cliente mejorado; panel derecho refrescado en Siguiente; Ver Trama con columna Quién aprovisiona; scroll corregido; botón Volver al gráfico principal.

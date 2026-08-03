@@ -183,6 +183,20 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
 .touch-operation-grid span{font-size:1.25rem}
 @media(max-width:550px){.touch-operation-grid{grid-template-columns:1fr}}
 
+
+/* v2.6 Consolidada */
+.atm-grid{grid-template-columns:minmax(520px,1.15fr) minmax(330px,.78fr) minmax(620px,1.35fr)!important;align-items:start}
+.iso-block{border:1px solid #24445f;background:#091827;border-radius:10px;padding:12px;margin-top:12px}
+.iso-block h3{margin:0 0 5px;font-size:.72rem;color:#eef7ff}.iso-block p{margin:0 0 9px;color:#8fa8bc;font-size:.57rem}
+.bitmap-title{display:flex;justify-content:space-between;align-items:center;margin:10px 0 5px;color:#a9c9e3;font-size:.58rem;font-weight:700}
+.bitmap{grid-template-columns:repeat(16,minmax(22px,1fr))!important}
+.table-wrap{max-height:470px!important;overflow:auto}.table-wrap table{min-width:850px;width:100%}.table-wrap th,.table-wrap td{white-space:normal!important}
+.table-wrap th:nth-child(1){width:45px}.table-wrap th:nth-child(2){width:205px}.table-wrap th:nth-child(3){width:230px}.table-wrap th:nth-child(4){width:60px}.table-wrap th:nth-child(5){width:90px}.table-wrap th:nth-child(6){width:155px}
+.atm-history-wide{grid-column:1/-1;margin-top:12px}.atm-history-wide .history{margin:0}.atm-history-wide table{width:100%}
+.usd-note{filter:drop-shadow(0 6px 5px rgba(0,0,0,.45));border-radius:3px!important;background:linear-gradient(135deg,#d9ead0,#eef4dd 55%,#b7d4af)!important;border:1px solid #63805c!important}
+.banknotes{transition:1.35s ease!important}.banknotes.dispense{top:2px!important;opacity:1}.cash-animation{height:120px!important}
+@media(max-width:1450px){.atm-grid{grid-template-columns:minmax(500px,1fr) minmax(310px,.7fr) minmax(560px,1.2fr)!important}}
+@media(max-width:1100px){.atm-grid{grid-template-columns:1fr!important}}
 </style>
 </head>
 <body>
@@ -211,7 +225,7 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
 
   <main class="main">
     <header class="topbar">
-      <div class="title"><span class="title-icon">🏧</span><div><h1>ATM Virtual · Full Size v2.3</h1><p>Pantalla táctil, teclado físico, transferencia y dispensación USD</p></div></div>
+      <div class="title"><span class="title-icon">🏧</span><div><h1>ATM Virtual · Full Size v2.6</h1><p>Pantalla táctil, teclado físico, transferencia y dispensación USD</p></div></div>
       <div class="top-actions"><a href="pos.html">← POS</a><a href="parser.html">Parser →</a><button id="newOperation">Nueva operación</button></div>
     </header>
 
@@ -288,7 +302,7 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
       <div class="usd-note n3"><i class="portrait"></i><i class="seal"></i><span class="serial">DEMO 8583 USD</span><span class="hundred">100</span></div>
     </div></div>
                   <div id="cashDoor" class="cash-door"><div class="cash-slot"></div></div>
-                  <div id="dispenseCountdown" class="dispense-countdown">Retire el efectivo. Si no lo hace, el ATM lo retractará en <b id="countdownValue">6</b> segundos.</div>
+                  <div id="dispenseCountdown" class="dispense-countdown">Retire el efectivo. Si no lo hace, el ATM lo retractará en <b id="countdownValue">9</b> segundos.</div>
        <div id="cashActions" class="cash-actions"><button id="takeCash">Retirar efectivo</button><button id="leaveCash" class="secondary">No retirar (simular retracto)</button></div>
                 </div>
               </div>
@@ -349,29 +363,37 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
             <div><span>Campos</span><strong id="fieldCount">0</strong></div>
           </div>
 
-          <div class="bitmap" id="bitmap"></div>
+          <div class="iso-block">
+            <h3>BITMAPS ISO8583</h3><p>Las posiciones presentes se resaltan en verde.</p>
+            <div class="bitmap-title"><span>BITMAP PRIMARIO (1–64)</span><span id="primaryState">64 posiciones</span></div>
+            <div class="bitmap" id="bitmap"></div>
+            <div class="bitmap-title"><span>BITMAP SECUNDARIO (65–128)</span><span id="secondaryState">Según campos presentes</span></div>
+            <div class="bitmap" id="bitmapSecondary"></div>
+          </div>
 
+          <div class="iso-block">
+            <h3>DATA ELEMENTS</h3><p>Detalle completo de cada dato que compone el mensaje.</p>
           <div class="table-wrap">
             <table>
-              <thead><tr><th>DE</th><th>NOMBRE</th><th>VALOR</th><th>FORMATO</th><th>ORIGEN</th></tr></thead>
+              <thead><tr><th>DE</th><th>NOMBRE</th><th>VALOR</th><th>LONG.</th><th>FORMATO</th><th>ORIGEN</th></tr></thead>
               <tbody id="deTable"></tbody>
             </table>
-          </div>
+          </div></div>
 
           <div class="output-actions">
             <button id="copyMessage">Copiar trama</button>
             <button id="openParser">Analizar en Parser</button>
           </div>
 
-          <div class="history">
+        </section>
+      </div>
+      <section class="panel atm-history-wide"><div class="history">
             <h2>HISTORIAL DE MENSAJES</h2>
             <table>
               <thead><tr><th>HORA</th><th>MTI</th><th>OPERACIÓN</th><th>RESP.</th><th>STAN</th></tr></thead>
               <tbody id="historyBody"></tbody>
             </table>
-          </div>
-        </section>
-      </div>
+          </div></section>
     </div>
   </main>
 </div>
@@ -379,6 +401,8 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
 <script>
 (() => {
   const $ = id => document.getElementById(id);
+
+  document.addEventListener('DOMContentLoaded',()=>{const b=document.getElementById('bitmapSecondary');if(b&&!b.children.length)b.innerHTML=Array.from({length:64},(_,i)=>`<span class="bit">${i+65}</span>`).join('')});
 
   const state = {
     step:'card',
@@ -603,9 +627,9 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
     $('bitmapValue').textContent=message.bitmap;
     $('fieldCount').textContent=message.fields.length;
     $('messageSubtitle').textContent=`${message.mti} · ${message.operation}`;
-    $('deTable').innerHTML=message.fields.map(r=>`<tr>${r.map(c=>`<td>${c}</td>`).join('')}</tr>`).join('');
+    $('deTable').innerHTML=message.fields.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${String(r[2]).length}</td><td>${r[3]}</td><td>${r[4]}</td></tr>`).join('');
     const bits=activeBits(message.fields);
-    $('bitmap').innerHTML=Array.from({length:64},(_,i)=>`<span class="bit ${bits.has(i+1)?'on':''}">${i+1}</span>`).join('');
+    $('bitmap').innerHTML=Array.from({length:64},(_,i)=>`<span class="bit ${bits.has(i+1)?'on':''}">${i+1}</span>`).join('');$('bitmapSecondary').innerHTML=Array.from({length:64},(_,i)=>`<span class="bit ${bits.has(i+65)?'on':''}">${i+65}</span>`).join('');
     document.querySelectorAll('#historyBody tr').forEach(tr=>tr.classList.toggle('selected',tr.dataset.id===message.id));
   }
 
@@ -628,7 +652,7 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
     notes.classList.remove('retract');door.classList.add('open');counter.classList.add('show');actions.classList.add('show');
     requestAnimationFrame(()=>notes.classList.add('dispense'));
     addTechEvent('Dispensador abierto · billetes USD presentados','done');
-    let remaining=6;value.textContent=remaining;
+    let remaining=9;value.textContent=remaining;
     cashTimer=setInterval(()=>{
       remaining-=1;value.textContent=Math.max(remaining,0);
       if(remaining<=0) finishCash('retracted');
@@ -747,7 +771,7 @@ ${raw(m)}`;
     $('hostStatus').textContent='Pendiente';$('deviceStatus').textContent='Pendiente';$('reversalStatus').textContent='No requerida';
     setFlow(1);setScreen('BIENVENIDO','<strong>Inserte su tarjeta</strong><small>Para comenzar una operación</small>');
     $('mti').textContent='----';$('bitmapValue').textContent='0000000000000000';$('fieldCount').textContent='0';$('messageSubtitle').textContent='Esperando operación';
-    $('deTable').innerHTML='';$('bitmap').innerHTML=Array.from({length:64},(_,i)=>`<span class="bit">${i+1}</span>`).join('');
+    $('deTable').innerHTML='';$('bitmap').innerHTML=Array.from({length:64},(_,i)=>`<span class="bit">${i+1}</span>`).join('');$('bitmapSecondary').innerHTML=Array.from({length:64},(_,i)=>`<span class="bit">${i+65}</span>`).join('');
   }
 
   document.querySelectorAll('[data-key]').forEach(b=>b.addEventListener('click',()=>pressKey(b.dataset.key)));

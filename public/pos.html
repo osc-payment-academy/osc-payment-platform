@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>OSC Academy · POS Virtual</title>
+  <title>OSC Academy · POS Virtual · v2.6</title>
   <link rel="stylesheet" href="css/app.css">
 </head>
 <body>
@@ -232,6 +232,9 @@
           <article id="step6"><span>6</span><div><strong>Impresión</strong><small>Comprobante</small><time id="time6">—</time></div><b>✓</b></article>
         </div>
 
+
+        <section class="pos-middle-section"><h3>ESCENARIO</h3><div class="pos-scenario-mini"><button class="active">00 · Aprobada</button><button>51 · Fondos insuficientes</button><button>05 · No aprobar</button><button>91 · Emisor no disponible</button></div></section>
+        <section class="pos-middle-section"><h3>MODO TÉCNICO · EVENTOS EN TIEMPO REAL</h3><div class="pos-tech-events" id="posTechEvents"><div>Esperando inicio de operación.</div><div>El POS construirá la solicitud 0200.</div></div></section>
         <div class="result-box" id="resultBox">
           <h3>RESULTADO</h3>
           <div class="result-content"><span>✓</span><div><strong id="resultText">EN ESPERA</strong><b id="resultCode">--</b></div></div>
@@ -351,7 +354,9 @@
   </div>
 </div>
 
-<script src="js/app.js"></script>
+<script src="js/app.js">
+<script>document.addEventListener('DOMContentLoaded',()=>{document.querySelectorAll('.pos-scenario-mini button').forEach((b,i)=>b.onclick=()=>{document.querySelectorAll('.pos-scenario-mini button').forEach(x=>x.classList.remove('active'));b.classList.add('active');const original=document.querySelectorAll('#scenarioGrid button')[i];if(original)original.click()});const log=document.getElementById('posTechEvents');const status=document.getElementById('flowResponse');if(log&&status)new MutationObserver(()=>{const d=document.createElement('div');d.textContent=new Date().toLocaleTimeString('es-AR')+' · '+status.textContent;log.prepend(d);while(log.children.length>8)log.lastChild.remove()}).observe(status,{childList:true,subtree:true,characterData:true})});</script>
+</script>
 <script src="js/permissions.js"></script>
 
 <div id="osc-version-badge" style="position:fixed;right:14px;bottom:12px;z-index:99999;background:#0d2238;border:1px solid #2f83ff;color:#9fd0ff;padding:7px 11px;border-radius:999px;font:600 12px/1.1 Inter,Segoe UI,Arial,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.28)">Baseline v2.5.1</div>

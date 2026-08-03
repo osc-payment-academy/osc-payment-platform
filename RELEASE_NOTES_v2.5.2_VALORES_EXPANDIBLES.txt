@@ -1,0 +1,14 @@
+OSC PAYMENT ACADEMY - BASELINE v2.5.2
+
+Constructor ISO8583 - Modo Estudio
+
+Cambios:
+- Se eliminó la leyenda general de colores del detalle del Data Element.
+- Se eliminó el bloque "Lectura visual" del panel Aprendizaje.
+- Cada componente puede incorporar un recuadro desplegable de valores posibles.
+- Para DE22 se incorporaron valores posibles de:
+  - POS Terminal PAN Entry Mode.
+  - POS Terminal PIN Entry Mode.
+- Los valores se presentan resumidos en español, manteniendo el nombre del campo en inglés.
+- Los desplegables muestran una sola línea mientras están cerrados.
+- Se conserva toda la funcionalidad de la Baseline v2.5.1.

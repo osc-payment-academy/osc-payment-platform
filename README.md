@@ -1,3 +1,5 @@
+## Baseline v2.6 Consolidada
+
 # OSC Payment Academy — Baseline v2.4
 
 Baseline consolidada a partir de **OSC-ACADEMY Lab v2.3 ATM Transferencia USD**.
@@ -20,3 +22,7 @@ Subir todo el contenido del ZIP a la raíz del repositorio. Cloudflare usará `w
 
 ## Baseline v2.5
 Se incorpora el modo **Sin plantilla** del Constructor ISO8583 para estudiar Data Elements individualmente desde el bitmap.
+
+
+## Baseline v2.5.2
+Agrega valores posibles expandibles en el Modo Estudio y simplifica la lectura visual.
