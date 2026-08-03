@@ -1,0 +1,12 @@
+OSC Payment Academy - Configuración de dominio personalizado
+
+Dominios configurados en wrangler.jsonc:
+- oscpaymentacademy.com
+- www.oscpaymentacademy.com
+
+Antes del despliegue, elimine únicamente los registros web heredados de Porkbun que entren en conflicto con esos hostnames (A/AAAA/CNAME para @ y www, y el comodín * si apunta al parking). Conserve MX y TXT de correo.
+
+Commit recomendado:
+Baseline v2.8.1 - Custom Domains Cloudflare
+
+Cloudflare creará automáticamente los registros DNS y certificados SSL durante el despliegue.
