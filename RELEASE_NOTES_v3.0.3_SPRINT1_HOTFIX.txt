@@ -1,0 +1,9 @@
+OSC Payment Academy - Baseline v3.0.3
+Sprint 1 Hotfix
+
+- Selección de tarjeta reforzada con manejadores inline y API pública.
+- Mastercard Crédito asigna PAN 5555555555554444 y BIN 555555.
+- Mastercard Débito asigna PAN 2223000048408210 y BIN 222300.
+- Resaltado inequívoco de la tarjeta seleccionada.
+- Ticket dinámico conserva marca, producto, PAN enmascarado y comercio ficticio aprobado.
+- Versionado de activos 3.0.3 para evitar caché anterior.

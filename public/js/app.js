@@ -63,7 +63,12 @@
     if(summary) summary.textContent=`${card.label} · PAN asignado automáticamente · •••• ${card.pan.slice(-4)} · BIN ${card.pan.slice(0,6)}`;
     refreshNetworkProfile();
     if(resetFlow) reset();
+    return card;
   }
+  // Public API used by inline controls. This avoids event-binding/cache issues in deployed static assets.
+  window.OSCSelectTestCard = function(cardId){
+    return selectTestCard(cardId,{resetFlow:true});
+  };
 
   const entryModes = {
     chip:{label:'Chip EMV',de22:'051',hasPin:true,hasDE55:true,hasDE35:true,de35Origin:'Track 2 Equivalent Data del chip'},

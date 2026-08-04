@@ -337,3 +337,9 @@ button{font:inherit;color:inherit}
 .ticket-auth{font-size:.64rem;margin:8px 0}.ticket-thanks{text-align:center;display:grid;gap:3px;margin:14px 0 5px;font-size:.56rem}.ticket-thanks strong{font-size:.75rem}
 .ticket-disclaimer{border-top:1px dashed #777;padding-top:7px!important}
 .ticket-network-qr{border-color:#24c8f2!important}.ticket-network-qr span{color:#087b9b!important}
+
+/* v3.0.3: selected card is unmistakable and clickable above terminal overlays */
+.test-card{pointer-events:auto!important;position:relative!important;z-index:50!important}
+.test-card-grid{position:relative;z-index:50}
+.test-card.active{border:2px solid #20d98b!important;box-shadow:0 0 0 3px rgba(32,217,139,.24),0 10px 24px rgba(0,0,0,.35)!important}
+.test-card.active::after{content:'✓ SELECCIONADA';display:block;position:absolute;right:6px;top:5px;padding:2px 5px;border-radius:999px;background:#073b2c;color:#44f0a4;font-size:.39rem;font-weight:900;letter-spacing:.04em}

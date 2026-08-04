@@ -104,16 +104,16 @@
   <div id="cardPaymentConfig" class="payment-config">
     <div class="test-card-heading">SELECCIONE LA TARJETA DE PRUEBA</div>
     <div class="test-card-grid" id="testCardGrid">
-      <button type="button" class="test-card active visa" data-test-card="visa-credit">
+      <button type="button" class="test-card active visa" data-test-card="visa-credit" onclick="window.OSCSelectTestCard && window.OSCSelectTestCard('visa-credit')">
         <span class="card-network">VISA</span><strong>CRÉDITO</strong><small>•••• 1111 · BIN 411111</small>
       </button>
-      <button type="button" class="test-card visa" data-test-card="visa-debit">
+      <button type="button" class="test-card visa" data-test-card="visa-debit" onclick="window.OSCSelectTestCard && window.OSCSelectTestCard('visa-debit')">
         <span class="card-network">VISA</span><strong>DÉBITO</strong><small>•••• 0002 · BIN 400000</small>
       </button>
-      <button type="button" class="test-card mastercard" data-test-card="mc-credit">
+      <button type="button" class="test-card mastercard" data-test-card="mc-credit" onclick="window.OSCSelectTestCard && window.OSCSelectTestCard('mc-credit')">
         <span class="card-network">MASTERCARD</span><strong>CRÉDITO</strong><small>•••• 4444 · BIN 555555</small>
       </button>
-      <button type="button" class="test-card mastercard" data-test-card="mc-debit">
+      <button type="button" class="test-card mastercard" data-test-card="mc-debit" onclick="window.OSCSelectTestCard && window.OSCSelectTestCard('mc-debit')">
         <span class="card-network">MASTERCARD</span><strong>DÉBITO</strong><small>•••• 8210 · BIN 222300</small>
       </button>
       <button type="button" class="test-card disabled" disabled>
@@ -349,11 +349,11 @@
   </div>
 </div>
 
-<script src="js/network-profiles.js?v=3.0.1"></script>
-<script src="js/app.js?v=3.0.1"></script>
+<script src="js/network-profiles.js?v=3.0.3"></script>
+<script src="js/app.js?v=3.0.3"></script>
 <script>document.addEventListener('DOMContentLoaded',()=>{document.querySelectorAll('.pos-scenario-mini button').forEach((b,i)=>b.onclick=()=>{document.querySelectorAll('.pos-scenario-mini button').forEach(x=>x.classList.remove('active'));b.classList.add('active');const original=document.querySelectorAll('#scenarioGrid button')[i];if(original)original.click()});const log=document.getElementById('posTechEvents');const status=document.getElementById('flowResponse');if(log&&status)new MutationObserver(()=>{const d=document.createElement('div');d.textContent=new Date().toLocaleTimeString('es-AR')+' · '+status.textContent;log.prepend(d);while(log.children.length>8)log.lastChild.remove()}).observe(status,{childList:true,subtree:true,characterData:true})});</script>
 <script src="js/permissions.js"></script>
 
-<div id="osc-version-badge" style="position:fixed;right:14px;bottom:12px;z-index:99999;background:#0d2238;border:1px solid #2f83ff;color:#9fd0ff;padding:7px 11px;border-radius:999px;font:600 12px/1.1 Inter,Segoe UI,Arial,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.28)">Baseline v3.0.2.1 · Sprint 1</div>
+<div id="osc-version-badge" style="position:fixed;right:14px;bottom:12px;z-index:99999;background:#0d2238;border:1px solid #2f83ff;color:#9fd0ff;padding:7px 11px;border-radius:999px;font:600 12px/1.1 Inter,Segoe UI,Arial,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.28)">Baseline v3.0.3.2.1 · Sprint 1</div>
 </body>
 </html>
