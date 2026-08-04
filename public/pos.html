@@ -95,9 +95,31 @@
     <section class="workspace">
       <div class="terminal-column">
         <div class="terminal">
-          <div class="network-profile-box" id="posNetworkBox">
-  <div class="network-profile-title"><span>PERFIL DE RED</span><span id="posNetworkValidation" class="network-validation">Detección automática por PAN</span></div>
-  <div class="network-profile-controls"><select id="posNetworkSelect"><option value="auto">Automático por PAN</option><option value="visa">Visa</option><option value="mastercard">Mastercard</option><option value="amex">American Express (preparado)</option></select><input id="posPanInput" inputmode="numeric" maxlength="19" value="4556123412341234" aria-label="PAN de prueba"></div>
+          <div class="network-profile-box payment-lab-box" id="posNetworkBox">
+  <div class="network-profile-title"><span>MEDIO DE PAGO</span><span id="posNetworkValidation" class="network-validation">Tarjeta de prueba seleccionada</span></div>
+  <div class="payment-method-tabs" role="group" aria-label="Medio de pago">
+    <button type="button" class="payment-method active" data-payment-method="card">💳 Tarjeta</button>
+    <button type="button" class="payment-method" data-payment-method="qr">▦ QR</button>
+  </div>
+  <div id="cardPaymentConfig" class="payment-config">
+    <label for="testCardSelect">Tarjeta de prueba</label>
+    <select id="testCardSelect">
+      <option value="visa-credit">Visa Crédito · •••• 1111</option>
+      <option value="visa-debit">Visa Débito · •••• 0002</option>
+      <option value="mc-credit">Mastercard Crédito · •••• 4444</option>
+      <option value="mc-debit">Mastercard Débito · •••• 8210</option>
+      <option value="amex" disabled>American Express · Próximamente</option>
+    </select>
+  </div>
+  <div id="qrPaymentConfig" class="payment-config hidden">
+    <label for="qrTypeSelect">Tipo de QR</label>
+    <select id="qrTypeSelect">
+      <option value="mastercard-qr">Mastercard QR · Merchant Presented</option>
+      <option value="visa-qr">Visa QR · Merchant Presented</option>
+      <option value="account-qr" disabled>Cuenta a cuenta · Próximamente</option>
+      <option value="wallet-qr" disabled>Wallet propietaria · Próximamente</option>
+    </select>
+  </div>
   <div id="posNetworkBadge" class="network-profile-badge"></div>
 </div><div class="terminal-model-select"><label for="terminalModel">Modelo</label><select id="terminalModel"><option value="ingenico">Ingenico ICT250</option><option value="verifone">Verifone VX520</option><option value="pax">PAX A920</option><option value="android">POS Android</option></select></div><div class="terminal-brand" id="terminalBrand">ingenico</div>
           <div class="terminal-screen">
@@ -121,6 +143,12 @@
               <button type="button" data-entry="magstripe">▰ Banda</button>
               <button type="button" data-entry="manual">⌨ Manual</button>
             </div>
+          </div>
+
+          <div id="qrStage" class="qr-stage hidden" aria-live="polite">
+            <div class="qr-stage-head"><strong>QR DE PAGO</strong><span id="qrStageNetwork">Mastercard QR</span></div>
+            <div class="qr-demo-code" aria-label="Código QR educativo"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+            <small id="qrStageStatus">Esperando escaneo desde la wallet…</small>
           </div>
 
           <div class="softkeys">
@@ -221,6 +249,7 @@
           <button type="button">🔊 Sonidos <span class="switch on"></span></button>
           <button type="button" id="printAgain">▣ Reimprimir ticket</button>
           <button type="button" id="downloadTicket">⇩ Descargar ticket</button>
+          <label class="iso-ticket-toggle"><input type="checkbox" id="showIsoTicket" checked> Mostrar información ISO8583</label>
           <button type="button">⛶ Pantalla Completa</button>
         </div>
       </div>

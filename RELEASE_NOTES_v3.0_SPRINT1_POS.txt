@@ -1,0 +1,18 @@
+OSC Payment Academy · Baseline v3.0 · Sprint 1
+POS Multi Network + QR + Ticket educativo
+
+INCLUYE
+- Selección de medio de pago: Tarjeta o QR.
+- Tarjetas de prueba Visa Crédito, Visa Débito, Mastercard Crédito y Mastercard Débito.
+- Detección y propagación del perfil de red desde la tarjeta simulada.
+- Mastercard tradicional y Mastercard 2-Series disponibles como tarjetas demo.
+- American Express visible como arquitectura próxima, sin habilitación funcional.
+- QR Mastercard y QR Visa en modalidad Merchant Presented, con flujo educativo.
+- Ticket dinámico por red/medio de pago.
+- Comercio ficticio: La Perla Coffee, CUIT 30-23566776-5, Olazábal 3020, Recoleta, Capital Federal, Argentina.
+- Información ISO8583 opcional en el ticket.
+- Datos de autorización, STAN y RRN conservados con fines didácticos.
+
+ALCANCE
+- El QR utiliza un perfil educativo y no representa una certificación de Visa o Mastercard.
+- La validación completa campo por campo contra manuales privados queda para sprints posteriores.

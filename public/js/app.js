@@ -23,8 +23,30 @@
     selectedSourceOperationId:null,
     modalMode:null,
     network:'auto',
-    pan:'4556123412341234'
+    pan:'4111111111111111',
+    paymentMethod:'card',
+    testCard:'visa-credit',
+    qrType:'mastercard-qr',
+    showIsoTicket:true
   };
+
+
+  const TEST_CARDS = {
+    'visa-credit':{id:'visa-credit',label:'Visa Crédito',network:'visa',product:'Crédito',pan:'4111111111111111',expiry:'2912',track2:'4111111111111111=29122011234567890',aid:'A0000000031010'},
+    'visa-debit':{id:'visa-debit',label:'Visa Débito',network:'visa',product:'Débito',pan:'4000000000000002',expiry:'2912',track2:'4000000000000002=29122011234567890',aid:'A0000000032010'},
+    'mc-credit':{id:'mc-credit',label:'Mastercard Crédito',network:'mastercard',product:'Crédito',pan:'5555555555554444',expiry:'2912',track2:'5555555555554444=29122011234567890',aid:'A0000000041010'},
+    'mc-debit':{id:'mc-debit',label:'Mastercard Débito',network:'mastercard',product:'Débito',pan:'2223000048408210',expiry:'2912',track2:'2223000048408210=29122011234567890',aid:'A0000000043060'}
+  };
+  const QR_PROFILES = {
+    'mastercard-qr':{label:'Mastercard QR',network:'mastercard',card:'mc-credit',mode:'Merchant Presented'},
+    'visa-qr':{label:'Visa QR',network:'visa',card:'visa-credit',mode:'Merchant Presented'}
+  };
+  const selectedCard = () => TEST_CARDS[state.testCard] || TEST_CARDS['visa-credit'];
+  const selectedQr = () => QR_PROFILES[state.qrType] || QR_PROFILES['mastercard-qr'];
+  function syncPaymentProfile(){
+    const card = state.paymentMethod==='qr' ? TEST_CARDS[selectedQr().card] : selectedCard();
+    state.pan=card.pan; state.network=card.network;
+  }
 
   const entryModes = {
     chip:{label:'Chip EMV',de22:'051',hasPin:true,hasDE55:true,hasDE35:true,de35Origin:'Track 2 Equivalent Data del chip'},
@@ -86,18 +108,19 @@
   function entryFields(){
     const mode=entryModes[state.entryMode]||entryModes.chip;
     const rows=[
-      field(2,'Primary Account Number (PAN)',state.pan,'16','LLVAR','Tarjeta'),
+      field(2,'Primary Account Number (PAN)',state.pan,String(state.pan.length),'LLVAR',state.paymentMethod==='qr'?'Credencial/token de la wallet':'Tarjeta'),
       field(3,'Processing Code','000000','6','FIXED','Aplicación POS'),
       amountField(),
-      field(14,'Expiration Date','2512','4','FIXED','Tarjeta'),
-      field(22,'Point of Service Entry Mode',mode.de22,'3','FIXED',mode.label),
+      field(14,'Expiration Date',selectedCard().expiry,'4','FIXED',state.paymentMethod==='qr'?'Credencial asociada':'Tarjeta'),
+      field(22,'Point of Service Entry Mode',state.paymentMethod==='qr'?'010':mode.de22,'3','FIXED',state.paymentMethod==='qr'?'QR educativo / wallet':mode.label),
       field(25,'Point of Service Condition Code','00','2','FIXED','Aplicación POS'),
       field(41,'Terminal ID','TERMID01','8','FIXED','Configuración terminal'),
       field(42,'Merchant ID','MERCHANT01','10','FIXED','Configuración comercio'),
       field(49,'Transaction Currency Code','032','3','FIXED','Configuración comercio')
     ];
-    if(mode.hasDE35) rows.push(field(35,'Track 2 Data',`${state.pan}=25121011234567890`,'37','LLVAR',mode.de35Origin));
-    if(mode.hasDE55) rows.push(field(55,'ICC Data (EMV)','9F2608A1B2C3D4E5F607','20','LLLVAR',mode.label));
+    if(state.paymentMethod!=='qr' && mode.hasDE35) rows.push(field(35,'Track 2 Data',selectedCard().track2,String(selectedCard().track2.length),'LLVAR',mode.de35Origin));
+    if(state.paymentMethod!=='qr' && mode.hasDE55) rows.push(field(55,'ICC Data (EMV)','9F2608A1B2C3D4E5F607','20','LLLVAR',mode.label));
+    if(state.paymentMethod==='qr') rows.push(field(48,'Additional Data - QR',`QR|${selectedQr().mode}|${profile().name}`,'Variable','LLLVAR','Wallet / aplicación QR'));
     return rows;
   }
 
@@ -268,17 +291,25 @@
     const status=op.status==='APROBADA'?'APROBADO':op.status;
     const date=new Date(op.createdAt||Date.now());
     const operationNumber=`${date.getTime()}`.slice(-12);
-    const brand=op.type==='purchase'?`CRÉDITO ${profile().name.toUpperCase()} ${state.pan.slice(-4)}`:operationLabels[op.type];
-    const aid=mode.hasDE55?'A0000000031010':'NO APLICA';
+    const card=TEST_CARDS[op.cardId]||selectedCard();
+    const p=window.OSCNetworks?OSCNetworks.profiles[op.network]||profile():profile();
+    const isQr=op.paymentMethod==='qr';
+    const paymentLabel=isQr?(QR_PROFILES[op.qrType]?.label||'QR'):`${card.label}`;
+    const readingLabel=isQr?'QR · WALLET':mode.label.toUpperCase();
+    const aid=isQr?'NO APLICA':(mode.hasDE55?card.aid:'NO APLICA');
+    const selectedMessage=state.messages.find(m=>m.operationId===op.id && m.mti==='0210')||state.messages.find(m=>m.operationId===op.id);
+    const isoRows=(selectedMessage?.fields||[]).filter(r=>['2','3','4','7','11','22','37','38','39','48'].includes(String(r[0])));
+    const isoBlock=state.showIsoTicket?`<div class="ticket-iso"><strong>INFORMACIÓN ISO8583</strong>${selectedMessage?`<div>MTI <b>${selectedMessage.mti}</b></div>`:''}${isoRows.map(r=>`<div>DE${r[0]} <b>${r[0]==='2'?String(r[2]).replace(/.(?=.{4})/g,'•'):r[2]}</b></div>`).join('')}</div>`:'';
     return `
+      <div class="ticket-network ticket-network-${p.id}"><span>${isQr?'QR':p.short}</span><small>${isQr?paymentLabel:p.name}</small></div>
       <div class="ticket-head">
-        <div class="ticket-brand">OSC<br>PAY</div>
-        <div><span class="ticket-badge">TICKET VENDEDOR</span><div class="ticket-date">${date.toLocaleDateString('es-AR')} · ${date.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'})}</div></div>
+        <div class="ticket-brand">OSC<br>ACADEMY</div>
+        <div><span class="ticket-badge">POS VIRTUAL · TICKET EDUCATIVO</span><div class="ticket-date">${date.toLocaleDateString('es-AR')} · ${date.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'})}</div></div>
       </div>
       <div class="ticket-meta">
         <strong>Operación #${operationNumber}</strong>
-        <span class="ticket-link" data-de="2">${brand}</span><br>
-        <span class="ticket-link" data-de="22">${mode.label.toUpperCase()}</span>
+        <span class="ticket-link" data-de="2">${paymentLabel} · •••• ${String(op.pan||state.pan).slice(-4)}</span><br>
+        <span class="ticket-link" data-de="22">${readingLabel}</span>
         <span style="float:right" class="ticket-link" data-de="55">AID: ${aid}</span>
       </div>
       <div class="ticket-box">
@@ -292,12 +323,13 @@
         <span>RRN: <b class="ticket-link" data-de="37">${op.rrn||'—'}</b></span>
         ${source?`<br><span>Original: ${source.stan}</span>`:''}
       </div>
+      <div class="ticket-emv"><span>TVR ${isQr?'NO APLICA':'0000000000'}</span><span>TSI ${isQr?'NO APLICA':'E800'}</span></div>
       <div class="ticket-foot">
-        <strong class="ticket-link" data-de="42">BORJA SPECIALTY COFFEE</strong>
-        <span style="float:right">30716739844</span><br>
-        Juncal 2303, Recoleta, Capital Federal, Argentina<br>
+        <strong class="ticket-link" data-de="42">LA PERLA COFFEE</strong>
+        <span style="float:right">CUIT 30-23566776-5</span><br>
+        Olazábal 3020, Recoleta, Capital Federal, Argentina<br>
         Terminal: <span class="ticket-link" data-de="41">TERMID01</span> · Lote ${op.batch}
-      </div>`;
+      </div>${isoBlock}<div class="ticket-disclaimer">OSC Academy · Simulación educativa · Datos ficticios</div>`;
   }
 
   function downloadTicket(){
@@ -391,7 +423,12 @@
       batch:state.batchNumber,
       status:'EN PROCESO',
       sourceOperationId:source?.id||null,
-      createdAt:new Date().toISOString()
+      createdAt:new Date().toISOString(),
+      paymentMethod:state.paymentMethod,
+      cardId:state.testCard,
+      qrType:state.qrType,
+      network:profile().id,
+      pan:state.pan
     };
     state.operations.push(op);
     return op;
@@ -437,14 +474,37 @@
     if(state.step==='amount'){
       if(!state.amountDigits||Number(state.amountDigits)===0)return;
       $('time1').textContent=timeNow();
-      state.step='entry';
-      $('entryModePanel').classList.remove('hidden');
-      screen('FORMA DE CAPTURA','<small>Seleccione</small><strong>TIPO DE ENTRADA</strong><span>Use las opciones debajo</span>');
-      setStep(2);
+      if(state.paymentMethod==='qr'){
+        startQrPayment();
+      }else{
+        state.step='entry';
+        $('entryModePanel').classList.remove('hidden');
+        screen('FORMA DE CAPTURA','<small>Seleccione</small><strong>TIPO DE ENTRADA</strong><span>Use las opciones debajo</span>');
+        setStep(2);
+      }
     }else if(state.step==='pin'&&state.pinDigits.length>=4){
       $('time3').textContent=timeNow();
       sendPurchase0200();
     }
+  }
+
+  function startQrPayment(){
+    state.step='qr'; state.entryMode='qr';
+    $('entryModePanel').classList.add('hidden');
+    const qr=$('qrStage'); qr.classList.remove('hidden');
+    $('qrStageNetwork').textContent=selectedQr().label;
+    $('qrStageStatus').textContent='Esperando escaneo desde la wallet…';
+    screen('PAGO CON QR',`<small>${selectedQr().mode}</small><strong>${selectedQr().label}</strong><span>Escanee y confirme desde la wallet</span>`);
+    setStep(2);
+    setTimeout(()=>{
+      $('qrStageStatus').textContent='QR escaneado · Confirmando pago…';
+      document.querySelector('#step2 strong').textContent='Lectura / Escaneo';
+      document.querySelector('#step2 small').textContent=`${selectedQr().label} · Wallet`;
+      $('time2').textContent=timeNow();
+      $('flowPin').textContent='No requerido'; $('time3').textContent=timeNow();
+      renderFields(entryFields().sort((a,b)=>Number(a[0])-Number(b[0])));
+      setTimeout(()=>{ qr.classList.add('hidden'); sendPurchase0200(); },1100);
+    },1800);
   }
 
   function startCaptureAnimation(modeKey){
@@ -651,7 +711,7 @@
 
   function reset(){
     state.currentOperation='purchase';state.step='amount';state.amountDigits='';state.pinDigits='';state.pinBlock=null;state.entryMode=null;state.currentStan=null;state.currentAuth=null;state.selectedMessageId=null;state.selectedSourceOperationId=null;
-    $('entryModePanel').classList.add('hidden');$('captureStage').classList.add('hidden');$('captureStage').classList.remove('success');
+    $('entryModePanel').classList.add('hidden');$('qrStage')?.classList.add('hidden');$('captureStage').classList.add('hidden');$('captureStage').classList.remove('success');
     ['captureChip','captureContactless','captureMagstripe','captureManual'].forEach(id=>$(id).classList.add('hidden'));
     $('receiptPaper').classList.remove('printing');$('receiptPaper').textContent='';
     screen('COMPRA','<small>Ingrese Importe</small><strong id="screenAmount">$ 0,00</strong><span>Presione VERDE para continuar</span>');
@@ -736,22 +796,34 @@ ${rawMessage(msg)}`;
   applyTerminalModel('ingenico');reset();updateDualBitmaps();
   function refreshNetworkProfile(){
     if(!window.OSCNetworks) return;
-    const p=OSCNetworks.resolve(state.network,state.pan);
+    syncPaymentProfile();
+    const p=profile();
     const badge=$('posNetworkBadge'), validation=$('posNetworkValidation');
     if(badge) badge.innerHTML=OSCNetworks.badge(p);
     if(validation){
       const ok=OSCNetworks.luhn(state.pan);
-      validation.textContent=`${p.name} · BIN ${state.pan.slice(0,6)||'—'} · Luhn ${ok?'válido':'demo/no válido'}`;
+      validation.textContent=state.paymentMethod==='qr'
+        ?`${selectedQr().label} · ${selectedQr().mode} · Perfil ${p.name}`
+        :`${selectedCard().label} · BIN ${state.pan.slice(0,6)} · Luhn ${ok?'válido':'demo/no válido'}`;
       validation.className='network-validation '+(ok?'ok':'warn');
     }
-    document.querySelectorAll('.card-demo strong,.capture-card strong').forEach(el=>el.textContent=p.short);
-    document.querySelectorAll('.virtual-card strong').forEach(el=>el.textContent=p.short);
-    const step=document.querySelector('#step2 small'); if(step && state.entryMode) step.textContent=`${p.name} · ${(entryModes[state.entryMode]||entryModes.chip).label}`;
+    document.querySelectorAll('.card-demo strong,.capture-card strong,.virtual-card strong').forEach(el=>el.textContent=p.short);
+    const step=document.querySelector('#step2 small');
+    if(step && state.entryMode) step.textContent=state.paymentMethod==='qr'?`${selectedQr().label} · Wallet`:`${p.name} · ${(entryModes[state.entryMode]||entryModes.chip).label}`;
+  }
+  function setPaymentMethod(method){
+    state.paymentMethod=method;
+    document.querySelectorAll('[data-payment-method]').forEach(b=>b.classList.toggle('active',b.dataset.paymentMethod===method));
+    $('cardPaymentConfig').classList.toggle('hidden',method!=='card');
+    $('qrPaymentConfig').classList.toggle('hidden',method!=='qr');
+    refreshNetworkProfile(); reset();
   }
   document.addEventListener('DOMContentLoaded',()=>{
-    const sel=$('posNetworkSelect'), pan=$('posPanInput');
-    if(sel){sel.value=state.network;sel.addEventListener('change',()=>{state.network=sel.value;refreshNetworkProfile();});}
-    if(pan){pan.value=state.pan;pan.addEventListener('input',()=>{state.pan=pan.value.replace(/\D/g,'').slice(0,19);pan.value=state.pan;refreshNetworkProfile();});}
+    document.querySelectorAll('[data-payment-method]').forEach(btn=>btn.addEventListener('click',()=>setPaymentMethod(btn.dataset.paymentMethod)));
+    const cards=$('testCardSelect'), qr=$('qrTypeSelect'), iso=$('showIsoTicket');
+    if(cards){cards.value=state.testCard;cards.addEventListener('change',()=>{state.testCard=cards.value;refreshNetworkProfile();});}
+    if(qr){qr.value=state.qrType;qr.addEventListener('change',()=>{state.qrType=qr.value;refreshNetworkProfile();});}
+    if(iso){iso.checked=state.showIsoTicket;iso.addEventListener('change',()=>{state.showIsoTicket=iso.checked;const op=state.operations.find(o=>o.id===state.selectedSourceOperationId);if(op&&$('receiptPaper').innerHTML.trim())$('receiptPaper').innerHTML=ticketHtml(op);});}
     refreshNetworkProfile();
   });
 

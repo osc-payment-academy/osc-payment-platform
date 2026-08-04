@@ -1,3 +1,7 @@
+# OSC Payment Academy — Baseline v3.0 Sprint 1
+
+POS Multi Network, tarjetas de prueba, QR educativo y ticket profesional.
+
 ## Baseline v2.8
 
 Ajustes POS, Constructor y Curso Interactivo.
