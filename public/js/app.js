@@ -808,6 +808,9 @@ ${rawMessage(msg)}`;
       validation.className='network-validation '+(ok?'ok':'warn');
     }
     document.querySelectorAll('.card-demo strong,.capture-card strong,.virtual-card strong').forEach(el=>el.textContent=p.short);
+    document.querySelectorAll('[data-test-card]').forEach(button=>button.classList.toggle('active',button.dataset.testCard===state.testCard));
+    const summary=$('selectedTestCardSummary');
+    if(summary && state.paymentMethod==='card') summary.textContent=`${selectedCard().label} · PAN de prueba asignado automáticamente · •••• ${state.pan.slice(-4)} · ${p.name}`;
     const step=document.querySelector('#step2 small');
     if(step && state.entryMode) step.textContent=state.paymentMethod==='qr'?`${selectedQr().label} · Wallet`:`${p.name} · ${(entryModes[state.entryMode]||entryModes.chip).label}`;
   }
@@ -820,9 +823,17 @@ ${rawMessage(msg)}`;
   }
   document.addEventListener('DOMContentLoaded',()=>{
     document.querySelectorAll('[data-payment-method]').forEach(btn=>btn.addEventListener('click',()=>setPaymentMethod(btn.dataset.paymentMethod)));
-    const cards=$('testCardSelect'), qr=$('qrTypeSelect'), iso=$('showIsoTicket');
-    if(cards){cards.value=state.testCard;cards.addEventListener('change',()=>{state.testCard=cards.value;refreshNetworkProfile();});}
-    if(qr){qr.value=state.qrType;qr.addEventListener('change',()=>{state.qrType=qr.value;refreshNetworkProfile();});}
+    const qr=$('qrTypeSelect'), iso=$('showIsoTicket');
+    document.querySelectorAll('[data-test-card]').forEach(cardButton=>cardButton.addEventListener('click',()=>{
+      state.testCard=cardButton.dataset.testCard;
+      document.querySelectorAll('[data-test-card]').forEach(button=>button.classList.toggle('active',button.dataset.testCard===state.testCard));
+      const selected=selectedCard();
+      const summary=$('selectedTestCardSummary');
+      if(summary) summary.textContent=`${selected.label} · PAN de prueba asignado automáticamente · •••• ${selected.pan.slice(-4)}`;
+      refreshNetworkProfile();
+      reset();
+    }));
+    if(qr){qr.value=state.qrType;qr.addEventListener('change',()=>{state.qrType=qr.value;refreshNetworkProfile();reset();});}
     if(iso){iso.checked=state.showIsoTicket;iso.addEventListener('change',()=>{state.showIsoTicket=iso.checked;const op=state.operations.find(o=>o.id===state.selectedSourceOperationId);if(op&&$('receiptPaper').innerHTML.trim())$('receiptPaper').innerHTML=ticketHtml(op);});}
     refreshNetworkProfile();
   });

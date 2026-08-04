@@ -1,0 +1,18 @@
+OSC PAYMENT ACADEMY
+Baseline v3.0.1 - Sprint 1 corregido
+
+Correcciones obligatorias:
+- Se elimina el ingreso manual del PAN en POS Virtual.
+- Se incorporan tarjetas visuales de prueba: Visa Crédito, Visa Débito, Mastercard Crédito y Mastercard Débito.
+- Cada tarjeta asigna automáticamente un PAN coherente con su red.
+- Mastercard Crédito usa BIN 555555; Mastercard Débito usa BIN 222300.
+- Se refrescan red, BIN, Luhn, DE2, DE35, perfil técnico y ticket al cambiar tarjeta.
+- Ticket actualizado con marca dinámica, La Perla Coffee, CUIT 30-23566776-5 y Olazábal 3020.
+- Se mantiene el bloque opcional de Información ISO8583.
+- Se agregan parámetros de versión a los scripts para evitar caché obsoleta.
+
+Pruebas mínimas:
+1. Visa Crédito -> verificar ••••1111 y perfil Visa.
+2. Mastercard Crédito -> verificar ••••4444 y perfil Mastercard.
+3. Mastercard Débito -> verificar BIN 222300 y perfil Mastercard.
+4. Completar una compra y revisar el ticket ficticio.
