@@ -22,8 +22,9 @@
       <a class="active" href="pos.html">▣ <span>POS Virtual</span></a>
       <a href="atm.html">🏧 <span>ATM Virtual</span></a>
       <a href="parser.html">◉ <span>Parser ISO8583</span></a>
+      <a href="switch.html">🏦 <span>Switch del Adquirente</span></a>
       <a href="compensacion.html">▤ <span>Laboratorio de Compensación</span></a>
-      <a href="#">⌁ <span>Escenarios y Respuestas</span></a>
+      <a href="research.html">🧪 <span>Laboratorio de Investigación</span></a>
     <a class="nav" href="mastercard_iso.html">◉ Mastercard ISO</a>
 <a class="nav" href="compensacion_mastercard.html">▤ Mastercard IPM</a>
 </nav>
@@ -77,18 +78,27 @@
       </div>
 
       <div class="operation-cards">
-        <button class="operation-card active" data-operation="purchase">
-          <span>▣</span><div><strong>Compra</strong><small>0200 → 0210</small></div>
-        </button>
         <button class="operation-card" data-operation="reversal">
           <span>↶</span><div><strong>Reversa</strong><small>0400 → 0410</small></div>
         </button>
         <button class="operation-card" data-operation="void">
           <span>⊘</span><div><strong>Anulación</strong><small>Sobre compra aprobada</small></div>
         </button>
-        <button class="operation-card" data-operation="batch">
-          <span>▤</span><div><strong>Cierre de lote</strong><small>Totales y confirmación</small></div>
+        <button class="operation-card" data-operation="query">
+          <span>⌕</span><div><strong>Consulta</strong><small>Estado del lote y terminal</small></div>
         </button>
+        <button class="operation-card" data-operation="batch">
+          <span>▤</span><div><strong>Cierre de lote</strong><small>0500 → 0510</small></div>
+        </button>
+        <button class="operation-card" data-operation="reprint">
+          <span>▧</span><div><strong>Reimpresión</strong><small>Elegir ticket del historial</small></div>
+        </button>
+        <button class="operation-card" data-operation="lastTicket">
+          <span>▤</span><div><strong>Último ticket</strong><small>Abrir último comprobante</small></div>
+        </button>
+        <a class="operation-card" href="switch.html" style="text-decoration:none;color:inherit">
+          <span>🏦</span><div><strong>Switch del Adquirente</strong><small>Lotes, clearing y settlement</small></div>
+        </a>
       </div>
     </section>
 

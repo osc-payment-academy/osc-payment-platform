@@ -441,6 +441,13 @@
     return'';
   }
 
+  function persistSwitchTransaction(op){
+    if(!window.OSCSwitchStore||!op||op.type==='batch')return;
+    const network=(window.OSCNetworks&&window.OSCNetworks.detect(state.pan)?.key)||((state.pan||'').startsWith('4')?'VISA':'MASTERCARD');
+    const req=state.messages.find(m=>m.operationId===op.id && /00$/.test(m.mti));
+    const res=state.messages.find(m=>m.operationId===op.id && /10$/.test(m.mti));
+    window.OSCSwitchStore.addTransaction({id:op.id,channel:'POS',network,type:op.type,amountCents:op.amountCents,status:op.status||'APPROVED',responseCode:op.responseCode||state.responseCode||'00',stan:op.stan,rrn:op.rrn,auth:op.auth,batch:op.batch,closed:op.closed,clearingStatus:op.closed?'READY':'PENDING',mtiRequest:req?.mti||'0200',mtiResponse:res?.mti||'0210',panLast4:(state.pan||'').slice(-4),raw:req?rawMessage(req):null});
+  }
   function createOperation(type,source=null){
     const amountDigits=source?source.amountDigits:state.amountDigits;
     const op={
@@ -726,7 +733,8 @@
         direction:'ENTRANTE',dateTime:dateTimeNow(),responseCode:'00',fields:res,bitmap:bitmapHex(res),
         amountCents:s.netCents,stan:op.stan,batch:state.batchNumber
       });
-      state.operations.filter(o=>o.batch===state.batchNumber&&o.id!==op.id).forEach(o=>o.closed=true);
+      state.operations.filter(o=>o.batch===state.batchNumber&&o.id!==op.id).forEach(o=>{o.closed=true;persistSwitchTransaction(o)});
+      if(window.OSCSwitchStore) window.OSCSwitchStore.closeBatch({channel:'POS',batch:state.batchNumber});
       renderMessage(state.messages[0]);screen('LOTE CERRADO','<small>Cierre confirmado</small><strong>00</strong><span>Nuevo lote habilitado</span>');
       printReceipt(op);refreshHistoryStatuses();
       state.batchNumber++;state.batchOpen=true;state.step='done';
@@ -734,6 +742,7 @@
   }
 
   function printReceipt(op){
+    persistSwitchTransaction(op);
     const paper=$('receiptPaper');
     paper.innerHTML=ticketHtml(op);
     paper.querySelectorAll('.ticket-link[data-de]').forEach(element=>{
@@ -795,6 +804,9 @@ ${rawMessage(msg)}`;
     else if(type==='reversal')openTransactionModal('reversal');
     else if(type==='void')openTransactionModal('void');
     else if(type==='batch')openBatchModal();
+    else if(type==='query'){alert(`Lote actual ${state.batchNumber} · ${state.operations.filter(o=>o.batch===state.batchNumber).length} operaciones registradas.`)}
+    else if(type==='reprint')openTransactionModal('reprint');
+    else if(type==='lastTicket'){const op=state.operations.find(o=>o.type!=='batch');if(op)printReceipt(op);else alert('Todavía no hay tickets.');}
   }
 
   document.querySelectorAll('[data-key]').forEach(btn=>btn.addEventListener('click',()=>{if(/^\d$/.test(btn.dataset.key))pressNumber(btn.dataset.key)}));

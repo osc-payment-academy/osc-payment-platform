@@ -1,0 +1,19 @@
+OSC Payment Academy · v3.1 Sprint 2
+Switch del Adquirente y persistencia del laboratorio
+
+INCLUYE
+- Nuevo módulo Switch del Adquirente.
+- Workspace personal persistente en el navegador.
+- POS registra transacciones en el workspace.
+- Cierre de lote 0500/0510 marca transacciones listas para clearing.
+- Separación por red Visa/Mastercard.
+- Generación didáctica de artefactos Visa CTF y Mastercard IPM.
+- Menú Operaciones funcional sin Compra: Reversa, Anulación, Consulta, Cierre, Reimpresión, Último Ticket.
+- Laboratorio de Investigación permanente.
+- Política visible: alumno activo conserva todo; 90 días de gracia al vencer.
+- Esquema Cloudflare D1 incluido en schema.sql.
+
+ALCANCE / LIMITACIÓN
+Esta entrega usa localStorage para validar la experiencia y conservar el trabajo en el mismo navegador.
+La persistencia entre computadoras y usuarios reales requiere activar Cloudflare D1, login y API del Worker.
+Los archivos CTF/IPM de esta fase son artefactos didácticos de agrupación; el mapeo completo contra manuales privados se implementará en el sprint de clearing certificado.
