@@ -1,0 +1,7 @@
+OSC PAYMENT ACADEMY — BASELINE v2.9.1
+
+Corrección crítica:
+- Se incorpora la regla global .hidden para alternar correctamente entre el Constructor guiado y el Laboratorio Sin plantilla.
+- El botón Sin plantilla ahora abre el Laboratorio Interactivo ISO 8583.
+- Se actualiza la leyenda del botón para reflejar la construcción libre con aprendizaje por campo.
+- Se conserva la configuración de dominios personalizados de Cloudflare.
