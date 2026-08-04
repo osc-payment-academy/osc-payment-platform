@@ -69,6 +69,8 @@ select:focus,input:focus,textarea:focus{border-color:#2f83ff;box-shadow:0 0 0 2p
 .study-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:9px}
 @media(max-width:1350px){.lab-grid{grid-template-columns:minmax(430px,1fr) minmax(400px,1fr)}.live-monitor{grid-column:1/-1;position:static}.monitor-fields{max-height:190px}}
 @media(max-width:930px){.lab-grid{grid-template-columns:1fr}.study-bitmap{grid-template-columns:repeat(8,1fr)}.study-info-grid{grid-template-columns:1fr}.lab-head{grid-template-columns:1fr}.live-monitor{position:static}.study-card dl{grid-template-columns:110px 1fr}}
+
+.network-constructor{display:grid;grid-template-columns:210px 1fr;gap:8px;margin:8px 0 12px;padding:9px;border:1px solid #234a6b;background:#0a1b2b;border-radius:8px}.network-constructor select{padding:8px}.network-constructor-badge{display:flex;align-items:center;gap:7px;font-size:.6rem}.network-constructor-badge small{color:#90a5b8}.osc-network-dot{width:9px;height:9px;border-radius:50%;display:inline-block}
 </style>
 </head>
 <body>
@@ -99,7 +101,7 @@ select:focus,input:focus,textarea:focus{border-color:#2f83ff;box-shadow:0 0 0 2p
       <div class="top-actions"><a href="pos.html">← POS Virtual</a><a href="parser.html">Parser →</a><button id="resetAll">Nueva construcción</button></div>
     </header>
 
-    <div class="content">
+    <div class="content"><div class="network-constructor"><select id="constructorNetworkSelect"><option value="auto">Automático por DE2 / PAN</option><option value="visa">Visa</option><option value="mastercard">Mastercard</option><option value="amex">American Express (preparado)</option></select><div id="constructorNetworkBadge" class="network-constructor-badge"></div></div>
       <div class="builder-grid" id="builderMode">
         <section class="panel">
           <h2>1. CONFIGURACIÓN DEL MENSAJE</h2>
@@ -244,6 +246,7 @@ select:focus,input:focus,textarea:focus{border-color:#2f83ff;box-shadow:0 0 0 2p
   </main>
 </div>
 
+<script src="js/network-profiles.js"></script>
 <script>
 (() => {
   const FIELD_DEFS = [
@@ -314,6 +317,8 @@ select:focus,input:focus,textarea:focus{border-color:#2f83ff;box-shadow:0 0 0 2p
   };
 
   const state = {mti:'0200',values:{},selected:new Set(),filter:''};
+  function refreshConstructorNetwork(){const sel=document.getElementById('constructorNetworkSelect');const badge=document.getElementById('constructorNetworkBadge');if(!sel||!badge||!window.OSCNetworks)return;const p=OSCNetworks.resolve(sel.value,state.values[2]||'');badge.innerHTML=OSCNetworks.badge(p);}
+  document.addEventListener('DOMContentLoaded',()=>{const s=document.getElementById('constructorNetworkSelect');if(s)s.addEventListener('change',refreshConstructorNetwork);setTimeout(refreshConstructorNetwork,0);});
 
   function dateTime7(){
     const d=new Date();
@@ -488,6 +493,9 @@ ${raw()}`,e.target));
   });
 
   loadPreset('purchase');
+  document.addEventListener('input',e=>{if(e.target && (e.target.dataset?.de==='2' || e.target.name==='de2' || e.target.closest?.('[data-de="2"]')))setTimeout(refreshConstructorNetwork,0);});
+  document.addEventListener('change',e=>{if(e.target && (e.target.dataset?.de==='2' || e.target.closest?.('[data-de="2"]')))setTimeout(refreshConstructorNetwork,0);});
+
 })();
 </script>
 
@@ -544,6 +552,6 @@ ${raw()}`,e.target));
 </script>
 <script src="js/permissions.js"></script>
 
-<div id="osc-version-badge" style="position:fixed;right:14px;bottom:12px;z-index:99999;background:#0d2238;border:1px solid #2f83ff;color:#9fd0ff;padding:7px 11px;border-radius:999px;font:600 12px/1.1 Inter,Segoe UI,Arial,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.28)">Baseline v2.9.1</div>
+<div id="osc-version-badge" style="position:fixed;right:14px;bottom:12px;z-index:99999;background:#0d2238;border:1px solid #2f83ff;color:#9fd0ff;padding:7px 11px;border-radius:999px;font:600 12px/1.1 Inter,Segoe UI,Arial,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.28)">Baseline v3.0</div>
 </body>
 </html>

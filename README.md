@@ -33,3 +33,7 @@ Agrega valores posibles expandibles en el Modo Estudio y simplifica la lectura v
 
 ## Baseline v2.9
 Incorpora el **Laboratorio Interactivo ISO 8583 – Construcción de Mensajes**, con construcción libre, aprendizaje por Data Element y validación al finalizar.
+
+
+## Baseline v3.0 — Multi Network Edition
+Perfiles Visa, Mastercard y arquitectura preparada para American Express. Detección automática por PAN compartida por POS, ATM, Parser y Constructor.

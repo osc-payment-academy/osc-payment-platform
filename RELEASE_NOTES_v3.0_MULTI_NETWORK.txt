@@ -1,0 +1,18 @@
+OSC PAYMENT ACADEMY
+BASELINE v3.0 — MULTI NETWORK EDITION
+
+INCLUIDO
+- Motor compartido de detección de franquicia por PAN.
+- Visa: detección por PAN iniciado en 4.
+- Mastercard: rangos 51–55 y 222100–272099.
+- American Express: detección 34/37 y arquitectura preparada; perfil técnico detallado pendiente de incorporar con manual autorizado.
+- POS Virtual: selector Automático/Visa/Mastercard/Amex, PAN de prueba, marca y BIN en tiempo real; DE2/DE35 se construyen con el PAN ingresado.
+- ATM Virtual: selector de red, PAN de prueba y tarjeta visual dinámica.
+- Parser: selección de perfil o detección automática desde DE2, identificando manual/perfil activo.
+- Constructor: perfil de red global y detección automática desde DE2.
+- Dominios personalizados de Cloudflare preservados.
+
+ALCANCE Y TRAZABILIDAD
+- La detección de Mastercard usa los rangos públicos 51–55 y 222100–272099.
+- La asignación real de una cuenta debe resolverse con una tabla BIN/account-range vigente; no se debe depender exclusivamente del primer dígito.
+- Esta baseline crea la arquitectura multi-red y validaciones de identificación. Las reglas campo por campo de Mastercard y Amex requieren incorporar los manuales técnicos autorizados en el repositorio del instructor.

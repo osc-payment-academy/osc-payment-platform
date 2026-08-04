@@ -95,7 +95,11 @@
     <section class="workspace">
       <div class="terminal-column">
         <div class="terminal">
-          <div class="terminal-model-select"><label for="terminalModel">Modelo</label><select id="terminalModel"><option value="ingenico">Ingenico ICT250</option><option value="verifone">Verifone VX520</option><option value="pax">PAX A920</option><option value="android">POS Android</option></select></div><div class="terminal-brand" id="terminalBrand">ingenico</div>
+          <div class="network-profile-box" id="posNetworkBox">
+  <div class="network-profile-title"><span>PERFIL DE RED</span><span id="posNetworkValidation" class="network-validation">Detección automática por PAN</span></div>
+  <div class="network-profile-controls"><select id="posNetworkSelect"><option value="auto">Automático por PAN</option><option value="visa">Visa</option><option value="mastercard">Mastercard</option><option value="amex">American Express (preparado)</option></select><input id="posPanInput" inputmode="numeric" maxlength="19" value="4556123412341234" aria-label="PAN de prueba"></div>
+  <div id="posNetworkBadge" class="network-profile-badge"></div>
+</div><div class="terminal-model-select"><label for="terminalModel">Modelo</label><select id="terminalModel"><option value="ingenico">Ingenico ICT250</option><option value="verifone">Verifone VX520</option><option value="pax">PAX A920</option><option value="android">POS Android</option></select></div><div class="terminal-brand" id="terminalBrand">ingenico</div>
           <div class="terminal-screen">
             <div class="status-icons">▂▃▅ ◉ ⌁ <span id="posClock">--:--:--</span></div>
             <div class="screen-title" id="screenTitle">COMPRA</div>
@@ -305,11 +309,11 @@
   </div>
 </div>
 
-<script src="js/app.js">
+<script src="js/network-profiles.js"></script>
+<script src="js/app.js"></script>
 <script>document.addEventListener('DOMContentLoaded',()=>{document.querySelectorAll('.pos-scenario-mini button').forEach((b,i)=>b.onclick=()=>{document.querySelectorAll('.pos-scenario-mini button').forEach(x=>x.classList.remove('active'));b.classList.add('active');const original=document.querySelectorAll('#scenarioGrid button')[i];if(original)original.click()});const log=document.getElementById('posTechEvents');const status=document.getElementById('flowResponse');if(log&&status)new MutationObserver(()=>{const d=document.createElement('div');d.textContent=new Date().toLocaleTimeString('es-AR')+' · '+status.textContent;log.prepend(d);while(log.children.length>8)log.lastChild.remove()}).observe(status,{childList:true,subtree:true,characterData:true})});</script>
-</script>
 <script src="js/permissions.js"></script>
 
-<div id="osc-version-badge" style="position:fixed;right:14px;bottom:12px;z-index:99999;background:#0d2238;border:1px solid #2f83ff;color:#9fd0ff;padding:7px 11px;border-radius:999px;font:600 12px/1.1 Inter,Segoe UI,Arial,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.28)">Baseline v2.8</div>
+<div id="osc-version-badge" style="position:fixed;right:14px;bottom:12px;z-index:99999;background:#0d2238;border:1px solid #2f83ff;color:#9fd0ff;padding:7px 11px;border-radius:999px;font:600 12px/1.1 Inter,Segoe UI,Arial,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.28)">Baseline v3.0</div>
 </body>
 </html>

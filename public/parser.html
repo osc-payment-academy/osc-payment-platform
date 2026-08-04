@@ -370,7 +370,9 @@
       padding-top: 9px;
       border-top: 1px solid var(--line);
     }
-  </style>
+  
+.network-parser-bar{display:grid;grid-template-columns:220px 1fr;gap:10px;margin:10px 0;padding:10px;border:1px solid #39485a;background:#101722;border-radius:8px}.network-parser-bar select{background:#0b111a;color:#fff;border:1px solid #46566a;border-radius:6px;padding:8px}.network-parser-badge{display:flex;align-items:center;gap:8px;color:#dce8f5}.network-parser-badge small{color:#9aa9b9}.osc-network-dot{width:9px;height:9px;border-radius:50%;display:inline-block}
+</style>
 
   <style>
     :root{
@@ -504,7 +506,7 @@
             <div class="mode-btn active" aria-pressed="true">Detección automática: Texto/ASCII o HEX de red</div>
           </div>
           <label class="field-label">Log de la trama</label>
-          <textarea id="iso-input" class="mono" placeholder="Pegue aquí la trama ISO 8583 en formato Texto / ASCII (bitmap en hex)"></textarea>
+          <div class="network-parser-bar"><select id="parserNetworkSelect"><option value="auto">Detectar por DE2 / PAN</option><option value="visa">Perfil Visa</option><option value="mastercard">Perfil Mastercard</option><option value="amex">American Express (preparado)</option></select><div id="parserNetworkBadge" class="network-parser-badge"><span>El perfil se resolverá al analizar la trama.</span></div></div><textarea id="iso-input" class="mono" placeholder="Pegue aquí la trama ISO 8583 en formato Texto / ASCII (bitmap en hex)"></textarea>
           <div style="margin-top:12px; display:flex; gap:10px; align-items:center;">
             <button class="parse-btn" id="parse-btn">Parsear trama</button>
             <button class="clear-btn" id="clear-btn" type="button">Borrar trama</button>
@@ -540,7 +542,8 @@
     </div>
   </div>
 
-  <script>
+  <script src="js/network-profiles.js"></script>
+<script>
     // --- LÓGICA DE AUTENTICACIÓN ---
     window.onload = function() {
       if (typeof google !== 'undefined' && google.script && google.script.run) {
@@ -1334,6 +1337,14 @@
       }
 
       function render(result) {
+        const networkSelect=document.getElementById('parserNetworkSelect');
+        const de2=result && result.fields ? result.fields.find(f=>Number(f.num)===2) : null;
+        const selected=networkSelect ? networkSelect.value : 'auto';
+        const net=window.OSCNetworks ? OSCNetworks.resolve(selected,de2?de2.value:'') : {name:'Perfil ISO genérico',manual:'—',color:'#64748b'};
+        const netBadge=document.getElementById('parserNetworkBadge');
+        if(netBadge) netBadge.innerHTML=OSCNetworks.badge(net)+(de2?`<small> · BIN ${(de2.value||'').slice(0,6)}</small>`:'<small> · DE2 no disponible</small>');
+        if(result) result.networkProfile=net;
+
         const bitmapArea = document.getElementById('bitmap-area');
         const errorArea = document.getElementById('error-area');
         const summaryArea = document.getElementById('summary-area');
@@ -1429,6 +1440,8 @@
         `;
       }
 
+      document.getElementById('parserNetworkSelect').addEventListener('change',()=>{const raw=document.getElementById('iso-input').value;if(raw.trim())render(parseTrama(raw));});
+
       document.getElementById('parse-btn').addEventListener('click', () => {
         const raw = document.getElementById('iso-input').value;
         const result = parseTrama(raw);
@@ -1479,6 +1492,6 @@
 
 <script src="js/permissions.js"></script>
 
-<div id="osc-version-badge" style="position:fixed;right:14px;bottom:12px;z-index:99999;background:#0d2238;border:1px solid #2f83ff;color:#9fd0ff;padding:7px 11px;border-radius:999px;font:600 12px/1.1 Inter,Segoe UI,Arial,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.28)">Baseline v2.6</div>
+<div id="osc-version-badge" style="position:fixed;right:14px;bottom:12px;z-index:99999;background:#0d2238;border:1px solid #2f83ff;color:#9fd0ff;padding:7px 11px;border-radius:999px;font:600 12px/1.1 Inter,Segoe UI,Arial,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.28)">Baseline v3.0</div>
 </body>
 </html>

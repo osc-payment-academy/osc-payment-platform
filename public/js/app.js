@@ -21,7 +21,9 @@
     batchOpen:true,
     operations:[],
     selectedSourceOperationId:null,
-    modalMode:null
+    modalMode:null,
+    network:'auto',
+    pan:'4556123412341234'
   };
 
   const entryModes = {
@@ -74,6 +76,7 @@
   };
   const random6 = () => String(Math.floor(100000+Math.random()*900000));
   const createPinBlock = () => Array.from({length:16},()=>Math.floor(Math.random()*16).toString(16).toUpperCase()).join('');
+  const profile = () => window.OSCNetworks ? OSCNetworks.resolve(state.network,state.pan) : {id:'visa',name:'Visa',short:'VISA'};
   const field = (de,name,value,length,format,origin='POS') => [String(de),name,String(value),String(length),format,origin];
 
   function amountField(amountDigits=state.amountDigits){
@@ -83,7 +86,7 @@
   function entryFields(){
     const mode=entryModes[state.entryMode]||entryModes.chip;
     const rows=[
-      field(2,'Primary Account Number (PAN)','4556123412341234','16','LLVAR','Tarjeta'),
+      field(2,'Primary Account Number (PAN)',state.pan,'16','LLVAR','Tarjeta'),
       field(3,'Processing Code','000000','6','FIXED','Aplicación POS'),
       amountField(),
       field(14,'Expiration Date','2512','4','FIXED','Tarjeta'),
@@ -93,7 +96,7 @@
       field(42,'Merchant ID','MERCHANT01','10','FIXED','Configuración comercio'),
       field(49,'Transaction Currency Code','032','3','FIXED','Configuración comercio')
     ];
-    if(mode.hasDE35) rows.push(field(35,'Track 2 Data','4556123412341234=25121011234567890','37','LLVAR',mode.de35Origin));
+    if(mode.hasDE35) rows.push(field(35,'Track 2 Data',`${state.pan}=25121011234567890`,'37','LLVAR',mode.de35Origin));
     if(mode.hasDE55) rows.push(field(55,'ICC Data (EMV)','9F2608A1B2C3D4E5F607','20','LLLVAR',mode.label));
     return rows;
   }
@@ -114,7 +117,7 @@
 
   function purchaseResponseFields(code, operation){
     const rows=[
-      field(2,'Primary Account Number (PAN)','4556123412341234','16','LLVAR','Eco de solicitud'),
+      field(2,'Primary Account Number (PAN)',state.pan,'16','LLVAR','Eco de solicitud'),
       field(3,'Processing Code','000000','6','FIXED','Eco de solicitud'),
       amountField(operation.amountDigits),
       field(7,'Transmission Date & Time',de7Now(),'10','FIXED','Host'),
@@ -135,7 +138,7 @@
 
   function reversalRequestFields(source){
     return [
-      field(2,'Primary Account Number (PAN)','4556123412341234','16','LLVAR','Operación original'),
+      field(2,'Primary Account Number (PAN)',state.pan,'16','LLVAR','Operación original'),
       field(3,'Processing Code','000000','6','FIXED','Operación original'),
       amountField(source.amountDigits),
       field(7,'Transmission Date & Time',de7Now(),'10','FIXED','Reloj del sistema'),
@@ -156,7 +159,7 @@
 
   function voidRequestFields(source){
     return [
-      field(2,'Primary Account Number (PAN)','4556123412341234','16','LLVAR','Operación original'),
+      field(2,'Primary Account Number (PAN)',state.pan,'16','LLVAR','Operación original'),
       field(3,'Processing Code','020000','6','FIXED','Anulación'),
       amountField(source.amountDigits),
       field(7,'Transmission Date & Time',de7Now(),'10','FIXED','Reloj del sistema'),
@@ -265,7 +268,7 @@
     const status=op.status==='APROBADA'?'APROBADO':op.status;
     const date=new Date(op.createdAt||Date.now());
     const operationNumber=`${date.getTime()}`.slice(-12);
-    const brand=op.type==='purchase'?'CRÉDITO VISA 6875':operationLabels[op.type];
+    const brand=op.type==='purchase'?`CRÉDITO ${profile().name.toUpperCase()} ${state.pan.slice(-4)}`:operationLabels[op.type];
     const aid=mode.hasDE55?'A0000000031010':'NO APLICA';
     return `
       <div class="ticket-head">
@@ -453,7 +456,7 @@
     screen('LEYENDO TARJETA',`<small>${entryModes[modeKey].label}</small><strong>...</strong><span>No retire la tarjeta</span>`);
     setTimeout(()=>{
       stage.classList.add('success');$('captureStatusText').textContent='Lectura completada';
-      const mode=entryModes[modeKey];$('time2').textContent=timeNow();document.querySelector('#step2 small').textContent=`VISA · ${mode.label}`;
+      const mode=entryModes[modeKey];$('time2').textContent=timeNow();document.querySelector('#step2 small').textContent=`${profile().name} · ${mode.label}`;
       renderFields(entryFields().sort((a,b)=>Number(a[0])-Number(b[0])));
       setTimeout(()=>{
         stage.classList.add('hidden');
@@ -731,4 +734,25 @@ ${rawMessage(msg)}`;
   },1000);
 
   applyTerminalModel('ingenico');reset();updateDualBitmaps();
+  function refreshNetworkProfile(){
+    if(!window.OSCNetworks) return;
+    const p=OSCNetworks.resolve(state.network,state.pan);
+    const badge=$('posNetworkBadge'), validation=$('posNetworkValidation');
+    if(badge) badge.innerHTML=OSCNetworks.badge(p);
+    if(validation){
+      const ok=OSCNetworks.luhn(state.pan);
+      validation.textContent=`${p.name} · BIN ${state.pan.slice(0,6)||'—'} · Luhn ${ok?'válido':'demo/no válido'}`;
+      validation.className='network-validation '+(ok?'ok':'warn');
+    }
+    document.querySelectorAll('.card-demo strong,.capture-card strong').forEach(el=>el.textContent=p.short);
+    document.querySelectorAll('.virtual-card strong').forEach(el=>el.textContent=p.short);
+    const step=document.querySelector('#step2 small'); if(step && state.entryMode) step.textContent=`${p.name} · ${(entryModes[state.entryMode]||entryModes.chip).label}`;
+  }
+  document.addEventListener('DOMContentLoaded',()=>{
+    const sel=$('posNetworkSelect'), pan=$('posPanInput');
+    if(sel){sel.value=state.network;sel.addEventListener('change',()=>{state.network=sel.value;refreshNetworkProfile();});}
+    if(pan){pan.value=state.pan;pan.addEventListener('input',()=>{state.pan=pan.value.replace(/\D/g,'').slice(0,19);pan.value=state.pan;refreshNetworkProfile();});}
+    refreshNetworkProfile();
+  });
+
 })();
