@@ -1,0 +1,17 @@
+OSC PAYMENT ACADEMY
+Baseline v3.2 - Visores de Clearing
+
+Incluye:
+- Dos accesos independientes en el Switch del Adquirente:
+  * Visa CTF / Base II
+  * Mastercard IPM
+- Vista superior del archivo didáctico generado.
+- Explicación campo a campo debajo del archivo.
+- Descarga independiente .ctf y .ipm.
+- Enlaces a los laboratorios Base II e IPM.
+- Historial de archivos por red.
+- Mejora de contraste en los 128 números del bitmap del POS:
+  * campos apagados con texto claro;
+  * campos activos con fondo verde y número blanco.
+
+Nota: Los archivos generados son representaciones educativas. No se presentan como archivos productivos certificados por las redes.
