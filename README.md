@@ -30,3 +30,6 @@ Se incorpora el modo **Sin plantilla** del Constructor ISO8583 para estudiar Dat
 
 ## Baseline v2.5.2
 Agrega valores posibles expandibles en el Modo Estudio y simplifica la lectura visual.
+
+## Baseline v2.9
+Incorpora el **Laboratorio Interactivo ISO 8583 – Construcción de Mensajes**, con construcción libre, aprendizaje por Data Element y validación al finalizar.

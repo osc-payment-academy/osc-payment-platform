@@ -1,0 +1,25 @@
+OSC Academy Baseline v2.9
+Laboratorio Interactivo ISO 8583 – Construcción de Mensajes
+
+CAMBIOS PRINCIPALES
+- Rediseño integral del modo SIN PLANTILLA.
+- Selección de MTI de solicitud y respuesta.
+- Construcción libre: el sistema no sugiere campos antes de validar.
+- Bitmap primario 1–64 visible inicialmente.
+- Bitmap secundario 65–128 visible únicamente al activar el bit 1.
+- Selección acumulativa de Data Elements, estudiando uno por vez.
+- Explicación visual de cada campo seleccionado mediante recuadros de colores.
+- Valores posibles desplegables para campos codificados, incluyendo DE3.
+- DE3 separado en tipo de transacción, cuenta origen y cuenta destino.
+- Monitor derecho de mensaje en tiempo real: MTI, Bitmap, campos y trama.
+- Validación didáctica al finalizar, sin revelar previamente qué campos faltan.
+- Cambio de MTI limpia la construcción para evitar mezclar perfiles.
+- Acceso directo al Parser con la trama construida.
+
+FILOSOFÍA
+- Con plantilla: el sistema enseña guiando.
+- Sin plantilla: el alumno construye libremente y el sistema valida al final.
+- Una vez seleccionado un campo, el laboratorio enseña cómo se conforma.
+
+NOTA
+Los perfiles de validación son didácticos y deben ajustarse al perfil vigente de la red antes de uso productivo.
