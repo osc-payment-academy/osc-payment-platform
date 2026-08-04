@@ -1,0 +1,13 @@
+OSC PAYMENT ACADEMY - Baseline v3.1.1
+Sprint 2 Hotfix: Operaciones y persistencia POS
+
+Correcciones:
+- Se carga switch-store.js antes de app.js.
+- El botón Operaciones abre el panel funcional.
+- Se evitaron errores por botones opcionales inexistentes.
+- Las transacciones POS se restauran desde el workspace al volver del Switch.
+- El historial conserva operaciones entre páginas en el mismo navegador.
+- Se persisten campos de solicitud y respuesta para reconstruir el detalle ISO8583.
+
+Persistencia actual: localStorage del navegador.
+Persistencia multi-dispositivo: pendiente de Login + Cloudflare D1.

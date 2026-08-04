@@ -446,8 +446,40 @@
     const network=(window.OSCNetworks&&window.OSCNetworks.detect(state.pan)?.key)||((state.pan||'').startsWith('4')?'VISA':'MASTERCARD');
     const req=state.messages.find(m=>m.operationId===op.id && /00$/.test(m.mti));
     const res=state.messages.find(m=>m.operationId===op.id && /10$/.test(m.mti));
-    window.OSCSwitchStore.addTransaction({id:op.id,channel:'POS',network,type:op.type,amountCents:op.amountCents,status:op.status||'APPROVED',responseCode:op.responseCode||state.responseCode||'00',stan:op.stan,rrn:op.rrn,auth:op.auth,batch:op.batch,closed:op.closed,clearingStatus:op.closed?'READY':'PENDING',mtiRequest:req?.mti||'0200',mtiResponse:res?.mti||'0210',panLast4:(state.pan||'').slice(-4),raw:req?rawMessage(req):null});
+    window.OSCSwitchStore.addTransaction({id:op.id,channel:'POS',network,type:op.type,amountCents:op.amountCents,status:op.status||'APPROVED',responseCode:op.responseCode||state.responseCode||'00',stan:op.stan,rrn:op.rrn,auth:op.auth,batch:op.batch,closed:op.closed,clearingStatus:op.closed?'READY':'PENDING',mtiRequest:req?.mti||'0200',mtiResponse:res?.mti||'0210',panLast4:(state.pan||'').slice(-4),raw:req?rawMessage(req):null,requestFields:req?.fields||null,responseFields:res?.fields||null,operationLabel:op.type||'purchase',dateTime:op.createdAt||new Date().toISOString()});
   }
+  function restoreWorkspaceHistory(){
+    if(!window.OSCSwitchStore) return;
+    const db=window.OSCSwitchStore.read();
+    const txs=(db.transactions||[]).filter(t=>t.channel==='POS').slice().reverse();
+    if(!txs.length) return;
+    state.operations=[]; state.messages=[]; $('historyBody').innerHTML='';
+    txs.forEach((tx,index)=>{
+      const op={
+        id:tx.id,type:tx.type||'purchase',amountDigits:String(tx.amountCents||0),amountCents:Number(tx.amountCents||0),
+        stan:tx.stan||'',auth:tx.auth||'',rrn:tx.rrn||'',batch:Number(tx.batch||1),
+        status:tx.status==='APPROVED'?'APROBADA':(tx.status||'APROBADA'),closed:Boolean(tx.closed),
+        createdAt:tx.createdAt||tx.dateTime||new Date().toISOString(),responseCode:tx.responseCode||'00'
+      };
+      state.operations.unshift(op);
+      const reqFields=Array.isArray(tx.requestFields)?tx.requestFields:[
+        field(3,'Processing Code','000000','6','FIXED','Restaurado'),
+        field(4,'Transaction Amount',String(tx.amountCents||0).padStart(12,'0'),'12','FIXED','Restaurado'),
+        field(11,'System Trace Audit Number (STAN)',tx.stan||'','6','FIXED','Restaurado'),
+        field(37,'Retrieval Reference Number',tx.rrn||'','12','FIXED','Restaurado'),
+        field(39,'Response Code',tx.responseCode||'00','2','FIXED','Restaurado')
+      ];
+      const resFields=Array.isArray(tx.responseFields)?tx.responseFields:reqFields;
+      const dateLabel=new Date(tx.createdAt||Date.now()).toLocaleString('es-AR');
+      const req={id:`REST-${tx.id}-REQ`,operationId:tx.id,mti:tx.mtiRequest||'0200',operation:(tx.type||'purchase').toUpperCase(),direction:'SALIENTE',dateTime:dateLabel,responseCode:'',fields:reqFields,bitmap:bitmapHex(reqFields),amountCents:tx.amountCents,stan:tx.stan,batch:tx.batch};
+      const res={id:`REST-${tx.id}-RES`,operationId:tx.id,mti:tx.mtiResponse||'0210',operation:(tx.type||'purchase').toUpperCase(),direction:'ENTRANTE',dateTime:dateLabel,responseCode:tx.responseCode||'00',fields:resFields,bitmap:bitmapHex(resFields),amountCents:tx.amountCents,stan:tx.stan,batch:tx.batch};
+      state.messages.unshift(req,res); addMessage(req); addMessage(res);
+    });
+    state.batchNumber=Math.max(1,...txs.map(t=>Number(t.batch||1)));
+    $('sessionTx').textContent=txs.length;
+    if(state.messages.length) renderMessage(state.messages[0]);
+  }
+
   function createOperation(type,source=null){
     const amountDigits=source?source.amountDigits:state.amountDigits;
     const op={
@@ -818,11 +850,11 @@ ${rawMessage(msg)}`;
   $('sendResponse').addEventListener('click',sendPurchaseResponse);
   $('newTest').addEventListener('click',reset);
   $('printAgain').addEventListener('click',()=>{const op=state.operations.find(o=>o.id===state.selectedSourceOperationId);if(op)printReceipt(op)});
-  $('copyBtn').addEventListener('click',copySelectedMessage);
-  $('analyzeBtn').addEventListener('click',openSelectedInParser);
+  $('copyBtn')?.addEventListener('click',copySelectedMessage);
+  $('analyzeBtn')?.addEventListener('click',openSelectedInParser);
   $('terminalModel').addEventListener('change',e=>applyTerminalModel(e.target.value));
-  $('operationMenuButton').addEventListener('click',()=>$('operationDrawer').classList.toggle('hidden'));
-  $('closeOperationDrawer').addEventListener('click',()=>$('operationDrawer').classList.add('hidden'));
+  $('operationMenuButton')?.addEventListener('click',()=>{const d=$('operationDrawer');if(d)d.classList.toggle('hidden')});
+  $('closeOperationDrawer')?.addEventListener('click',()=>$('operationDrawer')?.classList.add('hidden'));
   document.querySelectorAll('[data-operation]').forEach(btn=>btn.addEventListener('click',()=>selectOperation(btn.dataset.operation)));
   $('closeTransactionModal').addEventListener('click',()=>$('transactionModal').classList.add('hidden'));
   $('cancelTransactionSelection').addEventListener('click',()=>$('transactionModal').classList.add('hidden'));
@@ -839,7 +871,7 @@ ${rawMessage(msg)}`;
     $('sessionTime').textContent=[Math.floor(e/3600),Math.floor((e%3600)/60),e%60].map(v=>String(v).padStart(2,'0')).join(':');
   },1000);
 
-  applyTerminalModel('ingenico');reset();updateDualBitmaps();
+  applyTerminalModel('ingenico');reset();restoreWorkspaceHistory();updateDualBitmaps();
   function refreshNetworkProfile(){
     if(!window.OSCNetworks) return;
     syncPaymentProfile();
