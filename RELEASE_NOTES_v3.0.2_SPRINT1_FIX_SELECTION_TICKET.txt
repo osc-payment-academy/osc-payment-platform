@@ -1,0 +1,20 @@
+OSC PAYMENT ACADEMY
+Baseline v3.0.2 — Sprint 1 POS Multi Network (Corrección 2)
+
+CORRECCIONES
+- Selección robusta de tarjetas mediante delegación de eventos.
+- La tarjeta seleccionada conserva estado, PAN, BIN, red y producto.
+- Indicador visual "SELECCIONADA" y resaltado verde.
+- El flujo se reinicia sin volver a Visa Crédito.
+- El ticket fue rediseñado conforme al mockup aprobado.
+- Encabezado dinámico Visa, Mastercard o QR.
+- Comercio ficticio La Perla Coffee, CUIT y dirección aprobados.
+- Secciones: fecha/hora, ticket, terminal/lote, operación, total, estado,
+  tarjeta enmascarada, lectura, EMV, autorización, STAN, RRN y agradecimiento.
+- Información ISO8583 opcional al final.
+
+PRUEBAS RECOMENDADAS
+1. Seleccionar Mastercard Crédito y confirmar resaltado.
+2. Completar compra y comprobar PAN terminado en 4444 y marca Mastercard.
+3. Repetir con Visa Débito y Mastercard Débito.
+4. Activar/desactivar Información ISO8583 del ticket.

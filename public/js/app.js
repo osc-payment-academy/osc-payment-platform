@@ -48,6 +48,23 @@
     state.pan=card.pan; state.network=card.network;
   }
 
+  function selectTestCard(cardId,{resetFlow=true}={}){
+    if(!TEST_CARDS[cardId]) return;
+    state.testCard=cardId;
+    const card=TEST_CARDS[cardId];
+    state.pan=card.pan;
+    state.network=card.network;
+    document.querySelectorAll('[data-test-card]').forEach(button=>{
+      const active=button.dataset.testCard===cardId;
+      button.classList.toggle('active',active);
+      button.setAttribute('aria-pressed',active?'true':'false');
+    });
+    const summary=$('selectedTestCardSummary');
+    if(summary) summary.textContent=`${card.label} · PAN asignado automáticamente · •••• ${card.pan.slice(-4)} · BIN ${card.pan.slice(0,6)}`;
+    refreshNetworkProfile();
+    if(resetFlow) reset();
+  }
+
   const entryModes = {
     chip:{label:'Chip EMV',de22:'051',hasPin:true,hasDE55:true,hasDE35:true,de35Origin:'Track 2 Equivalent Data del chip'},
     contactless:{label:'Contactless EMV',de22:'071',hasPin:false,hasDE55:true,hasDE35:true,de35Origin:'Track 2 Equivalent Data contactless'},
@@ -287,10 +304,9 @@
 
   function ticketHtml(op){
     const source=op.sourceOperationId?state.operations.find(item=>item.id===op.sourceOperationId):null;
-    const mode=entryModes[state.entryMode]||entryModes.chip;
+    const mode=entryModes[op.entryMode||state.entryMode]||entryModes.chip;
     const status=op.status==='APROBADA'?'APROBADO':op.status;
     const date=new Date(op.createdAt||Date.now());
-    const operationNumber=`${date.getTime()}`.slice(-12);
     const card=TEST_CARDS[op.cardId]||selectedCard();
     const p=window.OSCNetworks?OSCNetworks.profiles[op.network]||profile():profile();
     const isQr=op.paymentMethod==='qr';
@@ -298,38 +314,50 @@
     const readingLabel=isQr?'QR · WALLET':mode.label.toUpperCase();
     const aid=isQr?'NO APLICA':(mode.hasDE55?card.aid:'NO APLICA');
     const selectedMessage=state.messages.find(m=>m.operationId===op.id && m.mti==='0210')||state.messages.find(m=>m.operationId===op.id);
-    const isoRows=(selectedMessage?.fields||[]).filter(r=>['2','3','4','7','11','22','37','38','39','48'].includes(String(r[0])));
-    const isoBlock=state.showIsoTicket?`<div class="ticket-iso"><strong>INFORMACIÓN ISO8583</strong>${selectedMessage?`<div>MTI <b>${selectedMessage.mti}</b></div>`:''}${isoRows.map(r=>`<div>DE${r[0]} <b>${r[0]==='2'?String(r[2]).replace(/.(?=.{4})/g,'•'):r[2]}</b></div>`).join('')}</div>`:'';
+    const isoRows=(selectedMessage?.fields||[]).filter(r=>['2','3','4','7','11','14','22','35','37','38','39','48','55'].includes(String(r[0])));
+    const isoBlock=state.showIsoTicket?`<div class="ticket-iso"><strong>INFORMACIÓN ISO8583</strong>${selectedMessage?`<div><span>MTI</span><b>${selectedMessage.mti}</b></div>`:''}${isoRows.map(r=>`<div><span>DE${r[0]}</span><b>${r[0]==='2'?String(r[2]).replace(/.(?=.{4})/g,'•'):r[2]}</b></div>`).join('')}</div>`:'';
+    const brandClass=isQr?'qr':p.id;
+    const brandMain=isQr?'QR':p.short;
+    const brandSub=isQr?paymentLabel:p.name;
+    const operationLabel=op.type==='purchase'?(card.product==='Débito'?'COMPRA DÉBITO':'COMPRA CRÉDITO'):(operationLabels[op.type]||'OPERACIÓN');
     return `
-      <div class="ticket-network ticket-network-${p.id}"><span>${isQr?'QR':p.short}</span><small>${isQr?paymentLabel:p.name}</small></div>
-      <div class="ticket-head">
-        <div class="ticket-brand">OSC<br>ACADEMY</div>
-        <div><span class="ticket-badge">POS VIRTUAL · TICKET EDUCATIVO</span><div class="ticket-date">${date.toLocaleDateString('es-AR')} · ${date.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'})}</div></div>
+      <div class="ticket-network ticket-network-${brandClass}"><span>${brandMain}</span><small>${brandSub}</small></div>
+      <div class="ticket-merchant">
+        <strong>LA PERLA COFFEE</strong>
+        <span>CUIT: 30-23566776-5</span>
+        <span>Olazábal 3020</span>
+        <span>Recoleta · Capital Federal · Argentina</span>
       </div>
-      <div class="ticket-meta">
-        <strong>Operación #${operationNumber}</strong>
-        <span class="ticket-link" data-de="2">${paymentLabel} · •••• ${String(op.pan||state.pan).slice(-4)}</span><br>
-        <span class="ticket-link" data-de="22">${readingLabel}</span>
-        <span style="float:right" class="ticket-link" data-de="55">AID: ${aid}</span>
-      </div>
+      <div class="ticket-separator"></div>
+      <div class="ticket-kv"><span>FECHA</span><b>${date.toLocaleDateString('es-AR')}</b></div>
+      <div class="ticket-kv"><span>HORA</span><b>${date.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}</b></div>
+      <div class="ticket-kv"><span>TICKET N°</span><b>${String(date.getTime()).slice(-6)}</b></div>
+      <div class="ticket-kv"><span>TERMINAL</span><b>TERMID01</b></div>
+      <div class="ticket-kv"><span>LOTE</span><b>${String(op.batch).padStart(4,'0')}</b></div>
+      <div class="ticket-separator"></div>
+      <div class="ticket-operation">${operationLabel}</div>
       <div class="ticket-box">
         <div class="ticket-total"><strong>Total</strong><b class="ticket-link" data-de="4">${formatCents(op.amountCents)}</b></div>
-        <div class="ticket-installments">Cuotas <span style="float:right">(1 x ${formatCents(op.amountCents)})</span></div>
+        <div class="ticket-installments">Cuotas <span>(1 x ${formatCents(op.amountCents)})</span></div>
         <div class="ticket-status ticket-link" data-de="39">${status}</div>
       </div>
-      <div class="ticket-meta">
-        <span>Autorización: <b class="ticket-link" data-de="38">${op.auth||'—'}</b></span><br>
-        <span>STAN: <b class="ticket-link" data-de="11">${op.stan||'—'}</b></span><br>
-        <span>RRN: <b class="ticket-link" data-de="37">${op.rrn||'—'}</b></span>
-        ${source?`<br><span>Original: ${source.stan}</span>`:''}
+      <div class="ticket-card-block">
+        <strong>${paymentLabel.toUpperCase()}</strong>
+        <b>•••• •••• •••• ${String(op.pan||card.pan).slice(-4)}</b>
       </div>
-      <div class="ticket-emv"><span>TVR ${isQr?'NO APLICA':'0000000000'}</span><span>TSI ${isQr?'NO APLICA':'E800'}</span></div>
-      <div class="ticket-foot">
-        <strong class="ticket-link" data-de="42">LA PERLA COFFEE</strong>
-        <span style="float:right">CUIT 30-23566776-5</span><br>
-        Olazábal 3020, Recoleta, Capital Federal, Argentina<br>
-        Terminal: <span class="ticket-link" data-de="41">TERMID01</span> · Lote ${op.batch}
-      </div>${isoBlock}<div class="ticket-disclaimer">OSC Academy · Simulación educativa · Datos ficticios</div>`;
+      <div class="ticket-kv"><span>MODO DE LECTURA</span><b>${readingLabel}</b></div>
+      <div class="ticket-kv"><span>AID</span><b>${aid}</b></div>
+      <div class="ticket-kv"><span>TVR</span><b>${isQr?'NO APLICA':'0000000000'}</b></div>
+      <div class="ticket-kv"><span>TSI</span><b>${isQr?'NO APLICA':'E800'}</b></div>
+      <div class="ticket-kv"><span>CVM</span><b>${isQr?'WALLET':'1A0300'}</b></div>
+      <div class="ticket-separator"></div>
+      <div class="ticket-auth"><span>Autorización</span><b class="ticket-link" data-de="38">${op.auth||'—'}</b></div>
+      <div class="ticket-auth"><span>STAN</span><b class="ticket-link" data-de="11">${op.stan||'—'}</b></div>
+      <div class="ticket-auth"><span>RRN</span><b class="ticket-link" data-de="37">${op.rrn||'—'}</b></div>
+      ${source?`<div class="ticket-auth"><span>Original</span><b>${source.stan}</b></div>`:''}
+      <div class="ticket-thanks"><strong>¡GRACIAS!</strong><span>CONSERVE ESTE COMPROBANTE</span></div>
+      ${isoBlock}
+      <div class="ticket-disclaimer">POS Virtual · Ticket educativo · Datos ficticios</div>`;
   }
 
   function downloadTicket(){
@@ -428,7 +456,8 @@
       cardId:state.testCard,
       qrType:state.qrType,
       network:profile().id,
-      pan:state.pan
+      pan:state.pan,
+      entryMode:state.entryMode
     };
     state.operations.push(op);
     return op;
@@ -824,18 +853,19 @@ ${rawMessage(msg)}`;
   document.addEventListener('DOMContentLoaded',()=>{
     document.querySelectorAll('[data-payment-method]').forEach(btn=>btn.addEventListener('click',()=>setPaymentMethod(btn.dataset.paymentMethod)));
     const qr=$('qrTypeSelect'), iso=$('showIsoTicket');
-    document.querySelectorAll('[data-test-card]').forEach(cardButton=>cardButton.addEventListener('click',()=>{
-      state.testCard=cardButton.dataset.testCard;
-      document.querySelectorAll('[data-test-card]').forEach(button=>button.classList.toggle('active',button.dataset.testCard===state.testCard));
-      const selected=selectedCard();
-      const summary=$('selectedTestCardSummary');
-      if(summary) summary.textContent=`${selected.label} · PAN de prueba asignado automáticamente · •••• ${selected.pan.slice(-4)}`;
-      refreshNetworkProfile();
-      reset();
-    }));
+    const testCardGrid=$('testCardGrid');
+    if(testCardGrid){
+      testCardGrid.addEventListener('click',event=>{
+        const cardButton=event.target.closest('[data-test-card]');
+        if(!cardButton || cardButton.disabled) return;
+        event.preventDefault();
+        event.stopPropagation();
+        selectTestCard(cardButton.dataset.testCard);
+      });
+    }
     if(qr){qr.value=state.qrType;qr.addEventListener('change',()=>{state.qrType=qr.value;refreshNetworkProfile();reset();});}
     if(iso){iso.checked=state.showIsoTicket;iso.addEventListener('change',()=>{state.showIsoTicket=iso.checked;const op=state.operations.find(o=>o.id===state.selectedSourceOperationId);if(op&&$('receiptPaper').innerHTML.trim())$('receiptPaper').innerHTML=ticketHtml(op);});}
-    refreshNetworkProfile();
+    selectTestCard(state.testCard,{resetFlow:false});
   });
 
 })();

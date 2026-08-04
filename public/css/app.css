@@ -320,3 +320,20 @@ button{font:inherit;color:inherit}
 .test-card.visa .card-network{color:#69aaff}.test-card.mastercard .card-network{color:#ff8b3d}.test-card.disabled{opacity:.45;cursor:not-allowed;grid-column:1/-1}
 .selected-test-card{border:1px dashed #2b5776;background:#071826;color:#9fd2ff;border-radius:7px;padding:7px;font-size:.52rem;text-align:center}
 @media(max-width:1250px){.test-card-grid{grid-template-columns:1fr}}
+
+/* Baseline v3.0.2 - ticket aprobado y selección robusta */
+.test-card{position:relative;z-index:2;touch-action:manipulation}
+.test-card.active{border-color:#20d98b!important;background:linear-gradient(145deg,#0e2f2c,#0b2030)!important;box-shadow:0 0 0 2px rgba(32,217,139,.2),0 8px 18px rgba(0,0,0,.25)!important}
+.test-card.active::after{content:'✓ SELECCIONADA';position:absolute;right:7px;top:7px;font-size:.42rem;color:#20d98b;letter-spacing:.04em}
+.receipt-paper{font-family:Arial,sans-serif!important;color:#111!important}
+.ticket-network{background:#fff;border-width:2px!important;padding:12px 8px!important;margin-bottom:12px!important}
+.ticket-network span{font-size:1.35rem!important}.ticket-network small{font-size:.62rem!important}
+.ticket-merchant{text-align:center;display:grid;gap:3px;font-size:.58rem;line-height:1.35}.ticket-merchant strong{font-size:.8rem;letter-spacing:.02em}.ticket-merchant span{display:block}
+.ticket-separator{border-top:1px dashed #777;margin:10px 0}
+.ticket-kv,.ticket-auth{display:flex;justify-content:space-between;gap:14px;font-size:.58rem;line-height:1.45;margin:3px 0}.ticket-kv span{font-weight:600}.ticket-kv b,.ticket-auth b{text-align:right;overflow-wrap:anywhere}
+.ticket-operation{text-align:center;font-weight:900;font-size:.68rem;margin:9px 0}
+.ticket-card-block{text-align:center;display:grid;gap:5px;margin:11px 0;font-size:.62rem}.ticket-card-block strong{font-size:.67rem}.ticket-card-block b{letter-spacing:.06em}
+.ticket-installments{display:flex;justify-content:space-between!important}.ticket-status{font-size:.68rem}
+.ticket-auth{font-size:.64rem;margin:8px 0}.ticket-thanks{text-align:center;display:grid;gap:3px;margin:14px 0 5px;font-size:.56rem}.ticket-thanks strong{font-size:.75rem}
+.ticket-disclaimer{border-top:1px dashed #777;padding-top:7px!important}
+.ticket-network-qr{border-color:#24c8f2!important}.ticket-network-qr span{color:#087b9b!important}
