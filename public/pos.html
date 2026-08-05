@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>OSC Academy · POS Virtual · v2.6</title>
   <link rel="stylesheet" href="css/app.css">
+<style>.de-learning-row{cursor:pointer}.de-learning-row:hover td{background:#12304a!important}.concept-discovery{position:fixed;inset:0;z-index:120000;background:#020913df;display:grid;place-items:center;padding:20px}.concept-discovery.hidden{display:none}.concept-dialog{position:relative;width:min(570px,100%);padding:25px;border:1px solid #2f83ff;border-radius:16px;background:linear-gradient(180deg,#102740,#071522);box-shadow:0 30px 100px #000c}.concept-close{position:absolute;right:14px;top:14px;border:0;background:transparent;color:#bcd0e2;font-size:18px;cursor:pointer}.concept-kicker{font-size:11px;color:#67bbff;font-weight:800;letter-spacing:.08em}.concept-dialog h2{margin:12px 0 8px}.concept-dialog p{color:#afc0d0;line-height:1.6}.concept-lab{padding:14px;border:1px solid #2e5e83;border-radius:10px;background:#0a1d2f;display:grid;gap:4px}.concept-lab span,.concept-lab small{color:#8fa7bb;font-size:11px}.concept-actions{display:flex;justify-content:space-between;align-items:center;margin-top:16px}.concept-actions button,.concept-actions a{padding:10px 13px;border:1px solid #2d699b;border-radius:8px;background:#123d62;color:white;text-decoration:none;font-size:12px}.concept-actions button{cursor:pointer}</style>
 </head>
 <body>
 <div class="app">
@@ -361,10 +362,10 @@
 
 <script src="js/network-profiles.js?v=3.1.1"></script>
 <script src="js/switch-store.js?v=3.1.1"></script>
-<script src="js/app.js?v=3.1.1"></script>
+<script src="js/app.js?v=3.3"></script>
 <script>document.addEventListener('DOMContentLoaded',()=>{document.querySelectorAll('.pos-scenario-mini button').forEach((b,i)=>b.onclick=()=>{document.querySelectorAll('.pos-scenario-mini button').forEach(x=>x.classList.remove('active'));b.classList.add('active');const original=document.querySelectorAll('#scenarioGrid button')[i];if(original)original.click()});const log=document.getElementById('posTechEvents');const status=document.getElementById('flowResponse');if(log&&status)new MutationObserver(()=>{const d=document.createElement('div');d.textContent=new Date().toLocaleTimeString('es-AR')+' · '+status.textContent;log.prepend(d);while(log.children.length>8)log.lastChild.remove()}).observe(status,{childList:true,subtree:true,characterData:true})});</script>
 <script src="js/permissions.js"></script>
 
-<div id="osc-version-badge" style="position:fixed;right:14px;bottom:12px;z-index:99999;background:#0d2238;border:1px solid #2f83ff;color:#9fd0ff;padding:7px 11px;border-radius:999px;font:600 12px/1.1 Inter,Segoe UI,Arial,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.28)">Baseline v3.1.1 · Sprint 2 Hotfix</div>
+<div id="osc-version-badge" style="position:fixed;right:14px;bottom:12px;z-index:99999;background:#0d2238;border:1px solid #2f83ff;color:#9fd0ff;padding:7px 11px;border-radius:999px;font:600 12px/1.1 Inter,Segoe UI,Arial,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.28)">Baseline v3.3 · Smart Learning</div>
 </body>
 </html>

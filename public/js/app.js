@@ -250,6 +250,7 @@
 
   function activeBits(fields){return new Set(fields.map(r=>Number(r[0])))}
   function bitmapHex(fields){
+    document.querySelectorAll('#deTable .de-learning-row').forEach(row=>row.addEventListener('click',()=>openConceptDiscovery(row.dataset.de)));
     const bits=activeBits(fields);
     const hasSecondary=[...bits].some(bit=>bit>64);
     if(hasSecondary) bits.add(1);
@@ -382,9 +383,29 @@
     URL.revokeObjectURL(anchor.href);
   }
 
+
+  const discoveryConcepts={
+    '55':{title:'DE55 — ICC System Related Data',summary:'Contiene datos EMV codificados en formato TLV. Puede incluir tags como 9F26, 95, 82, 9F10, 9F36 y 9F37.',lab:'Contactless, DE55 y ARQC'},
+    '52':{title:'DE52 — Personal Identification Number Data',summary:'Transporta el PIN Block cifrado. Su construcción y protección se relacionan con HSM, llaves y PCI PIN.',lab:'Seguridad, HSM y PIN Block'},
+    '35':{title:'DE35 — Track 2 Data',summary:'Representa datos capturados de banda o equivalentes y requiere tratamiento seguro por contener información sensible.',lab:'Seguridad de datos de tarjeta'},
+    '38':{title:'DE38 — Authorization Identification Response',summary:'Código asignado en una aprobación y utilizado posteriormente para trazabilidad y clearing.',lab:'Ciclo completo de una transacción'},
+    '39':{title:'DE39 — Response Code',summary:'Expresa la decisión de autorización o el resultado del procesamiento.',lab:'Escenarios y respuestas'}
+  };
+  function ensureDiscoveryModal(){
+    let modal=document.getElementById('conceptDiscoveryModal');if(modal)return modal;
+    modal=document.createElement('div');modal.id='conceptDiscoveryModal';modal.className='concept-discovery hidden';
+    modal.innerHTML=`<div class="concept-dialog"><button class="concept-close" type="button">✕</button><span class="concept-kicker">🔬 NUEVO CONCEPTO DESCUBIERTO</span><h2 id="conceptTitle"></h2><p id="conceptSummary"></p><div class="concept-lab"><span>Próximo nivel</span><strong id="conceptLab"></strong><small>Este tema forma parte del Laboratorio de Investigación.</small></div><div class="concept-actions"><button id="conceptInterest" type="button">👍 Me interesa</button><a href="research.html">Ver investigación →</a></div></div>`;
+    document.body.appendChild(modal);modal.querySelector('.concept-close').onclick=()=>modal.classList.add('hidden');modal.onclick=e=>{if(e.target===modal)modal.classList.add('hidden')};return modal;
+  }
+  function openConceptDiscovery(de){
+    const concept=discoveryConcepts[String(de)];if(!concept)return;
+    const modal=ensureDiscoveryModal();modal.querySelector('#conceptTitle').textContent=concept.title;modal.querySelector('#conceptSummary').textContent=concept.summary;modal.querySelector('#conceptLab').textContent=concept.lab;
+    const interest=modal.querySelector('#conceptInterest');interest.textContent='👍 Me interesa';interest.disabled=false;interest.onclick=()=>{const key='oscConceptInterest'+de;localStorage.setItem(key,String(Number(localStorage.getItem(key)||0)+1));interest.textContent='✓ Interés registrado';interest.disabled=true};modal.classList.remove('hidden');
+  }
+
   function renderFields(fields){
     $('deTable').innerHTML=fields.length
-      ?fields.map(r=>`<tr>${r.map(c=>`<td>${c}</td>`).join('')}</tr>`).join('')
+      ?fields.map(r=>`<tr data-de="${String(r[0]).replace('DE','')}" class="de-learning-row">${r.map(c=>`<td>${c}</td>`).join('')}</tr>`).join('')
       :`<tr><td colspan="6" style="text-align:center;color:#7f93a8;padding:22px">Los campos se activarán paso a paso durante la operación.</td></tr>`;
     $('deCount').textContent=fields.length; const fc=document.getElementById('fieldCount'); if(fc) fc.textContent=fields.length;
     $('totalLength').textContent=fields.length?`${fields.reduce((a,r)=>a+(parseInt(r[3])||8),0)} bytes`:'0 bytes';

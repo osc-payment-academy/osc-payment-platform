@@ -1,0 +1,14 @@
+OSC PAYMENT ACADEMY — BASELINE v3.3
+
+SMART LEARNING + EBOOK PROTEGIDO
+
+- El eBook ISO 8583 Desde Cero queda bloqueado para lectura y descarga.
+- Se elimina el archivo EPUB del paquete público.
+- Botón Desbloquear eBook y modal de acceso Premium.
+- Se elimina la duplicidad del roadmap Próximamente del Dashboard.
+- Laboratorio de Investigación queda como único roadmap permanente.
+- Temas: QR, Contactless/DE55, Wallets, Tokenización, Apple/Google Pay, ARQC/ARPC, ISO 20022, SoftPOS, HSM y PIN Block.
+- Primer Smart Learning Engine en POS: filas de DE avanzados abren fichas Concepto descubierto.
+- Botón Me interesa y acceso directo a Investigación.
+
+Nota: los votos se almacenan localmente hasta implementar login y Cloudflare D1.
