@@ -1,0 +1,13 @@
+OSC PAYMENT ACADEMY
+Baseline v3.3.4.1 - ATM Switch Persistence Hotfix
+
+Correcciones:
+- Toda operación ATM 0200/0210 se registra en el workspace del Switch del Adquirente.
+- Las operaciones ATM aprobadas, rechazadas, consultas y transferencias quedan identificadas por canal ATM y red Visa/Mastercard.
+- Una reversa ATM 0420/0430 se registra como operación separada y la extracción original queda marcada REVERSED / EXCLUDED para clearing.
+- El historial de mensajes ATM se conserva en localStorage al salir del módulo y se restaura al regresar.
+- Se mantienen PAN enmascarado, STAN, RRN, importe, MTI y campos de solicitud/respuesta.
+
+Persistencia actual:
+- Navegador local (localStorage).
+- La persistencia por usuario y entre dispositivos se implementará con Login + Cloudflare D1.

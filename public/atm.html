@@ -452,6 +452,7 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
 </div>
 
 <script src="js/network-profiles.js"></script>
+<script src="js/switch-store.js?v=3.3.4.1"></script>
 <script>
 (() => {
   const $ = id => document.getElementById(id);
@@ -475,6 +476,30 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
     cardType:'credit'
   };
 
+
+  const ATM_HISTORY_KEY='oscAcademyAtmMessageHistoryV1';
+
+  function saveAtmHistory(){
+    try{localStorage.setItem(ATM_HISTORY_KEY,JSON.stringify(state.messages.slice(0,120)))}catch(e){console.warn('No se pudo guardar historial ATM',e)}
+  }
+
+  function historyRow(message){
+    const tr=document.createElement('tr');
+    tr.dataset.id=message.id;
+    tr.innerHTML=`<td>${message.time}</td><td>${message.brand==='Visa'?'<span class="brand-logo visa-mark">VISA</span>':'<span class="brand-logo mc-mark"><i></i><i></i></span>'}</td><td><span class="direction ${message.direction==='Entrante'?'in':'out'}">${message.direction}</span></td><td><b>${message.mti}</b></td><td>${message.operation}</td><td>•••• ${String(message.pan||'').slice(-4)}</td><td>${formatAmount(message.amount)}</td><td>${message.responseCode||'—'}</td><td>${message.stan}</td><td>${message.batch||'000001'}</td><td><span class="status-pill ${message.status==='Aprobada'?'ok':'bad'}">${message.status}</span></td>`;
+    tr.addEventListener('click',()=>renderMessage(message));
+    return tr;
+  }
+
+  function restoreAtmHistory(){
+    try{
+      const saved=JSON.parse(localStorage.getItem(ATM_HISTORY_KEY)||'[]');
+      if(Array.isArray(saved)) state.messages=saved;
+    }catch(e){state.messages=[]}
+    const body=$('historyBody');
+    body.innerHTML='';
+    state.messages.slice().reverse().forEach(message=>body.prepend(historyRow(message)));
+  }
 
   const ATM_CARDS={
     'visa-credit':{brand:'visa',type:'credit',pan:'4111111111111111',name:'Visa Crédito',last4:'1111'},
@@ -697,14 +722,12 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
   }
 
   function addMessage(mti,operation,responseCode,fields){
-    const message={id:`MSG-${Date.now()}-${mti}`,mti,operation,responseCode,fields,bitmap:bitmapHex(fields),stan:fields.find(r=>r[0]==='11')?.[2]||state.stan,time:new Date().toLocaleString('es-AR',{hour12:false}),brand:state.brand==='mastercard'?'Mastercard':'Visa',pan:state.pan,amount:fields.find(r=>r[0]==='4')?.[2]||'0',direction:(mti.endsWith('10')||mti.endsWith('30'))?'Entrante':'Saliente',batch:'000001',status:(responseCode==='00'||!responseCode)?'Aprobada':'Rechazada'};
+    const message={id:`MSG-${Date.now()}-${mti}`,mti,operation,responseCode,fields,bitmap:bitmapHex(fields),stan:fields.find(r=>r[0]==='11')?.[2]||state.stan,time:new Date().toLocaleString('es-AR',{hour12:false}),createdAt:new Date().toISOString(),brand:state.brand==='mastercard'?'Mastercard':'Visa',pan:state.pan,amount:fields.find(r=>r[0]==='4')?.[2]||'0',direction:(mti.endsWith('10')||mti.endsWith('30'))?'Entrante':'Saliente',batch:'000001',status:(responseCode==='00'||!String(responseCode||'').trim())?'Aprobada':'Rechazada'};
     state.messages.unshift(message);
-    const tr=document.createElement('tr');
-    tr.dataset.id=message.id;
-    tr.innerHTML=`<td>${message.time}</td><td>${message.brand==='Visa'?'<span class="brand-logo visa-mark">VISA</span>':'<span class="brand-logo mc-mark"><i></i><i></i></span>'}</td><td><span class="direction ${message.direction==='Entrante'?'in':'out'}">${message.direction}</span></td><td><b>${mti}</b></td><td>${operation}</td><td>•••• ${message.pan.slice(-4)}</td><td>${formatAmount(message.amount)}</td><td>${responseCode||'—'}</td><td>${message.stan}</td><td>${message.batch}</td><td><span class="status-pill ${message.status==='Aprobada'?'ok':'bad'}">${message.status}</span></td>`;
-    tr.addEventListener('click',()=>renderMessage(message));
-    $('historyBody').prepend(tr);
+    $('historyBody').prepend(historyRow(message));
+    saveAtmHistory();
     renderMessage(message);
+    return message;
   }
 
   function renderMessage(message){
@@ -754,6 +777,40 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
     },1000);
   }
 
+  function persistAtmTransaction(req,res,code){
+    if(!window.OSCSwitchStore)return;
+    const network=state.brand==='mastercard'?'MASTERCARD':'VISA';
+    const type=state.operation==='withdrawal'?'withdrawal':state.operation==='transfer'?'transfer':'balance_inquiry';
+    const txId=`ATM-${state.stan}-${type}`;
+    window.OSCSwitchStore.addTransaction({
+      id:txId,channel:'ATM',network,type,amountCents:Number(state.amount||0),currency:'USD',
+      status:code==='00'?'APPROVED':'DECLINED',responseCode:code,stan:state.stan,
+      rrn:res.find(r=>r[0]==='37')?.[2]||'',auth:state.auth||'',batch:1,closed:false,
+      clearingStatus:code==='00'?'PENDING':'EXCLUDED',mtiRequest:'0200',mtiResponse:'0210',
+      panLast4:state.pan.slice(-4),raw:null,requestFields:req,responseFields:res,
+      operationLabel:labelOperation(),dateTime:new Date().toISOString()
+    });
+  }
+
+  function persistAtmReversal(req,res){
+    if(!window.OSCSwitchStore)return;
+    const network=state.brand==='mastercard'?'MASTERCARD':'VISA';
+    const originalType=state.operation==='withdrawal'?'withdrawal':state.operation;
+    window.OSCSwitchStore.addTransaction({
+      id:`ATM-${state.stan}-${originalType}`,channel:'ATM',network,type:originalType,
+      amountCents:Number(state.amount||0),currency:'USD',status:'REVERSED',responseCode:'00',stan:state.stan,
+      rrn:`${state.stan}123456`,auth:state.auth||'',batch:1,closed:false,clearingStatus:'EXCLUDED',
+      mtiRequest:'0200',mtiResponse:'0210',panLast4:state.pan.slice(-4),operationLabel:`${labelOperation()} revertida`,dateTime:new Date().toISOString()
+    });
+    window.OSCSwitchStore.addTransaction({
+      id:`ATM-REV-${state.stan}`,channel:'ATM',network,type:'reversal',amountCents:Number(state.amount||0),currency:'USD',
+      status:'APPROVED',responseCode:'00',stan:req.find(r=>r[0]==='11')?.[2]||state.stan,
+      rrn:req.find(r=>r[0]==='37')?.[2]||'',auth:'',batch:1,closed:false,clearingStatus:'EXCLUDED',
+      mtiRequest:'0420',mtiResponse:'0430',panLast4:state.pan.slice(-4),requestFields:req,responseFields:res,
+      operationLabel:'Reversa total ATM',dateTime:new Date().toISOString()
+    });
+  }
+
   function send0200(){
     state.step='processing';state.stan=random6();setFlow(4);
     setScreen('PROCESANDO','<strong>Enviando 0200</strong><small>Aguarde</small>');addTechEvent(`0200 construido · DE3=${processingCode()} · Bitmap calculado`,'done');
@@ -766,7 +823,7 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
       if(state.scenario==='issuerDown')code='91';
       state.auth=code==='00'?random6():'-';
       $('hostStatus').textContent=`${code} - ${code==='00'?'Aprobada':code==='51'?'Fondos insuficientes':'Emisor no disponible'}`;
-      const res=responseFields(code);addMessage('0210',labelOperation(),code,res);addTechEvent(`0210 recibido · DE39=${code}`,'done');
+      const res=responseFields(code);addMessage('0210',labelOperation(),code,res);persistAtmTransaction(req,res,code);addTechEvent(`0210 recibido · DE39=${code}`,'done');
 
       if(code!=='00'){
         setScreen('OPERACIÓN RECHAZADA',`<strong>${code}</strong><small>${$('hostStatus').textContent}</small>`);
@@ -809,6 +866,7 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
       res.push(field(39,'Response Code','00','AN2','Host'));
       res.sort((a,b)=>Number(a[0])-Number(b[0]));
       addMessage('0430','Respuesta reversa total','00',res);
+      persistAtmReversal(req,res);
       $('reversalStatus').textContent='0430 aprobada · saldo restituido';
       setScreen('OPERACIÓN REVERSADA','<strong>Saldo restituido</strong><small>Retire su tarjeta</small>');
       state.step='done';
@@ -929,6 +987,6 @@ document.addEventListener('DOMContentLoaded',()=>{
 </script>
 <script src="js/permissions.js"></script>
 
-<div id="osc-version-badge" style="position:fixed;right:14px;bottom:12px;z-index:99999;background:#0d2238;border:1px solid #2f83ff;color:#9fd0ff;padding:7px 11px;border-radius:999px;font:600 12px/1.1 Inter,Segoe UI,Arial,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.28)">Baseline v3.3.3 · Visa ATM Conformance</div>
+<div id="osc-version-badge" style="position:fixed;right:14px;bottom:12px;z-index:99999;background:#0d2238;border:1px solid #2f83ff;color:#9fd0ff;padding:7px 11px;border-radius:999px;font:600 12px/1.1 Inter,Segoe UI,Arial,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.28)">Baseline v3.3.4.1 · ATM Switch Persistence</div>
 </body>
 </html>
