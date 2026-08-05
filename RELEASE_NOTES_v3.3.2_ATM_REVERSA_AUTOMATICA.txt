@@ -1,0 +1,16 @@
+OSC PAYMENT ACADEMY
+Baseline v3.3.2 — ATM Reversa Automática por Efectivo No Retirado
+
+CORRECCIONES
+- Si la extracción 0200/0210 fue aprobada y el cliente no retira los billetes, el ATM retracta el efectivo y genera automáticamente una reversa total.
+- El historial conserva cuatro mensajes separados y seleccionables:
+  0200 Solicitud de extracción
+  0210 Extracción aprobada
+  0400 Reversa total por efectivo no retirado
+  0410 Respuesta de reversa aprobada
+- El panel técnico informa retracto, creación del 0400, recepción del 0410 y restitución del saldo.
+- Se agregó protección para evitar reversas duplicadas si coinciden el timeout y el botón de simulación.
+
+ALCANCE DE PERSISTENCIA
+- Esta baseline continúa utilizando almacenamiento local del navegador para las pruebas actuales.
+- El workspace independiente y permanente por alumno se implementará con Login + Cloudflare D1 en la v4.0.

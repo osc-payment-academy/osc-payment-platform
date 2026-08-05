@@ -246,7 +246,7 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
 
   <main class="main">
     <header class="topbar">
-      <div class="title"><span class="title-icon">🏧</span><div><h1>ATM Virtual · v3.3.1</h1><p>Pantalla táctil, teclado físico, transferencia y dispensación USD</p></div></div>
+      <div class="title"><span class="title-icon">🏧</span><div><h1>ATM Virtual · v3.3.2</h1><p>Pantalla táctil, teclado físico, transferencia y dispensación USD</p></div></div>
       <div class="top-actions"><a href="pos.html">← POS</a><a href="parser.html">Parser →</a><button id="newOperation">Nueva operación</button></div>
     </header>
 
@@ -675,7 +675,10 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
   }
 
   let cashTimer=null;
+  let cashOutcomeHandled=false;
   function finishCash(reason){
+    if(cashOutcomeHandled)return;
+    cashOutcomeHandled=true;
     clearInterval(cashTimer);cashTimer=null;
     const notes=$('banknotes'),door=$('cashDoor'),counter=$('dispenseCountdown'),actions=$('cashActions');
     notes.classList.remove('dispense');notes.classList.add('retract');actions.classList.remove('show');
@@ -684,12 +687,18 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
       door.classList.remove('open');counter.classList.remove('show');
       $('deviceStatus').textContent=reason==='taken'?'Efectivo retirado · dispensador cerrado':'Efectivo retractado · revisar conciliación ATM';
       setScreen(reason==='taken'?'OPERACIÓN FINALIZADA':'EFECTIVO RETRACTADO',
-        reason==='taken'?'<strong>Retire su tarjeta</strong><small>Gracias por utilizar OSC BANK</small>':'<strong>Los billetes volvieron al ATM</strong><small>Se registró un evento interno de retracto</small>');
+        reason==='taken'?'<strong>Retire su tarjeta</strong><small>Gracias por utilizar OSC BANK</small>':'<strong>Los billetes volvieron al ATM</strong><small>Generando reversa total 0400</small>');
+      if(reason==='retracted'){
+        addTechEvent('Billetes retractados · generando reversa total 0400','warn');
+        $('reversalStatus').textContent='Retracto confirmado · 0400 pendiente';
+        setTimeout(sendReversal,700);
+      }
     },900);
   }
 
   function dispenseCash(){
     const notes=$('banknotes'),door=$('cashDoor'),counter=$('dispenseCountdown'),value=$('countdownValue'),actions=$('cashActions');
+    cashOutcomeHandled=false;
     notes.classList.remove('retract');door.classList.add('open');counter.classList.add('show');actions.classList.add('show');
     requestAnimationFrame(()=>notes.classList.add('dispense'));
     addTechEvent('Dispensador abierto · billetes USD presentados','done');
@@ -749,13 +758,13 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
 
   function sendReversal(){
     setFlow(7);$('reversalStatus').textContent='0400 en proceso';
-    const req=reversalFields();addMessage('0400','Reversa técnica','',req);
+    const req=reversalFields();addMessage('0400','Reversa total por efectivo no retirado','',req);
     setTimeout(()=>{
       const res=req.filter(r=>r[0]!=='90');
       res.push(field(39,'Response Code','00','AN2','Host'));
       res.sort((a,b)=>Number(a[0])-Number(b[0]));
-      addMessage('0410','Reversa técnica','00',res);
-      $('reversalStatus').textContent='0410 aprobada';
+      addMessage('0410','Respuesta reversa total','00',res);
+      $('reversalStatus').textContent='0410 aprobada · saldo restituido';
       setScreen('OPERACIÓN REVERSADA','<strong>Saldo restituido</strong><small>Retire su tarjeta</small>');
       state.step='done';
     },850);
@@ -806,6 +815,7 @@ ${raw(m)}`;
   function reset(){
     state.step='card';state.pin='';state.amount='';state.destination='';state.stan=null;state.auth=null;state.selectedMessageId=null;
     clearInterval(cashTimer);cashTimer=null;
+    cashOutcomeHandled=false;
     $('atmCard').classList.remove('insert');$('banknotes').classList.remove('dispense','retract');$('cashDoor').classList.remove('open');$('dispenseCountdown').classList.remove('show');$('cashActions').classList.remove('show');
     $('softOptions').classList.remove('touch-operation-grid');
     $('techEvents').innerHTML='<div class="tech-event">Esperando inserción de tarjeta.</div>';
