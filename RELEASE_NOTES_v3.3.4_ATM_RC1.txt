@@ -1,0 +1,9 @@
+OSC PAYMENT ACADEMY — Baseline v3.3.4 ATM RC1
+
+- ATM adopta el selector visual de tarjetas del POS.
+- Historial ATM unificado con POS: fecha/hora, logo de red, dirección, MTI, operación, PAN enmascarado, importe, respuesta, STAN, lote y estado.
+- Manual Navigator desplegable con 0200/0210, 0420/0430, 0220 y 0422, explicación y referencias de capítulo/página.
+- Las referencias son orientativas por edición; el alumno debe consultar el manual oficial de su organización.
+- Curso Interactivo marcado como Próximamente y deshabilitado.
+- Biblioteca técnica reservada al perfil instructor/superadministrador; no se incluyen manuales oficiales en el paquete público.
+- Se mantiene reversa automática ATM 0420/0430 por efectivo no retirado.

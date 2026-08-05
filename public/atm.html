@@ -228,7 +228,7 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
     <div class="brand"><div class="brand-main"><span>OSC</span> ACADEMY</div><div class="brand-sub">Laboratorio de Medios de Pago</div></div>
     <nav>
       <a class="nav" href="index.html">⌂ Dashboard</a>
-      <a class="nav" href="curso_interactivo.html">🎓 Curso Interactivo</a>
+      <a class="nav nav-disabled" href="#" aria-disabled="true">🎓 Curso Interactivo <span class="soon-badge">PRÓXIMAMENTE</span></a>
       <a class="nav" href="pos.html">▣ POS Virtual</a>
       <a class="nav" href="constructor.html">⌘ Constructor ISO8583</a>
       <a class="nav active" href="atm.html">🏧 ATM Virtual</a>
@@ -248,7 +248,7 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
 
   <main class="main">
     <header class="topbar">
-      <div class="title"><span class="title-icon">🏧</span><div><h1>ATM Virtual · v3.3.3</h1><p>Pantalla táctil, teclado físico, transferencia y dispensación USD</p></div></div>
+      <div class="title"><span class="title-icon">🏧</span><div><h1>ATM Virtual · v3.3.4 RC1</h1><p>Pantalla táctil, teclado físico, transferencia y dispensación USD</p></div></div>
       <div class="top-actions"><a href="pos.html">← POS</a><a href="parser.html">Parser →</a><button id="newOperation">Nueva operación</button></div>
     </header>
 
@@ -257,11 +257,19 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
         <section class="panel">
           <h2>CAJERO FULL SIZE</h2>
           <p class="panel-sub">Interactuá con la pantalla, teclado y dispensador.</p>
-          <div class="network-profile-box atm-card-extension" id="atmCardExtension">
-            <div class="network-profile-title atm-profile-heading"><span>Seleccione la tarjeta de prueba</span><span class="network-validation">PAN asignado automáticamente</span></div>
-            <div class="atm-card-selectors">
-              <label>Marca<select id="atmBrandSelect"><option value="visa">Visa</option><option value="mastercard">Mastercard</option><option value="amex" disabled>American Express · Próximamente</option></select></label>
-              <label>Tipo de tarjeta<select id="atmTypeSelect"><option value="credit">Crédito</option><option value="debit">Débito</option></select></label>
+          <div class="network-profile-box payment-lab-box atm-card-extension" id="atmCardExtension">
+            <div class="network-profile-title"><span>MEDIO DE PAGO</span><span class="network-validation">PAN asignado automáticamente</span></div>
+            <div class="payment-method-tabs" role="group" aria-label="Medio de pago ATM">
+              <button type="button" class="payment-method active">💳 Tarjeta</button>
+              <button type="button" class="payment-method" disabled>▦ QR · Próximamente</button>
+            </div>
+            <div class="test-card-heading">Seleccione la tarjeta de prueba</div>
+            <div class="test-card-grid" id="atmTestCardGrid">
+              <button type="button" class="test-card active visa" data-atm-card="visa-credit"><span class="card-network visa-logo">VISA</span><strong>CRÉDITO</strong><small>•••• 1111 · BIN 411111</small></button>
+              <button type="button" class="test-card visa" data-atm-card="visa-debit"><span class="card-network visa-logo">VISA</span><strong>DÉBITO</strong><small>•••• 0002 · BIN 400000</small></button>
+              <button type="button" class="test-card mastercard" data-atm-card="mastercard-credit"><span class="card-network mc-logo"><i></i><i></i></span><strong>CRÉDITO</strong><small>•••• 4444 · BIN 555555</small></button>
+              <button type="button" class="test-card mastercard" data-atm-card="mastercard-debit"><span class="card-network mc-logo"><i></i><i></i></span><strong>DÉBITO</strong><small>•••• 8210 · BIN 222300</small></button>
+              <button type="button" class="test-card disabled" disabled><span class="card-network">AMERICAN EXPRESS</span><strong>PRÓXIMAMENTE</strong><small>Arquitectura preparada</small></button>
             </div>
             <div class="selected-test-card atm-selected-card" id="atmSelectedCardSummary">Visa Crédito · PAN de prueba asignado automáticamente · •••• 1111</div>
             <div id="atmNetworkBadge" class="network-profile-badge"></div>
@@ -368,6 +376,19 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
             <button data-scenario="dispenserFail">00 + falla dispensador</button>
           </div>
 
+          <details class="manual-navigator">
+            <summary>📖 Flujo de mensajes Visa ATM y referencia técnica</summary>
+            <div class="manual-flow-grid">
+              <article><b>0200</b><strong>Cash Disbursement</strong><small>Solicitud financiera de extracción.</small><span>Manual Visa Full Service ATM · Capítulo 5 · pág. 646*</span></article>
+              <article><b>0210</b><strong>Financial Response</strong><small>Respuesta a la solicitud 0200.</small><span>Capítulo 5 · sección relacionada con 0200</span></article>
+              <article><b>0420</b><strong>Reversal Advice</strong><small>Reversa financiera vinculada a la extracción original.</small><span>Capítulo 5 · pág. 660*</span></article>
+              <article><b>0430</b><strong>Reversal Response</strong><small>Confirmación del advice de reversa.</small><span>Capítulo 5 · sección 0420</span></article>
+              <article><b>0220</b><strong>Adjustment</strong><small>Ajuste posterior, por ejemplo misdispense.</small><span>Capítulo 5 · pág. 669*</span></article>
+              <article><b>0422</b><strong>Dispute Financial</strong><small>Mensaje financiero de disputa dentro del ciclo ATM.</small><span>Capítulo 5 · pág. 680*</span></article>
+            </div>
+            <p class="manual-note">* Las páginas corresponden a la edición utilizada para desarrollar el laboratorio. La numeración puede variar según la versión suministrada por su banco, consultora o adquirente; busque el mismo capítulo o sección equivalente.</p>
+          </details>
+
           <div class="notice">Los códigos, MTI y campos se presentan con fines didácticos. Incluye extracción, consulta de saldo y transferencia. No incorpora depósitos, cheques ni cambio de PIN.</div>
           <div class="tech-mode">
             <h3>MODO TÉCNICO · EVENTOS EN TIEMPO REAL</h3>
@@ -420,9 +441,9 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
         </section>
       </div>
       <section class="panel atm-history-wide"><div class="history">
-            <h2>HISTORIAL DE MENSAJES</h2>
+            <h2>HISTORIAL DE TRANSACCIONES</h2>
             <table>
-              <thead><tr><th>HORA</th><th>MARCA</th><th>MTI</th><th>OPERACIÓN</th><th>PAN</th><th>RESP.</th><th>STAN</th></tr></thead>
+              <thead><tr><th>FECHA / HORA</th><th>RED</th><th>DIRECCIÓN</th><th>MTI</th><th>OPERACIÓN</th><th>PAN</th><th>IMPORTE</th><th>RESP.</th><th>STAN</th><th>LOTE</th><th>ESTADO</th></tr></thead>
               <tbody id="historyBody"></tbody>
             </table>
           </div></section>
@@ -453,6 +474,22 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
     brand:'visa',
     cardType:'credit'
   };
+
+
+  const ATM_CARDS={
+    'visa-credit':{brand:'visa',type:'credit',pan:'4111111111111111',name:'Visa Crédito',last4:'1111'},
+    'visa-debit':{brand:'visa',type:'debit',pan:'4000000000000002',name:'Visa Débito',last4:'0002'},
+    'mastercard-credit':{brand:'mastercard',type:'credit',pan:'5555555555554444',name:'Mastercard Crédito',last4:'4444'},
+    'mastercard-debit':{brand:'mastercard',type:'debit',pan:'2223000048408210',name:'Mastercard Débito',last4:'8210'}
+  };
+  document.querySelectorAll('[data-atm-card]').forEach(btn=>btn.addEventListener('click',()=>{
+    const c=ATM_CARDS[btn.dataset.atmCard];
+    document.querySelectorAll('[data-atm-card]').forEach(x=>x.classList.toggle('active',x===btn));
+    state.cardKey=btn.dataset.atmCard;state.pan=c.pan;state.brand=c.brand;state.cardType=c.type;
+    $('atmSelectedCardSummary').textContent=`${c.name} · PAN de prueba asignado automáticamente · •••• ${c.last4}`;
+    document.querySelector('.card-pan').textContent=c.pan.replace(/(.{4})/g,'$1 ').trim();
+    addTechEvent(`${c.name} seleccionada · PAN •••• ${c.last4}`,'done');
+  }));
 
   document.addEventListener('osc-atm-card-change',event=>{
     const c=event.detail;
@@ -660,11 +697,11 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
   }
 
   function addMessage(mti,operation,responseCode,fields){
-    const message={id:`MSG-${Date.now()}-${mti}`,mti,operation,responseCode,fields,bitmap:bitmapHex(fields),stan:fields.find(r=>r[0]==='11')?.[2]||state.stan,time:timeNow(),brand:state.brand==='mastercard'?'Mastercard':'Visa',pan:state.pan};
+    const message={id:`MSG-${Date.now()}-${mti}`,mti,operation,responseCode,fields,bitmap:bitmapHex(fields),stan:fields.find(r=>r[0]==='11')?.[2]||state.stan,time:new Date().toLocaleString('es-AR',{hour12:false}),brand:state.brand==='mastercard'?'Mastercard':'Visa',pan:state.pan,amount:fields.find(r=>r[0]==='4')?.[2]||'0',direction:(mti.endsWith('10')||mti.endsWith('30'))?'Entrante':'Saliente',batch:'000001',status:(responseCode==='00'||!responseCode)?'Aprobada':'Rechazada'};
     state.messages.unshift(message);
     const tr=document.createElement('tr');
     tr.dataset.id=message.id;
-    tr.innerHTML=`<td>${message.time}</td><td>${message.brand}</td><td>${mti}</td><td>${operation}</td><td>•••• ${message.pan.slice(-4)}</td><td>${responseCode||'—'}</td><td>${message.stan}</td>`;
+    tr.innerHTML=`<td>${message.time}</td><td>${message.brand==='Visa'?'<span class="brand-logo visa-mark">VISA</span>':'<span class="brand-logo mc-mark"><i></i><i></i></span>'}</td><td><span class="direction ${message.direction==='Entrante'?'in':'out'}">${message.direction}</span></td><td><b>${mti}</b></td><td>${operation}</td><td>•••• ${message.pan.slice(-4)}</td><td>${formatAmount(message.amount)}</td><td>${responseCode||'—'}</td><td>${message.stan}</td><td>${message.batch}</td><td><span class="status-pill ${message.status==='Aprobada'?'ok':'bad'}">${message.status}</span></td>`;
     tr.addEventListener('click',()=>renderMessage(message));
     $('historyBody').prepend(tr);
     renderMessage(message);
