@@ -1,0 +1,16 @@
+OSC PAYMENT ACADEMY
+Baseline v3.3.3 - Visa ATM Conformance (primera etapa)
+
+CAMBIOS
+- Corrección visual del selector de tarjeta del ATM: tipografía reducida y separación correcta entre título y texto PAN.
+- Historial de mensajes ampliado con columnas Marca y PAN enmascarado.
+- Reversa automática de extracción alineada al perfil Visa Full Service ATM: 0420/0430.
+- Se mantienen vinculados 0200/0210 y 0420/0430 mediante STAN, RRN y Original Data Elements.
+- Se incorporan DE32 y DE42 en la operación ATM y en la reversa; DE63 se incorpora en la reversa como Network Identification Code educativo.
+- PAN completo nunca se muestra en el historial.
+
+FUENTE DE CONFORMIDAD
+- Visa Full Service ATM Online Messages - Technical Specifications, effective 21 October 2024.
+
+ALCANCE
+Esta entrega es la primera etapa de confrontación. La auditoría integral de todos los mensajes, campos condicionales, chip/VSDC, POS, clearing y settlement continúa por módulos. Los valores de institución y red incluidos son educativos y no corresponden a endpoints productivos.

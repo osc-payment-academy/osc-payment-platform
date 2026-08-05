@@ -212,6 +212,8 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
 .atm-card-selectors label{display:grid;gap:5px;color:#9fb4c8;font-size:.55rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em}
 .atm-card-selectors select{width:100%;border:1px solid #2a4964;background:#0d2133;color:#fff;border-radius:8px;padding:9px;font-size:.65rem}
 .atm-selected-card{font-size:.57rem;color:#b9dcff}
+.atm-profile-heading{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}.atm-profile-heading>span:first-child{font-size:.76rem!important;line-height:1.2;font-weight:750;color:#eef7ff;text-transform:none;letter-spacing:0}.atm-profile-heading .network-validation{font-size:.57rem!important;color:#8fb4cf;white-space:nowrap}
+.atm-history-wide th:nth-child(1){width:9%}.atm-history-wide th:nth-child(2){width:11%}.atm-history-wide th:nth-child(3){width:8%}.atm-history-wide th:nth-child(4){width:25%}.atm-history-wide th:nth-child(5){width:15%}.atm-history-wide th:nth-child(6){width:8%}.atm-history-wide th:nth-child(7){width:10%}
 .bitmap{grid-template-columns:repeat(16,minmax(22px,1fr))!important;gap:4px!important}
 .bit{border:1px solid #34536d!important;background:#11283b!important;color:#c7d8e8!important;font-size:.52rem!important;font-weight:650!important;text-shadow:0 1px 1px rgba(0,0,0,.55)}
 .bit.on{border-color:#24ee98!important;background:#087847!important;color:#fff!important;font-weight:900!important;box-shadow:0 0 0 1px rgba(36,238,152,.28),0 0 8px rgba(36,238,152,.35)!important}
@@ -241,12 +243,12 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
       <a class="nav" href="#" data-op="transfer">Transferencia</a>
       <a class="nav" href="#" data-op="reversal">Reversa técnica</a>
     </nav>
-    <div class="tip"><strong>Consejo OSC</strong><p>La extracción permite mostrar el caso más didáctico: aprobación del host y falla del dispensador, seguida de reversa 0400.</p></div>
+    <div class="tip"><strong>Consejo OSC</strong><p>La extracción permite mostrar el caso más didáctico: aprobación del host y falla del dispensador, seguida de reversa 0420/0430 conforme al perfil Visa ATM.</p></div>
   </aside>
 
   <main class="main">
     <header class="topbar">
-      <div class="title"><span class="title-icon">🏧</span><div><h1>ATM Virtual · v3.3.2</h1><p>Pantalla táctil, teclado físico, transferencia y dispensación USD</p></div></div>
+      <div class="title"><span class="title-icon">🏧</span><div><h1>ATM Virtual · v3.3.3</h1><p>Pantalla táctil, teclado físico, transferencia y dispensación USD</p></div></div>
       <div class="top-actions"><a href="pos.html">← POS</a><a href="parser.html">Parser →</a><button id="newOperation">Nueva operación</button></div>
     </header>
 
@@ -256,7 +258,7 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
           <h2>CAJERO FULL SIZE</h2>
           <p class="panel-sub">Interactuá con la pantalla, teclado y dispensador.</p>
           <div class="network-profile-box atm-card-extension" id="atmCardExtension">
-            <div class="network-profile-title"><span>SELECCIONE LA TARJETA DE PRUEBA</span><span class="network-validation">PAN asignado automáticamente</span></div>
+            <div class="network-profile-title atm-profile-heading"><span>Seleccione la tarjeta de prueba</span><span class="network-validation">PAN asignado automáticamente</span></div>
             <div class="atm-card-selectors">
               <label>Marca<select id="atmBrandSelect"><option value="visa">Visa</option><option value="mastercard">Mastercard</option><option value="amex" disabled>American Express · Próximamente</option></select></label>
               <label>Tipo de tarjeta<select id="atmTypeSelect"><option value="credit">Crédito</option><option value="debit">Débito</option></select></label>
@@ -420,7 +422,7 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
       <section class="panel atm-history-wide"><div class="history">
             <h2>HISTORIAL DE MENSAJES</h2>
             <table>
-              <thead><tr><th>HORA</th><th>MTI</th><th>OPERACIÓN</th><th>RESP.</th><th>STAN</th></tr></thead>
+              <thead><tr><th>HORA</th><th>MARCA</th><th>MTI</th><th>OPERACIÓN</th><th>PAN</th><th>RESP.</th><th>STAN</th></tr></thead>
               <tbody id="historyBody"></tbody>
             </table>
           </div></section>
@@ -498,8 +500,10 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
       field(14,'Expiration Date','2912','N4','Tarjeta'),
       field(22,'POS Entry Mode','051','N3','Lectura chip'),
       field(25,'POS Condition Code','00','N2','ATM'),
+      field(32,'Acquiring Institution ID','12345678901','LLVAR','Adquirente educativo'),
       field(35,'Track 2 Data',`${state.pan}=2912201`,'LLVAR','Chip EMV'),
       field(41,'Terminal ID','ATM00001','ANS8','Configuración ATM'),
+      field(42,'Card Acceptor ID','OSC BANK ATM001','ANS15','Institución operadora'),
       field(49,'Currency Code','840','N3','Configuración ATM'),
       field(52,'PIN Data',pinBlock(),'B64','PIN cifrado'),
       field(53,'Security Control Information','2000000000000000','N16','Seguridad PIN')
@@ -516,9 +520,11 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
       field(3,'Processing Code',processingCode(),'N6','Eco de solicitud'),
       field(7,'Transmission Date & Time',de7Now(),'N10','Host'),
       field(11,'System Trace Audit Number',state.stan,'N6','Eco de solicitud'),
+      field(32,'Acquiring Institution ID','12345678901','LLVAR','Eco de solicitud'),
       field(37,'Retrieval Reference Number',`${state.stan}123456`,'AN12','Host'),
       field(39,'Response Code',code,'AN2','Host'),
       field(41,'Terminal ID','ATM00001','ANS8','Eco de solicitud'),
+      field(42,'Card Acceptor ID','OSC BANK ATM001','ANS15','Eco de solicitud'),
       field(49,'Currency Code','840','N3','Eco de solicitud')
     ];
     if(state.operation!=='balance') fields.splice(3,0,field(4,'Transaction Amount',String(state.amount||0).padStart(12,'0'),'N12','Eco de solicitud'));
@@ -536,8 +542,10 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
       field(4,'Transaction Amount',String(state.amount||0).padStart(12,'0'),'N12','Operación original'),
       field(7,'Transmission Date & Time',de7Now(),'N10','Reloj del sistema'),
       field(11,'System Trace Audit Number',random6(),'N6','Nueva reversa'),
+      field(32,'Acquiring Institution ID','12345678901','LLVAR','Operación original'),
       field(37,'Retrieval Reference Number',`${state.stan}123456`,'AN12','Operación original'),
       field(41,'Terminal ID','ATM00001','ANS8','Configuración ATM'),
+      field(42,'Card Acceptor ID','OSC BANK ATM001','ANS15','Institución operadora'),
       field(49,'Currency Code','840','N3','Operación original'),
       field(90,'Original Data Elements',`0200${state.stan}${de7Now()}12345678901`.padEnd(42,'0').slice(0,42),'N42','Relación con 0200 original')
     ];
@@ -652,11 +660,11 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
   }
 
   function addMessage(mti,operation,responseCode,fields){
-    const message={id:`MSG-${Date.now()}-${mti}`,mti,operation,responseCode,fields,bitmap:bitmapHex(fields),stan:fields.find(r=>r[0]==='11')?.[2]||state.stan,time:timeNow()};
+    const message={id:`MSG-${Date.now()}-${mti}`,mti,operation,responseCode,fields,bitmap:bitmapHex(fields),stan:fields.find(r=>r[0]==='11')?.[2]||state.stan,time:timeNow(),brand:state.brand==='mastercard'?'Mastercard':'Visa',pan:state.pan};
     state.messages.unshift(message);
     const tr=document.createElement('tr');
     tr.dataset.id=message.id;
-    tr.innerHTML=`<td>${message.time}</td><td>${mti}</td><td>${operation}</td><td>${responseCode||'—'}</td><td>${message.stan}</td>`;
+    tr.innerHTML=`<td>${message.time}</td><td>${message.brand}</td><td>${mti}</td><td>${operation}</td><td>•••• ${message.pan.slice(-4)}</td><td>${responseCode||'—'}</td><td>${message.stan}</td>`;
     tr.addEventListener('click',()=>renderMessage(message));
     $('historyBody').prepend(tr);
     renderMessage(message);
@@ -687,10 +695,10 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
       door.classList.remove('open');counter.classList.remove('show');
       $('deviceStatus').textContent=reason==='taken'?'Efectivo retirado · dispensador cerrado':'Efectivo retractado · revisar conciliación ATM';
       setScreen(reason==='taken'?'OPERACIÓN FINALIZADA':'EFECTIVO RETRACTADO',
-        reason==='taken'?'<strong>Retire su tarjeta</strong><small>Gracias por utilizar OSC BANK</small>':'<strong>Los billetes volvieron al ATM</strong><small>Generando reversa total 0400</small>');
+        reason==='taken'?'<strong>Retire su tarjeta</strong><small>Gracias por utilizar OSC BANK</small>':'<strong>Los billetes volvieron al ATM</strong><small>Generando reversa total 0420</small>');
       if(reason==='retracted'){
-        addTechEvent('Billetes retractados · generando reversa total 0400','warn');
-        $('reversalStatus').textContent='Retracto confirmado · 0400 pendiente';
+        addTechEvent('Billetes retractados · generando reversa total 0420','warn');
+        $('reversalStatus').textContent='Retracto confirmado · 0420 pendiente';
         setTimeout(sendReversal,700);
       }
     },900);
@@ -757,14 +765,14 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
   }
 
   function sendReversal(){
-    setFlow(7);$('reversalStatus').textContent='0400 en proceso';
-    const req=reversalFields();addMessage('0400','Reversa total por efectivo no retirado','',req);
+    setFlow(7);$('reversalStatus').textContent='0420 en proceso';
+    const req=reversalFields();addMessage('0420','Reversa total por efectivo no retirado','',req);
     setTimeout(()=>{
       const res=req.filter(r=>r[0]!=='90');
       res.push(field(39,'Response Code','00','AN2','Host'));
       res.sort((a,b)=>Number(a[0])-Number(b[0]));
-      addMessage('0410','Respuesta reversa total','00',res);
-      $('reversalStatus').textContent='0410 aprobada · saldo restituido';
+      addMessage('0430','Respuesta reversa total','00',res);
+      $('reversalStatus').textContent='0430 aprobada · saldo restituido';
       setScreen('OPERACIÓN REVERSADA','<strong>Saldo restituido</strong><small>Retire su tarjeta</small>');
       state.step='done';
     },850);
@@ -884,6 +892,6 @@ document.addEventListener('DOMContentLoaded',()=>{
 </script>
 <script src="js/permissions.js"></script>
 
-<div id="osc-version-badge" style="position:fixed;right:14px;bottom:12px;z-index:99999;background:#0d2238;border:1px solid #2f83ff;color:#9fd0ff;padding:7px 11px;border-radius:999px;font:600 12px/1.1 Inter,Segoe UI,Arial,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.28)">Baseline v3.3.1 · ATM UI</div>
+<div id="osc-version-badge" style="position:fixed;right:14px;bottom:12px;z-index:99999;background:#0d2238;border:1px solid #2f83ff;color:#9fd0ff;padding:7px 11px;border-radius:999px;font:600 12px/1.1 Inter,Segoe UI,Arial,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.28)">Baseline v3.3.3 · Visa ATM Conformance</div>
 </body>
 </html>
