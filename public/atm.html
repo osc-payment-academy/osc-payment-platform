@@ -199,6 +199,12 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
 @media(max-width:1100px){.atm-grid{grid-template-columns:1fr!important}}
 
 .network-profile-box{border:1px solid #234a6b;background:#0a1b2b;border-radius:9px;padding:10px;margin:0 0 10px;display:grid;gap:8px}.network-profile-controls{display:grid;grid-template-columns:145px 1fr;gap:8px}.network-profile-controls select,.network-profile-controls input{padding:8px;border:1px solid #28506f;background:#071522;color:#eef6ff;border-radius:7px}.network-profile-badge{display:flex;gap:7px;align-items:center;font-size:.62rem}.network-profile-badge small{color:#8fa6ba}.osc-network-dot{width:9px;height:9px;border-radius:50%;display:inline-block}
+
+/* v3.3.6 Reconciliación ATM + Manual Navigator */
+.modal-overlay,.manual-drawer-overlay{position:fixed;inset:0;background:rgba(1,8,15,.78);z-index:1000;display:grid;place-items:center;padding:18px}.modal-overlay[hidden],.manual-drawer-overlay[hidden]{display:none!important}
+.reconcile-ticket-modal{position:relative;width:min(620px,96vw);max-height:92vh;overflow:auto;background:#0a1825;border:1px solid #2a587b;border-radius:16px;padding:18px;box-shadow:0 30px 80px #000}.modal-close{position:absolute;right:12px;top:10px;border:0;background:transparent;font-size:1.5rem;cursor:pointer}.reconcile-paper{width:min(410px,100%);margin:auto;background:#f7f3e8;color:#17202a;padding:25px 24px;font:600 .78rem/1.55 "Courier New",monospace;box-shadow:0 8px 25px rgba(0,0,0,.35)}.reconcile-paper h3{text-align:center;margin:0 0 2px}.reconcile-paper h4{text-align:center;margin:0 0 16px}.ticket-rule{border-top:1px dashed #222;margin:10px 0}.ticket-row{display:flex;justify-content:space-between;gap:18px}.ticket-status{text-align:center;font-weight:900;color:#087443;margin:12px 0}.reconcile-actions{display:flex;justify-content:center;gap:10px;margin-top:14px}.reconcile-actions button{border:1px solid #2d6795;background:#102c45;border-radius:8px;padding:10px 15px;cursor:pointer}.reconcile-actions button:last-child{background:#0b744b;border-color:#1eba79}.reconcile-detail{margin:14px auto 0;max-width:540px;border:1px solid #23435e;border-radius:9px;padding:10px}.reconcile-detail summary{cursor:pointer;color:#76c1ff}.reconcile-detail table{margin-top:8px}
+.manual-drawer-overlay{place-items:stretch end;padding:0}.manual-drawer{width:min(920px,96vw);height:100vh;background:#071522;border-left:1px solid #2a587b;box-shadow:-20px 0 60px #000;display:flex;flex-direction:column}.manual-drawer>header{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid #19354c}.manual-drawer header div{display:grid;gap:3px}.manual-drawer header small{color:#8fb0c9}.manual-drawer header button{border:0;background:transparent;font-size:1.6rem}.manual-tabs{display:flex;gap:7px;padding:10px 14px;border-bottom:1px solid #19354c}.manual-tabs button{border:1px solid #285577;background:#0b2133;border-radius:7px;padding:8px 12px}.manual-tabs button.active{background:#14558d}.manual-pane{flex:1;min-height:0;padding:12px;overflow:auto}.manual-pane iframe{width:100%;height:100%;min-height:600px;border:1px solid #294f6d;border-radius:8px;background:white}.compare-pane{display:grid;grid-template-columns:36% 64%;gap:10px}.compare-pane section{padding:14px;background:#0c2133;border:1px solid #294f6d;border-radius:8px;line-height:1.6}.manual-open{border:1px solid #416d91!important;background:#13324a!important;color:#9ed4ff!important;border-radius:7px;padding:7px 9px;cursor:pointer}.manual-flow-grid article button{margin-top:6px}
+@media(max-width:800px){.compare-pane{grid-template-columns:1fr}.manual-drawer{width:100vw}.manual-pane iframe{min-height:480px}}
 </style>
 
 <style>
@@ -220,6 +226,12 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
 .tech-mode h3{font-size:.72rem;color:#62b8ff;text-transform:none;letter-spacing:0}
 @media(max-width:1250px){.atm-grid{grid-template-columns:340px 240px minmax(470px,1fr)!important}.atm-machine{transform:scale(.64);margin-bottom:-330px}}
 @media(max-width:1000px){.atm-grid{grid-template-columns:1fr!important}.atm-machine{transform:scale(.82);margin-bottom:-130px}.atm-card-selectors{grid-template-columns:1fr}}
+
+/* v3.3.6 Reconciliación ATM + Manual Navigator */
+.modal-overlay,.manual-drawer-overlay{position:fixed;inset:0;background:rgba(1,8,15,.78);z-index:1000;display:grid;place-items:center;padding:18px}.modal-overlay[hidden],.manual-drawer-overlay[hidden]{display:none!important}
+.reconcile-ticket-modal{position:relative;width:min(620px,96vw);max-height:92vh;overflow:auto;background:#0a1825;border:1px solid #2a587b;border-radius:16px;padding:18px;box-shadow:0 30px 80px #000}.modal-close{position:absolute;right:12px;top:10px;border:0;background:transparent;font-size:1.5rem;cursor:pointer}.reconcile-paper{width:min(410px,100%);margin:auto;background:#f7f3e8;color:#17202a;padding:25px 24px;font:600 .78rem/1.55 "Courier New",monospace;box-shadow:0 8px 25px rgba(0,0,0,.35)}.reconcile-paper h3{text-align:center;margin:0 0 2px}.reconcile-paper h4{text-align:center;margin:0 0 16px}.ticket-rule{border-top:1px dashed #222;margin:10px 0}.ticket-row{display:flex;justify-content:space-between;gap:18px}.ticket-status{text-align:center;font-weight:900;color:#087443;margin:12px 0}.reconcile-actions{display:flex;justify-content:center;gap:10px;margin-top:14px}.reconcile-actions button{border:1px solid #2d6795;background:#102c45;border-radius:8px;padding:10px 15px;cursor:pointer}.reconcile-actions button:last-child{background:#0b744b;border-color:#1eba79}.reconcile-detail{margin:14px auto 0;max-width:540px;border:1px solid #23435e;border-radius:9px;padding:10px}.reconcile-detail summary{cursor:pointer;color:#76c1ff}.reconcile-detail table{margin-top:8px}
+.manual-drawer-overlay{place-items:stretch end;padding:0}.manual-drawer{width:min(920px,96vw);height:100vh;background:#071522;border-left:1px solid #2a587b;box-shadow:-20px 0 60px #000;display:flex;flex-direction:column}.manual-drawer>header{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid #19354c}.manual-drawer header div{display:grid;gap:3px}.manual-drawer header small{color:#8fb0c9}.manual-drawer header button{border:0;background:transparent;font-size:1.6rem}.manual-tabs{display:flex;gap:7px;padding:10px 14px;border-bottom:1px solid #19354c}.manual-tabs button{border:1px solid #285577;background:#0b2133;border-radius:7px;padding:8px 12px}.manual-tabs button.active{background:#14558d}.manual-pane{flex:1;min-height:0;padding:12px;overflow:auto}.manual-pane iframe{width:100%;height:100%;min-height:600px;border:1px solid #294f6d;border-radius:8px;background:white}.compare-pane{display:grid;grid-template-columns:36% 64%;gap:10px}.compare-pane section{padding:14px;background:#0c2133;border:1px solid #294f6d;border-radius:8px;line-height:1.6}.manual-open{border:1px solid #416d91!important;background:#13324a!important;color:#9ed4ff!important;border-radius:7px;padding:7px 9px;cursor:pointer}.manual-flow-grid article button{margin-top:6px}
+@media(max-width:800px){.compare-pane{grid-template-columns:1fr}.manual-drawer{width:100vw}.manual-pane iframe{min-height:480px}}
 </style>
 </head>
 <body>
@@ -233,6 +245,7 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
       <a class="nav" href="constructor.html">⌘ Constructor ISO8583</a>
       <a class="nav active" href="atm.html">🏧 ATM Virtual</a>
       <a class="nav" href="parser.html">◉ Parser ISO8583</a>
+      <a class="nav" href="documentacion.html">📚 Documentación Técnica</a>
     <a class="nav" href="mastercard_iso.html">◉ Mastercard ISO</a>
 <a class="nav" href="compensacion_mastercard.html">▤ Mastercard IPM</a>
 </nav>
@@ -248,8 +261,8 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
 
   <main class="main">
     <header class="topbar">
-      <div class="title"><span class="title-icon">🏧</span><div><h1>ATM Virtual · v3.3.4 RC1</h1><p>Pantalla táctil, teclado físico, transferencia y dispensación USD</p></div></div>
-      <div class="top-actions"><a href="pos.html">← POS</a><a href="parser.html">Parser →</a><button id="newOperation">Nueva operación</button></div>
+      <div class="title"><span class="title-icon">🏧</span><div><h1>ATM Virtual · v3.3.6</h1><p>Pantalla táctil, teclado físico, transferencia y dispensación USD</p></div></div>
+      <div class="top-actions"><a href="pos.html">← POS</a><a href="parser.html">Parser →</a><button id="reconcileAtm">🧾 Reconciliación</button><button id="newOperation">Nueva operación</button></div>
     </header>
 
     <div class="content">
@@ -257,23 +270,44 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
         <section class="panel">
           <h2>CAJERO FULL SIZE</h2>
           <p class="panel-sub">Interactuá con la pantalla, teclado y dispensador.</p>
-          <div class="network-profile-box payment-lab-box atm-card-extension" id="atmCardExtension">
-            <div class="network-profile-title"><span>MEDIO DE PAGO</span><span class="network-validation">PAN asignado automáticamente</span></div>
-            <div class="payment-method-tabs" role="group" aria-label="Medio de pago ATM">
-              <button type="button" class="payment-method active">💳 Tarjeta</button>
-              <button type="button" class="payment-method" disabled>▦ QR · Próximamente</button>
-            </div>
-            <div class="test-card-heading">Seleccione la tarjeta de prueba</div>
-            <div class="test-card-grid" id="atmTestCardGrid">
-              <button type="button" class="test-card active visa" data-atm-card="visa-credit"><span class="card-network visa-logo">VISA</span><strong>CRÉDITO</strong><small>•••• 1111 · BIN 411111</small></button>
-              <button type="button" class="test-card visa" data-atm-card="visa-debit"><span class="card-network visa-logo">VISA</span><strong>DÉBITO</strong><small>•••• 0002 · BIN 400000</small></button>
-              <button type="button" class="test-card mastercard" data-atm-card="mastercard-credit"><span class="card-network mc-logo"><i></i><i></i></span><strong>CRÉDITO</strong><small>•••• 4444 · BIN 555555</small></button>
-              <button type="button" class="test-card mastercard" data-atm-card="mastercard-debit"><span class="card-network mc-logo"><i></i><i></i></span><strong>DÉBITO</strong><small>•••• 8210 · BIN 222300</small></button>
-              <button type="button" class="test-card disabled" disabled><span class="card-network">AMERICAN EXPRESS</span><strong>PRÓXIMAMENTE</strong><small>Arquitectura preparada</small></button>
-            </div>
-            <div class="selected-test-card atm-selected-card" id="atmSelectedCardSummary">Visa Crédito · PAN de prueba asignado automáticamente · •••• 1111</div>
-            <div id="atmNetworkBadge" class="network-profile-badge"></div>
-          </div>
+          <div class="network-profile-box payment-lab-box" id="atmNetworkBox">
+  <div class="network-profile-title"><span>MEDIO DE PAGO</span><span id="atmNetworkValidation" class="network-validation">Tarjeta de prueba seleccionada</span></div>
+  <div class="payment-method-tabs" role="group" aria-label="Medio de pago ATM">
+    <button type="button" class="payment-method active" data-payment-method="card">💳 Tarjeta</button>
+    <button type="button" class="payment-method" data-payment-method="qr">▦ QR</button>
+  </div>
+  <div id="atmCardPaymentConfig" class="payment-config">
+    <div class="test-card-heading">SELECCIONE LA TARJETA DE PRUEBA</div>
+    <div class="test-card-grid" id="atmTestCardGrid">
+      <button type="button" class="test-card active visa" data-atm-card="visa-credit" onclick="window.OSCSelectATMCard && window.OSCSelectATMCard('visa-credit')">
+        <span class="card-network">VISA</span><strong>CRÉDITO</strong><small>•••• 1111 · BIN 411111</small>
+      </button>
+      <button type="button" class="test-card visa" data-atm-card="visa-debit" onclick="window.OSCSelectATMCard && window.OSCSelectATMCard('visa-debit')">
+        <span class="card-network">VISA</span><strong>DÉBITO</strong><small>•••• 0002 · BIN 400000</small>
+      </button>
+      <button type="button" class="test-card mastercard" data-atm-card="mc-credit" onclick="window.OSCSelectATMCard && window.OSCSelectATMCard('mastercard-credit')">
+        <span class="card-network">MASTERCARD</span><strong>CRÉDITO</strong><small>•••• 4444 · BIN 555555</small>
+      </button>
+      <button type="button" class="test-card mastercard" data-atm-card="mc-debit" onclick="window.OSCSelectATMCard && window.OSCSelectATMCard('mastercard-debit')">
+        <span class="card-network">MASTERCARD</span><strong>DÉBITO</strong><small>•••• 8210 · BIN 222300</small>
+      </button>
+      <button type="button" class="test-card disabled" disabled>
+        <span class="card-network">AMERICAN EXPRESS</span><strong>PRÓXIMAMENTE</strong><small>Arquitectura preparada</small>
+      </button>
+    </div>
+    <div class="selected-test-card" id="atmSelectedCardSummary">Visa Crédito · PAN de prueba asignado automáticamente</div>
+  </div>
+  <div id="atmQrPaymentConfig" class="payment-config hidden">
+    <label for="qrTypeSelect">Tipo de QR</label>
+    <select id="atmQrTypeSelect">
+      <option value="mastercard-qr">Mastercard QR · Merchant Presented</option>
+      <option value="visa-qr">Visa QR · Merchant Presented</option>
+      <option value="account-qr" disabled>Cuenta a cuenta · Próximamente</option>
+      <option value="wallet-qr" disabled>Wallet propietaria · Próximamente</option>
+    </select>
+  </div>
+  <div id="atmNetworkBadge" class="network-profile-badge"></div>
+</div>
 
           <div class="atm-full-wrap">
           <div>
@@ -451,6 +485,24 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
   </main>
 </div>
 
+<div class="modal-overlay" id="reconcileModal" hidden>
+  <div class="reconcile-ticket-modal">
+    <button class="modal-close" id="closeReconcile" aria-label="Cerrar">×</button>
+    <div class="reconcile-paper" id="reconcilePaper"></div>
+    <details class="reconcile-detail"><summary>Ver detalle por transacción</summary><div id="reconcileTxDetail"></div></details>
+    <div class="reconcile-actions"><button id="cancelReconcile">Cancelar</button><button id="confirmReconcile">Confirmar reconciliación</button></div>
+  </div>
+</div>
+<div class="manual-drawer-overlay" id="manualDrawer" hidden>
+  <aside class="manual-drawer">
+    <header><div><strong id="manualTitle">Manual Oficial</strong><small id="manualRef"></small></div><button id="closeManual">×</button></header>
+    <div class="manual-tabs"><button class="active" data-manual-tab="official">Manual oficial</button><button data-manual-tab="osc">Descripción OSC</button><button data-manual-tab="compare">Comparar</button></div>
+    <div id="manualOfficial" class="manual-pane"><iframe id="manualFrame" title="Manual oficial"></iframe></div>
+    <div id="manualOsc" class="manual-pane" hidden></div>
+    <div id="manualCompare" class="manual-pane compare-pane" hidden><section id="compareOsc"></section><iframe id="compareFrame" title="Comparación manual"></iframe></div>
+  </aside>
+</div>
+
 <script src="js/network-profiles.js"></script>
 <script src="js/switch-store.js?v=3.3.4.1"></script>
 <script>
@@ -507,14 +559,15 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
     'mastercard-credit':{brand:'mastercard',type:'credit',pan:'5555555555554444',name:'Mastercard Crédito',last4:'4444'},
     'mastercard-debit':{brand:'mastercard',type:'debit',pan:'2223000048408210',name:'Mastercard Débito',last4:'8210'}
   };
-  document.querySelectorAll('[data-atm-card]').forEach(btn=>btn.addEventListener('click',()=>{
-    const c=ATM_CARDS[btn.dataset.atmCard];
-    document.querySelectorAll('[data-atm-card]').forEach(x=>x.classList.toggle('active',x===btn));
-    state.cardKey=btn.dataset.atmCard;state.pan=c.pan;state.brand=c.brand;state.cardType=c.type;
-    $('atmSelectedCardSummary').textContent=`${c.name} · PAN de prueba asignado automáticamente · •••• ${c.last4}`;
-    document.querySelector('.card-pan').textContent=c.pan.replace(/(.{4})/g,'$1 ').trim();
+  window.OSCSelectATMCard=function(key){
+    const c=ATM_CARDS[key];if(!c)return;
+    document.querySelectorAll('[data-atm-card]').forEach(x=>x.classList.toggle('active',x.dataset.atmCard===key));
+    state.cardKey=key;state.pan=c.pan;state.brand=c.brand;state.cardType=c.type;
+    $('atmSelectedCardSummary').textContent=`${c.name} · PAN de prueba asignado automáticamente`;
+    const cp=document.querySelector('.card-pan');if(cp)cp.textContent=c.pan.replace(/(.{4})/g,'$1 ').trim();
     addTechEvent(`${c.name} seleccionada · PAN •••• ${c.last4}`,'done');
-  }));
+  };
+  document.querySelectorAll('[data-atm-card]').forEach(btn=>btn.addEventListener('click',()=>window.OSCSelectATMCard(btn.dataset.atmCard)));
 
   document.addEventListener('osc-atm-card-change',event=>{
     const c=event.detail;
@@ -811,6 +864,38 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
     });
   }
 
+  function reconciliationSnapshot(){
+    const db=window.OSCSwitchStore?.read?.()||{transactions:[]};
+    const pending=db.transactions.filter(t=>t.channel==='ATM'&&!t.closed&&['PENDING','EXCLUDED'].includes(t.clearingStatus));
+    const withdrawals=pending.filter(t=>t.type==='withdrawal'&&t.status!=='REVERSED'&&t.clearingStatus==='PENDING');
+    const reversed=pending.filter(t=>t.type==='withdrawal'&&t.status==='REVERSED');
+    const reversals=pending.filter(t=>t.type==='reversal');
+    const balance=pending.filter(t=>t.type==='balance_inquiry');
+    const transfers=pending.filter(t=>t.type==='transfer'&&t.clearingStatus==='PENDING');
+    const sum=a=>a.reduce((s,t)=>s+Number(t.amountCents||0),0);
+    return {pending,withdrawals,reversed,reversals,balance,transfers,withdrawalAmount:sum(withdrawals),reversalAmount:sum(reversals),transferAmount:sum(transfers),net:sum(withdrawals)+sum(transfers)};
+  }
+  function moneyCents(c){return (Number(c||0)/100).toLocaleString('es-AR',{style:'currency',currency:'USD'})}
+  function openReconcile(){
+    const s=reconciliationSnapshot(),d=new Date();
+    $('reconcilePaper').innerHTML=`<h3>OSC BANK</h3><h4>RECONCILIACIÓN ATM</h4><div class="ticket-row"><span>ATM ID</span><b>ATM00001</b></div><div class="ticket-row"><span>Fecha</span><b>${d.toLocaleDateString('es-AR')}</b></div><div class="ticket-row"><span>Hora</span><b>${d.toLocaleTimeString('es-AR',{hour12:false})}</b></div><div class="ticket-rule"></div><b>EXTRACCIONES APROBADAS</b><div class="ticket-row"><span>Cantidad</span><b>${s.withdrawals.length}</b></div><div class="ticket-row"><span>Importe</span><b>${moneyCents(s.withdrawalAmount)}</b></div><div class="ticket-rule"></div><b>REVERSAS</b><div class="ticket-row"><span>Cantidad</span><b>${s.reversals.length}</b></div><div class="ticket-row"><span>Importe</span><b>${moneyCents(s.reversalAmount)}</b></div><div class="ticket-rule"></div><div class="ticket-row"><span>CONSULTAS DE SALDO</span><b>${s.balance.length}</b></div><div class="ticket-row"><span>TRANSFERENCIAS</span><b>${s.transfers.length}</b></div><div class="ticket-row"><span>Importe transferido</span><b>${moneyCents(s.transferAmount)}</b></div><div class="ticket-rule"></div><div class="ticket-row"><b>TOTAL FINANCIERO NETO</b><b>${moneyCents(s.net)}</b></div><div class="ticket-status">✓ CONSISTENTE</div><div class="ticket-rule"></div><div style="text-align:center">Se generarán los mensajes<br><b>0520 → 0530</b></div>`;
+    $('reconcileTxDetail').innerHTML=s.pending.length?`<table><thead><tr><th>RED</th><th>TIPO</th><th>STAN</th><th>IMPORTE</th><th>ESTADO</th></tr></thead><tbody>${s.pending.map(t=>`<tr><td>${t.network}</td><td>${t.type}</td><td>${t.stan}</td><td>${moneyCents(t.amountCents)}</td><td>${t.status}</td></tr>`).join('')}</tbody></table>`:'<p>No hay operaciones pendientes.</p>';
+    $('reconcileModal').hidden=false;
+  }
+  function closeReconcile(){ $('reconcileModal').hidden=true; }
+  function confirmReconciliation(){
+    const s=reconciliationSnapshot();if(!s.pending.length){alert('No hay transacciones ATM pendientes para reconciliar.');return;}
+    const stan=random6(),at=new Date();
+    const fields0520=[field(7,'Transmission Date & Time',de7Now(),'N10','ATM'),field(11,'System Trace Audit Number',stan,'N6','ATM'),field(41,'Terminal ID','ATM00001','ANS8','ATM'),field(74,'Credits Number','0000000000','N10','Totales'),field(76,'Debits Number',String(s.withdrawals.length+s.transfers.length).padStart(10,'0'),'N10','Totales'),field(77,'Debits Reversal Number',String(s.reversals.length).padStart(10,'0'),'N10','Totales'),field(88,'Debits Amount',String(s.withdrawalAmount+s.transferAmount).padStart(16,'0'),'N16','Totales'),field(89,'Debits Reversal Amount',String(s.reversalAmount).padStart(16,'0'),'N16','Totales')];
+    const fields0530=[...fields0520,field(39,'Response Code','00','AN2','Switch')].sort((a,b)=>Number(a[0])-Number(b[0]));
+    addMessage('0520','Reconciliación ATM',' ',fields0520.sort((a,b)=>Number(a[0])-Number(b[0])));
+    addMessage('0530','Respuesta de reconciliación','00',fields0530);
+    const rec=window.OSCSwitchStore.reconcileATM({atmId:'ATM00001',requestMti:'0520',responseMti:'0530'});
+    localStorage.setItem('oscAcademyLastAtmReconciliation',JSON.stringify({at:at.toISOString(),summary:s,reconciliation:rec}));
+    addTechEvent(`0530 recibido · ${rec.readyCount} operaciones listas para clearing`,'done');
+    closeReconcile();alert('ATM reconciliado correctamente. Las operaciones financieras vigentes quedaron READY para clearing.');
+  }
+
   function send0200(){
     state.step='processing';state.stan=random6();setFlow(4);
     setScreen('PROCESANDO','<strong>Enviando 0200</strong><small>Aguarde</small>');addTechEvent(`0200 construido · DE3=${processingCode()} · Bitmap calculado`,'done');
@@ -948,6 +1033,27 @@ ${raw(m)}`;
 
   setInterval(()=>$('atmClock').textContent=timeNow(),1000);
   reset();
+
+  $('reconcileAtm')?.addEventListener('click',openReconcile);
+  $('closeReconcile')?.addEventListener('click',closeReconcile);
+  $('cancelReconcile')?.addEventListener('click',closeReconcile);
+  $('confirmReconcile')?.addEventListener('click',confirmReconciliation);
+  $('reconcileModal')?.addEventListener('click',e=>{if(e.target===$('reconcileModal'))closeReconcile()});
+  const manualFiles={atm:'manuals/full-service-atm-online-messages-tech-specs.pdf',pos:'manuals/full-service-pos-online-messages-tech-specs.pdf'};
+  function openManual(btn){
+    const file=manualFiles[btn.dataset.manual],page=btn.dataset.page||1,title=btn.dataset.title||'Manual oficial',osc=btn.dataset.osc||'';
+    $('manualTitle').textContent=title;$('manualRef').textContent=`Página ${page} · Documento en inglés`;
+    const src=`${file}#page=${page}&zoom=page-width`;$('manualFrame').src=src;$('compareFrame').src=src;
+    $('manualOsc').innerHTML=`<h2>${title}</h2><p>${osc}</p><p><b>Referencia:</b> Visa Full Service ATM Online Messages · página ${page}.</p><p class="notice">La numeración puede variar según la edición utilizada por su organización.</p>`;
+    $('compareOsc').innerHTML=$('manualOsc').innerHTML;$('manualDrawer').hidden=false;
+  }
+  document.querySelectorAll('.manual-open').forEach(b=>b.addEventListener('click',()=>openManual(b)));
+  $('closeManual')?.addEventListener('click',()=>{$('manualDrawer').hidden=true;$('manualFrame').src='';$('compareFrame').src=''});
+  document.querySelectorAll('[data-manual-tab]').forEach(b=>b.addEventListener('click',()=>{
+    document.querySelectorAll('[data-manual-tab]').forEach(x=>x.classList.toggle('active',x===b));
+    $('manualOfficial').hidden=b.dataset.manualTab!=='official';$('manualOsc').hidden=b.dataset.manualTab!=='osc';$('manualCompare').hidden=b.dataset.manualTab!=='compare';
+  }));
+
 })();
 </script>
 <script>

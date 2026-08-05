@@ -1,0 +1,12 @@
+OSC ACADEMY · Baseline v3.3.6
+ATM Reconciliation + Manual Navigator
+
+- Selector ATM reutiliza exactamente el componente visual del POS.
+- Botón Reconciliación en cabecera ATM.
+- Ticket de resumen y detalle por transacción.
+- Generación didáctica 0520/0530.
+- Operaciones ATM vigentes pasan a READY; reversas/consultas quedan EXCLUDED.
+- Historial ATM registra 0520 y 0530.
+- Manual Navigator con visor del PDF oficial, explicación OSC y comparación.
+- Centro de Documentación Técnica con manuales Visa ATM y POS.
+- Manuales se muestran en inglés y se incluyen referencias de página.
