@@ -1,0 +1,15 @@
+OSC PAYMENT ACADEMY — Baseline v3.3.1
+ATM UI + selector de tarjeta + reversa didáctica
+
+Cambios:
+- ATM adopta la proporción de tres columnas del POS: dispositivo, flujo y trama.
+- Cajero full size reducido visualmente para equilibrar el espacio.
+- Selector superior compacto con Marca y Tipo de tarjeta (Crédito/Débito).
+- PAN de prueba asignado automáticamente según la combinación seleccionada.
+- Visa Crédito, Visa Débito, Mastercard Crédito y Mastercard Débito.
+- PAN dinámico aplicado a DE2, DE35 y a los mensajes de reversa.
+- Bitmap del ATM hereda tamaños, contraste y colores del POS.
+- Modo técnico usa una jerarquía visual más discreta.
+- La falla total del dispensador conserva en el historial 0200, 0210, 0400 y 0410 como mensajes relacionados.
+
+Nota: American Express y QR permanecen preparados para una futura etapa.
