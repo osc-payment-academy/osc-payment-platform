@@ -24,10 +24,10 @@
       <a href="atm.html">🏧 <span>ATM Virtual</span></a>
       <a href="parser.html">◉ <span>Parser ISO8583</span></a>
       <a href="switch.html">🏦 <span>Switch del Adquirente</span></a>
-      
+      <a href="compensacion.html">▤ <span>Laboratorio de Compensación</span></a>
       <a href="research.html">🧪 <span>Laboratorio de Investigación</span></a>
-    
-
+    <a class="nav" href="mastercard_iso.html">◉ Mastercard ISO</a>
+<a class="nav" href="compensacion_mastercard.html">▤ Mastercard IPM</a>
 </nav>
 
     <div class="section">Recursos</div>
@@ -347,15 +347,16 @@
 </div>
 
 <div id="batchModal" class="transaction-modal hidden">
-  <div class="transaction-dialog batch-dialog">
-    <div class="transaction-dialog-head">
-      <div><h2>CIERRE DE LOTE</h2><p>Revisá los totales antes de confirmar.</p></div>
-      <button id="closeBatchModal" type="button">✕</button>
-    </div>
-    <div id="batchSummary" class="batch-summary"></div>
-    <div class="transaction-dialog-actions">
+  <div class="batch-ticket-modal">
+    <button id="closeBatchModal" class="batch-modal-close" type="button" aria-label="Cerrar">✕</button>
+    <div id="batchSummary" class="batch-paper"></div>
+    <details class="batch-detail">
+      <summary>Ver detalle por transacción</summary>
+      <div id="batchTxDetail"></div>
+    </details>
+    <div class="batch-ticket-actions">
       <button id="cancelBatchClose" type="button">Cancelar</button>
-      <button id="confirmBatchClose" type="button">Confirmar cierre</button>
+      <button id="confirmBatchClose" type="button">Confirmar cierre de lote</button>
     </div>
   </div>
 </div>
@@ -366,6 +367,6 @@
 <script>document.addEventListener('DOMContentLoaded',()=>{document.querySelectorAll('.pos-scenario-mini button').forEach((b,i)=>b.onclick=()=>{document.querySelectorAll('.pos-scenario-mini button').forEach(x=>x.classList.remove('active'));b.classList.add('active');const original=document.querySelectorAll('#scenarioGrid button')[i];if(original)original.click()});const log=document.getElementById('posTechEvents');const status=document.getElementById('flowResponse');if(log&&status)new MutationObserver(()=>{const d=document.createElement('div');d.textContent=new Date().toLocaleTimeString('es-AR')+' · '+status.textContent;log.prepend(d);while(log.children.length>8)log.lastChild.remove()}).observe(status,{childList:true,subtree:true,characterData:true})});</script>
 <script src="js/permissions.js"></script>
 
-<div id="osc-version-badge" style="position:fixed;right:14px;bottom:12px;z-index:99999;background:#0d2238;border:1px solid #2f83ff;color:#9fd0ff;padding:7px 11px;border-radius:999px;font:600 12px/1.1 Inter,Segoe UI,Arial,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.28)">Baseline v3.3 · Smart Learning</div>
+<div id="osc-version-badge" style="position:fixed;right:14px;bottom:12px;z-index:99999;background:#0d2238;border:1px solid #2f83ff;color:#9fd0ff;padding:7px 11px;border-radius:999px;font:600 12px/1.1 Inter,Segoe UI,Arial,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.28)">Baseline v3.5.2 · POS Batch Ticket</div>
 </body>
 </html>

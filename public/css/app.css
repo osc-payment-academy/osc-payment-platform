@@ -352,3 +352,17 @@ button{font:inherit;color:inherit}
 .atm-payment-header .test-card{min-width:0}
 @media(max-width:1200px){.atm-payment-header .test-card-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:700px){.atm-payment-header .test-card-grid{grid-template-columns:1fr}}
+
+
+/* v3.5.2 POS batch close ticket - shared visual language with ATM reconciliation */
+.batch-ticket-modal{position:relative;width:min(680px,96vw);max-height:92vh;overflow:auto;background:#0a1825;border:1px solid #2a587b;border-radius:16px;padding:18px;box-shadow:0 30px 80px #000}
+.batch-modal-close{position:absolute;right:12px;top:10px;border:0;background:transparent;color:#d8e6f2;font-size:1.5rem;cursor:pointer;z-index:2}
+.batch-paper{width:min(470px,100%);margin:auto;background:#f7f3e8;color:#17202a;padding:25px 24px;font:600 .78rem/1.55 "Courier New",monospace;box-shadow:0 8px 25px rgba(0,0,0,.35)}
+.batch-paper h3{text-align:center;margin:0 0 2px;font-size:1rem}.batch-paper h4{text-align:center;margin:0 0 16px;font-size:.9rem}
+.batch-ticket-rule{border-top:1px dashed #222;margin:10px 0}
+.batch-ticket-row{display:flex;justify-content:space-between;gap:18px;align-items:flex-start}.batch-ticket-row b{text-align:right}
+.batch-network-block{border-top:1px solid #a7a093;padding:8px 0}.batch-network-name{text-align:center;font-weight:900;letter-spacing:.08em;margin-bottom:4px}.batch-network-net{margin-top:3px;font-weight:900}
+.batch-grand-total{font-size:.9rem;font-weight:900}.batch-ticket-status{text-align:center;font-weight:900;color:#087443;margin:12px 0}.batch-ticket-iso{text-align:center}
+.batch-ticket-actions{display:flex;justify-content:center;gap:10px;margin-top:14px}.batch-ticket-actions button{border:1px solid #2d6795;background:#102c45;color:#fff;border-radius:8px;padding:10px 15px;cursor:pointer}.batch-ticket-actions button:last-child{background:#0b744b;border-color:#1eba79}
+.batch-detail{margin:14px auto 0;max-width:610px;border:1px solid #23435e;border-radius:9px;padding:10px}.batch-detail summary{cursor:pointer;color:#76c1ff}.batch-detail table{width:100%;margin-top:8px;border-collapse:collapse}.batch-detail th,.batch-detail td{padding:7px;border-bottom:1px solid #23435e;text-align:left;font-size:.75rem}
+@media(max-width:600px){.batch-paper{padding:20px 16px}.batch-ticket-row{gap:8px}.batch-ticket-actions{flex-direction:column}.batch-ticket-actions button{width:100%}}

@@ -1,0 +1,10 @@
+OSC ACADEMY - Baseline v3.5.2
+POS Batch Close Ticket
+
+- Reemplaza el modal de cajas por un comprobante tipo ticket.
+- Reutiliza el lenguaje visual de Reconciliación ATM.
+- Subtotales por Visa y Mastercard.
+- Aprobadas, anuladas, reversadas y neto por red.
+- Total general, mensajes generados y flujo 0500/0510.
+- Detalle desplegable por transacción.
+- No cambia la lógica funcional del cierre ni la persistencia del Switch.

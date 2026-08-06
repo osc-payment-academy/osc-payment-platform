@@ -83,9 +83,9 @@ select:focus,input:focus,textarea:focus{border-color:#2f83ff;box-shadow:0 0 0 2p
       <a class="nav" href="pos.html">▣ POS Virtual</a>
       <a class="nav active" href="constructor.html">⌘ Constructor ISO8583</a>
       <a class="nav" href="parser.html">◉ Parser ISO8583</a>
-      
-    
-
+      <a class="nav" href="compensacion.html">▤ Compensación</a>
+    <a class="nav" href="mastercard_iso.html">◉ Mastercard ISO</a>
+<a class="nav" href="compensacion_mastercard.html">▤ Mastercard IPM</a>
 </nav>
     <div class="section">Modo de aprendizaje</div>
     <nav>
@@ -101,7 +101,7 @@ select:focus,input:focus,textarea:focus{border-color:#2f83ff;box-shadow:0 0 0 2p
       <div class="top-actions"><a href="pos.html">← POS Virtual</a><a href="parser.html">Parser →</a><button id="resetAll">Nueva construcción</button></div>
     </header>
 
-    <div class="content"><div class="network-constructor"><label for="constructorNetworkSelect" style="display:flex;flex-direction:column;gap:5px;color:#9fc4e3;font-size:.62rem;font-weight:700">RED / MARCA<select id="constructorNetworkSelect"><option value="visa">Visa</option><option value="mastercard">Mastercard</option><option value="amex">American Express · Próximamente</option></select></label><div id="constructorNetworkBadge" class="network-constructor-badge"></div></div>
+    <div class="content"><div class="network-constructor"><select id="constructorNetworkSelect"><option value="auto">Automático por DE2 / PAN</option><option value="visa">Visa</option><option value="mastercard">Mastercard</option><option value="amex">American Express (preparado)</option></select><div id="constructorNetworkBadge" class="network-constructor-badge"></div></div>
       <div class="builder-grid" id="builderMode">
         <section class="panel">
           <h2>1. CONFIGURACIÓN DEL MENSAJE</h2>
@@ -317,30 +317,8 @@ select:focus,input:focus,textarea:focus{border-color:#2f83ff;box-shadow:0 0 0 2p
   };
 
   const state = {mti:'0200',values:{},selected:new Set(),filter:''};
-  function refreshConstructorNetwork(){
-    const sel=document.getElementById('constructorNetworkSelect');
-    const badge=document.getElementById('constructorNetworkBadge');
-    if(!sel||!badge||!window.OSCNetworks)return;
-    const network=sel.value;
-    localStorage.setItem('osc_constructor_network',network);
-    const p=OSCNetworks.resolve(network,state.values[2]||'');
-    const source = network==='mastercard' ? 'Perfil Mastercard: reglas, validaciones y manuales Mastercard.' : network==='amex' ? 'American Express está preparado y se habilitará al incorporar su perfil oficial.' : 'Perfil Visa: reglas, validaciones y manuales Visa.';
-    badge.innerHTML=OSCNetworks.badge(p)+'<small>'+source+'</small>';
-    document.body.dataset.network=network;
-    if(network==='amex'){
-      sel.value='amex';
-      document.getElementById('validation').innerHTML='<div class="warning">American Express · Próximamente. La interfaz ya está preparada, pero el perfil técnico todavía no está habilitado.</div>';
-    } else {
-      render();
-    }
-  }
-  document.addEventListener('DOMContentLoaded',()=>{
-    const s=document.getElementById('constructorNetworkSelect');
-    const saved=localStorage.getItem('osc_constructor_network');
-    if(s&&saved&&['visa','mastercard','amex'].includes(saved))s.value=saved;
-    if(s)s.addEventListener('change',refreshConstructorNetwork);
-    setTimeout(refreshConstructorNetwork,0);
-  });
+  function refreshConstructorNetwork(){const sel=document.getElementById('constructorNetworkSelect');const badge=document.getElementById('constructorNetworkBadge');if(!sel||!badge||!window.OSCNetworks)return;const p=OSCNetworks.resolve(sel.value,state.values[2]||'');badge.innerHTML=OSCNetworks.badge(p);}
+  document.addEventListener('DOMContentLoaded',()=>{const s=document.getElementById('constructorNetworkSelect');if(s)s.addEventListener('change',refreshConstructorNetwork);setTimeout(refreshConstructorNetwork,0);});
 
   function dateTime7(){
     const d=new Date();

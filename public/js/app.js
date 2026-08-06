@@ -746,25 +746,47 @@
     const approved=purchases.filter(o=>o.status==='APROBADA');
     const voided=purchases.filter(o=>o.status==='ANULADA');
     const reversed=purchases.filter(o=>o.status==='REVERSADA');
-    const approvedCents=approved.reduce((a,o)=>a+o.amountCents,0);
-    const voidedCents=voided.reduce((a,o)=>a+o.amountCents,0);
-    const reversedCents=reversed.reduce((a,o)=>a+o.amountCents,0);
+    const sum=items=>items.reduce((a,o)=>a+(o.amountCents||0),0);
+    const byNetwork=network=>{
+      const rows=purchases.filter(o=>(o.network||o.cardBrand||'VISA').toUpperCase()===network);
+      const ok=rows.filter(o=>o.status==='APROBADA');
+      const an=rows.filter(o=>o.status==='ANULADA');
+      const rv=rows.filter(o=>o.status==='REVERSADA');
+      return {network,approvedCount:ok.length,approvedCents:sum(ok),voidedCount:an.length,voidedCents:sum(an),reversedCount:rv.length,reversedCents:sum(rv),netCents:sum(ok)};
+    };
+    const approvedCents=sum(approved),voidedCents=sum(voided),reversedCents=sum(reversed);
     return{
       approvedCount:approved.length,voidedCount:voided.length,reversedCount:reversed.length,
       approvedCents,voidedCents,reversedCents,netCents:approvedCents,
-      totalMessages:state.messages.filter(m=>m.batch===state.batchNumber).length
+      totalMessages:state.messages.filter(m=>m.batch===state.batchNumber).length,
+      networks:[byNetwork('VISA'),byNetwork('MASTERCARD')],
+      detail:purchases.slice().sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||''))
     };
   }
 
   function openBatchModal(){
-    const s=batchSummary();
+    const s=batchSummary(),d=new Date();
+    const networkRows=s.networks.map(n=>`<div class="batch-network-block"><div class="batch-network-name">${n.network}</div><div class="batch-ticket-row"><span>Aprobadas</span><b>${n.approvedCount} · ${formatCents(n.approvedCents)}</b></div><div class="batch-ticket-row"><span>Anuladas</span><b>${n.voidedCount} · ${formatCents(n.voidedCents)}</b></div><div class="batch-ticket-row"><span>Reversadas</span><b>${n.reversedCount} · ${formatCents(n.reversedCents)}</b></div><div class="batch-ticket-row batch-network-net"><span>Neto</span><b>${formatCents(n.netCents)}</b></div></div>`).join('');
     $('batchSummary').innerHTML=`
-      <div class="batch-stat"><span>Número de lote</span><strong>${state.batchNumber}</strong></div>
-      <div class="batch-stat"><span>Mensajes generados</span><strong>${s.totalMessages}</strong></div>
-      <div class="batch-stat"><span>Compras aprobadas</span><strong>${s.approvedCount} · ${formatCents(s.approvedCents)}</strong></div>
-      <div class="batch-stat"><span>Anuladas</span><strong>${s.voidedCount}</strong></div>
-      <div class="batch-stat"><span>Reversadas</span><strong>${s.reversedCount}</strong></div>
-      <div class="batch-stat batch-total"><span>Total neto del lote</span><strong>${formatCents(s.netCents)}</strong></div>`;
+      <h3>OSC ACADEMY</h3><h4>CIERRE DE LOTE POS</h4>
+      <div class="batch-ticket-row"><span>Terminal</span><b>TERMID01</b></div>
+      <div class="batch-ticket-row"><span>Número de lote</span><b>${String(state.batchNumber).padStart(4,'0')}</b></div>
+      <div class="batch-ticket-row"><span>Fecha</span><b>${d.toLocaleDateString('es-AR')}</b></div>
+      <div class="batch-ticket-row"><span>Hora</span><b>${d.toLocaleTimeString('es-AR',{hour12:false})}</b></div>
+      <div class="batch-ticket-rule"></div>
+      ${networkRows}
+      <div class="batch-ticket-rule"></div>
+      <div class="batch-ticket-row"><span>Compras aprobadas</span><b>${s.approvedCount} · ${formatCents(s.approvedCents)}</b></div>
+      <div class="batch-ticket-row"><span>Anuladas</span><b>${s.voidedCount} · ${formatCents(s.voidedCents)}</b></div>
+      <div class="batch-ticket-row"><span>Reversadas</span><b>${s.reversedCount} · ${formatCents(s.reversedCents)}</b></div>
+      <div class="batch-ticket-row"><span>Mensajes generados</span><b>${s.totalMessages}</b></div>
+      <div class="batch-ticket-rule"></div>
+      <div class="batch-ticket-row batch-grand-total"><span>TOTAL NETO DEL LOTE</span><b>${formatCents(s.netCents)}</b></div>
+      <div class="batch-ticket-status">✓ LISTO PARA CIERRE</div>
+      <div class="batch-ticket-rule"></div>
+      <div class="batch-ticket-iso">Se generarán los mensajes<br><b>0500 → 0510</b></div>`;
+    const detail=$('batchTxDetail');
+    if(detail) detail.innerHTML=s.detail.length?`<table><thead><tr><th>RED</th><th>STAN</th><th>IMPORTE</th><th>ESTADO</th></tr></thead><tbody>${s.detail.map(t=>`<tr><td>${(t.network||t.cardBrand||'VISA').toUpperCase()}</td><td>${t.stan||'—'}</td><td>${formatCents(t.amountCents||0)}</td><td>${t.status||'—'}</td></tr>`).join('')}</tbody></table>`:'<p>No hay transacciones en el lote actual.</p>';
     $('batchModal').classList.remove('hidden');
   }
 

@@ -1,1 +1,144 @@
-<!doctype html><html lang="es"><head><meta charset="utf-8"><meta http-equiv="refresh" content="0; url=constructor.html"><title>Mastercard integrado</title></head><body><p>Mastercard ISO ahora está integrado en el <a href="constructor.html">Constructor ISO8583</a>.</p></body></html>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OSC Academy · Mastercard ISO 8583</title>
+<style>
+:root{--bg:#06111d;--panel:#0b1827;--line:#173149;--text:#f5f8fc;--muted:#9dafc2;--blue:#2f83ff;--green:#18d17e;--orange:#ff8a00;--red:#ff5267}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,Segoe UI,Arial,sans-serif}
+.app{display:grid;grid-template-columns:225px 1fr;min-height:100vh}.side{padding:18px 14px;background:#071522;border-right:1px solid var(--line)}
+.brand{font-weight:800;font-size:1.15rem;margin-bottom:22px}.brand span{color:#38a7ff}.nav{display:block;padding:10px;border-radius:8px;margin:4px 0;color:#dce7f1;text-decoration:none;font-size:.8rem}.nav.active{background:#143c69}
+.main{min-width:0}.top{height:78px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;padding:0 22px}.top h1{margin:0;font-size:1.15rem}.top p{margin:4px 0 0;color:var(--muted);font-size:.7rem}
+.actions button,.actions a{border:1px solid #24527d;background:#0c2235;color:#70bfff;border-radius:7px;padding:9px 11px;text-decoration:none;font-size:.68rem}
+.content{padding:14px}.grid{display:grid;grid-template-columns:330px 1fr 410px;gap:12px}.panel{background:linear-gradient(180deg,#0b1928,#091725);border:1px solid var(--line);border-radius:10px;padding:13px}
+.panel h2{margin:0;font-size:.79rem}.sub{color:var(--muted);font-size:.64rem;margin:4px 0 12px}
+label{display:block;color:#8fa4b8;text-transform:uppercase;font-size:.58rem;letter-spacing:.06em;margin:10px 0 5px}
+select,input{width:100%;background:#071522;border:1px solid #28465f;border-radius:7px;padding:9px;color:#fff}
+.preset{display:grid;grid-template-columns:1fr 1fr;gap:7px}.preset button{border:1px solid #2a4965;background:#0d2133;border-radius:7px;padding:9px;text-align:left;font-size:.64rem}.preset button.active{border-color:var(--orange);background:#3a2611}
+.field-list{display:grid;gap:6px;max-height:560px;overflow:auto}.field{display:grid;grid-template-columns:24px 44px 1fr 74px;gap:6px;align-items:center;border:1px solid #1c3951;background:#0c1c2b;border-radius:7px;padding:8px;font-size:.62rem}.field input{width:auto}.field b{color:#5db1ff}.field small{color:#8da2b5}
+.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.summary div{border:1px solid #1c3b56;background:#0d1f30;border-radius:7px;padding:9px}.summary span,.summary strong{display:block}.summary span{font-size:.55rem;color:#8ea3b6}.summary strong{margin-top:4px;color:#5eb3ff;font-family:monospace}
+.bitmap{display:grid;grid-template-columns:repeat(16,1fr);gap:4px;margin-top:10px}.bit{aspect-ratio:1;background:#0b1722;border:1px solid #29445a;border-radius:3px;display:grid;place-items:center;font-size:.42rem;color:#60758a}.bit.on{background:#16bd6e;color:#00150b;border-color:#38e895;font-weight:800}
+.table{overflow:auto;max-height:430px;margin-top:10px}table{width:100%;border-collapse:collapse;font-size:.61rem}th,td{padding:7px;border-bottom:1px solid #152b40;text-align:left}th{color:#9dafc2}
+.out{background:#06111d;border:1px solid #1f405b;border-radius:8px;padding:10px;margin-top:9px}.out pre{white-space:pre-wrap;word-break:break-all;color:#45dc96;font: .65rem/1.5 monospace;margin:0}
+.note{border:1px solid #664c19;background:#2a2010;color:#f2c65a;border-radius:8px;padding:9px;margin-top:10px;font-size:.61rem;line-height:1.45}
+.btns{display:flex;gap:8px;margin-top:9px}.btns button{border:1px solid #2a6490;background:#103554;border-radius:7px;padding:8px 10px;font-size:.62rem}
+@media(max-width:1150px){.grid{grid-template-columns:300px 1fr}.right{grid-column:1/-1}}@media(max-width:800px){.app{grid-template-columns:1fr}.side{display:none}.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="app">
+<aside class="side">
+<div class="brand"><span>OSC</span> ACADEMY</div>
+<a class="nav" href="pos.html">▣ POS Virtual</a>
+<a class="nav" href="constructor.html">⌘ Constructor ISO8583</a>
+<a class="nav active" href="mastercard_iso.html">◉ Mastercard ISO</a>
+<a class="nav" href="parser.html">◎ Parser</a>
+<a class="nav" href="atm.html">🏧 ATM</a>
+<a class="nav" href="compensacion_mastercard.html">▤ Mastercard IPM</a>
+<a class="nav" href="compensacion.html">▤ Visa BASE II</a>
+</aside>
+<main class="main">
+<header class="top"><div><h1>Mastercard ISO 8583 — Dual Message System</h1><p>Simulador didáctico basado en CIS: autorización, reversa, advice y network management.</p></div><div class="actions"><a href="parser.html">Parser →</a><button id="reset">Nueva prueba</button></div></header>
+<div class="content"><div class="grid">
+<section class="panel">
+<h2>1. PERFIL DE MENSAJE</h2><p class="sub">Elegí un flujo documentado por Mastercard.</p>
+<div class="preset" id="presets">
+<button data-p="auth" class="active"><b>0100</b><br><small>Authorization Request</small></button>
+<button data-p="authres"><b>0110</b><br><small>Authorization Response</small></button>
+<button data-p="rev"><b>0400</b><br><small>Reversal Request</small></button>
+<button data-p="revres"><b>0410</b><br><small>Reversal Response</small></button>
+<button data-p="advice"><b>0420</b><br><small>Reversal Advice</small></button>
+<button data-p="network"><b>0800</b><br><small>Network Management</small></button>
+</div>
+<label>Escenario</label><select id="scenario"><option value="purchase">Compra chip</option><option value="contactless">Compra contactless</option><option value="atm">Extracción ATM</option><option value="timeout">Timeout adquirente</option></select>
+<label>Data Elements</label><div class="field-list" id="fields"></div>
+</section>
+<section class="panel">
+<h2>2. ESTRUCTURA DEL MENSAJE</h2><p class="sub">Bitmap primario/secundario y campos ordenados.</p>
+<div class="summary"><div><span>MTI</span><strong id="mti">0100</strong></div><div><span>Bitmap</span><strong id="hex">0000</strong></div><div><span>Campos</span><strong id="count">0</strong></div></div>
+<div class="bitmap" id="bitmap"></div>
+<div class="table"><table><thead><tr><th>DE</th><th>Nombre</th><th>Valor</th><th>Uso</th></tr></thead><tbody id="table"></tbody></table></div>
+<div class="note" id="explain"></div>
+</section>
+<section class="panel right">
+<h2>3. TRAMAS</h2><p class="sub">Vista didáctica y vista continua.</p>
+<div class="out"><pre id="annotated"></pre></div>
+<div class="out"><pre id="raw"></pre></div>
+<div class="btns"><button id="copy">Copiar ambas</button><button id="parser">Analizar en Parser</button></div>
+<div class="note"><b>Importante:</b> el CIS cargado es de 2013. La pantalla respeta los MTI, Bitmap, conceptos de presencia y estructura documentados, pero debe validarse contra una edición vigente antes de uso productivo.</div>
+</section>
+</div></div></main></div>
+<script>
+(()=>{
+const defs={
+2:['Primary Account Number (PAN)','541234******3456','LLVAR','M/ME'],
+3:['Processing Code','000000','N6','M/ME'],
+4:['Amount, Transaction','000000033300','N12','M/ME'],
+7:['Transmission Date and Time',dt(),'N10','M/ME'],
+11:['System Trace Audit Number','123456','N6','M/ME'],
+12:['Time, Local Transaction',tm(),'N6','C'],
+13:['Date, Local Transaction',md(),'N4','C'],
+14:['Date, Expiration','2912','N4','C'],
+15:['Date, Settlement',md(),'N4','M in response'],
+18:['Merchant Type','5814','N4','C'],
+22:['POS Entry Mode','051','N3','M'],
+23:['Card Sequence Number','001','N3','C'],
+24:['Network International ID','001','N3','C'],
+25:['POS Condition Code','00','N2','C'],
+26:['POS PIN Capture Code','12','N2','C'],
+32:['Acquiring Institution ID Code','12345678901','LLVAR','M'],
+35:['Track 2 Data','5412340000003456D2912201','LLVAR','C'],
+37:['Retrieval Reference Number','123456789012','AN12','C/CE'],
+38:['Authorization ID Response','654321','AN6','C'],
+39:['Response Code','00','AN2','M response'],
+41:['Card Acceptor Terminal ID','TERM0001','ANS8','C'],
+42:['Card Acceptor ID Code','OSCACADEMY0001','ANS15','C'],
+43:['Card Acceptor Name/Location','BORJA COFFEE BUENOS AIRES AR','ANS40','C'],
+48:['Additional Data - Private Use','TCCU','LLLVAR','M/C'],
+49:['Currency Code, Transaction','032','N3','M'],
+52:['PIN Data','A1B2C3D4E5F60718','B64','C'],
+53:['Security-Related Control Information','2000000000000000','N16','C'],
+54:['Additional Amounts','1001032C000000125000','LLLVAR','C'],
+55:['ICC System-Related Data','9F2608A1B2C3D4E5F6079F270180','LLLVAR','C'],
+60:['Advice Reason Code','402','LLLVAR','M in advice'],
+61:['POS Data','211101300000032','LLLVAR','C'],
+63:['Network Data','MCC123456789','LLLVAR','M/C'],
+70:['Network Management Information Code','001','N3','M 0800'],
+90:['Original Data Elements','010012345608011113451234567890100000000000','N42','M/C reversal'],
+95:['Replacement Amounts','000000033300000000000000000000000000000000','N42','C'],
+121:['Authorizing Agent ID Code','000001','LLVAR','C'],
+127:['Private Data','OSC-MC-DEMO','LLLVAR','O'],
+128:['Message Authentication Code','0000000000000000','B64','C']
+};
+const profiles={
+auth:{mti:'0100',fields:[2,3,4,7,11,12,13,14,18,22,23,24,25,26,32,35,41,42,43,48,49,52,53,55,61,63],note:'Authorization Request/0100: mensaje interactivo originado por el adquirente.'},
+authres:{mti:'0110',fields:[2,3,4,7,11,15,32,37,38,39,41,42,48,49,54,63],note:'Authorization Request Response/0110: responde la disposición de la solicitud y eco de campos aplicables.'},
+rev:{mti:'0400',fields:[2,3,4,7,11,15,22,32,37,41,42,43,48,49,55,61,63,90,95,127],note:'Reversal Request/0400: reversa total o parcial de una autorización previa.'},
+revres:{mti:'0410',fields:[2,3,4,7,11,15,32,37,39,41,42,48,49,63],note:'Reversal Request Response/0410: denota la disposición de la reversa y eco de campos del 0400.'},
+advice:{mti:'0420',fields:[2,3,4,7,11,15,32,37,38,39,43,48,49,54,60,62,63,90,95,121,127].filter(x=>defs[x]),note:'Reversal Advice/0420: advice no interactivo, usado por la plataforma en condiciones de excepción.'},
+network:{mti:'0800',fields:[7,11,48,63,70,128],note:'Network Management Request/0800: sign-on/sign-off, estado de conexión o intercambio de claves según DE70 y datos asociados.'}
+};
+let current='auth'; let selected=new Set(profiles.auth.fields);
+function dt(){const d=new Date();return String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0')+String(d.getHours()).padStart(2,'0')+String(d.getMinutes()).padStart(2,'0')+String(d.getSeconds()).padStart(2,'0')}
+function tm(){return new Date().toTimeString().slice(0,8).replaceAll(':','')} function md(){const d=new Date();return String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0')}
+function bitmap(){let bits=new Array(128).fill(0);selected.forEach(de=>bits[de-1]=1);if([...selected].some(x=>x>64))bits[0]=1;let limit=bits[0]?128:64,out='';for(let i=0;i<limit;i+=4)out+=parseInt(bits.slice(i,i+4).join(''),2).toString(16).toUpperCase();return out}
+function serialize(de){let [n,v,f]=defs[de];if(f==='LLVAR')return String(v.length).padStart(2,'0')+v;if(f==='LLLVAR')return String(v.length).padStart(3,'0')+v;return v}
+function render(){
+ const p=profiles[current];document.getElementById('mti').textContent=p.mti;document.getElementById('hex').textContent=bitmap();document.getElementById('count').textContent=selected.size;
+ document.getElementById('fields').innerHTML=Object.keys(defs).map(Number).filter(de=>p.fields.includes(de)||selected.has(de)).sort((a,b)=>a-b).map(de=>`<div class="field"><input type="checkbox" data-de="${de}" ${selected.has(de)?'checked':''}><b>DE${de}</b><span>${defs[de][0]}</span><small>${defs[de][2]}</small></div>`).join('');
+ document.querySelectorAll('[data-de]').forEach(c=>c.onchange=()=>{c.checked?selected.add(+c.dataset.de):selected.delete(+c.dataset.de);render()});
+ document.getElementById('bitmap').innerHTML=Array.from({length:128},(_,i)=>`<span class="bit ${selected.has(i+1)||(i===0&&[...selected].some(x=>x>64))?'on':''}">${i+1}</span>`).join('');
+ document.getElementById('table').innerHTML=[...selected].sort((a,b)=>a-b).map(de=>`<tr><td>${de}</td><td>${defs[de][0]}</td><td>${defs[de][1]}</td><td>${defs[de][3]}</td></tr>`).join('');
+ const ann=[p.mti,bitmap(),...[...selected].sort((a,b)=>a-b).map(de=>`${de}=${defs[de][1]}`)].join('|');
+ const raw=p.mti+bitmap()+[...selected].sort((a,b)=>a-b).map(serialize).join('');
+ document.getElementById('annotated').textContent='TRAMA DIDÁCTICA\n'+ann;document.getElementById('raw').textContent='TRAMA CONTINUA\n'+raw;document.getElementById('explain').textContent=p.note;
+}
+document.querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{current=b.dataset.p;selected=new Set(profiles[current].fields);document.querySelectorAll('[data-p]').forEach(x=>x.classList.toggle('active',x===b));render()});
+document.getElementById('copy').onclick=()=>navigator.clipboard.writeText(document.getElementById('annotated').textContent+'\n\n'+document.getElementById('raw').textContent);
+document.getElementById('parser').onclick=()=>{const p=profiles[current];localStorage.setItem('oscAcademyParserPayload',JSON.stringify({source:'Mastercard ISO',mti:p.mti,annotated:document.getElementById('annotated').textContent,raw:document.getElementById('raw').textContent,createdAt:new Date().toISOString()}));location.href='parser.html'};
+document.getElementById('reset').onclick=()=>{selected=new Set(profiles[current].fields);render()};render();
+})();
+</script><script src="js/permissions.js"></script>
+
+<div id="osc-version-badge" style="position:fixed;right:14px;bottom:12px;z-index:99999;background:#0d2238;border:1px solid #2f83ff;color:#9fd0ff;padding:7px 11px;border-radius:999px;font:600 12px/1.1 Inter,Segoe UI,Arial,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.28)">Baseline v2.6</div>
+</body></html>
