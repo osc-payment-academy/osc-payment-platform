@@ -1,0 +1,15 @@
+OSC PAYMENT ACADEMY — BASELINE v3.5.1
+ARCHITECTURE REFACTORING
+
+IMPLEMENTADO
+- Mastercard ISO deja de figurar como módulo independiente.
+- Visa BASE II y Mastercard IPM dejan de figurar como módulos independientes.
+- Los accesos históricos redirigen al módulo correcto para no romper marcadores.
+- Constructor ISO8583 incorpora selector único de red: Visa, Mastercard y American Express (Próximamente).
+- Se conserva la misma interfaz visual del Constructor para todas las redes.
+- Visa CTF y Mastercard IPM permanecen dentro del Switch del Adquirente.
+- Incoming Visa/Mastercard permanece dentro del Switch Emisor.
+- Se mantiene toda la funcionalidad previa de POS, ATM, Reconciliación, Manual Navigator y persistencia local.
+
+NOTA
+Esta entrega consolida la navegación y arquitectura. Los perfiles avanzados de red seguirán ampliándose contra los manuales oficiales.
