@@ -1,0 +1,14 @@
+OSC PAYMENT ACADEMY
+Baseline v3.4 - Switch Emisor e Incoming Internacional MVP
+
+Incluye:
+- Nuevo Switch Emisor con bandeja Incoming Visa y Mastercard.
+- Simulador de recepción de archivos internacionales.
+- Explorador Incoming con vistas Producción, Didáctica y Campos.
+- Procesamiento educativo: identificación, posting y generación de movimiento.
+- Nueva Cuenta del Cliente con movimientos provenientes del Incoming.
+- Visores CTF/IPM del Switch Adquirente actualizados a Producción, Didáctica y Campos.
+- Descarga de clearing en vista Producción sin pipes.
+- Persistencia local por navegador para el workspace emisor.
+
+Alcance: demostración educativa. No representa settlement, contabilidad bancaria ni formatos certificados de producción.
