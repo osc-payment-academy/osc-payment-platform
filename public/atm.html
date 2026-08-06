@@ -261,54 +261,54 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
 
   <main class="main">
     <header class="topbar">
-      <div class="title"><span class="title-icon">🏧</span><div><h1>ATM Virtual · v3.3.6</h1><p>Pantalla táctil, teclado físico, transferencia y dispensación USD</p></div></div>
+      <div class="title"><span class="title-icon">🏧</span><div><h1>ATM Virtual · v3.4.1</h1><p>Pantalla táctil, teclado físico, transferencia y dispensación USD</p></div></div>
       <div class="top-actions"><a href="pos.html">← POS</a><a href="parser.html">Parser →</a><button id="reconcileAtm">🧾 Reconciliación</button><button id="newOperation">Nueva operación</button></div>
     </header>
 
     <div class="content">
+      <div class="network-profile-box payment-lab-box atm-payment-header" id="atmNetworkBox">
+        <div class="network-profile-title"><span>MEDIO DE PAGO</span><span id="atmNetworkValidation" class="network-validation">Tarjeta de prueba seleccionada</span></div>
+        <div class="payment-method-tabs" role="group" aria-label="Medio de pago ATM">
+          <button type="button" class="payment-method active" data-payment-method="card">💳 Tarjeta</button>
+          <button type="button" class="payment-method" data-payment-method="qr">▦ QR</button>
+        </div>
+        <div id="atmCardPaymentConfig" class="payment-config">
+          <div class="test-card-heading">SELECCIONE LA TARJETA DE PRUEBA</div>
+          <div class="test-card-grid" id="atmTestCardGrid">
+            <button type="button" class="test-card active visa" data-atm-card="visa-credit" onclick="window.OSCSelectATMCard && window.OSCSelectATMCard('visa-credit')">
+              <span class="card-network">VISA</span><strong>CRÉDITO</strong><small>•••• 1111 · BIN 411111</small>
+            </button>
+            <button type="button" class="test-card visa" data-atm-card="visa-debit" onclick="window.OSCSelectATMCard && window.OSCSelectATMCard('visa-debit')">
+              <span class="card-network">VISA</span><strong>DÉBITO</strong><small>•••• 0002 · BIN 400000</small>
+            </button>
+            <button type="button" class="test-card mastercard" data-atm-card="mc-credit" onclick="window.OSCSelectATMCard && window.OSCSelectATMCard('mastercard-credit')">
+              <span class="card-network">MASTERCARD</span><strong>CRÉDITO</strong><small>•••• 4444 · BIN 555555</small>
+            </button>
+            <button type="button" class="test-card mastercard" data-atm-card="mc-debit" onclick="window.OSCSelectATMCard && window.OSCSelectATMCard('mastercard-debit')">
+              <span class="card-network">MASTERCARD</span><strong>DÉBITO</strong><small>•••• 8210 · BIN 222300</small>
+            </button>
+            <button type="button" class="test-card disabled" disabled>
+              <span class="card-network">AMERICAN EXPRESS</span><strong>PRÓXIMAMENTE</strong><small>Arquitectura preparada</small>
+            </button>
+          </div>
+          <div class="selected-test-card" id="atmSelectedCardSummary">Visa Crédito · PAN de prueba asignado automáticamente</div>
+        </div>
+        <div id="atmQrPaymentConfig" class="payment-config hidden">
+          <label for="qrTypeSelect">Tipo de QR</label>
+          <select id="atmQrTypeSelect">
+            <option value="mastercard-qr">Mastercard QR · Merchant Presented</option>
+            <option value="visa-qr">Visa QR · Merchant Presented</option>
+            <option value="account-qr" disabled>Cuenta a cuenta · Próximamente</option>
+            <option value="wallet-qr" disabled>Wallet propietaria · Próximamente</option>
+          </select>
+        </div>
+        <div id="atmNetworkBadge" class="network-profile-badge"></div>
+      </div>
+
       <div class="atm-grid">
         <section class="panel">
           <h2>CAJERO FULL SIZE</h2>
           <p class="panel-sub">Interactuá con la pantalla, teclado y dispensador.</p>
-          <div class="network-profile-box payment-lab-box" id="atmNetworkBox">
-  <div class="network-profile-title"><span>MEDIO DE PAGO</span><span id="atmNetworkValidation" class="network-validation">Tarjeta de prueba seleccionada</span></div>
-  <div class="payment-method-tabs" role="group" aria-label="Medio de pago ATM">
-    <button type="button" class="payment-method active" data-payment-method="card">💳 Tarjeta</button>
-    <button type="button" class="payment-method" data-payment-method="qr">▦ QR</button>
-  </div>
-  <div id="atmCardPaymentConfig" class="payment-config">
-    <div class="test-card-heading">SELECCIONE LA TARJETA DE PRUEBA</div>
-    <div class="test-card-grid" id="atmTestCardGrid">
-      <button type="button" class="test-card active visa" data-atm-card="visa-credit" onclick="window.OSCSelectATMCard && window.OSCSelectATMCard('visa-credit')">
-        <span class="card-network">VISA</span><strong>CRÉDITO</strong><small>•••• 1111 · BIN 411111</small>
-      </button>
-      <button type="button" class="test-card visa" data-atm-card="visa-debit" onclick="window.OSCSelectATMCard && window.OSCSelectATMCard('visa-debit')">
-        <span class="card-network">VISA</span><strong>DÉBITO</strong><small>•••• 0002 · BIN 400000</small>
-      </button>
-      <button type="button" class="test-card mastercard" data-atm-card="mc-credit" onclick="window.OSCSelectATMCard && window.OSCSelectATMCard('mastercard-credit')">
-        <span class="card-network">MASTERCARD</span><strong>CRÉDITO</strong><small>•••• 4444 · BIN 555555</small>
-      </button>
-      <button type="button" class="test-card mastercard" data-atm-card="mc-debit" onclick="window.OSCSelectATMCard && window.OSCSelectATMCard('mastercard-debit')">
-        <span class="card-network">MASTERCARD</span><strong>DÉBITO</strong><small>•••• 8210 · BIN 222300</small>
-      </button>
-      <button type="button" class="test-card disabled" disabled>
-        <span class="card-network">AMERICAN EXPRESS</span><strong>PRÓXIMAMENTE</strong><small>Arquitectura preparada</small>
-      </button>
-    </div>
-    <div class="selected-test-card" id="atmSelectedCardSummary">Visa Crédito · PAN de prueba asignado automáticamente</div>
-  </div>
-  <div id="atmQrPaymentConfig" class="payment-config hidden">
-    <label for="qrTypeSelect">Tipo de QR</label>
-    <select id="atmQrTypeSelect">
-      <option value="mastercard-qr">Mastercard QR · Merchant Presented</option>
-      <option value="visa-qr">Visa QR · Merchant Presented</option>
-      <option value="account-qr" disabled>Cuenta a cuenta · Próximamente</option>
-      <option value="wallet-qr" disabled>Wallet propietaria · Próximamente</option>
-    </select>
-  </div>
-  <div id="atmNetworkBadge" class="network-profile-badge"></div>
-</div>
-
           <div class="atm-full-wrap">
           <div>
             <div class="atm-machine">

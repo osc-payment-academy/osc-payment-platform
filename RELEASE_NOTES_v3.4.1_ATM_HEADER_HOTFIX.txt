@@ -1,0 +1,7 @@
+OSC Payment Academy - Baseline v3.4.1 ATM Header Hotfix
+
+- Corrige definitivamente la cabecera del ATM Virtual.
+- El selector de tarjetas reutiliza el mismo bloque visual del POS.
+- El selector se ubica a ancho completo por encima de las tres columnas del ATM.
+- Se conservan Reconciliación, persistencia en Switch, Manual Navigator e Incoming.
+- No se modificó el Historial de Transacciones, previamente aprobado.
