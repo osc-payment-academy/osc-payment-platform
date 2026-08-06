@@ -232,6 +232,27 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
 .reconcile-ticket-modal{position:relative;width:min(620px,96vw);max-height:92vh;overflow:auto;background:#0a1825;border:1px solid #2a587b;border-radius:16px;padding:18px;box-shadow:0 30px 80px #000}.modal-close{position:absolute;right:12px;top:10px;border:0;background:transparent;font-size:1.5rem;cursor:pointer}.reconcile-paper{width:min(410px,100%);margin:auto;background:#f7f3e8;color:#17202a;padding:25px 24px;font:600 .78rem/1.55 "Courier New",monospace;box-shadow:0 8px 25px rgba(0,0,0,.35)}.reconcile-paper h3{text-align:center;margin:0 0 2px}.reconcile-paper h4{text-align:center;margin:0 0 16px}.ticket-rule{border-top:1px dashed #222;margin:10px 0}.ticket-row{display:flex;justify-content:space-between;gap:18px}.ticket-status{text-align:center;font-weight:900;color:#087443;margin:12px 0}.reconcile-actions{display:flex;justify-content:center;gap:10px;margin-top:14px}.reconcile-actions button{border:1px solid #2d6795;background:#102c45;border-radius:8px;padding:10px 15px;cursor:pointer}.reconcile-actions button:last-child{background:#0b744b;border-color:#1eba79}.reconcile-detail{margin:14px auto 0;max-width:540px;border:1px solid #23435e;border-radius:9px;padding:10px}.reconcile-detail summary{cursor:pointer;color:#76c1ff}.reconcile-detail table{margin-top:8px}
 .manual-drawer-overlay{place-items:stretch end;padding:0}.manual-drawer{width:min(920px,96vw);height:100vh;background:#071522;border-left:1px solid #2a587b;box-shadow:-20px 0 60px #000;display:flex;flex-direction:column}.manual-drawer>header{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid #19354c}.manual-drawer header div{display:grid;gap:3px}.manual-drawer header small{color:#8fb0c9}.manual-drawer header button{border:0;background:transparent;font-size:1.6rem}.manual-tabs{display:flex;gap:7px;padding:10px 14px;border-bottom:1px solid #19354c}.manual-tabs button{border:1px solid #285577;background:#0b2133;border-radius:7px;padding:8px 12px}.manual-tabs button.active{background:#14558d}.manual-pane{flex:1;min-height:0;padding:12px;overflow:auto}.manual-pane iframe{width:100%;height:100%;min-height:600px;border:1px solid #294f6d;border-radius:8px;background:white}.compare-pane{display:grid;grid-template-columns:36% 64%;gap:10px}.compare-pane section{padding:14px;background:#0c2133;border:1px solid #294f6d;border-radius:8px;line-height:1.6}.manual-open{border:1px solid #416d91!important;background:#13324a!important;color:#9ed4ff!important;border-radius:7px;padding:7px 9px;cursor:pointer}.manual-flow-grid article button{margin-top:6px}
 @media(max-width:800px){.compare-pane{grid-template-columns:1fr}.manual-drawer{width:100vw}.manual-pane iframe{min-height:480px}}
+
+/* Shared PaymentSelector visual contract: POS / ATM */
+.network-profile-box.payment-lab-box{border:1px solid #234a6b;background:#0a1b2b;border-radius:12px;padding:14px;display:grid;gap:10px;margin:0 0 14px}
+.atm-payment-header .test-card-heading{font-size:.72rem;color:#9fb4c8;letter-spacing:.08em;font-weight:800}
+.atm-payment-header .test-card-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.atm-payment-header .test-card{position:relative;display:grid;gap:4px;text-align:left;border:1px solid #2a4964;background:linear-gradient(135deg,#0e2539,#0a1725);color:#eef7ff;border-radius:10px;padding:12px;cursor:pointer;min-height:82px;transition:.16s ease}
+.atm-payment-header .test-card:hover{transform:translateY(-1px);border-color:#4aa3ff}
+.atm-payment-header .test-card.active{border:2px solid #20d98b;background:linear-gradient(145deg,#0e2f2c,#0b2030);box-shadow:0 0 0 3px rgba(32,217,139,.24),0 10px 24px rgba(0,0,0,.35)}
+.atm-payment-header .test-card.active::after{content:'✓ SELECCIONADA';position:absolute;right:8px;top:7px;padding:3px 6px;border-radius:999px;background:#073b2c;color:#44f0a4;font-size:.44rem;font-weight:900;letter-spacing:.04em}
+.atm-payment-header .test-card .card-network{font-size:.68rem;font-weight:900;letter-spacing:.08em}
+.atm-payment-header .test-card strong{font-size:.82rem}
+.atm-payment-header .test-card small{font-size:.58rem;color:#9eb3c6}
+.atm-payment-header .test-card.visa .card-network{color:#69aaff}
+.atm-payment-header .test-card.mastercard .card-network{color:#ff8b3d}
+.atm-payment-header .test-card.disabled{opacity:.45;cursor:not-allowed;grid-column:1/-1;min-height:66px}
+.atm-card-footer{display:grid;grid-template-columns:minmax(0,1fr) minmax(260px,.8fr);gap:10px;align-items:stretch}
+.atm-payment-header .selected-test-card{border:1px dashed #2b5776;background:#071826;color:#9fd2ff;border-radius:8px;padding:10px;font-size:.66rem;text-align:center;display:grid;place-items:center}
+.atm-payment-header .network-profile-badge{display:flex;align-items:center;gap:8px;border:1px solid #24445e;background:#0d2235;border-radius:8px;padding:9px 11px;min-width:0}
+.atm-payment-header .network-profile-badge small{color:#8fa6ba;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media(max-width:1200px){.atm-payment-header .test-card-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:760px){.atm-payment-header .test-card-grid,.atm-card-footer{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -261,48 +282,34 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
 
   <main class="main">
     <header class="topbar">
-      <div class="title"><span class="title-icon">🏧</span><div><h1>ATM Virtual · v3.4.1</h1><p>Pantalla táctil, teclado físico, transferencia y dispensación USD</p></div></div>
+      <div class="title"><span class="title-icon">🏧</span><div><h1>ATM Virtual · v3.4.2</h1><p>Pantalla táctil, teclado físico, transferencia y dispensación USD</p></div></div>
       <div class="top-actions"><a href="pos.html">← POS</a><a href="parser.html">Parser →</a><button id="reconcileAtm">🧾 Reconciliación</button><button id="newOperation">Nueva operación</button></div>
     </header>
 
     <div class="content">
       <div class="network-profile-box payment-lab-box atm-payment-header" id="atmNetworkBox">
-        <div class="network-profile-title"><span>MEDIO DE PAGO</span><span id="atmNetworkValidation" class="network-validation">Tarjeta de prueba seleccionada</span></div>
-        <div class="payment-method-tabs" role="group" aria-label="Medio de pago ATM">
-          <button type="button" class="payment-method active" data-payment-method="card">💳 Tarjeta</button>
-          <button type="button" class="payment-method" data-payment-method="qr">▦ QR</button>
+        <div class="test-card-heading">SELECCIONE LA TARJETA DE PRUEBA</div>
+        <div class="test-card-grid" id="atmTestCardGrid">
+          <button type="button" class="test-card active visa" data-atm-card="visa-credit" onclick="window.OSCSelectATMCard && window.OSCSelectATMCard('visa-credit')">
+            <span class="card-network">VISA</span><strong>CRÉDITO</strong><small>•••• 1111 · BIN 411111</small>
+          </button>
+          <button type="button" class="test-card visa" data-atm-card="visa-debit" onclick="window.OSCSelectATMCard && window.OSCSelectATMCard('visa-debit')">
+            <span class="card-network">VISA</span><strong>DÉBITO</strong><small>•••• 0002 · BIN 400000</small>
+          </button>
+          <button type="button" class="test-card mastercard" data-atm-card="mastercard-credit" onclick="window.OSCSelectATMCard && window.OSCSelectATMCard('mastercard-credit')">
+            <span class="card-network">MASTERCARD</span><strong>CRÉDITO</strong><small>•••• 4444 · BIN 555555</small>
+          </button>
+          <button type="button" class="test-card mastercard" data-atm-card="mastercard-debit" onclick="window.OSCSelectATMCard && window.OSCSelectATMCard('mastercard-debit')">
+            <span class="card-network">MASTERCARD</span><strong>DÉBITO</strong><small>•••• 8210 · BIN 222300</small>
+          </button>
+          <button type="button" class="test-card disabled" disabled>
+            <span class="card-network">AMERICAN EXPRESS</span><strong>PRÓXIMAMENTE</strong><small>Arquitectura preparada</small>
+          </button>
         </div>
-        <div id="atmCardPaymentConfig" class="payment-config">
-          <div class="test-card-heading">SELECCIONE LA TARJETA DE PRUEBA</div>
-          <div class="test-card-grid" id="atmTestCardGrid">
-            <button type="button" class="test-card active visa" data-atm-card="visa-credit" onclick="window.OSCSelectATMCard && window.OSCSelectATMCard('visa-credit')">
-              <span class="card-network">VISA</span><strong>CRÉDITO</strong><small>•••• 1111 · BIN 411111</small>
-            </button>
-            <button type="button" class="test-card visa" data-atm-card="visa-debit" onclick="window.OSCSelectATMCard && window.OSCSelectATMCard('visa-debit')">
-              <span class="card-network">VISA</span><strong>DÉBITO</strong><small>•••• 0002 · BIN 400000</small>
-            </button>
-            <button type="button" class="test-card mastercard" data-atm-card="mc-credit" onclick="window.OSCSelectATMCard && window.OSCSelectATMCard('mastercard-credit')">
-              <span class="card-network">MASTERCARD</span><strong>CRÉDITO</strong><small>•••• 4444 · BIN 555555</small>
-            </button>
-            <button type="button" class="test-card mastercard" data-atm-card="mc-debit" onclick="window.OSCSelectATMCard && window.OSCSelectATMCard('mastercard-debit')">
-              <span class="card-network">MASTERCARD</span><strong>DÉBITO</strong><small>•••• 8210 · BIN 222300</small>
-            </button>
-            <button type="button" class="test-card disabled" disabled>
-              <span class="card-network">AMERICAN EXPRESS</span><strong>PRÓXIMAMENTE</strong><small>Arquitectura preparada</small>
-            </button>
-          </div>
+        <div class="atm-card-footer">
           <div class="selected-test-card" id="atmSelectedCardSummary">Visa Crédito · PAN de prueba asignado automáticamente</div>
+          <div id="atmNetworkBadge" class="network-profile-badge"></div>
         </div>
-        <div id="atmQrPaymentConfig" class="payment-config hidden">
-          <label for="qrTypeSelect">Tipo de QR</label>
-          <select id="atmQrTypeSelect">
-            <option value="mastercard-qr">Mastercard QR · Merchant Presented</option>
-            <option value="visa-qr">Visa QR · Merchant Presented</option>
-            <option value="account-qr" disabled>Cuenta a cuenta · Próximamente</option>
-            <option value="wallet-qr" disabled>Wallet propietaria · Próximamente</option>
-          </select>
-        </div>
-        <div id="atmNetworkBadge" class="network-profile-badge"></div>
       </div>
 
       <div class="atm-grid">

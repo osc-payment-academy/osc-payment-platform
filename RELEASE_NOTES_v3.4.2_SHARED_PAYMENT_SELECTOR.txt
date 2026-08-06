@@ -1,0 +1,7 @@
+OSC-ACADEMY Baseline v3.4.2 — Shared Payment Selector Hotfix
+
+- Reemplaza la cabecera ATM rota por un selector de tarjetas estable y autocontenido.
+- Conserva exactamente los datos aprobados: Visa Crédito/Débito, Mastercard Crédito/Débito, BIN, PAN enmascarado, selección activa, perfil de red y Amex Próximamente.
+- ATM oculta QR; POS conserva su comportamiento actual.
+- Corrige la clave interna de Mastercard Crédito.
+- Mantiene Reconciliación, historial, Switch Adquirente, Manual Navigator y Switch Emisor.
