@@ -1,0 +1,24 @@
+OSC-ACADEMY Baseline v3.5.3.1
+ATM Capture + Partial Dispense Hotfix
+
+CORRECCIONES
+1. Forma de captura ATM
+   - Reutiliza el mismo componente visual "Seleccione forma de captura" usado por POS.
+   - Opciones ATM: Chip EMV / Contactless / Banda.
+   - La selección actualiza DE22 y el flujo técnico.
+   - Se elimina el selector ATM alternativo que podía quedar oculto o deformado.
+
+2. Dispensación parcial
+   - El botón "Dispensación parcial 80%" está en el mismo grupo que:
+     "Retirar efectivo" y "No retirar".
+   - Aparece cuando una extracción fue aprobada y el dispensador presenta efectivo.
+   - Visa: genera 0220/0230 por el 20% no dispensado.
+   - Mastercard: se mantiene bloqueado hasta disponer de especificación ATM/Cirrus suficiente.
+
+3. Verificación de versión
+   - ATM visible: v3.5.3.1
+   - Badge: Baseline v3.5.3.1 · ATM Capture/Partial Hotfix
+
+NOTA DE INSTALACIÓN
+Si después de desplegar seguís viendo "ATM Virtual · v3.4.2" o un badge v3.3.x,
+el sitio está sirviendo una versión anterior (deployment/caché), no este hotfix.

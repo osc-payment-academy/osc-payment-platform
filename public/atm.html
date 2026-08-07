@@ -220,6 +220,15 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
 .cassette strong{display:block;font-size:.65rem;color:#eef7ff}.cassette small{display:block;font-size:.52rem;color:#91abc0;margin-top:2px}
 @media(max-width:700px){.cassette-grid{grid-template-columns:repeat(2,1fr)}}
 
+
+#atmEntryModePanel .entry-mode-grid{grid-template-columns:repeat(3,1fr)}
+#atmEntryModePanel .entry-mode-grid button.active{
+  border-color:#20d98b;background:#12382f;color:#a7f5cf;
+  box-shadow:0 0 0 2px rgba(32,217,139,.14)
+}
+#cashActions.show{display:flex!important;gap:8px;flex-wrap:wrap}
+#partialCash{display:inline-flex!important;align-items:center;justify-content:center}
+
 </style>
 
 <style>
@@ -297,7 +306,7 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
 
   <main class="main">
     <header class="topbar">
-      <div class="title"><span class="title-icon">🏧</span><div><h1>ATM Virtual · v3.5.3</h1><p>Banda, Chip y Contactless · inventario de cassettes · dispensación controlada</p></div></div>
+      <div class="title"><span class="title-icon">🏧</span><div><h1>ATM Virtual · v3.5.3.1</h1><p>Banda, Chip y Contactless · cassettes · dispensación parcial</p></div></div>
       <div class="top-actions"><a href="pos.html">← POS</a><a href="parser.html">Parser →</a><button id="reconcileAtm">🧾 Reconciliación</button><button id="newOperation">Nueva operación</button></div>
     </header>
 
@@ -325,12 +334,14 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
           <div class="selected-test-card" id="atmSelectedCardSummary">Visa Crédito · PAN de prueba asignado automáticamente</div>
           <div id="atmNetworkBadge" class="network-profile-badge"></div>
         </div>
-        <div class="atm-capture-row">
-          <span>FORMA DE LECTURA</span>
-          <button type="button" class="capture-mode-btn" data-capture-mode="magstripe">Banda magnética</button>
-          <button type="button" class="capture-mode-btn active" data-capture-mode="chip">Chip</button>
-          <button type="button" class="capture-mode-btn" data-capture-mode="contactless">Contactless</button>
-          <span id="captureModeHint">DE22 051 · Chip EMV</span>
+        <div id="atmEntryModePanel" class="entry-mode-panel">
+          <strong>Seleccione forma de captura</strong>
+          <div class="entry-mode-grid">
+            <button type="button" data-atm-entry="chip">▣ Chip EMV</button>
+            <button type="button" data-atm-entry="contactless">⌁ Contactless</button>
+            <button type="button" data-atm-entry="magstripe">▰ Banda</button>
+          </div>
+          <small id="captureModeHint" style="display:block;margin-top:7px;color:#8fb3ce">DE22 051 · Chip EMV</small>
         </div>
       </div>
 
@@ -406,7 +417,7 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
     </div></div>
                   <div id="cashDoor" class="cash-door"><div class="cash-slot"></div></div>
                   <div id="dispenseCountdown" class="dispense-countdown">Retire el efectivo. Si no lo hace, el ATM lo retractará en <b id="countdownValue">9</b> segundos.</div>
-       <div id="cashActions" class="cash-actions"><button id="takeCash">Retirar efectivo</button><button id="partialCash" class="partial">Dispensación parcial 80%</button><button id="leaveCash" class="secondary">No retirar (simular retracto)</button></div>
+       <div id="cashActions" class="cash-actions" aria-label="Resultado de dispensación"><button id="takeCash">Retirar efectivo</button><button id="partialCash" class="partial" type="button">Dispensación parcial 80%</button><button id="leaveCash" class="secondary">No retirar (simular retracto)</button></div>
                   <div class="cassette-box">
                     <div class="cassette-head"><span>INVENTARIO DIDÁCTICO DEL DISPENSADOR</span><b id="cashInventoryTotal">US$ 70.000,00</b></div>
                     <div class="cassette-grid" id="cassetteGrid"></div>
@@ -669,7 +680,7 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
   }
   function setCaptureMode(mode){
     state.captureMode=mode;
-    document.querySelectorAll('[data-capture-mode]').forEach(b=>b.classList.toggle('active',b.dataset.captureMode===mode));
+    document.querySelectorAll('[data-atm-entry]').forEach(b=>b.classList.toggle('active',b.dataset.atmEntry===mode));
     const p=captureProfile();
     $('captureModeHint').textContent=`DE22 ${p.de22} · ${p.label}`;
     addTechEvent(`Forma de lectura seleccionada: ${p.label} · DE22=${p.de22}`,'done');
@@ -1160,7 +1171,7 @@ ${raw(m)}`;
   $('takeCash').addEventListener('click',()=>finishCash('taken'));
   $('leaveCash').addEventListener('click',()=>finishCash('retracted'));
   $('partialCash').addEventListener('click',partialDispense);
-  document.querySelectorAll('[data-capture-mode]').forEach(b=>b.addEventListener('click',()=>setCaptureMode(b.dataset.captureMode)));
+  document.querySelectorAll('[data-atm-entry]').forEach(b=>b.addEventListener('click',()=>setCaptureMode(b.dataset.atmEntry)));
 
   setInterval(()=>$('atmClock').textContent=timeNow(),1000);
   renderCassettes();
@@ -1226,6 +1237,6 @@ document.addEventListener('DOMContentLoaded',()=>{
 </script>
 <script src="js/permissions.js"></script>
 
-<div id="osc-version-badge" style="position:fixed;right:14px;bottom:12px;z-index:99999;background:#0d2238;border:1px solid #2f83ff;color:#9fd0ff;padding:7px 11px;border-radius:999px;font:600 12px/1.1 Inter,Segoe UI,Arial,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.28)">Baseline v3.3.4.1 · ATM Switch Persistence</div>
+<div id="osc-version-badge" style="position:fixed;right:14px;bottom:12px;z-index:99999;background:#0d2238;border:1px solid #2f83ff;color:#9fd0ff;padding:7px 11px;border-radius:999px;font:600 12px/1.1 Inter,Segoe UI,Arial,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.28)">Baseline v3.5.3.1 · ATM Capture/Partial Hotfix</div>
 </body>
 </html>
