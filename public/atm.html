@@ -229,6 +229,28 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
 #cashActions.show{display:flex!important;gap:8px;flex-wrap:wrap}
 #partialCash{display:inline-flex!important;align-items:center;justify-content:center}
 
+
+/* tarjeta física dinámica */
+.atm-card.visa-card{background:linear-gradient(135deg,#052b79 0%,#0f62be 62%,#0a2c69 100%)}
+.atm-card.visa-card::after{content:'VISA'}
+.atm-card.mastercard-card{background:linear-gradient(135deg,#151515,#282828 55%,#111)}
+.atm-card.mastercard-card::after{content:'mastercard';right:7px;top:10px;color:#fff;font:700 9px Arial;letter-spacing:0}
+.atm-card.mastercard-card .mc-card-circles{display:block}
+.mc-card-circles{display:none;position:absolute;right:9px;top:25px;width:34px;height:18px}
+.mc-card-circles:before,.mc-card-circles:after{content:"";position:absolute;width:18px;height:18px;border-radius:50%}
+.mc-card-circles:before{left:0;background:#eb001b}.mc-card-circles:after{left:12px;background:#f79e1b;opacity:.92}
+/* billetes USD estilizados, más cercanos a una pieza bancaria */
+.usd-note{background:
+ linear-gradient(90deg,rgba(71,104,65,.14),transparent 18%,rgba(255,255,255,.22) 50%,transparent 82%,rgba(71,104,65,.14)),
+ repeating-linear-gradient(0deg,#e7ead9 0 3px,#dbe3ce 3px 4px);
+ border:1px solid #647861}
+.usd-note:before{content:'100';font:900 15px Georgia;color:#244b2c}
+.usd-note:after{content:'FEDERAL RESERVE NOTE · EDUCATIONAL';font-size:4.7px;color:#39523c}
+.usd-note .portrait{border-color:#536b55;background:
+ radial-gradient(ellipse at 50% 34%,#d8d4bd 0 16%,#b3b39d 17% 31%,#626b5d 32% 43%,#d5d9c5 44% 100%)}
+.usd-note .serial{position:absolute;left:9px;bottom:8px;font:700 5px monospace;color:#35553c}
+.usd-note .hundred{position:absolute;right:7px;top:6px;font:900 15px Georgia;color:#31543a}
+
 </style>
 
 <style>
@@ -306,7 +328,7 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
 
   <main class="main">
     <header class="topbar">
-      <div class="title"><span class="title-icon">🏧</span><div><h1>ATM Virtual · v3.5.3.1</h1><p>Banda, Chip y Contactless · cassettes · dispensación parcial</p></div></div>
+      <div class="title"><span class="title-icon">🏧</span><div><h1>ATM Virtual · v3.5.3.2</h1><p>Banda, Chip y Contactless · cassettes · dispensación parcial</p></div></div>
       <div class="top-actions"><a href="pos.html">← POS</a><a href="parser.html">Parser →</a><button id="reconcileAtm">🧾 Reconciliación</button><button id="newOperation">Nueva operación</button></div>
     </header>
 
@@ -336,10 +358,10 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
         </div>
         <div id="atmEntryModePanel" class="entry-mode-panel">
           <strong>Seleccione forma de captura</strong>
-          <div class="entry-mode-grid">
-            <button type="button" data-atm-entry="chip">▣ Chip EMV</button>
-            <button type="button" data-atm-entry="contactless">⌁ Contactless</button>
-            <button type="button" data-atm-entry="magstripe">▰ Banda</button>
+          <div class="entry-mode-grid capture-3">
+            <button type="button" data-atm-entry="chip"><span class="capture-icon chip"></span><span>Chip EMV</span></button>
+            <button type="button" data-atm-entry="contactless"><span class="capture-icon nfc"></span><span>Contactless</span></button>
+            <button type="button" data-atm-entry="magstripe"><span class="capture-icon mag"></span><span>Banda magnética</span></button>
           </div>
           <small id="captureModeHint" style="display:block;margin-top:7px;color:#8fb3ce">DE22 051 · Chip EMV</small>
         </div>
@@ -384,7 +406,7 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
                   <div class="device card-device">
                     <span class="device-led"></span>
                     <div class="device-label">Lector de tarjeta EMV</div>
-                    <div class="card-animation"><div id="atmCard" class="atm-card"><span class="card-pan">4111 1111 1111 1111</span><span class="card-demo">OSC ACADEMY · TARJETA DE PRUEBA</span><span class="card-contactless">)))</span></div></div>
+                    <div class="card-animation"><div id="atmCard" class="atm-card visa-card"><span class="mc-card-circles"></span><span class="card-pan">4111 1111 1111 1111</span><span class="card-demo">OSC ACADEMY · TARJETA DE PRUEBA</span><span class="card-contactless">)))</span></div></div>
                     <div class="card-slot"></div>
                   </div>
                 </div>
@@ -589,7 +611,9 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
   function historyRow(message){
     const tr=document.createElement('tr');
     tr.dataset.id=message.id;
-    tr.innerHTML=`<td>${message.time}</td><td>${message.brand==='Visa'?'<span class="brand-logo visa-mark">VISA</span>':'<span class="brand-logo mc-mark"><i></i><i></i></span>'}</td><td><span class="direction ${message.direction==='Entrante'?'in':'out'}">${message.direction}</span></td><td><b>${message.mti}</b></td><td>${message.operation}</td><td>•••• ${String(message.pan||'').slice(-4)}</td><td>${formatAmount(message.amount)}</td><td>${message.responseCode||'—'}</td><td>${message.stan}</td><td>${message.batch||'000001'}</td><td><span class="status-pill ${message.status==='Aprobada'?'ok':'bad'}">${message.status}</span></td>`;
+    const pan=String(message.pan||'');
+    const inferredBrand=(String(message.brand||'').toLowerCase().includes('master')||/^2|^5/.test(pan))?'mastercard':'visa';
+    tr.innerHTML=`<td>${message.time}</td><td>${inferredBrand==='visa'?'<span class="brand-logo visa-mark" title="Visa">VISA</span>':'<span class="brand-logo mc-mark" title="Mastercard"><i></i><i></i></span>'}</td><td><span class="direction ${message.direction==='Entrante'?'in':'out'}">${message.direction}</span></td><td><b>${message.mti}</b></td><td>${message.operation}</td><td>•••• ${String(message.pan||'').slice(-4)}</td><td>${formatAmount(message.amount)}</td><td>${message.responseCode||'—'}</td><td>${message.stan}</td><td>${message.batch||'000001'}</td><td><span class="status-pill ${message.status==='Aprobada'?'ok':'bad'}">${message.status}</span></td>`;
     tr.addEventListener('click',()=>renderMessage(message));
     return tr;
   }
@@ -616,6 +640,11 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
     state.cardKey=key;state.pan=c.pan;state.brand=c.brand;state.cardType=c.type;
     $('atmSelectedCardSummary').textContent=`${c.name} · PAN de prueba asignado automáticamente`;
     const cp=document.querySelector('.card-pan');if(cp)cp.textContent=c.pan.replace(/(.{4})/g,'$1 ').trim();
+    const physicalCard=$('atmCard');
+    if(physicalCard){
+      physicalCard.classList.toggle('visa-card',c.brand==='visa');
+      physicalCard.classList.toggle('mastercard-card',c.brand==='mastercard');
+    }
     addTechEvent(`${c.name} seleccionada · PAN •••• ${c.last4}`,'done');
   };
   document.querySelectorAll('[data-atm-card]').forEach(btn=>btn.addEventListener('click',()=>window.OSCSelectATMCard(btn.dataset.atmCard)));
@@ -623,6 +652,11 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
   document.addEventListener('osc-atm-card-change',event=>{
     const c=event.detail;
     state.cardKey=`${c.brand}-${c.type}`;state.pan=c.pan;state.brand=c.brand;state.cardType=c.type;
+    const physicalCard=$('atmCard');
+    if(physicalCard){
+      physicalCard.classList.toggle('visa-card',c.brand==='visa');
+      physicalCard.classList.toggle('mastercard-card',c.brand==='mastercard');
+    }
     addTechEvent?.(`${c.name} seleccionada · PAN •••• ${c.last4}`,'done');
   });
 
@@ -1237,6 +1271,6 @@ document.addEventListener('DOMContentLoaded',()=>{
 </script>
 <script src="js/permissions.js"></script>
 
-<div id="osc-version-badge" style="position:fixed;right:14px;bottom:12px;z-index:99999;background:#0d2238;border:1px solid #2f83ff;color:#9fd0ff;padding:7px 11px;border-radius:999px;font:600 12px/1.1 Inter,Segoe UI,Arial,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.28)">Baseline v3.5.3.1 · ATM Capture/Partial Hotfix</div>
+<div id="osc-version-badge" style="position:fixed;right:14px;bottom:12px;z-index:99999;background:#0d2238;border:1px solid #2f83ff;color:#9fd0ff;padding:7px 11px;border-radius:999px;font:600 12px/1.1 Inter,Segoe UI,Arial,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.28)">Baseline v3.5.3.2 · POS/ATM Capture Visuals</div>
 </body>
 </html>

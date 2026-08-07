@@ -1,0 +1,18 @@
+OSC-ACADEMY Baseline v3.5.3.2
+POS / ATM Capture Visual Unification
+
+IMPLEMENTADO
+- POS y ATM reutilizan el mismo lenguaje visual para forma de captura:
+  Chip EMV / Contactless / Banda magnética.
+- Icono Chip dorado, icono NFC y banda magnética consistentes entre ambos módulos.
+- POS conserva Entrada Manual como cuarta opción.
+- Historial POS incorpora columna RED con logo Visa/Mastercard.
+- Historial ATM muestra logo Visa/Mastercard y recupera la red por PAN si una transacción histórica no tenía marca persistida.
+- La tarjeta física dentro del ATM cambia visualmente según la marca seleccionada:
+  Visa o Mastercard.
+- El dispensador mantiene billetes USD educativos con apariencia bancaria más realista.
+- Se conservan Reconciliación, cassettes, dispensación parcial, reversa total y Parser por red.
+
+VERIFICACIÓN
+ATM debe mostrar: v3.5.3.2
+Badge ATM: Baseline v3.5.3.2 · POS/ATM Capture Visuals

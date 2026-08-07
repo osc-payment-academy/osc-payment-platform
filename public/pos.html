@@ -160,10 +160,10 @@
           <div id="entryModePanel" class="entry-mode-panel hidden">
             <strong>Seleccione forma de captura</strong>
             <div class="entry-mode-grid">
-              <button type="button" data-entry="chip">▣ Chip EMV</button>
-              <button type="button" data-entry="contactless">⌁ Contactless</button>
-              <button type="button" data-entry="magstripe">▰ Banda</button>
-              <button type="button" data-entry="manual">⌨ Manual</button>
+              <button type="button" data-entry="chip"><span class="capture-icon chip"></span><span>Chip EMV</span></button>
+              <button type="button" data-entry="contactless"><span class="capture-icon nfc"></span><span>Contactless</span></button>
+              <button type="button" data-entry="magstripe"><span class="capture-icon mag"></span><span>Banda magnética</span></button>
+              <button type="button" data-entry="manual"><span class="capture-icon manual"></span><span>Manual</span></button>
             </div>
           </div>
 
@@ -323,7 +323,7 @@
       <div class="history-panel">
         <div class="history-title"><h2>HISTORIAL DE TRANSACCIONES</h2><button type="button">Ver Todas</button></div>
         <table>
-          <thead><tr><th>FECHA/HORA</th><th>DIRECCIÓN</th><th>MTI</th><th>OPERACIÓN</th><th>IMPORTE</th><th>RESP.</th><th>STAN</th><th>LOTE</th><th>ESTADO</th></tr></thead>
+          <thead><tr><th>FECHA/HORA</th><th>RED</th><th>DIRECCIÓN</th><th>MTI</th><th>OPERACIÓN</th><th>IMPORTE</th><th>RESP.</th><th>STAN</th><th>LOTE</th><th>ESTADO</th></tr></thead>
           <tbody id="historyBody"></tbody>
         </table>
       </div>

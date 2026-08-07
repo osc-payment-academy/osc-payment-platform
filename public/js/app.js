@@ -432,6 +432,7 @@
     const op=state.operations.find(o=>o.id===message.operationId);
     tr.innerHTML=`
       <td>${message.dateTime}</td>
+      <td>${((op?.network||'').toLowerCase()==='mastercard')?'<span class="brand-logo mc-mark" title="Mastercard"><i></i><i></i></span>':'<span class="brand-logo visa-mark" title="Visa">VISA</span>'}</td>
       <td class="${message.direction==='SALIENTE'?'direction-out':'direction-in'}">${message.direction}</td>
       <td><span class="message-badge">${message.mti}</span></td>
       <td><span class="operation-tag">${message.operation}</span></td>
@@ -602,6 +603,7 @@
   }
 
   function startCaptureAnimation(modeKey){
+    document.querySelectorAll('[data-entry]').forEach(b=>b.classList.toggle('active',b.dataset.entry===modeKey));
     state.step='capturing';state.entryMode=modeKey;$('entryModePanel').classList.add('hidden');
     const stage=$('captureStage');stage.classList.remove('hidden','success');
     ['captureChip','captureContactless','captureMagstripe','captureManual'].forEach(id=>$(id).classList.add('hidden'));
