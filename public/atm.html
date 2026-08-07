@@ -352,6 +352,27 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
 @media(max-width:1200px){.atm-payment-header .test-card-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:760px){.atm-payment-header .test-card-grid,.atm-card-footer{grid-template-columns:1fr}}
 </style>
+<style>
+/* v3.5.3.4 · selector compacto integrado como extensión superior del ATM */
+.atm-main-panel{padding-top:10px}
+.atm-main-panel #atmNetworkBox{margin:-10px -13px 12px!important;border-radius:10px 10px 8px 8px!important;padding:10px!important;gap:7px!important;box-shadow:none!important}
+.atm-main-panel .test-card-heading{font-size:.64rem!important;margin-bottom:2px!important}
+.atm-main-panel .test-card-grid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:6px!important}
+.atm-main-panel .test-card{min-height:58px!important;padding:7px 9px!important;border-radius:8px!important}
+.atm-main-panel .test-card .card-network{font-size:.57rem!important}
+.atm-main-panel .test-card strong{font-size:.68rem!important;margin-top:2px!important}
+.atm-main-panel .test-card small{font-size:.51rem!important;margin-top:2px!important}
+.atm-main-panel .test-card.disabled{grid-column:1/-1;min-height:42px!important}
+.atm-main-panel .atm-card-footer{display:grid!important;grid-template-columns:1fr!important;gap:4px!important}
+.atm-main-panel #atmNetworkBadge{display:none!important}
+.atm-main-panel #atmEntryModePanel{margin-top:2px!important;padding:8px!important}
+.atm-main-panel #atmEntryModePanel>strong{font-size:.62rem!important;margin-bottom:6px!important}
+.atm-main-panel #atmEntryModePanel .entry-mode-grid{gap:5px!important}
+.atm-main-panel #atmEntryModePanel .entry-mode-grid button{min-height:36px!important;padding:6px!important;font-size:.56rem!important;gap:5px!important}
+.atm-main-panel .capture-icon.chip{transform:scale(.75)}
+.atm-main-panel .capture-icon.nfc,.atm-main-panel .capture-icon.mag{transform:scale(.72)}
+.atm-main-panel #captureModeHint{margin-top:5px!important;font-size:.53rem!important}
+</style>
 </head>
 <body>
 <div class="app">
@@ -380,11 +401,15 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
 
   <main class="main">
     <header class="topbar">
-      <div class="title"><span class="title-icon">🏧</span><div><h1>ATM Virtual · v3.5.3.3</h1><p>Banda, Chip y Contactless · cassettes · dispensación parcial</p></div></div>
+      <div class="title"><span class="title-icon">🏧</span><div><h1>ATM Virtual · v3.5.3.4</h1><p>Banda, Chip y Contactless · cassettes · dispensación parcial</p></div></div>
       <div class="top-actions"><a href="pos.html">← POS</a><a href="parser.html">Parser →</a><button id="reconcileAtm">🧾 Reconciliación</button><button id="newOperation">Nueva operación</button></div>
     </header>
 
     <div class="content">
+
+
+      <div class="atm-grid">
+        <section class="panel atm-main-panel">
       <div class="network-profile-box payment-lab-box atm-payment-header" id="atmNetworkBox">
         <div class="test-card-heading">SELECCIONE LA TARJETA DE PRUEBA</div>
         <div class="test-card-grid" id="atmTestCardGrid">
@@ -418,9 +443,6 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
           <small id="captureModeHint" style="display:block;margin-top:7px;color:#8fb3ce">DE22 051 · Chip EMV</small>
         </div>
       </div>
-
-      <div class="atm-grid">
-        <section class="panel">
           <h2>CAJERO FULL SIZE</h2>
           <p class="panel-sub">Interactuá con la pantalla, teclado y dispensador.</p>
           <div class="atm-full-wrap">
@@ -818,10 +840,10 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
   }
 
   function reversalFields(){
-    return [
+    const fields=[
       field(2,'Primary Account Number',state.pan,'LLVAR','Operación original'),
       field(3,'Processing Code',processingCode(),'N6','Operación original'),
-      field(4,'Transaction Amount',String(state.amount||0).padStart(12,'0'),'N12','Operación original'),
+      field(4,'Transaction Amount',String(state.amount||0).padStart(12,'0'),'N12','Importe original'),
       field(7,'Transmission Date & Time',de7Now(),'N10','Reloj del sistema'),
       field(11,'System Trace Audit Number',random6(),'N6','Nueva reversa'),
       field(32,'Acquiring Institution ID','12345678901','LLVAR','Operación original'),
@@ -831,6 +853,17 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
       field(49,'Currency Code','840','N3','Operación original'),
       field(90,'Original Data Elements',`0200${state.stan}${de7Now()}12345678901`.padEnd(42,'0').slice(0,42),'N42','Relación con 0200 original')
     ];
+    // Mastercard MDS: DE60 450/0018 = zero dispense/over dispense, card returned, POI failure.
+    if(state.brand==='mastercard') fields.push(field(60,'Advice Reason Code','4500018','LLLVAR','Mastercard · Zero dispense · card returned · POI failure'));
+    return fields.sort((a,b)=>Number(a[0])-Number(b[0]));
+  }
+
+  function mastercardPartialReversalFields(dispensedCents){
+    const actual=String(dispensedCents||0).padStart(12,'0');
+    const fields=reversalFields().filter(r=>r[0]!=='60');
+    fields.push(field(60,'Advice Reason Code','4510010','LLLVAR','Mastercard · Partial dispense · card returned'));
+    fields.push(field(95,'Replacement Amounts',actual+'000000000000'+'000000000000'+'000000','N42','SF1 Actual Amount, Transaction = importe efectivamente dispensado'));
+    return fields.sort((a,b)=>Number(a[0])-Number(b[0]));
   }
 
 
@@ -862,26 +895,44 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
   }
   function partialDispense(){
     if(cashOutcomeHandled)return;
-    if(state.brand!=='visa'){
-      alert('Dispensación parcial: pendiente de especificación Mastercard ATM/Cirrus. En esta versión se habilita únicamente para Visa.');
-      return;
-    }
     cashOutcomeHandled=true; clearInterval(cashTimer); cashTimer=null;
     const approved=Number(state.amount||0);
     const dispensed=Math.floor((approved*0.80)/100)*100;
-    const adjustment=approved-dispensed;
+    const difference=approved-dispensed;
     deductCash(dispensed);
     $('cashActions').classList.remove('show'); $('dispenseCountdown').classList.remove('show');
     $('deviceStatus').textContent=`Dispensación parcial · ${moneyCents(dispensed)} entregado`;
-    setScreen('DISPENSACIÓN PARCIAL',`<strong>${moneyCents(dispensed)} entregados</strong><small>No dispensado: ${moneyCents(adjustment)} · Generando 0220</small>`);
-    const req=adjustmentFields(adjustment); addMessage('0220','Adjustment · ATM misdispense','',req);
+
+    if(state.brand==='mastercard'){
+      setFlow(7);
+      setScreen('DISPENSACIÓN PARCIAL',`<strong>${moneyCents(dispensed)} entregados</strong><small>No dispensado: ${moneyCents(difference)} · Generando 0420 Mastercard</small>`);
+      $('reversalStatus').textContent='0420 · reversa parcial Mastercard';
+      const req=mastercardPartialReversalFields(dispensed);
+      addMessage('0420','Reversa parcial · Partial dispense','',req);
+      addTechEvent(`Mastercard partial dispense: DE60=4510010 · DE95 SF1=${String(dispensed).padStart(12,'0')}`,'warn');
+      setTimeout(()=>{
+        const res=req.filter(r=>r[0]!=='90');
+        res.push(field(39,'Response Code','00','AN2','Host'));
+        res.sort((a,b)=>Number(a[0])-Number(b[0]));
+        addMessage('0430','Respuesta reversa parcial','00',res);
+        persistAtmPartialReversal(req,res,difference,dispensed);
+        $('reversalStatus').textContent='0430 aprobada · reversa parcial';
+        addTechEvent(`Mastercard 0430 aprobada · liberado ${moneyCents(difference)} · efectivo real ${moneyCents(dispensed)}`,'done');
+        setScreen('REVERSA PARCIAL COMPLETADA',`<strong>${moneyCents(difference)} liberados</strong><small>Importe final dispensado: ${moneyCents(dispensed)}</small>`);
+      },700);
+      return;
+    }
+
+    // Visa mantiene el circuito previamente aprobado: 0220/0230 Adjustment por misdispense.
+    setScreen('DISPENSACIÓN PARCIAL',`<strong>${moneyCents(dispensed)} entregados</strong><small>No dispensado: ${moneyCents(difference)} · Generando 0220</small>`);
+    const req=adjustmentFields(difference); addMessage('0220','Adjustment · ATM misdispense','',req);
     setTimeout(()=>{
       const res=[...req,field(39,'Response Code','00','AN2','Host')].sort((a,b)=>Number(a[0])-Number(b[0]));
       addMessage('0230','Respuesta Adjustment','00',res);
-      persistAtmAdjustment(req,res,adjustment,dispensed);
+      persistAtmAdjustment(req,res,difference,dispensed);
       $('reversalStatus').textContent='0220/0230 · ajuste por diferencia';
-      addTechEvent(`Partial dispense Visa: aprobado ${moneyCents(approved)}, dispensado ${moneyCents(dispensed)}, ajuste ${moneyCents(adjustment)}`,'done');
-      setScreen('AJUSTE COMPLETADO',`<strong>${moneyCents(adjustment)} ajustados</strong><small>Importe efectivo dispensado: ${moneyCents(dispensed)}</small>`);
+      addTechEvent(`Partial dispense Visa: aprobado ${moneyCents(approved)}, dispensado ${moneyCents(dispensed)}, ajuste ${moneyCents(difference)}`,'done');
+      setScreen('AJUSTE COMPLETADO',`<strong>${moneyCents(difference)} ajustados</strong><small>Importe efectivo dispensado: ${moneyCents(dispensed)}</small>`);
     },700);
   }
 
@@ -1081,6 +1132,23 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
       rrn:req.find(r=>r[0]==='37')?.[2]||'',auth:'',batch:1,closed:false,clearingStatus:'EXCLUDED',
       mtiRequest:'0420',mtiResponse:'0430',panLast4:state.pan.slice(-4),requestFields:req,responseFields:res,
       operationLabel:'Reversa total ATM',dateTime:new Date().toISOString()
+    });
+  }
+
+  function persistAtmPartialReversal(req,res,reversedCents,dispensedCents){
+    if(!window.OSCSwitchStore)return;
+    window.OSCSwitchStore.addTransaction({
+      id:`ATM-${state.stan}-withdrawal-partial`,channel:'ATM',network:'MASTERCARD',type:'withdrawal',
+      amountCents:Number(dispensedCents||0),currency:'USD',status:'APPROVED',responseCode:'00',stan:state.stan,
+      rrn:`${state.stan}123456`,auth:state.auth||'',batch:1,closed:false,clearingStatus:'PENDING',
+      mtiRequest:'0200',mtiResponse:'0210',panLast4:state.pan.slice(-4),operationLabel:`Extracción · dispensación parcial ${moneyCents(dispensedCents)}`,dateTime:new Date().toISOString()
+    });
+    window.OSCSwitchStore.addTransaction({
+      id:`ATM-PREV-${state.stan}-${Date.now()}`,channel:'ATM',network:'MASTERCARD',type:'reversal',
+      amountCents:Number(reversedCents||0),currency:'USD',status:'APPROVED',responseCode:'00',
+      stan:req.find(r=>r[0]==='11')?.[2]||state.stan,rrn:req.find(r=>r[0]==='37')?.[2]||'',auth:'',batch:1,closed:false,clearingStatus:'EXCLUDED',
+      mtiRequest:'0420',mtiResponse:'0430',panLast4:state.pan.slice(-4),requestFields:req,responseFields:res,
+      operationLabel:`Reversa parcial Mastercard · no dispensado ${moneyCents(reversedCents)}`,dateTime:new Date().toISOString()
     });
   }
 
@@ -1323,6 +1391,6 @@ document.addEventListener('DOMContentLoaded',()=>{
 </script>
 <script src="js/permissions.js"></script>
 
-<div id="osc-version-badge" style="position:fixed;right:14px;bottom:12px;z-index:99999;background:#0d2238;border:1px solid #2f83ff;color:#9fd0ff;padding:7px 11px;border-radius:999px;font:600 12px/1.1 Inter,Segoe UI,Arial,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.28)">Baseline v3.5.3.3 · Embedded Capture Styles</div>
+<div id="osc-version-badge" style="position:fixed;right:14px;bottom:12px;z-index:99999;background:#0d2238;border:1px solid #2f83ff;color:#9fd0ff;padding:7px 11px;border-radius:999px;font:600 12px/1.1 Inter,Segoe UI,Arial,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.28)">Baseline v3.5.3.4 · Compact Header + MC Partial Reversal</div>
 </body>
 </html>

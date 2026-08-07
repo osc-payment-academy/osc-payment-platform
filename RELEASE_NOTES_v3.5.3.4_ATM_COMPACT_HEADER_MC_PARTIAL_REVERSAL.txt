@@ -1,0 +1,20 @@
+OSC ACADEMY — Baseline v3.5.3.4
+ATM Compact Header + Mastercard Partial Reversal
+Fecha: 2026-08-07
+
+CAMBIOS
+1. ATM: selector de tarjeta + forma de captura compactados e integrados como extensión superior del cajero.
+2. Mastercard ATM: habilitado circuito de dispensación parcial 0200 → 0210 → 0420 → 0430.
+3. Mastercard 0420 parcial: DE60=4510010 (Partial dispense: card returned).
+4. Mastercard 0420 parcial: DE95 n-42; SF1 = importe realmente dispensado, SF2/SF3/SF4 en cero.
+5. Mastercard reversa total por falla de dispensador: DE60=4500018 (Zero dispense/Over dispense, card returned, POI failure).
+6. Visa: se conserva el circuito existente de partial dispense mediante 0220/0230 Adjustment.
+7. Historial/Switch Store: se persiste la extracción por importe efectivamente dispensado y la reversa parcial por la diferencia.
+
+REFERENCIAS MASTERCARD
+- Acquirer ATM Credit and Debit — Test Cases, 9 Sep 2009: 0200/0210 seguido de 0420/0430 para Partial Reversal / Partial dispense card returned.
+- MDS Online Specifications, Jun 2003: DE60 Advice Reason Code 451/0010.
+- Customer Interface Specification, 21 May 2013: partial reversal 04xx y DE95 Replacement Amounts; SF1 menor que DE4.
+
+NOTA
+Se priorizó la versión más reciente disponible por tema cuando existían documentos repetidos.
