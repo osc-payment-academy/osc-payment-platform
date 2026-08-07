@@ -251,6 +251,58 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
 .usd-note .serial{position:absolute;left:9px;bottom:8px;font:700 5px monospace;color:#35553c}
 .usd-note .hundred{position:absolute;right:7px;top:6px;font:900 15px Georgia;color:#31543a}
 
+
+/* v3.5.3.3 FIX: ATM standalone — estilos de captura/logos embebidos */
+#atmEntryModePanel{
+  margin-top:12px;padding:12px;border:1px solid #254967;border-radius:10px;
+  background:linear-gradient(180deg,#0b1d2d,#081725)
+}
+#atmEntryModePanel>strong{
+  display:block;margin-bottom:9px;font-size:.72rem;letter-spacing:.02em;color:#eef7ff
+}
+#atmEntryModePanel .entry-mode-grid{
+  display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:8px!important
+}
+#atmEntryModePanel .entry-mode-grid button{
+  appearance:none;border:1px solid #31516d!important;background:#0c2030!important;color:#dceaf6!important;
+  border-radius:8px!important;padding:9px 10px!important;min-height:45px!important;
+  display:flex!important;align-items:center!important;justify-content:center!important;gap:9px!important;
+  font-size:.64rem!important;font-weight:700!important;cursor:pointer!important
+}
+#atmEntryModePanel .entry-mode-grid button.active{
+  border-color:#20d98b!important;background:#12382f!important;color:#a7f5cf!important;
+  box-shadow:0 0 0 2px rgba(32,217,139,.16)!important
+}
+.capture-icon{position:relative;display:inline-block;flex:0 0 auto}
+.capture-icon.chip{
+  width:25px;height:19px;border-radius:4px;
+  background:linear-gradient(135deg,#f7dc71,#c29a28);box-shadow:inset 0 0 0 1px #765810
+}
+.capture-icon.chip:before,.capture-icon.chip:after{content:"";position:absolute;background:#866819;opacity:.8}
+.capture-icon.chip:before{left:7px;top:0;width:1px;height:19px;box-shadow:9px 0 0 #866819}
+.capture-icon.chip:after{left:0;top:6px;width:25px;height:1px;box-shadow:0 6px 0 #866819}
+.capture-icon.nfc{width:28px;height:23px}
+.capture-icon.nfc:before,.capture-icon.nfc:after{
+  content:"";position:absolute;border-style:solid;border-color:#cfe8fb;
+  border-width:0 2px 0 0;border-radius:50%
+}
+.capture-icon.nfc:before{width:13px;height:18px;left:2px;top:2px}
+.capture-icon.nfc:after{width:22px;height:23px;left:3px;top:0}
+.capture-icon.mag{
+  width:27px;height:19px;border-radius:3px;background:#8ba9c1;
+  box-shadow:inset 0 -6px 0 #314c65
+}
+.capture-icon.mag:after{content:"";position:absolute;left:0;right:0;top:4px;height:3px;background:#d5e4ef}
+.brand-logo{display:inline-flex;align-items:center;justify-content:center;min-width:42px;height:23px;vertical-align:middle}
+.visa-mark{font:italic 900 15px Arial;color:#4b8dff;letter-spacing:-1px;text-shadow:0 1px 1px #001a42}
+.mc-mark{position:relative;width:38px;height:20px;display:inline-block}
+.mc-mark i{position:absolute;top:1px;width:19px;height:19px;border-radius:50%}
+.mc-mark i:first-child{left:2px;background:#eb001b}
+.mc-mark i:last-child{left:15px;background:#f79e1b;opacity:.92}
+@media(max-width:780px){
+  #atmEntryModePanel .entry-mode-grid{grid-template-columns:1fr!important}
+}
+
 </style>
 
 <style>
@@ -328,7 +380,7 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
 
   <main class="main">
     <header class="topbar">
-      <div class="title"><span class="title-icon">🏧</span><div><h1>ATM Virtual · v3.5.3.2</h1><p>Banda, Chip y Contactless · cassettes · dispensación parcial</p></div></div>
+      <div class="title"><span class="title-icon">🏧</span><div><h1>ATM Virtual · v3.5.3.3</h1><p>Banda, Chip y Contactless · cassettes · dispensación parcial</p></div></div>
       <div class="top-actions"><a href="pos.html">← POS</a><a href="parser.html">Parser →</a><button id="reconcileAtm">🧾 Reconciliación</button><button id="newOperation">Nueva operación</button></div>
     </header>
 
@@ -1271,6 +1323,6 @@ document.addEventListener('DOMContentLoaded',()=>{
 </script>
 <script src="js/permissions.js"></script>
 
-<div id="osc-version-badge" style="position:fixed;right:14px;bottom:12px;z-index:99999;background:#0d2238;border:1px solid #2f83ff;color:#9fd0ff;padding:7px 11px;border-radius:999px;font:600 12px/1.1 Inter,Segoe UI,Arial,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.28)">Baseline v3.5.3.2 · POS/ATM Capture Visuals</div>
+<div id="osc-version-badge" style="position:fixed;right:14px;bottom:12px;z-index:99999;background:#0d2238;border:1px solid #2f83ff;color:#9fd0ff;padding:7px 11px;border-radius:999px;font:600 12px/1.1 Inter,Segoe UI,Arial,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.28)">Baseline v3.5.3.3 · Embedded Capture Styles</div>
 </body>
 </html>

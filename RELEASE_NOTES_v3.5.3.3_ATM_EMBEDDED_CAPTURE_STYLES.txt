@@ -1,0 +1,23 @@
+OSC-ACADEMY Baseline v3.5.3.3
+ATM Embedded Capture Styles Hotfix
+
+CAUSA IDENTIFICADA
+- POS carga public/css/app.css.
+- ATM es una pantalla standalone con CSS embebido y NO carga app.css.
+- En v3.5.3.2 el HTML nuevo sí llegó al ATM, pero los estilos de los iconos quedaron solamente en app.css.
+- Por eso aparecían botones blancos/texto, sin los iconos visuales aprobados.
+
+CORRECCIÓN
+- Se embebieron directamente en atm.html los estilos necesarios para:
+  * Chip EMV dorado
+  * Contactless/NFC
+  * Banda magnética
+  * Estado seleccionado en verde
+  * Logos Visa/Mastercard del historial
+- No se importa app.css completo para evitar romper el layout propio del ATM.
+- POS continúa usando el mismo lenguaje visual desde app.css.
+
+VERIFICACIÓN
+- ATM debe mostrar: ATM Virtual · v3.5.3.3
+- Los tres botones de captura deben tener iconos visibles.
+- El botón seleccionado debe resaltarse en verde.
