@@ -1,0 +1,21 @@
+OSC-ACADEMY Baseline v3.5.3
+ATM Capture Modes + Cassette Inventory + Partial Dispense + Parser Network
+
+IMPLEMENTADO
+- ATM: selector de forma de lectura: Banda magnética / Chip / Contactless.
+- DE22 dinámico: 021 / 051 / 071 en el perfil didáctico Visa.
+- DE55 didáctico para Chip/Contactless.
+- Historial y Parser reciben la marca de la operación.
+- Parser: selección obligatoria de marca Visa/Mastercard; AMEX queda Próximamente.
+- ATM: inventario didáctico de 4 cassettes (US$10/20/50/100), total inicial US$70.000.
+- Extracción exitosa descuenta efectivo del inventario.
+- Si el importe solicitado supera el efectivo disponible, el ATM detiene la operación antes del 0200.
+- Botón “Dispensación parcial 80%” junto a “Retirar efectivo”.
+- Visa: partial dispense genera 0220/0230 por el 20% no dispensado.
+- Mastercard: partial dispense queda bloqueado hasta contar con especificación ATM/Cirrus que respalde el flujo.
+- Se conserva el escenario de no retiro/retracto con reversa total.
+- No se implementan timeouts en esta versión.
+
+NOTA
+La cantidad/capacidad máxima física de cassettes no pretende representar un modelo de fabricante.
+El inventario es una configuración didáctica para enseñar control de efectivo y conciliación.

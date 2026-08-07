@@ -205,6 +205,21 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
 .reconcile-ticket-modal{position:relative;width:min(620px,96vw);max-height:92vh;overflow:auto;background:#0a1825;border:1px solid #2a587b;border-radius:16px;padding:18px;box-shadow:0 30px 80px #000}.modal-close{position:absolute;right:12px;top:10px;border:0;background:transparent;font-size:1.5rem;cursor:pointer}.reconcile-paper{width:min(410px,100%);margin:auto;background:#f7f3e8;color:#17202a;padding:25px 24px;font:600 .78rem/1.55 "Courier New",monospace;box-shadow:0 8px 25px rgba(0,0,0,.35)}.reconcile-paper h3{text-align:center;margin:0 0 2px}.reconcile-paper h4{text-align:center;margin:0 0 16px}.ticket-rule{border-top:1px dashed #222;margin:10px 0}.ticket-row{display:flex;justify-content:space-between;gap:18px}.ticket-status{text-align:center;font-weight:900;color:#087443;margin:12px 0}.reconcile-actions{display:flex;justify-content:center;gap:10px;margin-top:14px}.reconcile-actions button{border:1px solid #2d6795;background:#102c45;border-radius:8px;padding:10px 15px;cursor:pointer}.reconcile-actions button:last-child{background:#0b744b;border-color:#1eba79}.reconcile-detail{margin:14px auto 0;max-width:540px;border:1px solid #23435e;border-radius:9px;padding:10px}.reconcile-detail summary{cursor:pointer;color:#76c1ff}.reconcile-detail table{margin-top:8px}
 .manual-drawer-overlay{place-items:stretch end;padding:0}.manual-drawer{width:min(920px,96vw);height:100vh;background:#071522;border-left:1px solid #2a587b;box-shadow:-20px 0 60px #000;display:flex;flex-direction:column}.manual-drawer>header{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid #19354c}.manual-drawer header div{display:grid;gap:3px}.manual-drawer header small{color:#8fb0c9}.manual-drawer header button{border:0;background:transparent;font-size:1.6rem}.manual-tabs{display:flex;gap:7px;padding:10px 14px;border-bottom:1px solid #19354c}.manual-tabs button{border:1px solid #285577;background:#0b2133;border-radius:7px;padding:8px 12px}.manual-tabs button.active{background:#14558d}.manual-pane{flex:1;min-height:0;padding:12px;overflow:auto}.manual-pane iframe{width:100%;height:100%;min-height:600px;border:1px solid #294f6d;border-radius:8px;background:white}.compare-pane{display:grid;grid-template-columns:36% 64%;gap:10px}.compare-pane section{padding:14px;background:#0c2133;border:1px solid #294f6d;border-radius:8px;line-height:1.6}.manual-open{border:1px solid #416d91!important;background:#13324a!important;color:#9ed4ff!important;border-radius:7px;padding:7px 9px;cursor:pointer}.manual-flow-grid article button{margin-top:6px}
 @media(max-width:800px){.compare-pane{grid-template-columns:1fr}.manual-drawer{width:100vw}.manual-pane iframe{min-height:480px}}
+
+/* v3.5.3 · ATM capture modes + cassette inventory + partial dispense */
+.atm-capture-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px;padding-top:10px;border-top:1px solid #24445f}
+.atm-capture-row>span{font-size:.62rem;color:#9fb4c8;font-weight:800}
+.capture-mode-btn{border:1px solid #31516d;background:#0c1c2a;color:#cfe7fa;border-radius:8px;padding:7px 10px;font-size:.62rem;cursor:pointer}
+.capture-mode-btn.active{border-color:#20d98b;background:#10372f;color:#8ff0c3;box-shadow:0 0 0 2px rgba(32,217,139,.14)}
+.cash-actions button.partial{border-color:#2f72a7;background:#0d3554;color:#82c8ff}
+.cassette-box{margin-top:10px;border:1px solid #2a4964;border-radius:9px;background:#091724;padding:9px}
+.cassette-head{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:6px;font-size:.6rem;color:#9fb4c8}
+.cassette-head b{color:#74d7a8}
+.cassette-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.cassette{border:1px solid #223c52;border-radius:7px;padding:6px;background:#0c2030;text-align:center}
+.cassette strong{display:block;font-size:.65rem;color:#eef7ff}.cassette small{display:block;font-size:.52rem;color:#91abc0;margin-top:2px}
+@media(max-width:700px){.cassette-grid{grid-template-columns:repeat(2,1fr)}}
+
 </style>
 
 <style>
@@ -282,7 +297,7 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
 
   <main class="main">
     <header class="topbar">
-      <div class="title"><span class="title-icon">🏧</span><div><h1>ATM Virtual · v3.4.2</h1><p>Pantalla táctil, teclado físico, transferencia y dispensación USD</p></div></div>
+      <div class="title"><span class="title-icon">🏧</span><div><h1>ATM Virtual · v3.5.3</h1><p>Banda, Chip y Contactless · inventario de cassettes · dispensación controlada</p></div></div>
       <div class="top-actions"><a href="pos.html">← POS</a><a href="parser.html">Parser →</a><button id="reconcileAtm">🧾 Reconciliación</button><button id="newOperation">Nueva operación</button></div>
     </header>
 
@@ -309,6 +324,13 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
         <div class="atm-card-footer">
           <div class="selected-test-card" id="atmSelectedCardSummary">Visa Crédito · PAN de prueba asignado automáticamente</div>
           <div id="atmNetworkBadge" class="network-profile-badge"></div>
+        </div>
+        <div class="atm-capture-row">
+          <span>FORMA DE LECTURA</span>
+          <button type="button" class="capture-mode-btn" data-capture-mode="magstripe">Banda magnética</button>
+          <button type="button" class="capture-mode-btn active" data-capture-mode="chip">Chip</button>
+          <button type="button" class="capture-mode-btn" data-capture-mode="contactless">Contactless</button>
+          <span id="captureModeHint">DE22 051 · Chip EMV</span>
         </div>
       </div>
 
@@ -384,7 +406,11 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
     </div></div>
                   <div id="cashDoor" class="cash-door"><div class="cash-slot"></div></div>
                   <div id="dispenseCountdown" class="dispense-countdown">Retire el efectivo. Si no lo hace, el ATM lo retractará en <b id="countdownValue">9</b> segundos.</div>
-       <div id="cashActions" class="cash-actions"><button id="takeCash">Retirar efectivo</button><button id="leaveCash" class="secondary">No retirar (simular retracto)</button></div>
+       <div id="cashActions" class="cash-actions"><button id="takeCash">Retirar efectivo</button><button id="partialCash" class="partial">Dispensación parcial 80%</button><button id="leaveCash" class="secondary">No retirar (simular retracto)</button></div>
+                  <div class="cassette-box">
+                    <div class="cassette-head"><span>INVENTARIO DIDÁCTICO DEL DISPENSADOR</span><b id="cashInventoryTotal">US$ 70.000,00</b></div>
+                    <div class="cassette-grid" id="cassetteGrid"></div>
+                  </div>
                 </div>
               </div>
               <div class="service-panel"></div>
@@ -532,7 +558,14 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
     cardKey:'visa-credit',
     pan:'4111111111111111',
     brand:'visa',
-    cardType:'credit'
+    cardType:'credit',
+    captureMode:'chip',
+    cassettes:[
+      {id:'C1',denom:10,count:800},
+      {id:'C2',denom:20,count:600},
+      {id:'C3',denom:50,count:400},
+      {id:'C4',denom:100,count:300}
+    ]
   };
 
 
@@ -613,6 +646,35 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
     return '010000';
   }
 
+
+  const captureProfiles={
+    magstripe:{label:'Banda magnética',de22:'021',origin:'Banda magnética',de55:false},
+    chip:{label:'Chip EMV',de22:'051',origin:'Chip EMV',de55:true},
+    contactless:{label:'Contactless qVSDC/EMV',de22:'071',origin:'Contactless',de55:true}
+  };
+  function captureProfile(){return captureProfiles[state.captureMode]||captureProfiles.chip}
+  function cashInventoryCents(){return state.cassettes.reduce((sum,c)=>sum+(c.denom*c.count*100),0)}
+  function renderCassettes(){
+    const grid=$('cassetteGrid'); if(!grid)return;
+    grid.innerHTML=state.cassettes.map(c=>`<div class="cassette"><strong>${c.id} · US$ ${c.denom}</strong><small>${c.count} billetes · ${(c.denom*c.count).toLocaleString('es-AR',{style:'currency',currency:'USD'})}</small></div>`).join('');
+    $('cashInventoryTotal').textContent=(cashInventoryCents()/100).toLocaleString('es-AR',{style:'currency',currency:'USD'});
+  }
+  function deductCash(amountCents){
+    let remaining=Math.max(0,Math.round(Number(amountCents||0)/100));
+    [...state.cassettes].sort((a,b)=>b.denom-a.denom).forEach(c=>{
+      const n=Math.min(c.count,Math.floor(remaining/c.denom)); c.count-=n; remaining-=n*c.denom;
+    });
+    renderCassettes();
+    return remaining===0;
+  }
+  function setCaptureMode(mode){
+    state.captureMode=mode;
+    document.querySelectorAll('[data-capture-mode]').forEach(b=>b.classList.toggle('active',b.dataset.captureMode===mode));
+    const p=captureProfile();
+    $('captureModeHint').textContent=`DE22 ${p.de22} · ${p.label}`;
+    addTechEvent(`Forma de lectura seleccionada: ${p.label} · DE22=${p.de22}`,'done');
+  }
+
   function requestFields(){
     const fields=[
       field(2,'Primary Account Number',state.pan,'LLVAR','Tarjeta'),
@@ -620,10 +682,10 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
       field(7,'Transmission Date & Time',de7Now(),'N10','Reloj del sistema'),
       field(11,'System Trace Audit Number',state.stan,'N6','ATM'),
       field(14,'Expiration Date','2912','N4','Tarjeta'),
-      field(22,'POS Entry Mode','051','N3','Lectura chip'),
+      field(22,'POS Entry Mode',captureProfile().de22,'N3',captureProfile().label),
       field(25,'POS Condition Code','00','N2','ATM'),
       field(32,'Acquiring Institution ID','12345678901','LLVAR','Adquirente educativo'),
-      field(35,'Track 2 Data',`${state.pan}=2912201`,'LLVAR','Chip EMV'),
+      field(35,'Track 2 Data',`${state.pan}=2912201`,'LLVAR',captureProfile().origin),
       field(41,'Terminal ID','ATM00001','ANS8','Configuración ATM'),
       field(42,'Card Acceptor ID','OSC BANK ATM001','ANS15','Institución operadora'),
       field(49,'Currency Code','840','N3','Configuración ATM'),
@@ -631,6 +693,7 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
       field(53,'Security Control Information','2000000000000000','N16','Seguridad PIN')
     ];
     if(state.operation!=='balance') fields.splice(3,0,field(4,'Transaction Amount',String(state.amount||0).padStart(12,'0'),'N12','Usuario'));
+    if(captureProfile().de55) fields.push(field(55,'ICC System Related Data','9F2608A1B2C3D4E5F60708950500000000009F360200129F3704A1B2C3D4','LLLVAR','Datos EMV didácticos'));
     fields.push(field(102,'Account Identification 1','001234567890','LLVAR','Cuenta origen'));
     if(state.operation==='transfer') fields.push(field(103,'Account Identification 2',state.destination||'009876543210','LLVAR','Cuenta destino'));
     return fields.sort((a,b)=>Number(a[0])-Number(b[0]));
@@ -671,6 +734,58 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
       field(49,'Currency Code','840','N3','Operación original'),
       field(90,'Original Data Elements',`0200${state.stan}${de7Now()}12345678901`.padEnd(42,'0').slice(0,42),'N42','Relación con 0200 original')
     ];
+  }
+
+
+  function adjustmentFields(adjustmentCents){
+    return [
+      field(2,'Primary Account Number',state.pan,'LLVAR','Operación original'),
+      field(3,'Processing Code',processingCode(),'N6','Ajuste ATM'),
+      field(4,'Transaction Amount',String(adjustmentCents||0).padStart(12,'0'),'N12','Importe no dispensado'),
+      field(7,'Transmission Date & Time',de7Now(),'N10','Reloj del sistema'),
+      field(11,'System Trace Audit Number',random6(),'N6','Nuevo STAN del ajuste'),
+      field(32,'Acquiring Institution ID','12345678901','LLVAR','Operación original'),
+      field(37,'Retrieval Reference Number',`${state.stan}123456`,'AN12','Correlación original'),
+      field(41,'Terminal ID','ATM00001','ANS8','ATM original'),
+      field(42,'Card Acceptor ID','OSC BANK ATM001','ANS15','Institución operadora'),
+      field(49,'Currency Code','840','N3','Operación original')
+    ].sort((a,b)=>Number(a[0])-Number(b[0]));
+  }
+  function persistAtmAdjustment(req,res,adjustmentCents,dispensedCents){
+    if(!window.OSCSwitchStore)return;
+    const network=state.brand==='mastercard'?'MASTERCARD':'VISA';
+    window.OSCSwitchStore.addTransaction({
+      id:`ATM-ADJ-${state.stan}-${Date.now()}`,channel:'ATM',network,type:'adjustment',
+      amountCents:Number(adjustmentCents||0),currency:'USD',status:'APPROVED',responseCode:'00',
+      stan:req.find(r=>r[0]==='11')?.[2]||'',rrn:req.find(r=>r[0]==='37')?.[2]||'',
+      batch:1,closed:false,clearingStatus:'PENDING',mtiRequest:'0220',mtiResponse:'0230',
+      panLast4:state.pan.slice(-4),requestFields:req,responseFields:res,
+      operationLabel:`Ajuste ATM por misdispense · dispensado ${moneyCents(dispensedCents)}`,dateTime:new Date().toISOString()
+    });
+  }
+  function partialDispense(){
+    if(cashOutcomeHandled)return;
+    if(state.brand!=='visa'){
+      alert('Dispensación parcial: pendiente de especificación Mastercard ATM/Cirrus. En esta versión se habilita únicamente para Visa.');
+      return;
+    }
+    cashOutcomeHandled=true; clearInterval(cashTimer); cashTimer=null;
+    const approved=Number(state.amount||0);
+    const dispensed=Math.floor((approved*0.80)/100)*100;
+    const adjustment=approved-dispensed;
+    deductCash(dispensed);
+    $('cashActions').classList.remove('show'); $('dispenseCountdown').classList.remove('show');
+    $('deviceStatus').textContent=`Dispensación parcial · ${moneyCents(dispensed)} entregado`;
+    setScreen('DISPENSACIÓN PARCIAL',`<strong>${moneyCents(dispensed)} entregados</strong><small>No dispensado: ${moneyCents(adjustment)} · Generando 0220</small>`);
+    const req=adjustmentFields(adjustment); addMessage('0220','Adjustment · ATM misdispense','',req);
+    setTimeout(()=>{
+      const res=[...req,field(39,'Response Code','00','AN2','Host')].sort((a,b)=>Number(a[0])-Number(b[0]));
+      addMessage('0230','Respuesta Adjustment','00',res);
+      persistAtmAdjustment(req,res,adjustment,dispensed);
+      $('reversalStatus').textContent='0220/0230 · ajuste por diferencia';
+      addTechEvent(`Partial dispense Visa: aprobado ${moneyCents(approved)}, dispensado ${moneyCents(dispensed)}, ajuste ${moneyCents(adjustment)}`,'done');
+      setScreen('AJUSTE COMPLETADO',`<strong>${moneyCents(adjustment)} ajustados</strong><small>Importe efectivo dispensado: ${moneyCents(dispensed)}</small>`);
+    },700);
   }
 
   function addTechEvent(text,type=''){
@@ -807,6 +922,7 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
   function finishCash(reason){
     if(cashOutcomeHandled)return;
     cashOutcomeHandled=true;
+    if(reason==='taken') deductCash(Number(state.amount||0));
     clearInterval(cashTimer);cashTimer=null;
     const notes=$('banknotes'),door=$('cashDoor'),counter=$('dispenseCountdown'),actions=$('cashActions');
     notes.classList.remove('dispense');notes.classList.add('retract');actions.classList.remove('show');
@@ -904,6 +1020,12 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
   }
 
   function send0200(){
+    if(state.operation==='withdrawal' && Number(state.amount||0)>cashInventoryCents()){
+      $('deviceStatus').textContent='Efectivo insuficiente en el ATM';
+      setScreen('CAJERO SIN EFECTIVO',`<strong>Importe no disponible</strong><small>Disponible en dispensador: ${moneyCents(cashInventoryCents())} · No se envió 0200</small>`);
+      addTechEvent('Validación local del dispensador: operación detenida antes de autorización','done');
+      state.step='done'; return;
+    }
     state.step='processing';state.stan=random6();setFlow(4);
     setScreen('PROCESANDO','<strong>Enviando 0200</strong><small>Aguarde</small>');addTechEvent(`0200 construido · DE3=${processingCode()} · Bitmap calculado`,'done');
     const req=requestFields();addMessage('0200',labelOperation(),' ',req);
@@ -1003,7 +1125,7 @@ ${raw(m)}`;
 
   function openParser(){
     const m=selectedMessage();if(!m){alert('Seleccione un mensaje.');return}
-    localStorage.setItem('oscAcademyParserPayload',JSON.stringify({source:'ATM Virtual',mti:m.mti,annotated:annotated(m),raw:raw(m),createdAt:new Date().toISOString()}));
+    localStorage.setItem('oscAcademyParserPayload',JSON.stringify({source:'ATM Virtual',mti:m.mti,annotated:annotated(m),raw:raw(m),createdAt:new Date().toISOString(),network:state.brand}));
     location.href='parser.html';
   }
 
@@ -1037,8 +1159,12 @@ ${raw(m)}`;
   $('newOperation').addEventListener('click',reset);
   $('takeCash').addEventListener('click',()=>finishCash('taken'));
   $('leaveCash').addEventListener('click',()=>finishCash('retracted'));
+  $('partialCash').addEventListener('click',partialDispense);
+  document.querySelectorAll('[data-capture-mode]').forEach(b=>b.addEventListener('click',()=>setCaptureMode(b.dataset.captureMode)));
 
   setInterval(()=>$('atmClock').textContent=timeNow(),1000);
+  renderCassettes();
+  setCaptureMode('chip');
   reset();
 
   $('reconcileAtm')?.addEventListener('click',openReconcile);

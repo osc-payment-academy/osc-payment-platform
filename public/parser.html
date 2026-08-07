@@ -506,7 +506,7 @@
             <div class="mode-btn active" aria-pressed="true">Detección automática: Texto/ASCII o HEX de red</div>
           </div>
           <label class="field-label">Log de la trama</label>
-          <div class="network-parser-bar"><select id="parserNetworkSelect"><option value="auto">Detectar por DE2 / PAN</option><option value="visa">Perfil Visa</option><option value="mastercard">Perfil Mastercard</option><option value="amex">American Express (preparado)</option></select><div id="parserNetworkBadge" class="network-parser-badge"><span>El perfil se resolverá al analizar la trama.</span></div></div><textarea id="iso-input" class="mono" placeholder="Pegue aquí la trama ISO 8583 en formato Texto / ASCII (bitmap en hex)"></textarea>
+          <div class="network-parser-bar"><select id="parserNetworkSelect"><option value="">Seleccione la marca...</option><option value="visa">Visa</option><option value="mastercard">Mastercard</option><option value="amex" disabled>American Express (Próximamente)</option></select><div id="parserNetworkBadge" class="network-parser-badge"><span>El perfil se resolverá al analizar la trama.</span></div></div><textarea id="iso-input" class="mono" placeholder="Pegue aquí la trama ISO 8583 en formato Texto / ASCII (bitmap en hex)"></textarea>
           <div style="margin-top:12px; display:flex; gap:10px; align-items:center;">
             <button class="parse-btn" id="parse-btn">Parsear trama</button>
             <button class="clear-btn" id="clear-btn" type="button">Borrar trama</button>
@@ -1339,7 +1339,8 @@
       function render(result) {
         const networkSelect=document.getElementById('parserNetworkSelect');
         const de2=result && result.fields ? result.fields.find(f=>Number(f.num)===2) : null;
-        const selected=networkSelect ? networkSelect.value : 'auto';
+        const selected=networkSelect ? networkSelect.value : '';
+        if(!selected){alert('Seleccione primero la marca de la trama: Visa o Mastercard.');return null;}
         const net=window.OSCNetworks ? OSCNetworks.resolve(selected,de2?de2.value:'') : {name:'Perfil ISO genérico',manual:'—',color:'#64748b'};
         const netBadge=document.getElementById('parserNetworkBadge');
         if(netBadge) netBadge.innerHTML=OSCNetworks.badge(net)+(de2?`<small> · BIN ${(de2.value||'').slice(0,6)}</small>`:'<small> · DE2 no disponible</small>');
@@ -1466,6 +1467,7 @@
         const stored = localStorage.getItem('oscAcademyParserPayload');
         if (stored) {
           const payload = JSON.parse(stored);
+          if(payload.network){const ns=document.getElementById('parserNetworkSelect');if(ns)ns.value=String(payload.network).toLowerCase();}
           if (payload && payload.raw) {
             inputArea.value = payload.raw;
             const result = parseTrama(payload.raw);
