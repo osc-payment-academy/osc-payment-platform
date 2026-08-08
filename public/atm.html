@@ -405,7 +405,7 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
 
   <main class="main">
     <header class="topbar">
-      <div class="title"><span class="title-icon">🏧</span><div><h1>ATM Virtual · v3.5.3.5</h1><p>Banda, Chip y Contactless · cassettes · dispensación parcial</p></div></div>
+      <div class="title"><span class="title-icon">🏧</span><div><h1>ATM Virtual · v3.5.3.7</h1><p>Banda, Chip y Contactless · cassettes · dispensación parcial</p></div></div>
       <div class="top-actions"><a href="pos.html">← POS</a><a href="parser.html">Parser →</a><button id="reconcileAtm">🧾 Reconciliación</button><button id="newOperation">Nueva operación</button></div>
     </header>
 
@@ -701,11 +701,75 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
   }
 
   function restoreAtmHistory(){
+    let localMessages=[];
     try{
       const saved=JSON.parse(localStorage.getItem(ATM_HISTORY_KEY)||'[]');
-      if(Array.isArray(saved)) state.messages=saved;
-    }catch(e){state.messages=[]}
+      if(Array.isArray(saved)) localMessages=saved;
+    }catch(e){localMessages=[]}
+
+    const restoredFromStore=[];
+    try{
+      const db=window.OSCSwitchStore?.read?.();
+      const txs=(db?.transactions||[]).filter(t=>t.channel==='ATM');
+
+      const toMessage=(tx,mti,fields,direction,isResponse)=>{
+        if(!mti || !Array.isArray(fields)) return null;
+        const created=tx.dateTime||tx.createdAt||new Date().toISOString();
+        const d=new Date(created);
+        if(isResponse) d.setSeconds(d.getSeconds()+1);
+        const responseCode=isResponse ? (tx.responseCode||fields.find(r=>String(r[0])==='39')?.[2]||'00') : '';
+        const network=String(tx.network||'').toUpperCase();
+        const brand=network==='MASTERCARD'?'Mastercard':'Visa';
+        const amount=fields.find(r=>String(r[0])==='4')?.[2]||String(tx.amountCents||0).padStart(12,'0');
+        const operation=tx.operationLabel||tx.type||'ATM';
+        const last4=String(tx.panLast4||'').slice(-4);
+        const pan=last4?`000000000000${last4}`:'';
+        return {
+          id:`RESTORE-${tx.id}-${mti}-${isResponse?'R':'Q'}`,
+          mti,
+          operation,
+          responseCode,
+          fields,
+          bitmap:bitmapHex(fields),
+          stan:fields.find(r=>String(r[0])==='11')?.[2]||tx.stan||'',
+          time:d.toLocaleString('es-AR',{hour12:false}),
+          createdAt:d.toISOString(),
+          brand,
+          pan,
+          amount,
+          direction,
+          batch:String(tx.batch||1).padStart(6,'0'),
+          status:(responseCode==='00'||!String(responseCode||'').trim())?'Aprobada':'Rechazada'
+        };
+      };
+
+      txs.forEach(tx=>{
+        const req=toMessage(tx,tx.mtiRequest,tx.requestFields,'Saliente',false);
+        const res=toMessage(tx,tx.mtiResponse,tx.responseFields,'Entrante',true);
+        if(req) restoredFromStore.push(req);
+        if(res) restoredFromStore.push(res);
+      });
+    }catch(e){console.warn('No se pudo reconstruir historial ATM desde Switch Store',e)}
+
+    const dedupeKey=m=>[
+      m.mti||'',
+      m.stan||'',
+      String(m.pan||'').slice(-4),
+      m.direction||'',
+      m.operation||''
+    ].join('|');
+
+    const merged=new Map();
+    [...restoredFromStore,...localMessages].forEach(m=>{
+      const key=dedupeKey(m);
+      if(!merged.has(key) || String(m.id||'').startsWith('MSG-')) merged.set(key,m);
+    });
+
+    state.messages=[...merged.values()].sort((a,b)=>new Date(b.createdAt||0)-new Date(a.createdAt||0));
+    saveAtmHistory();
+
     const body=$('historyBody');
+    if(!body)return;
     body.innerHTML='';
     state.messages.slice().reverse().forEach(message=>body.prepend(historyRow(message)));
   }
@@ -1339,6 +1403,12 @@ ${raw(m)}`;
   renderCassettes();
   setCaptureMode('chip');
   reset();
+  restoreAtmHistory();
+
+  window.addEventListener('osc-switch-updated',()=>{
+    // Shared workspace changed: keep ATM history synchronized without wiping the active operation.
+    restoreAtmHistory();
+  });
 
   $('reconcileAtm')?.addEventListener('click',openReconcile);
   $('closeReconcile')?.addEventListener('click',closeReconcile);
@@ -1399,6 +1469,6 @@ document.addEventListener('DOMContentLoaded',()=>{
 </script>
 <script src="js/permissions.js"></script>
 
-<div id="osc-version-badge" style="position:fixed;right:14px;bottom:12px;z-index:99999;background:#0d2238;border:1px solid #2f83ff;color:#9fd0ff;padding:7px 11px;border-radius:999px;font:600 12px/1.1 Inter,Segoe UI,Arial,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.28)">Baseline v3.5.3.5 · ATM SMS Network Profile</div>
+<div id="osc-version-badge" style="position:fixed;right:14px;bottom:12px;z-index:99999;background:#0d2238;border:1px solid #2f83ff;color:#9fd0ff;padding:7px 11px;border-radius:999px;font:600 12px/1.1 Inter,Segoe UI,Arial,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.28)">Baseline v3.5.3.7 · ATM Persistent History</div>
 </body>
 </html>

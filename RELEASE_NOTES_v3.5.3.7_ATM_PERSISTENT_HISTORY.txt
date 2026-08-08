@@ -1,0 +1,27 @@
+OSC-ACADEMY Baseline v3.5.3.7
+ATM Persistent History Hotfix
+
+PROBLEMA CORREGIDO
+- POS restauraba su información desde el workspace persistente.
+- ATM guardaba oscAcademyAtmMessageHistoryV1 pero no ejecutaba restoreAtmHistory() al abrir la pantalla.
+- Al salir del ATM y volver a entrar, el historial visual podía aparecer vacío aunque la transacción siguiera en Switch Adquirente.
+
+CORRECCIÓN
+1. ATM ejecuta restoreAtmHistory() al iniciar.
+2. La restauración utiliza dos fuentes:
+   - historial local ATM;
+   - OSCSwitchStore compartido con POS y Switch Adquirente.
+3. Si el historial local faltara, se reconstruyen los pares request/response de transacciones ATM persistidas:
+   0200/0210, 0420/0430, 0220/0230, etc., según lo registrado.
+4. Se hace merge con deduplicación para evitar filas repetidas.
+5. Marca, PAN enmascarado, importe, STAN, dirección, MTI, respuesta y estado vuelven a aparecer.
+6. El historial se sincroniza cuando el workspace compartido se actualiza.
+
+RESULTADO
+- Navegar ATM -> Switch -> Dashboard -> ATM ya no debe borrar el historial.
+- Cerrar y volver a abrir la pantalla en el mismo navegador mantiene las transacciones mientras el workspace no sea reiniciado.
+- POS y ATM quedan alineados sobre OSCSwitchStore como fuente compartida de persistencia.
+
+IMPORTANTE
+- Esta persistencia sigue siendo local al navegador en esta fase.
+- La persistencia real multi-dispositivo/multi-tenant llegará con backend + autenticación.
