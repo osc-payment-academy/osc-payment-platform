@@ -15,8 +15,6 @@
 
 .test-card.amex .card-network{color:#70b7ff}
 .test-card.amex.active{border-color:#2f9bff;box-shadow:0 0 0 3px rgba(47,155,255,.16);background:linear-gradient(180deg,#0b2a43,#0c2133)}
-.amex-phase-notice{margin-top:8px;border:1px solid #2b6590;background:#092137;border-radius:9px;padding:9px 11px;color:#9ecdf0;font-size:.72rem;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.amex-phase-notice strong{color:#6cc1ff}.amex-phase-notice.hidden{display:none}
 
 </style>
 </head>
@@ -146,10 +144,6 @@
       </button>
     </div>
     <div class="selected-test-card" id="selectedTestCardSummary">Visa Crédito · PAN de prueba asignado automáticamente</div>
-    <div id="amexPhaseNotice" class="amex-phase-notice hidden">
-      <strong>American Express · Autorización POS</strong>
-      <span>POS Authorization Request 1100 / 1110 activo. La respuesta 1110 se incorpora en el siguiente paso.</span>
-    </div>
   </div>
   <div id="qrPaymentConfig" class="payment-config hidden">
     <label for="qrTypeSelect">Tipo de QR</label>
@@ -397,6 +391,6 @@
 <script>document.addEventListener('DOMContentLoaded',()=>{document.querySelectorAll('.pos-scenario-mini button').forEach((b,i)=>b.onclick=()=>{document.querySelectorAll('.pos-scenario-mini button').forEach(x=>x.classList.remove('active'));b.classList.add('active');const original=document.querySelectorAll('#scenarioGrid button')[i];if(original)original.click()});const log=document.getElementById('posTechEvents');const status=document.getElementById('flowResponse');if(log&&status)new MutationObserver(()=>{const d=document.createElement('div');d.textContent=new Date().toLocaleTimeString('es-AR')+' · '+status.textContent;log.prepend(d);while(log.children.length>8)log.lastChild.remove()}).observe(status,{childList:true,subtree:true,characterData:true})});</script>
 <script src="js/permissions.js"></script>
 
-<div id="osc-version-badge" style="position:fixed;right:14px;bottom:12px;z-index:99999;background:#0d2238;border:1px solid #2f83ff;color:#9fd0ff;padding:7px 11px;border-radius:999px;font:600 12px/1.1 Inter,Segoe UI,Arial,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.28)">Baseline v3.5.3.12 · AMEX POS Debit</div>
+<div id="osc-version-badge" style="position:fixed;right:14px;bottom:12px;z-index:99999;background:#0d2238;border:1px solid #2f83ff;color:#9fd0ff;padding:7px 11px;border-radius:999px;font:600 12px/1.1 Inter,Segoe UI,Arial,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.28)">Baseline v3.5.3.13 · AMEX AEIPS / Expresspay</div>
 </body>
 </html>

@@ -105,6 +105,58 @@
     return ['6','6','0',common.environment,common.cardmemberPresent,'1','6','0','0','1',common.terminalOutput,'0'].join('');
   }
 
+
+  function hexAmount6(cents){
+    const n=BigInt(Math.max(0,Number(cents||0)));
+    return n.toString(16).toUpperCase().padStart(12,'0').slice(-12);
+  }
+  function amexUnpredictableNumber(){
+    const seed=(state.currentStan||random6()).padStart(6,'0');
+    return Number(seed).toString(16).toUpperCase().padStart(8,'0').slice(-8);
+  }
+  function amexBit55(modeKey){
+    // AEIPS / Expresspay educational ICC data set built as BER-TLV.
+    // Values are deterministic lab values; tag selection follows the AMEX ICC/Expresspay profile.
+    const amt=String(state.amountDigits||'0').padStart(12,'0').slice(-12);
+    const other='000000000000';
+    const date=(()=>{
+      const d=now();
+      return String(d.getFullYear()).slice(-2)+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0');
+    })();
+    const txnType='00'; // purchase
+    const currency='0032'; // ISO 4217 numeric ARS encoded as BCD-style demo
+    const country='0032';
+    const isCl=modeKey==='contactless';
+    const tags=[
+      ['9F02','06',amt],
+      ['9F03','06',other],
+      ['9F1A','02',country],
+      ['5F2A','02',currency],
+      ['9A','03',date],
+      ['9C','01',txnType],
+      ['9F37','04',amexUnpredictableNumber()],
+      ['82','02',isCl?'1980':'1800'],
+      ['9F36','02','0012'],
+      ['9F26','08','A1B2C3D4E5F60708'],
+      ['9F27','01','80'],
+      ['9F10','07',isCl?'06011203A0B800':'06010A03A0B800'],
+      ['9F34','03',isCl?'1F0302':(amexDebitOnlinePinRequired()?'020300':'1E0300')],
+      ['9F33','03','E0F8C8'],
+      ['9F35','01','22'],
+      ['9F1E','08','4F5343414D455831'], // OSCAMEX1
+      ['84','07','A00000002501'],
+      ['9F09','02','0001'],
+      ['5F34','01','01']
+    ];
+    return tags.map(([t,l,v])=>t+l+v).join('');
+  }
+
+  function amexBit55Description(modeKey){
+    return modeKey==='contactless'
+      ? 'American Express Expresspay · BER-TLV ICC data'
+      : 'American Express AEIPS Chip · BER-TLV ICC data';
+  }
+
   function amex1100RequestFields(){
     const mode=entryModes[state.entryMode]||entryModes.chip;
     const card=selectedCard();
@@ -132,9 +184,9 @@
     if(amexDebitOnlinePinRequired()){
       rows.push(field(52,'Personal Identification Number (PIN)',state.pinBlock||'A1B2C3D4E5F60708','8 bytes','BINARY','PIN online cifrado · Acquirer certificado'));
     }
-    if(mode.hasDE55){
-      // First-phase AEIPS/Expresspay educational subset. Full Bit 55 expansion follows in its dedicated step.
-      rows.push(field(55,'ICC System Related Data','AGNS00019F2608A1B2C3D4E5F6075F2A0200329F1A0200325F3401019F270180','Variable','LLLVAR',state.entryMode==='contactless'?'Expresspay subset':'AEIPS subset'));
+    if(mode.hasDE55 && ['chip','contactless'].includes(state.entryMode)){
+      const icc=amexBit55(state.entryMode);
+      rows.push(field(55,'ICC System Related Data',icc,String(icc.length/2)+' bytes','LLLVAR',amexBit55Description(state.entryMode)));
     }
     return rows.sort((a,b)=>Number(a[0])-Number(b[0]));
   }
@@ -186,6 +238,10 @@
     if(action.code==='000'){
       const approval=sourceOp.auth || (sourceOp.auth=random6());
       rows.push(field(38,'Approval Code',approval,'6','FIXED','Issuer approval code'));
+      if(['chip','contactless'].includes(state.entryMode)){
+        const issuerAuth='910A11223344556677883030';
+        rows.push(field(55,'ICC System Related Data',issuerAuth,String(issuerAuth.length/2)+' bytes','LLLVAR','Issuer Authentication Data · tag 91'));
+      }
     }
     return rows.sort((a,b)=>Number(a[0])-Number(b[0]));
   }
@@ -1184,13 +1240,11 @@ ${rawMessage(msg)}`;
     const summary=$('selectedTestCardSummary');
     if(summary && state.paymentMethod==='card') summary.textContent=`${selectedCard().label} · PAN de prueba asignado automáticamente · •••• ${state.pan.slice(-4)} · ${p.name}`;
     const step=document.querySelector('#step2 small');
-    if(step && state.entryMode) step.textContent=state.paymentMethod==='qr'?`${selectedQr().label} · Wallet`:`${p.name} · ${(entryModes[state.entryMode]||entryModes.chip).label}`;
-    $('amexPhaseNotice')?.classList.toggle('hidden',p.id!=='amex');
-    if(p.id==='amex' && $('amexPhaseNotice')){
-      const span=$('amexPhaseNotice').querySelector('span');
-      if(span) span.textContent=isAmexDebit()
-        ? 'Débito: 1100 → 1110. Chip/Banda usa PIN online en este perfil didáctico y envía Bit 52; Contactless queda sin PIN.'
-        : 'Crédito: 1100 → 1110. La Red AMEX asigna TID y el emisor responde con Action Code de 3 dígitos.';
+    if(step && state.entryMode){
+      const cap=(entryModes[state.entryMode]||entryModes.chip).label;
+      step.textContent=state.paymentMethod==='qr'?`${selectedQr().label} · Wallet`:
+        (p.id==='amex' && state.entryMode==='contactless'?`${p.name} · Expresspay`:
+        (p.id==='amex' && state.entryMode==='chip'?`${p.name} · AEIPS Chip`:`${p.name} · ${cap}`));
     }
     const sendBtn=$('sendResponse');
     if(sendBtn){

@@ -1,0 +1,24 @@
+AMEX AEIPS / EXPRESSPAY · MANUAL MAPPING v3.5.3.13
+
+BASE DOCUMENTAL
+American Express GNS Network Specifications - Authorization · October 2023.
+American Express GNS Codes Reference Guide · October 2023.
+
+OBJETIVO
+Modelar Bit 55 ICC System Related Data en el flujo POS 1100/1110 para:
+- AEIPS contact chip
+- American Express Expresspay contactless
+
+REGLAS IMPLEMENTADAS
+- Bit 55 sólo aparece en captura ICC/Contactless.
+- Magnetic stripe no lleva Bit 55.
+- Los datos se codifican visualmente como BER-TLV.
+- CVM Results (9F34) cambia según el perfil:
+  * AMEX Debit Chip con Online PIN
+  * AMEX Credit Chip sin PIN
+  * Expresspay contactless
+- El 1110 aprobado muestra información ICC de respuesta del emisor.
+
+SEGURIDAD / ALCANCE
+ARQC, IAD, ATC y autenticación del emisor son simulados y no constituyen claves,
+criptogramas o certificación productiva.

@@ -1,0 +1,40 @@
+OSC-ACADEMY Baseline v3.5.3.13
+AMERICAN EXPRESS · AEIPS CHIP / EXPRESSPAY CONTACTLESS
+
+CAMBIOS
+- Se elimina del POS el recuadro informativo "American Express · Autorización POS".
+  Ya no era necesario porque 1100/1110 está implementado.
+- Se reemplaza el Bit 55 provisional por un constructor BER-TLV específico para AMEX.
+- Chip se identifica didácticamente como AEIPS Chip.
+- Contactless se identifica como American Express Expresspay.
+- Banda magnética no genera Bit 55.
+- El 1110 aprobado de Chip/Contactless puede devolver Bit 55 con datos de autenticación del emisor.
+
+BIT 55 REQUEST - TAGS IMPLEMENTADOS EN EL LABORATORIO
+9F02 Amount, Authorized
+9F03 Amount, Other
+9F1A Terminal Country Code
+5F2A Transaction Currency Code
+9A   Transaction Date
+9C   Transaction Type
+9F37 Unpredictable Number
+82   Application Interchange Profile
+9F36 Application Transaction Counter
+9F26 Application Cryptogram
+9F27 Cryptogram Information Data
+9F10 Issuer Application Data
+9F34 Cardholder Verification Method Results
+9F33 Terminal Capabilities
+9F35 Terminal Type
+9F1E Interface Device Serial Number
+84   Dedicated File Name / AID
+9F09 Application Version Number
+5F34 Application PAN Sequence Number
+
+BIT 55 RESPONSE
+- Para aprobación se incorpora un ejemplo didáctico de Issuer Authentication Data (Tag 91).
+
+ACLARACIÓN
+Los valores criptográficos del laboratorio (ARQC/IAD/ATC/etc.) son valores simulados.
+La selección y presentación TLV se utiliza para enseñar el circuito y la anatomía de los
+datos ICC/Expresspay; no pretende ejecutar criptografía EMV real ni sustituir certificación AMEX.
