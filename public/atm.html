@@ -348,6 +348,9 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
 .atm-payment-header .test-card small{font-size:.58rem;color:#9eb3c6}
 .atm-payment-header .test-card.visa .card-network{color:#69aaff}
 .atm-payment-header .test-card.mastercard .card-network{color:#ff8b3d}
+.atm-payment-header .test-card.amex .card-network{color:#70b7ff}
+.atm-card.amex-card{background:linear-gradient(145deg,#1674aa,#0e4f80)!important}
+.brand-logo.amex-mark{color:#70b7ff;font-size:.72rem;font-weight:900;font-style:italic}
 .atm-payment-header .test-card.disabled{opacity:.45;cursor:not-allowed;grid-column:1/-1;min-height:66px}
 .atm-card-footer{display:grid;grid-template-columns:minmax(0,1fr) minmax(260px,.8fr);gap:10px;align-items:stretch}
 .atm-payment-header .selected-test-card{border:1px dashed #2b5776;background:#071826;color:#9fd2ff;border-radius:8px;padding:10px;font-size:.66rem;text-align:center;display:grid;place-items:center}
@@ -399,12 +402,12 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
       <a class="nav" href="#" data-op="transfer">Transferencia</a>
       <a class="nav" href="#" data-op="reversal">Reversa técnica</a>
     </nav>
-    <div class="tip"><strong>Consejo OSC</strong><p>El ATM trabaja con mensajería financiera Single Message: 0200/0210 para la operación y 0420/0430 para reversas/advice cuando corresponda según la red.</p></div>
+    <div class="tip"><strong>Consejo OSC</strong><p>El ATM utiliza el perfil de cada red: Visa/Mastercard 0200/0210 y American Express 1200/1210. Las reversas se construyen según la especificación de la marca.</p></div>
   </aside>
 
   <main class="main">
     <header class="topbar">
-      <div class="title"><span class="title-icon">🏧</span><div><h1>ATM Virtual · v3.5.3.7</h1><p>Banda, Chip y Contactless · cassettes · dispensación parcial</p></div></div>
+      <div class="title"><span class="title-icon">🏧</span><div><h1>ATM Virtual · v3.5.3.15</h1><p>Banda, Chip y Contactless · cassettes · dispensación parcial</p></div></div>
       <div class="top-actions"><a href="pos.html">← POS</a><a href="parser.html">Parser →</a><button id="reconcileAtm">🧾 Reconciliación</button><button id="newOperation">Nueva operación</button></div>
     </header>
 
@@ -428,8 +431,11 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
           <button type="button" class="test-card mastercard" data-atm-card="mastercard-debit" onclick="window.OSCSelectATMCard && window.OSCSelectATMCard('mastercard-debit')">
             <span class="card-network">MASTERCARD</span><strong>DÉBITO</strong><small>•••• 8210 · BIN 222300</small>
           </button>
-          <button type="button" class="test-card disabled" disabled>
-            <span class="card-network">AMERICAN EXPRESS</span><strong>PRÓXIMAMENTE</strong><small>Arquitectura preparada</small>
+          <button type="button" class="test-card amex" data-atm-card="amex-credit" onclick="window.OSCSelectATMCard && window.OSCSelectATMCard('amex-credit')">
+            <span class="card-network">AMERICAN EXPRESS</span><strong>CRÉDITO</strong><small>•••• 8431 · BIN 371449 · 1200/1210</small>
+          </button>
+          <button type="button" class="test-card amex" data-atm-card="amex-debit" onclick="window.OSCSelectATMCard && window.OSCSelectATMCard('amex-debit')">
+            <span class="card-network">AMERICAN EXPRESS</span><strong>DÉBITO</strong><small>•••• 0127 · BIN 341234 · 1200/1210</small>
           </button>
         </div>
         <div class="atm-card-footer">
@@ -539,7 +545,7 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
             <article data-step="1" class="active"><span>1</span><div><strong>Lectura de tarjeta</strong><small>Chip EMV</small></div><b>✓</b></article>
             <article data-step="2"><span>2</span><div><strong>Ingreso de PIN</strong><small>DE52 / DE53</small></div><b>✓</b></article>
             <article data-step="3"><span>3</span><div><strong>Selección de operación</strong><small>Extracción, consulta de saldo o transferencia</small></div><b>✓</b></article>
-            <article data-step="4"><span>4</span><div><strong>Construcción ISO8583</strong><small>ATM SMS · 0200 / 0210</small></div><b>✓</b></article>
+            <article data-step="4"><span>4</span><div><strong>Construcción ISO8583</strong><small>Según red · Visa/MC 0200/0210 · AMEX 1200/1210</small></div><b>✓</b></article>
             <article data-step="5"><span>5</span><div><strong>Respuesta del host</strong><small id="hostStatus">Pendiente</small></div><b>✓</b></article>
             <article data-step="6"><span>6</span><div><strong>Dispositivo físico</strong><small id="deviceStatus">Pendiente</small></div><b>✓</b></article>
             <article data-step="7"><span>7</span><div><strong>Reversa técnica</strong><small id="reversalStatus">No requerida</small></div><b>✓</b></article>
@@ -693,8 +699,10 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
     const tr=document.createElement('tr');
     tr.dataset.id=message.id;
     const pan=String(message.pan||'');
-    const inferredBrand=(String(message.brand||'').toLowerCase().includes('master')||/^2|^5/.test(pan))?'mastercard':'visa';
-    tr.innerHTML=`<td>${message.time}</td><td>${inferredBrand==='visa'?'<span class="brand-logo visa-mark" title="Visa">VISA</span>':'<span class="brand-logo mc-mark" title="Mastercard"><i></i><i></i></span>'}</td><td><span class="direction ${message.direction==='Entrante'?'in':'out'}">${message.direction}</span></td><td><b>${message.mti}</b></td><td>${message.operation}</td><td>•••• ${String(message.pan||'').slice(-4)}</td><td>${formatAmount(message.amount)}</td><td>${message.responseCode||'—'}</td><td>${message.stan}</td><td>${message.batch||'000001'}</td><td><span class="status-pill ${message.status==='Aprobada'?'ok':'bad'}">${message.status}</span></td>`;
+    const brandText=String(message.brand||'').toLowerCase();
+    const inferredBrand=brandText.includes('amex')||/^3[47]/.test(pan)?'amex':(brandText.includes('master')||/^2|^5/.test(pan))?'mastercard':'visa';
+    const brandHtml=inferredBrand==='amex'?'<span class="brand-logo amex-mark" title="American Express">AMEX</span>':inferredBrand==='visa'?'<span class="brand-logo visa-mark" title="Visa">VISA</span>':'<span class="brand-logo mc-mark" title="Mastercard"><i></i><i></i></span>';
+    tr.innerHTML=`<td>${message.time}</td><td>${brandHtml}</td><td><span class="direction ${message.direction==='Entrante'?'in':'out'}">${message.direction}</span></td><td><b>${message.mti}</b></td><td>${message.operation}</td><td>•••• ${String(message.pan||'').slice(-4)}</td><td>${formatAmount(message.amount)}</td><td>${message.responseCode||'—'}</td><td>${message.stan}</td><td>${message.batch||'000001'}</td><td><span class="status-pill ${message.status==='Aprobada'?'ok':'bad'}">${message.status}</span></td>`;
     tr.addEventListener('click',()=>renderMessage(message));
     return tr;
   }
@@ -718,7 +726,7 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
         if(isResponse) d.setSeconds(d.getSeconds()+1);
         const responseCode=isResponse ? (tx.responseCode||fields.find(r=>String(r[0])==='39')?.[2]||'00') : '';
         const network=String(tx.network||'').toUpperCase();
-        const brand=network==='MASTERCARD'?'Mastercard':'Visa';
+        const brand=network==='AMEX'?'Amex':network==='MASTERCARD'?'Mastercard':'Visa';
         const amount=fields.find(r=>String(r[0])==='4')?.[2]||String(tx.amountCents||0).padStart(12,'0');
         const operation=tx.operationLabel||tx.type||'ATM';
         const last4=String(tx.panLast4||'').slice(-4);
@@ -777,7 +785,9 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
     'visa-credit':{brand:'visa',type:'credit',pan:'4111111111111111',name:'Visa Crédito',last4:'1111'},
     'visa-debit':{brand:'visa',type:'debit',pan:'4000000000000002',name:'Visa Débito',last4:'0002'},
     'mastercard-credit':{brand:'mastercard',type:'credit',pan:'5555555555554444',name:'Mastercard Crédito',last4:'4444'},
-    'mastercard-debit':{brand:'mastercard',type:'debit',pan:'2223000048408210',name:'Mastercard Débito',last4:'8210'}
+    'mastercard-debit':{brand:'mastercard',type:'debit',pan:'2223000048408210',name:'Mastercard Débito',last4:'8210'},
+    'amex-credit':{brand:'amex',type:'credit',pan:'371449635398431',name:'American Express Crédito',last4:'8431'},
+    'amex-debit':{brand:'amex',type:'debit',pan:'341234567890127',name:'American Express Débito',last4:'0127'}
   };
   window.OSCSelectATMCard=function(key){
     const c=ATM_CARDS[key];if(!c)return;
@@ -789,6 +799,7 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
     if(physicalCard){
       physicalCard.classList.toggle('visa-card',c.brand==='visa');
       physicalCard.classList.toggle('mastercard-card',c.brand==='mastercard');
+      physicalCard.classList.toggle('amex-card',c.brand==='amex');
     }
     addTechEvent(`${c.name} seleccionada · PAN •••• ${c.last4}`,'done');
   };
@@ -801,6 +812,7 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
     if(physicalCard){
       physicalCard.classList.toggle('visa-card',c.brand==='visa');
       physicalCard.classList.toggle('mastercard-card',c.brand==='mastercard');
+      physicalCard.classList.toggle('amex-card',c.brand==='amex');
     }
     addTechEvent?.(`${c.name} seleccionada · PAN •••• ${c.last4}`,'done');
   });
@@ -827,6 +839,77 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
     const bits=activeBits(fields);let binary='';
     for(let i=1;i<=64;i++)binary+=bits.has(i)?'1':'0';
     return binary.match(/.{4}/g).map(n=>parseInt(n,2).toString(16).toUpperCase()).join('');
+  }
+
+
+  const amexLocalDateTime = () => {
+    const d=now();
+    return String(d.getFullYear()).slice(-2)+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0')+
+      String(d.getHours()).padStart(2,'0')+String(d.getMinutes()).padStart(2,'0')+String(d.getSeconds()).padStart(2,'0');
+  };
+  function amexAtmPosDataCode(){
+    // 12-position AMEX POS Data Code, ATM PIN-capable profile.
+    const input=state.captureMode==='magstripe'?'2':'5';
+    const cardPresent=state.captureMode==='contactless'?'X':'1';
+    return [input,'1','1','2','0',cardPresent,input,'1','3','1','2','6'].join('');
+  }
+  function makeAmexAtmTid(){
+    return `${Date.now()}${Math.floor(Math.random()*1e7).toString().padStart(7,'0')}`.slice(-20);
+  }
+  function amexAtmAction(){
+    if(state.scenario==='insufficient') return {code:'116',label:'Not sufficient funds'};
+    if(state.scenario==='issuerDown') return {code:'100',label:'Deny'};
+    return {code:'000',label:'Approved'};
+  }
+  function amexAtmRequestFields(){
+    const fields=[
+      field(3,'Processing Code',state.cardType==='debit'?'014008':'014000','N6',state.cardType==='debit'?'Cash Disbursement Debit':'Cash Request'),
+      field(4,'Amount, Transaction',String(state.amount||0).padStart(12,'0'),'N12','Usuario'),
+      field(11,'Systems Trace Audit Number',state.stan,'N6','ATM'),
+      field(12,'Date and Time, Local Transaction',amexLocalDateTime(),'N12','YYMMDDHHMMSS'),
+      field(19,'Country Code, Acquiring Institution','032','N3','Argentina · perfil laboratorio'),
+      field(22,'Point of Service Data Code',amexAtmPosDataCode(),'AN12','AMEX ATM · 12 posiciones'),
+      field(24,'Function Code','200','AN3','Original financial request/advice'),
+      field(26,'Card Acceptor Business Code','6011','N4','Financial Institution Automatic Cash Dispense'),
+      field(32,'Acquiring Institution Identification (AIN) Code','12345678901','LLVAR','Adquirente educativo'),
+      field(35,'Track 2 Data',`${state.pan}=2912201`,'LLVAR',captureProfile().origin),
+      field(37,'Acquirer Reference Number',`${state.stan}${String(Date.now()).slice(-6)}`.slice(0,12),'AN12','Referencia adquirente'),
+      field(41,'Card Acceptor Terminal Identification','ATM00001','AN8','ATM'),
+      field(43,'Card Acceptor Name and Location','OSC BANK ATM · BUENOS AIRES ARGENTINA','LLVAR','ATM location'),
+      field(49,'Currency Code, Transaction','840','N3','USD'),
+      field(52,'Personal Identification Number (PIN)',pinBlock(),'B64','PIN cifrado · Bit 52')
+    ];
+    if(captureProfile().de55){
+      fields.push(field(55,'ICC System Related Data','9F02060000000010009F1A0200325F2A0208409A032608089F3704A1B2C3D49F2608A1B2C3D4E5F60708','LLLVAR',state.captureMode==='contactless'?'Expresspay':'AEIPS'));
+    }
+    return fields.sort((x,y)=>Number(x[0])-Number(y[0]));
+  }
+  function amexAtmResponseFields(action,tid){
+    const approval=action.code==='000'?random6():'000000';
+    if(action.code==='000') state.auth=approval;
+    const fields=[
+      field(2,'Primary Account Number (PAN)',state.pan,'LLVAR','Network/Issuer response'),
+      field(3,'Processing Code',state.cardType==='debit'?'014008':'014000','N6','Mandatory echo'),
+      field(4,'Amount, Transaction',String(state.amount||0).padStart(12,'0'),'N12','Mandatory echo'),
+      field(5,'Amount, Reconciliation',String(state.amount||0).padStart(12,'0'),'N12','Network reconciliation amount'),
+      field(11,'Systems Trace Audit Number',state.stan,'N6','Mandatory echo'),
+      field(12,'Date and Time, Local Transaction',amexLocalDateTime(),'N12','Mandatory echo'),
+      field(19,'Country Code, Acquiring Institution','032','N3','Mandatory echo'),
+      field(22,'Point of Service Data Code',amexAtmPosDataCode(),'AN12','Mandatory echo'),
+      field(24,'Function Code','200','AN3','Mandatory echo'),
+      field(26,'Card Acceptor Business Code','6011','N4','Echo'),
+      field(31,'Acquirer Reference Data, Transaction Identifier (TID)',tid,'LLVAR','Generated by AMEX Network'),
+      field(32,'Acquiring Institution Identification (AIN) Code','12345678901','LLVAR','Mandatory echo'),
+      field(33,'Forwarding Institution Identification Code','1118000000511','LLVAR','Required value'),
+      field(37,'Acquirer Reference Number',`${state.stan}${String(Date.now()).slice(-6)}`.slice(0,12),'AN12','Correlation'),
+      field(38,'Approval Code',approval,'AN6',action.code==='000'?'Approved':'Zero-filled when denied'),
+      field(39,'Action Code',action.code,'N3',action.label),
+      field(41,'Card Acceptor Terminal Identification','ATM00001','AN8','Mandatory echo'),
+      field(49,'Currency Code, Transaction','840','N3','Mandatory echo'),
+      field(50,'Currency Code, Reconciliation','840','N3','Issuer currency')
+    ];
+    if(captureProfile().de55 && action.code==='000') fields.push(field(55,'ICC System Related Data','910A11223344556677883030','LLLVAR','Issuer Authentication Data'));
+    return fields.sort((x,y)=>Number(x[0])-Number(y[0]));
   }
 
   function processingCode(){
@@ -954,7 +1037,7 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
   }
   function persistAtmAdjustment(req,res,adjustmentCents,dispensedCents){
     if(!window.OSCSwitchStore)return;
-    const network=state.brand==='mastercard'?'MASTERCARD':'VISA';
+    const network=state.brand==='amex'?'AMEX':state.brand==='mastercard'?'MASTERCARD':'VISA';
     window.OSCSwitchStore.addTransaction({
       id:`ATM-ADJ-${state.stan}-${Date.now()}`,channel:'ATM',network,type:'adjustment',
       amountCents:Number(adjustmentCents||0),currency:'USD',status:'APPROVED',responseCode:'00',
@@ -1116,7 +1199,7 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
   }
 
   function addMessage(mti,operation,responseCode,fields){
-    const message={id:`MSG-${Date.now()}-${mti}`,mti,operation,responseCode,fields,bitmap:bitmapHex(fields),stan:fields.find(r=>r[0]==='11')?.[2]||state.stan,time:new Date().toLocaleString('es-AR',{hour12:false}),createdAt:new Date().toISOString(),brand:state.brand==='mastercard'?'Mastercard':'Visa',pan:state.pan,amount:fields.find(r=>r[0]==='4')?.[2]||'0',direction:(mti.endsWith('10')||mti.endsWith('30'))?'Entrante':'Saliente',batch:'000001',status:(responseCode==='00'||!String(responseCode||'').trim())?'Aprobada':'Rechazada'};
+    const message={id:`MSG-${Date.now()}-${mti}`,mti,operation,responseCode,fields,bitmap:bitmapHex(fields),stan:fields.find(r=>r[0]==='11')?.[2]||state.stan,time:new Date().toLocaleString('es-AR',{hour12:false}),createdAt:new Date().toISOString(),brand:state.brand==='amex'?'Amex':state.brand==='mastercard'?'Mastercard':'Visa',pan:state.pan,amount:fields.find(r=>r[0]==='4')?.[2]||'0',direction:(mti.endsWith('10')||mti.endsWith('30'))?'Entrante':'Saliente',batch:'000001',status:(responseCode==='00'||!String(responseCode||'').trim())?'Aprobada':'Rechazada'};
     state.messages.unshift(message);
     $('historyBody').prepend(historyRow(message));
     saveAtmHistory();
@@ -1174,14 +1257,14 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
 
   function persistAtmTransaction(req,res,code){
     if(!window.OSCSwitchStore)return;
-    const network=state.brand==='mastercard'?'MASTERCARD':'VISA';
+    const network=state.brand==='amex'?'AMEX':state.brand==='mastercard'?'MASTERCARD':'VISA';
     const type=state.operation==='withdrawal'?'withdrawal':state.operation==='transfer'?'transfer':'balance_inquiry';
     const txId=`ATM-${state.stan}-${type}`;
     window.OSCSwitchStore.addTransaction({
       id:txId,channel:'ATM',network,type,amountCents:Number(state.amount||0),currency:'USD',
       status:code==='00'?'APPROVED':'DECLINED',responseCode:code,stan:state.stan,
       rrn:res.find(r=>r[0]==='37')?.[2]||'',auth:state.auth||'',batch:1,closed:false,
-      clearingStatus:code==='00'?'PENDING':'EXCLUDED',mtiRequest:'0200',mtiResponse:'0210',
+      clearingStatus:code==='00'?'PENDING':'EXCLUDED',mtiRequest:state.brand==='amex'?'1200':'0200',mtiResponse:state.brand==='amex'?'1210':'0210',
       panLast4:state.pan.slice(-4),raw:null,requestFields:req,responseFields:res,
       operationLabel:labelOperation(),dateTime:new Date().toISOString()
     });
@@ -1189,13 +1272,13 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
 
   function persistAtmReversal(req,res){
     if(!window.OSCSwitchStore)return;
-    const network=state.brand==='mastercard'?'MASTERCARD':'VISA';
+    const network=state.brand==='amex'?'AMEX':state.brand==='mastercard'?'MASTERCARD':'VISA';
     const originalType=state.operation==='withdrawal'?'withdrawal':state.operation;
     window.OSCSwitchStore.addTransaction({
       id:`ATM-${state.stan}-${originalType}`,channel:'ATM',network,type:originalType,
       amountCents:Number(state.amount||0),currency:'USD',status:'REVERSED',responseCode:'00',stan:state.stan,
       rrn:`${state.stan}123456`,auth:state.auth||'',batch:1,closed:false,clearingStatus:'EXCLUDED',
-      mtiRequest:'0200',mtiResponse:'0210',panLast4:state.pan.slice(-4),operationLabel:`${labelOperation()} revertida`,dateTime:new Date().toISOString()
+      mtiRequest:state.brand==='amex'?'1200':'0200',mtiResponse:state.brand==='amex'?'1210':'0210',panLast4:state.pan.slice(-4),operationLabel:`${labelOperation()} revertida`,dateTime:new Date().toISOString()
     });
     window.OSCSwitchStore.addTransaction({
       id:`ATM-REV-${state.stan}`,channel:'ATM',network,type:'reversal',amountCents:Number(state.amount||0),currency:'USD',
@@ -1212,7 +1295,7 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
       id:`ATM-${state.stan}-withdrawal-partial`,channel:'ATM',network:'MASTERCARD',type:'withdrawal',
       amountCents:Number(dispensedCents||0),currency:'USD',status:'APPROVED',responseCode:'00',stan:state.stan,
       rrn:`${state.stan}123456`,auth:state.auth||'',batch:1,closed:false,clearingStatus:'PENDING',
-      mtiRequest:'0200',mtiResponse:'0210',panLast4:state.pan.slice(-4),operationLabel:`Extracción · dispensación parcial ${moneyCents(dispensedCents)}`,dateTime:new Date().toISOString()
+      mtiRequest:state.brand==='amex'?'1200':'0200',mtiResponse:state.brand==='amex'?'1210':'0210',panLast4:state.pan.slice(-4),operationLabel:`Extracción · dispensación parcial ${moneyCents(dispensedCents)}`,dateTime:new Date().toISOString()
     });
     window.OSCSwitchStore.addTransaction({
       id:`ATM-PREV-${state.stan}-${Date.now()}`,channel:'ATM',network:'MASTERCARD',type:'reversal',
@@ -1256,6 +1339,11 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
   }
 
   function send0200(){
+    if(state.brand==='amex' && state.operation!=='withdrawal'){
+      setScreen('OPERACIÓN NO HABILITADA','<strong>AMEX ATM</strong><small>En esta fase se implementa Cash Disbursement 1200/1210. Consulta de saldo y transferencia quedan pendientes de validación documental.</small>');
+      addTechEvent('AMEX ATM: sólo extracción habilitada en v3.5.3.15','done');
+      state.step='done';return;
+    }
     if(state.operation==='withdrawal' && Number(state.amount||0)>cashInventoryCents()){
       $('deviceStatus').textContent='Efectivo insuficiente en el ATM';
       setScreen('CAJERO SIN EFECTIVO',`<strong>Importe no disponible</strong><small>Disponible en dispensador: ${moneyCents(cashInventoryCents())} · No se envió 0200</small>`);
@@ -1263,19 +1351,32 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
       state.step='done'; return;
     }
     state.step='processing';state.stan=random6();setFlow(4);
-    setScreen('PROCESANDO','<strong>Enviando 0200</strong><small>Aguarde</small>');addTechEvent(`0200 construido · DE3=${processingCode()} · Bitmap calculado`,'done');
-    const req=requestFields();addMessage('0200',labelOperation(),' ',req);
+    const isAmex=state.brand==='amex';
+    const requestMti=isAmex?'1200':'0200';
+    setScreen('PROCESANDO',`<strong>Enviando ${requestMti}</strong><small>${isAmex?'American Express GNS':'Aguarde'}</small>`);
+    addTechEvent(`${requestMti} construido · ${isAmex?'Bit 24=200 · MCC 6011':'DE3='+processingCode()} · Bitmap calculado`,'done');
+    const req=isAmex?amexAtmRequestFields():requestFields();addMessage(requestMti,labelOperation(),' ',req);
 
     setTimeout(()=>{
       setFlow(5);
-      let code='00';
-      if(state.scenario==='insufficient')code='51';
-      if(state.scenario==='issuerDown')code='91';
-      state.auth=code==='00'?random6():'-';
-      $('hostStatus').textContent=`${code} - ${code==='00'?'Aprobada':code==='51'?'Fondos insuficientes':'Emisor no disponible'}`;
-      const res=responseFields(code);addMessage('0210',labelOperation(),code,res);persistAtmTransaction(req,res,code);addTechEvent(`0210 recibido · DE39=${code}`,'done');
+      let code='00', action=null, tid='';
+      if(isAmex){
+        action=amexAtmAction(); code=action.code; tid=makeAmexAtmTid();
+        $('hostStatus').textContent=`${code} - ${action.label}`;
+        const res=amexAtmResponseFields(action,tid);
+        addMessage('1210',labelOperation(),code,res);
+        persistAtmTransaction(req,res,code);
+        addTechEvent(`1210 recibido · Bit39 Action Code=${code} · TID=${tid}`,'done');
+      }else{
+        if(state.scenario==='insufficient')code='51';
+        if(state.scenario==='issuerDown')code='91';
+        state.auth=code==='00'?random6():'-';
+        $('hostStatus').textContent=`${code} - ${code==='00'?'Aprobada':code==='51'?'Fondos insuficientes':'Emisor no disponible'}`;
+        const res=responseFields(code);addMessage('0210',labelOperation(),code,res);persistAtmTransaction(req,res,code);addTechEvent(`0210 recibido · DE39=${code}`,'done');
+      }
 
-      if(code!=='00'){
+      const approved=isAmex?code==='000':code==='00';
+      if(!approved){
         setScreen('OPERACIÓN RECHAZADA',`<strong>${code}</strong><small>${$('hostStatus').textContent}</small>`);
         state.step='done';return;
       }
@@ -1443,7 +1544,9 @@ document.addEventListener('DOMContentLoaded',()=>{
     'visa-credit':{brand:'visa',type:'credit',name:'Visa Crédito',pan:'4111111111111111',last4:'1111'},
     'visa-debit':{brand:'visa',type:'debit',name:'Visa Débito',pan:'4000000000000002',last4:'0002'},
     'mastercard-credit':{brand:'mastercard',type:'credit',name:'Mastercard Crédito',pan:'5555555555554444',last4:'4444'},
-    'mastercard-debit':{brand:'mastercard',type:'debit',name:'Mastercard Débito',pan:'2223000048408210',last4:'8210'}
+    'mastercard-debit':{brand:'mastercard',type:'debit',name:'Mastercard Débito',pan:'2223000048408210',last4:'8210'},
+    'amex-credit':{brand:'amex',type:'credit',name:'American Express Crédito',pan:'371449635398431',last4:'8431'},
+    'amex-debit':{brand:'amex',type:'debit',name:'American Express Débito',pan:'341234567890127',last4:'0127'}
   };
   const marker=document.createElement('span');
   marker.id='atmNetworkName';
@@ -1468,6 +1571,6 @@ document.addEventListener('DOMContentLoaded',()=>{
 </script>
 <script src="js/permissions.js"></script>
 
-<div id="osc-version-badge" style="position:fixed;right:14px;bottom:12px;z-index:99999;background:#0d2238;border:1px solid #2f83ff;color:#9fd0ff;padding:7px 11px;border-radius:999px;font:600 12px/1.1 Inter,Segoe UI,Arial,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.28)">Baseline v3.5.3.7 · ATM Persistent History</div>
+<div id="osc-version-badge" style="position:fixed;right:14px;bottom:12px;z-index:99999;background:#0d2238;border:1px solid #2f83ff;color:#9fd0ff;padding:7px 11px;border-radius:999px;font:600 12px/1.1 Inter,Segoe UI,Arial,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.28)">Baseline v3.5.3.15 · AMEX ATM 1200/1210</div>
 </body>
 </html>

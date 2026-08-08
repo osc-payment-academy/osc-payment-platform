@@ -1007,6 +1007,20 @@
     });
   }
 
+
+  function transactionBrand(op){
+    const net=String(op.network||'').toLowerCase();
+    if(net==='amex') return '<span class="tx-brand-large amex">AMEX</span>';
+    if(net==='mastercard') return '<span class="tx-brand-large mc" title="Mastercard"><i></i><i></i></span>';
+    return '<span class="tx-brand-large visa">VISA</span>';
+  }
+  function transactionMaskedPan(op){
+    const card=TEST_CARDS[op.cardId||''];
+    const pan=String(op.pan||card?.pan||'');
+    const last4=pan.slice(-4)||'••••';
+    return `•••• ${last4}`;
+  }
+
   function openTransactionModal(mode){
     state.modalMode=mode;state.selectedSourceOperationId=null;
     const list=eligibleOperations(mode);
@@ -1017,8 +1031,8 @@
     if(isRefund){$('refundMode').value='full';$('refundAmount').value='';$('refundAmountWrap').classList.add('hidden')}
     $('transactionSelectionList').innerHTML=list.length?list.map(op=>`
       <div class="transaction-choice" data-op="${op.id}">
-        <span>○</span><div><small>${new Date(op.createdAt).toLocaleString('es-AR')} · STAN ${op.stan}</small><strong>${formatCents(op.amountCents)} · Aut. ${op.auth||'—'}</strong></div><b>${op.status}</b>
-      </div>`).join(''):'<div class="transaction-choice"><div></div><div><strong>No hay operaciones elegibles.</strong><small>Primero genere una compra aprobada.</small></div></div>';
+        <span>○</span>${transactionBrand(op)}<div><small>${new Date(op.createdAt).toLocaleString('es-AR')} · STAN ${op.stan}</small><strong>${formatCents(op.amountCents)} · Aut. ${op.auth||'—'}</strong><span class="tx-pan">${transactionMaskedPan(op)}</span></div><b>${op.status}</b>
+      </div>`).join(''):'<div class="transaction-choice"><div></div><div></div><div><strong>No hay operaciones elegibles.</strong><small>Primero genere una compra aprobada.</small></div></div>';
     $('transactionModal').classList.remove('hidden');
     document.querySelectorAll('.transaction-choice[data-op]').forEach(el=>el.addEventListener('click',()=>{
       document.querySelectorAll('.transaction-choice').forEach(x=>x.classList.remove('selected'));

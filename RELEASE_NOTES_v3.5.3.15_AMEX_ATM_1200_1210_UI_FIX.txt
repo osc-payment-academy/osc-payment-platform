@@ -1,0 +1,33 @@
+OSC-ACADEMY Baseline v3.5.3.15
+AMEX ATM 1200/1210 + IDENTIFICACIÓN DE TARJETA EN ANULACIÓN/DEVOLUCIÓN
+
+POS UI
+- En el selector de Anulación y Devolución se agrega:
+  * Marca visible en tamaño mayor: VISA / Mastercard / AMEX.
+  * PAN enmascarado con los últimos 4 dígitos.
+- Permite identificar claramente qué tarjeta/origen se está seleccionando.
+
+AMEX ATM - FASE 1
+- Se habilitan American Express Crédito y Débito en ATM.
+- Alcance inicial: Extracción / Cash Disbursement.
+- Flujo AMEX ATM:
+  1200 ATM Financial Transaction Request
+  1210 ATM Financial Transaction Response
+- AMEX Crédito usa Processing Code 014000 (Cash Request).
+- AMEX Débito usa Processing Code 014008 (Cash Disbursement Debit).
+- Bit 24 Function Code = 200 (Original financial request/advice).
+- Bit 26 MCC = 6011 (Financial Institution Automatic Cash Dispense).
+- Bit 22 = Point of Service Data Code AMEX de 12 posiciones.
+- Bit 52 = PIN cifrado.
+- Bit 55 = AEIPS/Expresspay cuando la lectura es ICC/Contactless.
+- La Red AMEX genera TID y lo devuelve en Bit 31 del 1210.
+- Bit 39 usa Action Code AMEX N(3):
+  000 Approved
+  116 Not sufficient funds
+  100 Deny
+- Bit 38 Approval Code: 6 dígitos si aprobada; cero en rechazo.
+- Bit 33 Forwarding Institution ID = 1118000000511 según especificación.
+- Consulta de saldo y transferencia AMEX se bloquean en esta fase hasta completar validación documental.
+
+NOTA
+La reversa ATM AMEX 1420/1430 es el siguiente subpaso. El manual indica que una falla de dispensación debe producir ATM Reversal Advice 1420 reutilizando el TID del 1210.
