@@ -1,0 +1,46 @@
+OSC-ACADEMY Baseline v3.5.3.11
+AMERICAN EXPRESS · POS 1100/1110
+
+FUENTE
+American Express Global Network Services
+Network Specifications - Authorization · October 2023
+Codes Reference Guide · October 2023
+
+NUEVO
+- Se completa el flujo POS AMEX 1100 → 1110.
+- El 1100 queda en estado "Esperando 1110".
+- El botón de respuesta vuelve a estar habilitado para American Express.
+- La respuesta se construye como MTI 1110.
+- Bit 31 TID es generado por la capa simulada "American Express Network", no por el POS.
+- Bit 39 usa Action Code AMEX de 3 dígitos.
+- Bit 38 Approval Code se genera sólo para aprobación.
+
+ACTION CODES IMPLEMENTADOS
+- 000 Approved
+- 100 Deny
+- 101 Expired Card / Invalid Expiration Date
+- 107 Please Call Issuer
+- 116 Not sufficient funds
+
+1110 - CAMPOS PRINCIPALES IMPLEMENTADOS
+- Bit 2  PAN
+- Bit 3  Processing Code
+- Bit 4  Amount, Transaction
+- Bit 7  Date and Time, Transmission
+- Bit 11 Systems Trace Audit Number
+- Bit 12 Date and Time, Local Transaction
+- Bit 24 Function Code (conditional echo)
+- Bit 31 Transaction Identifier (TID)
+- Bit 32 Acquiring Institution Identification (AIN)
+- Bit 37 Acquirer Reference Number
+- Bit 38 Approval Code (approved)
+- Bit 39 Action Code
+- Bit 41 Terminal Identification
+- Bit 42 Card Acceptor Identification
+- Bit 49 Currency Code, Transaction
+
+COMPORTAMIENTO
+1100 Acquirer → AMEX Network → Issuer
+1110 Issuer → AMEX Network → Acquirer/POS
+
+La Red asigna el TID al ciclo. Si el adquirente está certificado, el TID vuelve hacia el adquirente.

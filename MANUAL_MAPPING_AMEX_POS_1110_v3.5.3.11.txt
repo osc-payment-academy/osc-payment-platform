@@ -1,0 +1,9 @@
+AMEX POS 1110 · MANUAL MAPPING
+- Network Specifications - Authorization, Oct 2023
+  POS Authorization Response (1110), Chapter 5, starting p. 5-37.
+- TID lifecycle: Chapter 2, pp. 2-2 / 2-3.
+- Bit 31: TID, Network-generated, mandatory Network→Acquirer for certified Acquirer.
+- Bit 39: Action Code N(3), mandatory.
+- Approved scenario: Action Code 000.
+- Other simulator scenarios: 100 Deny, 101 Expired, 107 Please Call Issuer, 116 Not sufficient funds.
+- Bit 38 Approval Code is included for approved response.
