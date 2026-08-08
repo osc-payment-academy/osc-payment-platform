@@ -810,7 +810,7 @@
     });
     state.batchNumber=Math.max(1,...txs.map(t=>Number(t.batch||1)));
     $('sessionTx').textContent=txs.length;
-    if(state.messages.length) renderMessage(state.messages[0]);
+    // Historial restaurado sin cargar automáticamente la última trama.
   }
 
   function createOperation(type,source=null){
@@ -1215,6 +1215,17 @@
     requestAnimationFrame(()=>paper.classList.add('printing'));
   }
 
+
+  function clearTechnicalMessagePanel(){
+    state.selectedMessageId=null;
+    const mti=$('mti'); if(mti) mti.textContent='----';
+    const sub=$('messageSubtitle'); if(sub) sub.textContent='Esperando operación';
+    const bm=$('bitmap'); if(bm) bm.textContent='0000000000000000';
+    renderFields([]);
+    document.querySelectorAll('#historyBody tr').forEach(tr=>tr.classList.remove('selected'));
+    updateDualBitmaps();
+  }
+
   function reset(){
     state.currentOperation='purchase';state.step='amount';state.amountDigits='';state.pinDigits='';state.pinBlock=null;state.entryMode=null;state.currentStan=null;state.currentAuth=null;state.selectedMessageId=null;state.selectedSourceOperationId=null;
     $('entryModePanel').classList.add('hidden');$('qrStage')?.classList.add('hidden');$('captureStage').classList.add('hidden');$('captureStage').classList.remove('success');
@@ -1303,7 +1314,7 @@ ${rawMessage(msg)}`;
     $('sessionTime').textContent=[Math.floor(e/3600),Math.floor((e%3600)/60),e%60].map(v=>String(v).padStart(2,'0')).join(':');
   },1000);
 
-  applyTerminalModel('ingenico');reset();restoreWorkspaceHistory();updateDualBitmaps();
+  applyTerminalModel('ingenico');reset();restoreWorkspaceHistory();clearTechnicalMessagePanel();
   function refreshNetworkProfile(){
     if(!window.OSCNetworks) return;
     syncPaymentProfile();

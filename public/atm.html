@@ -350,6 +350,8 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
 .atm-payment-header .test-card.mastercard .card-network{color:#ff8b3d}
 .atm-payment-header .test-card.amex .card-network{color:#70b7ff}
 .atm-card.amex-card{background:linear-gradient(145deg,#1674aa,#0e4f80)!important}
+.atm-card.amex-card::after{content:'AMEX';right:9px;top:8px;color:#fff;font:italic 900 15px Arial;letter-spacing:-.5px;text-shadow:0 1px 2px #00243d}
+.atm-card.amex-card .mc-card-circles{display:none}
 .brand-logo.amex-mark{color:#70b7ff;font-size:.72rem;font-weight:900;font-style:italic}
 .atm-payment-header .test-card.disabled{opacity:.45;cursor:not-allowed;grid-column:1/-1;min-height:66px}
 .atm-card-footer{display:grid;grid-template-columns:minmax(0,1fr) minmax(260px,.8fr);gap:10px;align-items:stretch}
@@ -407,7 +409,7 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
 
   <main class="main">
     <header class="topbar">
-      <div class="title"><span class="title-icon">🏧</span><div><h1>ATM Virtual · v3.5.3.15</h1><p>Banda, Chip y Contactless · cassettes · dispensación parcial</p></div></div>
+      <div class="title"><span class="title-icon">🏧</span><div><h1>ATM Virtual · v3.5.3.16</h1><p>Banda, Chip y Contactless · cassettes · dispensación parcial</p></div></div>
       <div class="top-actions"><a href="pos.html">← POS</a><a href="parser.html">Parser →</a><button id="reconcileAtm">🧾 Reconciliación</button><button id="newOperation">Nueva operación</button></div>
     </header>
 
@@ -568,8 +570,8 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
             <div class="manual-flow-grid">
               <article><b>0200</b><strong>Cash Disbursement</strong><small>Solicitud financiera de extracción.</small><span>Manual Visa Full Service ATM · Capítulo 5 · pág. 646*</span></article>
               <article><b>0210</b><strong>Financial Response</strong><small>Respuesta a la solicitud 0200.</small><span>Capítulo 5 · sección relacionada con 0200</span></article>
-              <article><b>0420</b><strong>Reversal Advice</strong><small>Reversa financiera vinculada a la extracción original.</small><span>Capítulo 5 · pág. 660*</span></article>
-              <article><b>0430</b><strong>Reversal Response</strong><small>Confirmación del advice de reversa.</small><span>Capítulo 5 · sección 0420</span></article>
+              <article><b>0420/1420</b><strong>Reversal Advice</strong><small>Visa/MC usan su perfil; AMEX usa 1420 y reutiliza el TID del 1210.</small><span>AMEX Cap. 5 · 5-112</span></article>
+              <article><b>0430/1430</b><strong>Reversal Response</strong><small>AMEX 1430 confirma recepción del 1420; Action Code 400.</small><span>AMEX Cap. 5 · 5-118</span></article>
               <article><b>0220</b><strong>Adjustment</strong><small>Ajuste posterior, por ejemplo misdispense.</small><span>Capítulo 5 · pág. 669*</span></article>
               <article><b>0422</b><strong>Dispute Financial</strong><small>Mensaje financiero de disputa dentro del ciclo ATM.</small><span>Capítulo 5 · pág. 680*</span></article>
             </div>
@@ -993,6 +995,59 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
     return fields.sort((a,b)=>Number(a[0])-Number(b[0]));
   }
 
+
+  function amexAtmReversalFields({partial=false,dispensedCents=0,reasonCode=null}={}){
+    const original=String(state.amount||0).padStart(12,'0');
+    const dispensed=String(partial?Number(dispensedCents||0):0).padStart(12,'0');
+    const functionCode=partial?'401':'400';
+    const reason=reasonCode || (partial?'4004':'4017');
+    const fields=[
+      field(2,'Primary Account Number (PAN)',state.pan,'LLVAR','Operación ATM original'),
+      field(3,'Processing Code',state.cardType==='debit'?'014008':'014000','N6','Eco de 1200'),
+      field(4,'Amount, Transaction',dispensed,'N12',partial?'Importe efectivamente dispensado':'Ceros = no dispense'),
+      field(5,'Amount, Reconciliation','000000000000','N12','Network controla conversión'),
+      field(11,'Systems Trace Audit Number',state.stan,'N6','Mismo STAN del 1200 original'),
+      field(12,'Date and Time, Local Transaction',state.amexOriginalLocalDateTime||amexLocalDateTime(),'N12','Fecha/hora original'),
+      field(19,'Country Code, Acquiring Institution','032','N3','Eco'),
+      field(24,'Function Code',functionCode,'AN3',partial?'Partial reversal':'Full reversal'),
+      field(25,'Message Reason Code',reason,'N4',
+        reason==='4017'?'Suspected malfunction / no cash dispensed':
+        reason==='4018'?'Timed-out at taking money / no cash dispensed':
+        reason==='4004'?'Completed partially':'ATM reversal reason'),
+      field(30,'Amount, Original',original+'000000000000','N24','Importe original 1200 + reconciliation reservado'),
+      ...(state.amexTid?[field(31,'Acquirer Reference Data, Transaction Identifier (TID)',state.amexTid,'LLVAR','TID recibido en 1210')]:[]),
+      field(32,'Acquiring Institution Identification (AIN) Code','12345678901','LLVAR','Mandatory echo'),
+      field(33,'Forwarding Institution Identification Code','1118000000511','LLVAR','AEGNS ATM'),
+      field(37,'Acquirer Reference Number (ARN)',state.amexOriginalArn||`${state.stan}${String(Date.now()).slice(-6)}`.slice(0,12),'AN12','Referencia original'),
+      field(41,'Card Acceptor Terminal Identification','ATM00001','AN8','ATM'),
+      field(49,'Currency Code, Transaction','840','N3','USD'),
+      field(50,'Currency Code, Reconciliation','840','N3','USD')
+    ];
+    return fields.sort((x,y)=>Number(x[0])-Number(y[0]));
+  }
+
+  function amexAtmReversalResponseFields(req){
+    const get=(de,fb='')=>req.find(r=>String(r[0])===String(de))?.[2]??fb;
+    const fields=[
+      field(2,'Primary Account Number (PAN)',get(2,state.pan),'LLVAR','Mandatory echo'),
+      field(3,'Processing Code',get(3,state.cardType==='debit'?'014008':'014000'),'N6','Conditional echo'),
+      field(4,'Amount, Transaction',get(4,'000000000000'),'N12','Mandatory echo'),
+      field(5,'Amount, Reconciliation',get(5,'000000000000'),'N12','Network response'),
+      field(11,'Systems Trace Audit Number',get(11,state.stan),'N6','Mandatory echo'),
+      field(12,'Date and Time, Local Transaction',get(12,state.amexOriginalLocalDateTime||amexLocalDateTime()),'N12','Mandatory echo'),
+      field(19,'Country Code, Acquiring Institution',get(19,'032'),'N3','Mandatory echo'),
+      ...(state.amexTid?[field(31,'Acquirer Reference Data, Transaction Identifier (TID)',state.amexTid,'LLVAR','Echo TID')]:[]),
+      field(32,'Acquiring Institution Identification (AIN) Code',get(32,'12345678901'),'LLVAR','Mandatory echo'),
+      field(33,'Forwarding Institution Identification Code','1118000000511','LLVAR','AEGNS ATM'),
+      field(37,'Acquirer Reference Number (ARN)',get(37,state.amexOriginalArn||''),'AN12','Echo'),
+      field(39,'Action Code','400','N3','Reversal Accepted'),
+      field(41,'Card Acceptor Terminal Identification',get(41,'ATM00001'),'AN8','Mandatory echo'),
+      field(49,'Currency Code, Transaction',get(49,'840'),'N3','Mandatory echo'),
+      field(50,'Currency Code, Reconciliation',get(50,'840'),'N3','Network response')
+    ];
+    return fields.sort((x,y)=>Number(x[0])-Number(y[0]));
+  }
+
   function reversalFields(){
     const fields=[
       field(2,'Primary Account Number',state.pan,'LLVAR','Operación original'),
@@ -1056,6 +1111,25 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
     deductCash(dispensed);
     $('cashActions').classList.remove('show'); $('dispenseCountdown').classList.remove('show');
     $('deviceStatus').textContent=`Dispensación parcial · ${moneyCents(dispensed)} entregado`;
+
+    if(state.brand==='amex'){
+      setFlow(7);
+      setScreen('DISPENSACIÓN PARCIAL',`<strong>${moneyCents(dispensed)} entregados</strong><small>No dispensado: ${moneyCents(difference)} · Generando 1420 AMEX</small>`);
+      $('reversalStatus').textContent='1420 · reversa parcial AMEX';
+      const req=amexAtmReversalFields({partial:true,dispensedCents:dispensed,reasonCode:'4004'});
+      addMessage('1420','Reversa parcial AMEX · Partial dispense','',req);
+      addTechEvent(`AMEX partial reversal: Bit24=401 · Bit25=4004 · Bit4=${String(dispensed).padStart(12,'0')}`,'warn');
+      setTimeout(()=>{
+        const res=amexAtmReversalResponseFields(req);
+        addMessage('1430','Respuesta reversa parcial AMEX','400',res);
+        persistAtmPartialReversalAmex(req,res,difference,dispensed);
+        $('reversalStatus').textContent='1430 aceptada · reversa parcial AMEX';
+        addTechEvent('AMEX 1430 · Action Code 400 · reversa parcial aceptada','done');
+        setScreen('REVERSA PARCIAL COMPLETADA',`<strong>${moneyCents(difference)} liberados</strong><small>Importe final dispensado: ${moneyCents(dispensed)}</small>`);
+        state.step='done';
+      },700);
+      return;
+    }
 
     if(state.brand==='mastercard'){
       setFlow(7);
@@ -1284,8 +1358,23 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
       id:`ATM-REV-${state.stan}`,channel:'ATM',network,type:'reversal',amountCents:Number(state.amount||0),currency:'USD',
       status:'APPROVED',responseCode:'00',stan:req.find(r=>r[0]==='11')?.[2]||state.stan,
       rrn:req.find(r=>r[0]==='37')?.[2]||'',auth:'',batch:1,closed:false,clearingStatus:'EXCLUDED',
-      mtiRequest:'0420',mtiResponse:'0430',panLast4:state.pan.slice(-4),requestFields:req,responseFields:res,
+      mtiRequest:state.brand==='amex'?'1420':'0420',mtiResponse:state.brand==='amex'?'1430':'0430',panLast4:state.pan.slice(-4),requestFields:req,responseFields:res,
       operationLabel:'Reversa total ATM',dateTime:new Date().toISOString()
+    });
+  }
+
+
+  function persistAtmPartialReversalAmex(req,res,reversedCents,dispensedCents){
+    if(!window.OSCSwitchStore)return;
+    const batch=Number(state.batchNumber||1);
+    window.OSCSwitchStore.addTransaction({
+      id:`ATM-AMEX-PREV-${state.stan}-${Date.now()}`,channel:'ATM',network:'AMEX',type:'reversal',
+      amountCents:Number(reversedCents||0),currency:'USD',status:'APPROVED',responseCode:'400',stan:state.stan,
+      rrn:state.amexOriginalArn||`${state.stan}123456`,auth:state.auth||'',batch,closed:false,clearingStatus:'EXCLUDED',
+      mtiRequest:'1420',mtiResponse:'1430',panLast4:state.pan.slice(-4),
+      requestFields:req,responseFields:res,
+      operationLabel:`Reversa parcial AMEX · no dispensado ${moneyCents(reversedCents)} · dispensado ${moneyCents(dispensedCents)}`,
+      dateTime:new Date().toISOString()
     });
   }
 
@@ -1301,7 +1390,7 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
       id:`ATM-PREV-${state.stan}-${Date.now()}`,channel:'ATM',network:'MASTERCARD',type:'reversal',
       amountCents:Number(reversedCents||0),currency:'USD',status:'APPROVED',responseCode:'00',
       stan:req.find(r=>r[0]==='11')?.[2]||state.stan,rrn:req.find(r=>r[0]==='37')?.[2]||'',auth:'',batch:1,closed:false,clearingStatus:'EXCLUDED',
-      mtiRequest:'0420',mtiResponse:'0430',panLast4:state.pan.slice(-4),requestFields:req,responseFields:res,
+      mtiRequest:state.brand==='amex'?'1420':'0420',mtiResponse:state.brand==='amex'?'1430':'0430',panLast4:state.pan.slice(-4),requestFields:req,responseFields:res,
       operationLabel:`Reversa parcial Mastercard · no dispensado ${moneyCents(reversedCents)}`,dateTime:new Date().toISOString()
     });
   }
@@ -1355,13 +1444,18 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
     const requestMti=isAmex?'1200':'0200';
     setScreen('PROCESANDO',`<strong>Enviando ${requestMti}</strong><small>${isAmex?'American Express GNS':'Aguarde'}</small>`);
     addTechEvent(`${requestMti} construido · ${isAmex?'Bit 24=200 · MCC 6011':'DE3='+processingCode()} · Bitmap calculado`,'done');
-    const req=isAmex?amexAtmRequestFields():requestFields();addMessage(requestMti,labelOperation(),' ',req);
+    const req=isAmex?amexAtmRequestFields():requestFields();
+    if(isAmex){
+      state.amexOriginalLocalDateTime=req.find(r=>r[0]==='12')?.[2]||amexLocalDateTime();
+      state.amexOriginalArn=req.find(r=>r[0]==='37')?.[2]||'';
+    }
+    addMessage(requestMti,labelOperation(),' ',req);
 
     setTimeout(()=>{
       setFlow(5);
       let code='00', action=null, tid='';
       if(isAmex){
-        action=amexAtmAction(); code=action.code; tid=makeAmexAtmTid();
+        action=amexAtmAction(); code=action.code; tid=makeAmexAtmTid(); state.amexTid=tid;
         $('hostStatus').textContent=`${code} - ${action.label}`;
         const res=amexAtmResponseFields(action,tid);
         addMessage('1210',labelOperation(),code,res);
@@ -1410,7 +1504,27 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
   }
 
   function sendReversal(){
-    setFlow(7);$('reversalStatus').textContent='0420 en proceso';
+    setFlow(7);
+    if(state.brand==='amex'){
+      const device=($('deviceStatus').textContent||'').toLowerCase();
+      const reason=device.includes('retract')?'4018':'4017';
+      $('reversalStatus').textContent='1420 AMEX en proceso';
+      const req=amexAtmReversalFields({partial:false,reasonCode:reason});
+      addMessage('1420','Reversa ATM AMEX · no cash dispensed','',req);
+      addTechEvent(`AMEX 1420 · Bit24=400 · Bit25=${reason} · Bit4=000000000000 · TID reutilizado`,'warn');
+      setTimeout(()=>{
+        const res=amexAtmReversalResponseFields(req);
+        addMessage('1430','Respuesta reversa ATM AMEX','400',res);
+        persistAtmReversal(req,res);
+        $('reversalStatus').textContent='1430 aceptada · saldo restituido';
+        addTechEvent('AMEX 1430 · Action Code 400 Reversal Accepted','done');
+        setScreen('OPERACIÓN REVERSADA','<strong>Saldo restituido</strong><small>AMEX 1420/1430 · Retire su tarjeta</small>');
+        state.step='done';
+      },850);
+      return;
+    }
+
+    $('reversalStatus').textContent='0420 en proceso';
     const req=reversalFields();addMessage('0420','Reversa total por efectivo no retirado','',req);
     setTimeout(()=>{
       const res=req.filter(r=>r[0]!=='90');
@@ -1571,6 +1685,6 @@ document.addEventListener('DOMContentLoaded',()=>{
 </script>
 <script src="js/permissions.js"></script>
 
-<div id="osc-version-badge" style="position:fixed;right:14px;bottom:12px;z-index:99999;background:#0d2238;border:1px solid #2f83ff;color:#9fd0ff;padding:7px 11px;border-radius:999px;font:600 12px/1.1 Inter,Segoe UI,Arial,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.28)">Baseline v3.5.3.15 · AMEX ATM 1200/1210</div>
+<div id="osc-version-badge" style="position:fixed;right:14px;bottom:12px;z-index:99999;background:#0d2238;border:1px solid #2f83ff;color:#9fd0ff;padding:7px 11px;border-radius:999px;font:600 12px/1.1 Inter,Segoe UI,Arial,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.28)">Baseline v3.5.3.16 · AMEX ATM 1420/1430</div>
 </body>
 </html>

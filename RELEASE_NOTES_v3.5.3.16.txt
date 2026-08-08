@@ -1,0 +1,32 @@
+OSC-ACADEMY Baseline v3.5.3.16
+
+1) POS - INICIO LIMPIO
+- Al entrar al POS, MTI queda ----.
+- Bitmap queda 0000000000000000.
+- Data Elements quedan en 0/sin campos.
+- El historial persistido sigue visible.
+- La última trama NO se carga automáticamente; se carga únicamente al hacer clic sobre una fila.
+
+2) ATM - TARJETA AMEX
+- Se corrige el gráfico de la tarjeta física.
+- AMEX Crédito/Débito muestran marca AMEX y el PAN correspondiente.
+- Se conserva la identidad visual Visa/Mastercard.
+
+3) AMEX ATM REVERSAL
+Full reversal / no dispense:
+- MTI 1420 -> 1430.
+- Bit 24 = 400 Full reversal.
+- Bit 4 = 000000000000.
+- Bit 11 = mismo STAN del 1200.
+- Bit 25 = 4017 malfunction/no cash dispensed o 4018 timeout al retirar efectivo.
+- Bit 30 = importe original + 12 ceros.
+- Bit 31 = TID recibido en el 1210.
+- 1430 Bit 39 = 400 Reversal Accepted.
+
+Partial reversal:
+- MTI 1420 -> 1430.
+- Bit 24 = 401 Partial reversal.
+- Bit 4 = importe realmente dispensado.
+- Bit 25 = 4004 Completed partially.
+- Bit 30 = importe original.
+- Bit 31 = TID original.

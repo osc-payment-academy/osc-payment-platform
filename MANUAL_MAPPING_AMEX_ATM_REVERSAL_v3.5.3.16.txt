@@ -1,0 +1,17 @@
+AMEX ATM REVERSAL - MANUAL MAPPING
+
+Network Specifications - Authorization, October 2023:
+- ATM Reversal Advice 1420 is used when ATM fails to dispense, partially dispenses,
+  Cardmember cancels before cash dispense, ATM times out, or communications outage causes timeout.
+- Bit 4 = zero on non-dispense; actual dispensed amount on partial dispense.
+- Bit 11 = same STAN as original 1200.
+- Bit 24 = 400 Full reversal / 401 Partial reversal.
+- Bit 25 mandatory Message Reason Code.
+- Bit 30 mandatory Original Amount N(24).
+- Bit 31 reuses TID returned in original 1210, when present.
+- 1430 acknowledges receipt of 1420 and does not alone mean account exposure has already been reversed.
+
+Codes Reference Guide, October 2023:
+- 4004 Completed partially.
+- 4017 Suspected malfunction / no cash dispensed.
+- 4018 ATM-only timed-out at taking money / no cash dispensed.
