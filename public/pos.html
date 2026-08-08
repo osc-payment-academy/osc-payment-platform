@@ -3,9 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>OSC Academy · POS Virtual · v3.5.3.3</title>
+  <title>OSC Academy · POS Virtual · v3.5.3.9</title>
   <link rel="stylesheet" href="css/app.css">
-<style>.de-learning-row{cursor:pointer}.de-learning-row:hover td{background:#12304a!important}.concept-discovery{position:fixed;inset:0;z-index:120000;background:#020913df;display:grid;place-items:center;padding:20px}.concept-discovery.hidden{display:none}.concept-dialog{position:relative;width:min(570px,100%);padding:25px;border:1px solid #2f83ff;border-radius:16px;background:linear-gradient(180deg,#102740,#071522);box-shadow:0 30px 100px #000c}.concept-close{position:absolute;right:14px;top:14px;border:0;background:transparent;color:#bcd0e2;font-size:18px;cursor:pointer}.concept-kicker{font-size:11px;color:#67bbff;font-weight:800;letter-spacing:.08em}.concept-dialog h2{margin:12px 0 8px}.concept-dialog p{color:#afc0d0;line-height:1.6}.concept-lab{padding:14px;border:1px solid #2e5e83;border-radius:10px;background:#0a1d2f;display:grid;gap:4px}.concept-lab span,.concept-lab small{color:#8fa7bb;font-size:11px}.concept-actions{display:flex;justify-content:space-between;align-items:center;margin-top:16px}.concept-actions button,.concept-actions a{padding:10px 13px;border:1px solid #2d699b;border-radius:8px;background:#123d62;color:white;text-decoration:none;font-size:12px}.concept-actions button{cursor:pointer}</style>
+<style>.de-learning-row{cursor:pointer}.de-learning-row:hover td{background:#12304a!important}.concept-discovery{position:fixed;inset:0;z-index:120000;background:#020913df;display:grid;place-items:center;padding:20px}.concept-discovery.hidden{display:none}.concept-dialog{position:relative;width:min(570px,100%);padding:25px;border:1px solid #2f83ff;border-radius:16px;background:linear-gradient(180deg,#102740,#071522);box-shadow:0 30px 100px #000c}.concept-close{position:absolute;right:14px;top:14px;border:0;background:transparent;color:#bcd0e2;font-size:18px;cursor:pointer}.concept-kicker{font-size:11px;color:#67bbff;font-weight:800;letter-spacing:.08em}.concept-dialog h2{margin:12px 0 8px}.concept-dialog p{color:#afc0d0;line-height:1.6}.concept-lab{padding:14px;border:1px solid #2e5e83;border-radius:10px;background:#0a1d2f;display:grid;gap:4px}.concept-lab span,.concept-lab small{color:#8fa7bb;font-size:11px}.concept-actions{display:flex;justify-content:space-between;align-items:center;margin-top:16px}.concept-actions button,.concept-actions a{padding:10px 13px;border:1px solid #2d699b;border-radius:8px;background:#123d62;color:white;text-decoration:none;font-size:12px}.concept-actions button{cursor:pointer}
+.refund-controls{margin-top:12px;padding:12px;border:1px solid #31516d;border-radius:10px;background:#0b1d2c;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.refund-controls.hidden{display:none}.refund-controls label{font-size:11px;color:#9fb7ca}
+.refund-controls select,.refund-controls input{width:100%;margin-top:5px;background:#071522;border:1px solid #31516d;border-radius:7px;color:#e9f4fb;padding:9px}
+.refund-controls small{grid-column:1/-1;color:#8fa9bc}.refund-controls #refundAmountWrap.hidden{display:none}
+@media(max-width:700px){.refund-controls{grid-template-columns:1fr}}
+
+</style>
 </head>
 <body>
 <div class="app">
@@ -24,10 +31,8 @@
       <a href="atm.html">🏧 <span>ATM Virtual</span></a>
       <a href="parser.html">◉ <span>Parser ISO8583</span></a>
       <a href="switch.html">🏦 <span>Switch del Adquirente</span></a>
-      <a href="compensacion.html">▤ <span>Laboratorio de Compensación</span></a>
       <a href="research.html">🧪 <span>Laboratorio de Investigación</span></a>
     <a class="nav" href="mastercard_iso.html">◉ Mastercard ISO</a>
-<a class="nav" href="compensacion_mastercard.html">▤ Mastercard IPM</a>
 </nav>
 
     <div class="section">Recursos</div>
@@ -79,8 +84,8 @@
       </div>
 
       <div class="operation-cards">
-        <button class="operation-card" data-operation="reversal">
-          <span>↶</span><div><strong>Reversa</strong><small>0400 → 0410</small></div>
+        <button class="operation-card" data-operation="refund">
+          <span>↩</span><div><strong>Devolución</strong><small>Crédito total o parcial</small></div>
         </button>
         <button class="operation-card" data-operation="void">
           <span>⊘</span><div><strong>Anulación</strong><small>Sobre compra aprobada</small></div>
@@ -339,6 +344,18 @@
       <button id="closeTransactionModal" type="button">✕</button>
     </div>
     <div id="transactionSelectionList" class="transaction-selection-list"></div>
+    <div id="refundControls" class="refund-controls hidden">
+      <label>Tipo de devolución
+        <select id="refundMode">
+          <option value="full">Total</option>
+          <option value="partial">Parcial</option>
+        </select>
+      </label>
+      <label id="refundAmountWrap" class="hidden">Importe a devolver
+        <input id="refundAmount" type="number" min="0.01" step="0.01" placeholder="0,00">
+      </label>
+      <small>La devolución genera una nueva operación de crédito y conserva la referencia de la compra original.</small>
+    </div>
     <div class="transaction-dialog-actions">
       <button id="cancelTransactionSelection" type="button">Cancelar</button>
       <button id="confirmTransactionSelection" type="button">Continuar</button>
@@ -367,6 +384,6 @@
 <script>document.addEventListener('DOMContentLoaded',()=>{document.querySelectorAll('.pos-scenario-mini button').forEach((b,i)=>b.onclick=()=>{document.querySelectorAll('.pos-scenario-mini button').forEach(x=>x.classList.remove('active'));b.classList.add('active');const original=document.querySelectorAll('#scenarioGrid button')[i];if(original)original.click()});const log=document.getElementById('posTechEvents');const status=document.getElementById('flowResponse');if(log&&status)new MutationObserver(()=>{const d=document.createElement('div');d.textContent=new Date().toLocaleTimeString('es-AR')+' · '+status.textContent;log.prepend(d);while(log.children.length>8)log.lastChild.remove()}).observe(status,{childList:true,subtree:true,characterData:true})});</script>
 <script src="js/permissions.js"></script>
 
-<div id="osc-version-badge" style="position:fixed;right:14px;bottom:12px;z-index:99999;background:#0d2238;border:1px solid #2f83ff;color:#9fd0ff;padding:7px 11px;border-radius:999px;font:600 12px/1.1 Inter,Segoe UI,Arial,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.28)">Baseline v3.5.2 · POS Batch Ticket</div>
+<div id="osc-version-badge" style="position:fixed;right:14px;bottom:12px;z-index:99999;background:#0d2238;border:1px solid #2f83ff;color:#9fd0ff;padding:7px 11px;border-radius:999px;font:600 12px/1.1 Inter,Segoe UI,Arial,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.28)">Baseline v3.5.3.9 · Core Pilot + Refund</div>
 </body>
 </html>

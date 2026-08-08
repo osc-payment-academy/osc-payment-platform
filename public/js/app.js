@@ -96,6 +96,7 @@
   const operationLabels = {
     purchase:'COMPRA',
     reversal:'REVERSA',
+    refund:'DEVOLUCIÓN',
     void:'ANULACIÓN',
     batch:'CIERRE'
   };
@@ -198,6 +199,32 @@
 
   function reversalResponseFields(source, code){
     const rows=reversalRequestFields(source).filter(r=>!['90'].includes(r[0]));
+    rows.push(field(39,'Response Code',code,'2','FIXED','Host'));
+    return rows.sort((a,b)=>Number(a[0])-Number(b[0]));
+  }
+
+  function refundRequestFields(source,refundCents){
+    const digits=String(Math.round(refundCents||0)).padStart(12,'0');
+    const mode=entryModes[source.entryMode]||entryModes[state.entryMode]||entryModes.chip;
+    const rows=[
+      field(2,'Primary Account Number (PAN)',source.pan||state.pan,'16','LLVAR','Compra original'),
+      field(3,'Processing Code','200000','6','FIXED','Purchase Return / Refund'),
+      field(4,'Transaction Amount',digits,'12','FIXED','Importe de devolución'),
+      field(7,'Transmission Date & Time',de7Now(),'10','FIXED','Reloj del sistema'),
+      field(11,'System Trace Audit Number (STAN)',state.currentStan,'6','FIXED','Nueva devolución'),
+      field(22,'Point of Service Entry Mode',mode.de22,'3','FIXED','Entorno de devolución'),
+      field(37,'Retrieval Reference Number',source.rrn,'12','FIXED','Referencia compra original'),
+      field(41,'Terminal ID','TERMID01','8','FIXED','Configuración terminal'),
+      field(42,'Merchant ID','MERCHANT01','10','FIXED','Configuración comercio'),
+      field(49,'Transaction Currency Code','032','3','FIXED','Moneda')
+    ];
+    if(mode.hasDE55) rows.push(field(55,'ICC Data (EMV)','9F2608A1B2C3D4E5F607','20','LLLVAR','Entorno refund'));
+    return rows.sort((a,b)=>Number(a[0])-Number(b[0]));
+  }
+
+  function refundResponseFields(source,refundCents,code,auth){
+    const rows=refundRequestFields(source,refundCents).filter(r=>!['55'].includes(r[0]));
+    if(code==='00') rows.push(field(38,'Authorization Identification Response',auth,'6','FIXED','Host'));
     rows.push(field(39,'Response Code',code,'2','FIXED','Host'));
     return rows.sort((a,b)=>Number(a[0])-Number(b[0]));
   }
@@ -468,7 +495,7 @@
     const network=(window.OSCNetworks&&window.OSCNetworks.detect(state.pan)?.key)||((state.pan||'').startsWith('4')?'VISA':'MASTERCARD');
     const req=state.messages.find(m=>m.operationId===op.id && /00$/.test(m.mti));
     const res=state.messages.find(m=>m.operationId===op.id && /10$/.test(m.mti));
-    window.OSCSwitchStore.addTransaction({id:op.id,channel:'POS',network,type:op.type,amountCents:op.amountCents,status:op.status||'APPROVED',responseCode:op.responseCode||state.responseCode||'00',stan:op.stan,rrn:op.rrn,auth:op.auth,batch:op.batch,closed:op.closed,clearingStatus:op.closed?'READY':'PENDING',mtiRequest:req?.mti||'0200',mtiResponse:res?.mti||'0210',panLast4:(state.pan||'').slice(-4),raw:req?rawMessage(req):null,requestFields:req?.fields||null,responseFields:res?.fields||null,operationLabel:op.type||'purchase',dateTime:op.createdAt||new Date().toISOString()});
+    window.OSCSwitchStore.addTransaction({id:op.id,channel:'POS',network,type:op.type,amountCents:op.amountCents,status:op.status||'APPROVED',responseCode:op.responseCode||state.responseCode||'00',stan:op.stan,rrn:op.rrn,auth:op.auth,batch:op.batch,closed:op.closed,clearingStatus:op.closed?'READY':'PENDING',mtiRequest:req?.mti||'0200',mtiResponse:res?.mti||'0210',panLast4:(op.pan||state.pan||'').slice(-4),raw:req?rawMessage(req):null,requestFields:req?.fields||null,responseFields:res?.fields||null,operationLabel:op.type||'purchase',dateTime:op.createdAt||new Date().toISOString()});
   }
   function restoreWorkspaceHistory(){
     if(!window.OSCSwitchStore) return;
@@ -521,9 +548,9 @@
       paymentMethod:state.paymentMethod,
       cardId:state.testCard,
       qrType:state.qrType,
-      network:profile().id,
-      pan:state.pan,
-      entryMode:state.entryMode
+      network:source?.network||profile().id,
+      pan:source?.pan||state.pan,
+      entryMode:source?.entryMode||state.entryMode
     };
     state.operations.push(op);
     return op;
@@ -665,7 +692,11 @@
   function eligibleOperations(mode){
     return state.operations.filter(op=>{
       if(op.batch!==state.batchNumber)return false;
-      if(mode==='reversal')return ['APROBADA','TIMEOUT'].includes(op.status)&&op.type==='purchase';
+      if(mode==='refund'){
+        if(!(op.status==='APROBADA'&&op.type==='purchase')) return false;
+        const refunded=state.operations.filter(r=>r.type==='refund'&&r.sourceOperationId===op.id&&r.status==='APROBADA').reduce((a,r)=>a+(r.amountCents||0),0);
+        return refunded < (op.amountCents||0);
+      }
       if(mode==='void')return op.status==='APROBADA'&&op.type==='purchase';
       return false;
     });
@@ -674,8 +705,11 @@
   function openTransactionModal(mode){
     state.modalMode=mode;state.selectedSourceOperationId=null;
     const list=eligibleOperations(mode);
-    $('transactionModalTitle').textContent=mode==='reversal'?'Seleccionar compra para reversar':'Seleccionar compra para anular';
-    $('transactionModalSubtitle').textContent=mode==='reversal'?'Compras aprobadas o con timeout del lote abierto.':'Solo compras aprobadas del lote abierto.';
+    const isRefund=mode==='refund';
+    $('transactionModalTitle').textContent=isRefund?'Seleccionar compra para devolver':'Seleccionar compra para anular';
+    $('transactionModalSubtitle').textContent=isRefund?'Seleccione una compra aprobada. Puede devolver el total o una parte del saldo disponible.':'Solo compras aprobadas del lote abierto.';
+    $('refundControls')?.classList.toggle('hidden',!isRefund);
+    if(isRefund){$('refundMode').value='full';$('refundAmount').value='';$('refundAmountWrap').classList.add('hidden')}
     $('transactionSelectionList').innerHTML=list.length?list.map(op=>`
       <div class="transaction-choice" data-op="${op.id}">
         <span>○</span><div><small>${new Date(op.createdAt).toLocaleString('es-AR')} · STAN ${op.stan}</small><strong>${formatCents(op.amountCents)} · Aut. ${op.auth||'—'}</strong></div><b>${op.status}</b>
@@ -691,7 +725,7 @@
     const source=state.operations.find(o=>o.id===state.selectedSourceOperationId);
     if(!source){alert('Seleccione una operación.');return}
     $('transactionModal').classList.add('hidden');
-    if(state.modalMode==='reversal')runReversal(source);else runVoid(source);
+    if(state.modalMode==='refund')runRefund(source);else runVoid(source);
   }
 
   function runReversal(source){
@@ -714,6 +748,35 @@
       });
       renderMessage(state.messages[0]);
       screen('REVERSA APROBADA','<small>Operación original reversada</small><strong>00</strong><span>Proceso finalizado</span>');
+      printReceipt(op);refreshHistoryStatuses();state.step='done';
+    },850);
+  }
+
+  function runRefund(source){
+    const mode=$('refundMode')?.value||'full';
+    const priorRefunds=state.operations.filter(o=>o.type==='refund'&&o.sourceOperationId===source.id&&o.status==='APROBADA').reduce((a,o)=>a+(o.amountCents||0),0);
+    const available=Math.max(0,(source.amountCents||0)-priorRefunds);
+    let refundCents=available;
+    if(mode==='partial') refundCents=Math.round(Number($('refundAmount')?.value||0)*100);
+    if(!refundCents||refundCents<=0){alert('Ingrese un importe de devolución válido.');return}
+    if(refundCents>available){alert(`El importe supera el saldo disponible para devolver: ${formatCents(available)}`);return}
+
+    state.currentOperation='refund';state.currentStan=random6();state.amountDigits=String(refundCents);
+    screen('DEVOLUCIÓN','<small>Purchase Return / Refund</small><strong>...</strong><span>Generando crédito</span>');
+    const op=createOperation('refund',source);
+    op.amountCents=refundCents;op.amountDigits=String(refundCents);op.rrn=source.rrn;
+    op.refundMode=refundCents===available?'TOTAL':'PARCIAL';
+
+    const req=refundRequestFields(source,refundCents);
+    addMessage({id:`MSG-${Date.now()}-REFREQ`,operationId:op.id,mti:'0200',operation:`DEVOLUCIÓN ${op.refundMode}`,direction:'SALIENTE',dateTime:dateTimeNow(),responseCode:'',fields:req,bitmap:bitmapHex(req),amountCents:refundCents,stan:op.stan,batch:op.batch});
+
+    setTimeout(()=>{
+      const code='00',auth=random6();op.auth=auth;op.status='APROBADA';
+      const res=refundResponseFields(source,refundCents,code,auth);
+      addMessage({id:`MSG-${Date.now()}-REFRES`,operationId:op.id,mti:'0210',operation:`DEVOLUCIÓN ${op.refundMode}`,direction:'ENTRANTE',dateTime:dateTimeNow(),responseCode:code,fields:res,bitmap:bitmapHex(res),amountCents:refundCents,stan:op.stan,batch:op.batch});
+      persistSwitchTransaction(op);
+      renderMessage(state.messages[0]);
+      screen('DEVOLUCIÓN APROBADA',`<small>${op.refundMode} · crédito al tarjetahabiente</small><strong>${formatCents(refundCents)}</strong><span>DE3 = 20 · Purchase Return / Refund</span>`);
       printReceipt(op);refreshHistoryStatuses();state.step='done';
     },850);
   }
@@ -745,30 +808,32 @@
   function batchSummary(){
     const batchOps=state.operations.filter(o=>o.batch===state.batchNumber);
     const purchases=batchOps.filter(o=>o.type==='purchase');
+    const refunds=batchOps.filter(o=>o.type==='refund'&&o.status==='APROBADA');
     const approved=purchases.filter(o=>o.status==='APROBADA');
     const voided=purchases.filter(o=>o.status==='ANULADA');
     const reversed=purchases.filter(o=>o.status==='REVERSADA');
     const sum=items=>items.reduce((a,o)=>a+(o.amountCents||0),0);
     const byNetwork=network=>{
       const rows=purchases.filter(o=>(o.network||o.cardBrand||'VISA').toUpperCase()===network);
+      const rf=refunds.filter(o=>(o.network||o.cardBrand||'VISA').toUpperCase()===network);
       const ok=rows.filter(o=>o.status==='APROBADA');
       const an=rows.filter(o=>o.status==='ANULADA');
       const rv=rows.filter(o=>o.status==='REVERSADA');
-      return {network,approvedCount:ok.length,approvedCents:sum(ok),voidedCount:an.length,voidedCents:sum(an),reversedCount:rv.length,reversedCents:sum(rv),netCents:sum(ok)};
+      return {network,approvedCount:ok.length,approvedCents:sum(ok),refundCount:rf.length,refundCents:sum(rf),voidedCount:an.length,voidedCents:sum(an),reversedCount:rv.length,reversedCents:sum(rv),netCents:sum(ok)-sum(rf)};
     };
-    const approvedCents=sum(approved),voidedCents=sum(voided),reversedCents=sum(reversed);
+    const approvedCents=sum(approved),refundCents=sum(refunds),voidedCents=sum(voided),reversedCents=sum(reversed);
     return{
-      approvedCount:approved.length,voidedCount:voided.length,reversedCount:reversed.length,
-      approvedCents,voidedCents,reversedCents,netCents:approvedCents,
+      approvedCount:approved.length,refundCount:refunds.length,voidedCount:voided.length,reversedCount:reversed.length,
+      approvedCents,refundCents,voidedCents,reversedCents,netCents:approvedCents-refundCents,
       totalMessages:state.messages.filter(m=>m.batch===state.batchNumber).length,
       networks:[byNetwork('VISA'),byNetwork('MASTERCARD')],
-      detail:purchases.slice().sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||''))
+      detail:[...purchases,...refunds].slice().sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||''))
     };
   }
 
   function openBatchModal(){
     const s=batchSummary(),d=new Date();
-    const networkRows=s.networks.map(n=>`<div class="batch-network-block"><div class="batch-network-name">${n.network}</div><div class="batch-ticket-row"><span>Aprobadas</span><b>${n.approvedCount} · ${formatCents(n.approvedCents)}</b></div><div class="batch-ticket-row"><span>Anuladas</span><b>${n.voidedCount} · ${formatCents(n.voidedCents)}</b></div><div class="batch-ticket-row"><span>Reversadas</span><b>${n.reversedCount} · ${formatCents(n.reversedCents)}</b></div><div class="batch-ticket-row batch-network-net"><span>Neto</span><b>${formatCents(n.netCents)}</b></div></div>`).join('');
+    const networkRows=s.networks.map(n=>`<div class="batch-network-block"><div class="batch-network-name">${n.network}</div><div class="batch-ticket-row"><span>Aprobadas</span><b>${n.approvedCount} · ${formatCents(n.approvedCents)}</b></div><div class="batch-ticket-row"><span>Devoluciones</span><b>${n.refundCount} · ${formatCents(n.refundCents)}</b></div><div class="batch-ticket-row"><span>Anuladas</span><b>${n.voidedCount} · ${formatCents(n.voidedCents)}</b></div><div class="batch-ticket-row"><span>Reversadas</span><b>${n.reversedCount} · ${formatCents(n.reversedCents)}</b></div><div class="batch-ticket-row batch-network-net"><span>Neto</span><b>${formatCents(n.netCents)}</b></div></div>`).join('');
     $('batchSummary').innerHTML=`
       <h3>OSC ACADEMY</h3><h4>CIERRE DE LOTE POS</h4>
       <div class="batch-ticket-row"><span>Terminal</span><b>TERMID01</b></div>
@@ -779,6 +844,7 @@
       ${networkRows}
       <div class="batch-ticket-rule"></div>
       <div class="batch-ticket-row"><span>Compras aprobadas</span><b>${s.approvedCount} · ${formatCents(s.approvedCents)}</b></div>
+      <div class="batch-ticket-row"><span>Devoluciones</span><b>${s.refundCount} · ${formatCents(s.refundCents)}</b></div>
       <div class="batch-ticket-row"><span>Anuladas</span><b>${s.voidedCount} · ${formatCents(s.voidedCents)}</b></div>
       <div class="batch-ticket-row"><span>Reversadas</span><b>${s.reversedCount} · ${formatCents(s.reversedCents)}</b></div>
       <div class="batch-ticket-row"><span>Mensajes generados</span><b>${s.totalMessages}</b></div>
@@ -878,7 +944,7 @@ ${rawMessage(msg)}`;
     $('operationDrawer').classList.add('hidden');
     document.querySelectorAll('.operation-card').forEach(b=>b.classList.toggle('active',b.dataset.operation===type));
     if(type==='purchase')reset();
-    else if(type==='reversal')openTransactionModal('reversal');
+    else if(type==='refund')openTransactionModal('refund');
     else if(type==='void')openTransactionModal('void');
     else if(type==='batch')openBatchModal();
     else if(type==='query'){alert(`Lote actual ${state.batchNumber} · ${state.operations.filter(o=>o.batch===state.batchNumber).length} operaciones registradas.`)}
@@ -904,6 +970,7 @@ ${rawMessage(msg)}`;
   $('closeTransactionModal').addEventListener('click',()=>$('transactionModal').classList.add('hidden'));
   $('cancelTransactionSelection').addEventListener('click',()=>$('transactionModal').classList.add('hidden'));
   $('confirmTransactionSelection').addEventListener('click',confirmSelectedOperation);
+  $('refundMode')?.addEventListener('change',e=>$('refundAmountWrap')?.classList.toggle('hidden',e.target.value!=='partial'));
   $('closeBatchModal').addEventListener('click',()=>$('batchModal').classList.add('hidden'));
   $('cancelBatchClose').addEventListener('click',()=>$('batchModal').classList.add('hidden'));
   $('confirmBatchClose').addEventListener('click',closeBatch);

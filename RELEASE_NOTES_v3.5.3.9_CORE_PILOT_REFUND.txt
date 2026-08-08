@@ -1,0 +1,31 @@
+OSC-ACADEMY Baseline v3.5.3.9
+CORE PILOT + POS REFUND
+
+BASE
+- Retoma v3.5.3.7 (antes del entregable experimental de Disputas/Contracargos).
+
+POS
+- El botón manual Reversa se reemplaza por Devolución.
+- La Devolución exige seleccionar una compra aprobada del lote abierto.
+- Permite devolución TOTAL o PARCIAL.
+- Controla el saldo ya devuelto para impedir devoluciones por encima del importe original.
+- La devolución se genera como nueva operación financiera de crédito:
+  DE3 = 200000 (Purchase Return / Refund).
+- Se conserva la referencia RRN de la compra original para fines didácticos/trazabilidad.
+- Historial, Switch Store y cierre de lote registran la devolución.
+- El ticket de cierre muestra Devoluciones y Neto = Compras aprobadas - Devoluciones.
+
+CLEARING CORE
+- Las devoluciones aprobadas quedan elegibles para clearing al cerrar el lote.
+- Visa CTF: Purchase = TC05, Refund = TC06, ATM Cash = TC07 en el visor del Switch Adquirente.
+- Mastercard IPM: se conserva First Presentment 1240 y se identifica el tipo REFUND en la vista.
+- Reversas/anulaciones/rechazos quedan EXCLUDED del clearing al cierre de lote.
+
+MÓDULOS OCULTOS EN LA VERSIÓN INICIAL
+- Visa BASE II / Compensación: archivo conservado, sin acceso desde los menús.
+- Mastercard IPM / Compensación: archivo conservado, sin acceso desde los menús.
+- Switch Emisor: archivo conservado, sin acceso desde los menús.
+- Los visores CTF/IPM del Switch Adquirente se mantienen disponibles para mostrar el clearing normal.
+
+RESERVADO
+- El entregable v3.5.3.8 con Disputas/Contracargos se mantiene separado para una futura evolución / Private Module.
