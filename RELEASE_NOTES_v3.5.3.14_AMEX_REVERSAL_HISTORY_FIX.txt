@@ -1,0 +1,26 @@
+OSC-ACADEMY Baseline v3.5.3.14
+AMEX REVERSAL + POS HISTORY FIX
+
+AJUSTES DE HISTORIAL
+- Se corrige la columna ESTADO: antes refreshHistoryStatuses() escribía por error sobre LOTE.
+- Ahora request y response de una operación aprobada muestran correctamente APROBADA en ESTADO.
+- La restauración del workspace conserva RED/network; una operación AMEX histórica ya no reaparece como Visa al volver a entrar.
+- Persistencia agrega cardId/product para nuevas operaciones.
+- La red se calcula usando la operación persistida, no la tarjeta que esté seleccionada en pantalla al momento de guardar.
+
+AMERICAN EXPRESS 1420 / 1430
+- La ANULACIÓN de una compra AMEX aprobada ahora utiliza:
+  1420 POS Authorization Reversal Advice
+  1430 POS Authorization Reversal Advice Response
+- Processing Code 024000: S/E Initiated Reversal.
+- Function Code 400: Full Reversal / void.
+- Message Reason Code 4000: Customer cancellation.
+- Bit 31: reutiliza TID recibido en el 1110.
+- Bit 37: reutiliza ARN de la compra original.
+- Bit 38: Approval Code original cuando existe.
+- Bit 56: Original Data Elements.
+- 1430 devuelve Action Code 400 = Reversal Accepted.
+- La compra original queda ANULADA y no debe ir a Settlement/Clearing.
+
+IMPORTANTE
+El manual AMEX aclara que recibir 1430 confirma recepción del 1420; no significa por sí solo que la exposición de cuenta ya haya sido revertida.

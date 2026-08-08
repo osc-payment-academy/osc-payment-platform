@@ -1,0 +1,22 @@
+AMEX POS REVERSAL · MANUAL MAPPING v3.5.3.14
+
+Network Specifications - Authorization · October 2023
+- POS Authorization Reversal Advice: 1420.
+- POS Authorization Reversal Advice Response: 1430.
+- Acquirers can generate online reversals and voids with 1420.
+- Function Code 400 = Full Reversal, transaction did not complete as approved; voids and reversals.
+- Function Code 401 = Partial Reversal.
+- Bit 31 must contain the TID received in the original 1110 when available/certified.
+- 1430 Action Code 400 = Reversal Accepted.
+- 1430 acknowledges receipt; it does not certify that account exposure has already been reversed.
+
+Codes Reference Guide · October 2023
+- Processing Code 024000 = Merchant/S-E Initiated Reversal.
+- Processing Code 004000 = Card Reversal Advice - System Generated Reversal.
+- Message Reason Code 4000 = Customer cancellation.
+- Message Reason Code 4006 = Response received too late.
+- Message Reason Code 4007 = Card acceptor device unable to complete.
+
+Business and Operational Policies · October 2023
+- Reversed transaction must not be submitted for Settlement.
+- Card Present S/E reversal should be initiated within 24 hours and before submission for Settlement.
