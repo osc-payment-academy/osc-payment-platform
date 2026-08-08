@@ -36,13 +36,17 @@
     'visa-debit':{id:'visa-debit',label:'Visa Débito',network:'visa',product:'Débito',pan:'4000000000000002',expiry:'2912',track2:'4000000000000002=29122011234567890',aid:'A0000000032010'},
     'mc-credit':{id:'mc-credit',label:'Mastercard Crédito',network:'mastercard',product:'Crédito',pan:'5555555555554444',expiry:'2912',track2:'5555555555554444=29122011234567890',aid:'A0000000041010'},
     'mc-debit':{id:'mc-debit',label:'Mastercard Débito',network:'mastercard',product:'Débito',pan:'2223000048408210',expiry:'2912',track2:'2223000048408210=29122011234567890',aid:'A0000000043060'},
-    'amex-credit':{id:'amex-credit',label:'American Express Crédito',network:'amex',product:'Crédito',pan:'371449635398431',expiry:'2912',track2:'371449635398431=29122011234567890',aid:'A00000002501'}
+    'amex-credit':{id:'amex-credit',label:'American Express Crédito',network:'amex',product:'Crédito',pan:'371449635398431',expiry:'2912',track2:'371449635398431=29122011234567890',aid:'A00000002501'},
+    'amex-debit':{id:'amex-debit',label:'American Express Débito',network:'amex',product:'Débito',pan:'341234567890127',expiry:'2912',track2:'341234567890127=29122011234567890',aid:'A00000002501',onlinePin:true}
   };
   const QR_PROFILES = {
     'mastercard-qr':{label:'Mastercard QR',network:'mastercard',card:'mc-credit',mode:'Merchant Presented'},
     'visa-qr':{label:'Visa QR',network:'visa',card:'visa-credit',mode:'Merchant Presented'}
   };
   const selectedCard = () => TEST_CARDS[state.testCard] || TEST_CARDS['visa-credit'];
+  const isAmexDebit = () => profile().id==='amex' && selectedCard().product==='Débito';
+  const amexDebitOnlinePinRequired = () => isAmexDebit() && ['chip','magstripe'].includes(state.entryMode);
+
   const selectedQr = () => QR_PROFILES[state.qrType] || QR_PROFILES['mastercard-qr'];
   function syncPaymentProfile(){
     const card = state.paymentMethod==='qr' ? TEST_CARDS[selectedQr().card] : selectedCard();
@@ -83,11 +87,12 @@
   // Values are assembled from the terminal/capture capabilities published in
   // Codes Reference Guide (Oct 2023). This is the simulator's attended POS profile.
   function amexPosDataCode(modeKey){
-    const pinCap='6'; // terminal capable of capturing up to 6 PIN characters
+    const useOnlinePin=amexDebitOnlinePinRequired();
+    const pinCap=useOnlinePin?'6':'0';
     const common={capture:'1',environment:'1',cardmemberPresent:'0',terminalOutput:'4'};
     if(modeKey==='chip'){
       // ICC capable + online PIN in this simulator.
-      return ['5','1',common.capture,common.environment,common.cardmemberPresent,'1','5','1','3','3',common.terminalOutput,pinCap].join('');
+      return ['5',useOnlinePin?'1':'6',common.capture,common.environment,common.cardmemberPresent,'1','5',useOnlinePin?'1':'0',useOnlinePin?'3':'0','3',common.terminalOutput,pinCap].join('');
     }
     if(modeKey==='contactless'){
       // Expresspay contactless, no PIN requested in the current POS flow.
@@ -95,7 +100,7 @@
     }
     if(modeKey==='magstripe'){
       // Based on the published 12-position attended magnetic-stripe example profile.
-      return ['2','6',common.capture,common.environment,common.cardmemberPresent,'1','2','0','0','1','2','0'].join('');
+      return ['2',useOnlinePin?'1':'6',common.capture,common.environment,common.cardmemberPresent,'1','2',useOnlinePin?'1':'0',useOnlinePin?'3':'0','1','2',pinCap].join('');
     }
     return ['6','6','0',common.environment,common.cardmemberPresent,'1','6','0','0','1',common.terminalOutput,'0'].join('');
   }
@@ -123,6 +128,9 @@
     ];
     if(mode.hasDE35){
       rows.push(field(35,'Track 2 Data',card.track2,String(card.track2.length),'LLVAR',mode.de35Origin));
+    }
+    if(amexDebitOnlinePinRequired()){
+      rows.push(field(52,'Personal Identification Number (PIN)',state.pinBlock||'A1B2C3D4E5F60708','8 bytes','BINARY','PIN online cifrado · Acquirer certificado'));
     }
     if(mode.hasDE55){
       // First-phase AEIPS/Expresspay educational subset. Full Bit 55 expansion follows in its dedicated step.
@@ -204,7 +212,7 @@
     $('time5').textContent=timeNow();
     state.step='done';setStep(6);
     if(action.code==='000'){
-      screen('APROBADA',`<small>AMEX · 1110</small><strong>${formatCents(op.amountCents)}</strong><span>Action Code 000 · TID ${op.amexTid}</span>`);
+      screen('APROBADA',`<small>AMEX ${selectedCard().product} · 1110</small><strong>${formatCents(op.amountCents)}</strong><span>Action Code 000 · TID ${op.amexTid}</span>`);
       printReceipt(op);
     }else{
       screen('RECHAZADA',`<small>AMEX · 1110</small><strong>${action.code}</strong><span>${action.label}</span>`);
@@ -739,8 +747,8 @@
       screen('PIN',`<small>Ingrese PIN</small><strong>${'•'.repeat(state.pinDigits.length)}</strong><span>Presione VERDE para continuar</span>`);
       $('flowPin').textContent='•'.repeat(state.pinDigits.length);
       const f=entryFields();
-      f.push(field(52,'PIN Data (Encrypted PIN Block)',state.pinBlock,'8 bytes','B64','PIN cifrado'));
-      f.push(field(53,'Security-Related Control Information','2000000000000000','16','FIXED','Seguridad PIN'));
+      f.push(field(52,profile().id==='amex'?'Personal Identification Number (PIN)':'PIN Data (Encrypted PIN Block)',state.pinBlock,'8 bytes','B64',profile().id==='amex'?'AMEX Bit 52 · PIN cifrado':'PIN cifrado'));
+      if(profile().id!=='amex') f.push(field(53,'Security-Related Control Information','2000000000000000','16','FIXED','Seguridad PIN'));
       renderFields(f.sort((a,b)=>Number(a[0])-Number(b[0])));
     }
   }
@@ -797,8 +805,12 @@
       renderFields(entryFields().sort((a,b)=>Number(a[0])-Number(b[0])));
       setTimeout(()=>{
         stage.classList.add('hidden');
-        if(profile().id==='amex'){
-          $('flowPin').textContent='Fase 1100';$('time3').textContent=timeNow();sendPurchase0200();
+        if(profile().id==='amex' && amexDebitOnlinePinRequired()){
+          state.step='pin';setStep(3);
+          $('flowPin').textContent='AMEX Débito · Online PIN';
+          screen('PIN','<small>American Express Débito</small><strong></strong><span>PIN online · Bit 52 en 1100</span>');
+        }else if(profile().id==='amex'){
+          $('flowPin').textContent='No requerido';$('time3').textContent=timeNow();sendPurchase0200();
         }else if(mode.hasPin){state.step='pin';setStep(3);screen('PIN','<small>Ingrese PIN</small><strong></strong><span>Presione VERDE para continuar</span>')}
         else{$('flowPin').textContent='No requerido';$('time3').textContent=timeNow();sendPurchase0200()}
       },650);
@@ -823,7 +835,7 @@
       state.selectedSourceOperationId=op.id;state.step='waiting';setStep(5);
       if(isAmex){
         op.status='PENDIENTE';
-        screen('1100 ENVIADO','<small>POS Authorization Request</small><strong>AMEX</strong><span>Esperando 1110 del emisor vía American Express Network</span>');
+        screen('1100 ENVIADO',`<small>POS Authorization Request · ${selectedCard().product}</small><strong>AMEX</strong><span>Esperando 1110 del emisor vía American Express Network</span>`);
         $('flowResponse').textContent='Esperando 1110';
         renderMessage(state.messages[0]);
         refreshHistoryStatuses();
@@ -1174,6 +1186,12 @@ ${rawMessage(msg)}`;
     const step=document.querySelector('#step2 small');
     if(step && state.entryMode) step.textContent=state.paymentMethod==='qr'?`${selectedQr().label} · Wallet`:`${p.name} · ${(entryModes[state.entryMode]||entryModes.chip).label}`;
     $('amexPhaseNotice')?.classList.toggle('hidden',p.id!=='amex');
+    if(p.id==='amex' && $('amexPhaseNotice')){
+      const span=$('amexPhaseNotice').querySelector('span');
+      if(span) span.textContent=isAmexDebit()
+        ? 'Débito: 1100 → 1110. Chip/Banda usa PIN online en este perfil didáctico y envía Bit 52; Contactless queda sin PIN.'
+        : 'Crédito: 1100 → 1110. La Red AMEX asigna TID y el emisor responde con Action Code de 3 dígitos.';
+    }
     const sendBtn=$('sendResponse');
     if(sendBtn){
       sendBtn.disabled=false;

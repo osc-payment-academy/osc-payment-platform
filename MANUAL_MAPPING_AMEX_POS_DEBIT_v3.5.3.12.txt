@@ -1,0 +1,26 @@
+AMEX POS DEBIT · MANUAL MAPPING v3.5.3.12
+
+1) Business and Operational Policies
+   - American Express Debit Card: Payment Functionality - Debit; Cash Access.
+   - Debit Cards are supported product types.
+
+2) Network Specifications - Authorization
+   - POS authorization flow remains 1100 request / 1110 response.
+   - Online PIN Cardholder Verification Method:
+     * Optional CVM at a PIN-capable POS.
+     * 1100 carries encrypted PIN data.
+   - Bit 52 Personal Identification Number (PIN):
+     * Binary(8)
+     * Conditional
+     * Acquirer and Issuer certification applies.
+     * Bit 111 must NOT carry PIN simultaneously with Bit 52.
+   - Bit 53 is CSC / OTP data, not PIN security-control information.
+   - Debit available balance must not be returned to Acquirer in Bit 54.
+
+3) Codes Reference Guide
+   - 004000 Card Authorization Request.
+   - Function Code 100 remains basic/original authorization profile.
+
+SIMULATOR PROFILE
+- AMEX Debit + Chip/Banda => Online PIN / Bit 52.
+- AMEX Debit + Contactless => No PIN in current phase.

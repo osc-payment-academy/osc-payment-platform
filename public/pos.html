@@ -139,7 +139,10 @@
         <span class="card-network">MASTERCARD</span><strong>DÉBITO</strong><small>•••• 8210 · BIN 222300</small>
       </button>
       <button type="button" class="test-card amex" data-test-card="amex-credit" onclick="window.OSCSelectTestCard && window.OSCSelectTestCard('amex-credit')">
-        <span class="card-network">AMERICAN EXPRESS</span><strong>CRÉDITO</strong><small>•••• 8431 · BIN 371449 · 1100 / 1110 activo</small>
+        <span class="card-network">AMERICAN EXPRESS</span><strong>CRÉDITO</strong><small>•••• 8431 · BIN 371449 · 1100 / 1110</small>
+      </button>
+      <button type="button" class="test-card amex" data-test-card="amex-debit" onclick="window.OSCSelectTestCard && window.OSCSelectTestCard('amex-debit')">
+        <span class="card-network">AMERICAN EXPRESS</span><strong>DÉBITO</strong><small>•••• 0127 · BIN 341234 · 1100 / 1110 + PIN online</small>
       </button>
     </div>
     <div class="selected-test-card" id="selectedTestCardSummary">Visa Crédito · PAN de prueba asignado automáticamente</div>
@@ -394,6 +397,6 @@
 <script>document.addEventListener('DOMContentLoaded',()=>{document.querySelectorAll('.pos-scenario-mini button').forEach((b,i)=>b.onclick=()=>{document.querySelectorAll('.pos-scenario-mini button').forEach(x=>x.classList.remove('active'));b.classList.add('active');const original=document.querySelectorAll('#scenarioGrid button')[i];if(original)original.click()});const log=document.getElementById('posTechEvents');const status=document.getElementById('flowResponse');if(log&&status)new MutationObserver(()=>{const d=document.createElement('div');d.textContent=new Date().toLocaleTimeString('es-AR')+' · '+status.textContent;log.prepend(d);while(log.children.length>8)log.lastChild.remove()}).observe(status,{childList:true,subtree:true,characterData:true})});</script>
 <script src="js/permissions.js"></script>
 
-<div id="osc-version-badge" style="position:fixed;right:14px;bottom:12px;z-index:99999;background:#0d2238;border:1px solid #2f83ff;color:#9fd0ff;padding:7px 11px;border-radius:999px;font:600 12px/1.1 Inter,Segoe UI,Arial,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.28)">Baseline v3.5.3.11 · AMEX POS 1100/1110</div>
+<div id="osc-version-badge" style="position:fixed;right:14px;bottom:12px;z-index:99999;background:#0d2238;border:1px solid #2f83ff;color:#9fd0ff;padding:7px 11px;border-radius:999px;font:600 12px/1.1 Inter,Segoe UI,Arial,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.28)">Baseline v3.5.3.12 · AMEX POS Debit</div>
 </body>
 </html>

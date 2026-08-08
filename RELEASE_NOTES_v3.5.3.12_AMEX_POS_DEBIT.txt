@@ -1,0 +1,35 @@
+OSC-ACADEMY Baseline v3.5.3.12
+AMERICAN EXPRESS · POS DÉBITO
+
+FUENTES
+- American Express GNS Business and Operational Policies · October 2023
+- American Express GNS Network Specifications - Authorization · October 2023
+- American Express GNS Codes Reference Guide · October 2023
+
+VALIDACIÓN DOCUMENTAL
+- American Express contempla productos Debit.
+- La compra POS Debit continúa usando POS Authorization Request/Response 1100/1110.
+- El Processing Code básico de autorización continúa siendo 004000.
+- Function Code 100 continúa representando una Basic/Original Authorization.
+- Online PIN es un CVM opcional para Card Present en POS.
+- Cuando se utiliza Online PIN, el Acquirer envía el PIN cifrado en Bit 52.
+- Bit 52 es Conditional y requiere certificación del Acquirer/Issuer.
+- Bit 53 AMEX NO se utiliza como acompañante del PIN: Bit 53 contiene CSC/OTP.
+- Bit 111 puede ser una alternativa para PIN, pero Bit 52 y Bit 111 no deben coexistir para PIN.
+- Para esta versión didáctica se usa exclusivamente Bit 52.
+
+NUEVO EN POS
+- Tarjeta AMERICAN EXPRESS DÉBITO de prueba:
+  PAN 341234567890127 · Luhn válido · terminación 0127.
+- AMEX Crédito y Débito conviven en la misma pantalla.
+- Débito mantiene MTI 1100 → 1110.
+- Chip EMV y Banda Magnética solicitan PIN online en este perfil didáctico.
+- Contactless permanece sin PIN en esta etapa.
+- El 1100 Debit incorpora Bit 52 cuando el alumno ingresó PIN.
+- Bit 22 AMEX de 12 posiciones se adapta al escenario con/sin Online PIN.
+- El 1110 conserva TID/Bit 31 y Action Code AMEX de 3 dígitos.
+- No se agrega Bit 54 Balance Return para Debit; el manual indica que available balance no debe retornarse para productos Debit.
+
+IMPORTANTE
+Este laboratorio modela un perfil didáctico de POS Debit con Online PIN para Chip/Banda.
+El manual define Online PIN como CVM opcional; no implica que toda compra AMEX Debit deba requerir PIN.
