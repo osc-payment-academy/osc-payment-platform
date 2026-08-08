@@ -1,0 +1,47 @@
+OSC-ACADEMY Baseline v3.5.3.10
+AMERICAN EXPRESS · POS 1100 · FASE 1
+
+FUENTE
+- American Express Global Network Services
+  Network Specifications - Authorization · October 2023
+- American Express GNS Codes Reference Guide · October 2023
+
+ALCANCE
+- American Express deja de aparecer como "Próximamente" en POS.
+- Se incorpora tarjeta AMEX de prueba terminada en 8431 (PAN de laboratorio).
+- Se reutiliza la misma pantalla POS y los mismos controles de captura.
+- La compra AMEX genera POS Authorization Request MTI 1100.
+- Esta fase NO genera todavía el 1110; la respuesta se incorpora en el siguiente paso acordado.
+
+1100 IMPLEMENTADO
+- Bit 2  PAN
+- Bit 3  Processing Code = 004000 (Card Authorization Request)
+- Bit 4  Amount, Transaction
+- Bit 7  Date and Time, Transmission
+- Bit 11 Systems Trace Audit Number
+- Bit 12 Date and Time, Local Transaction
+- Bit 14 Card Expiration Date
+- Bit 19 Country Code, Acquiring Institution
+- Bit 22 Point of Service Data Code (12 posiciones)
+- Bit 24 Function Code = 100 (Original authorization - amount accurate)
+- Bit 26 Card Acceptor Business Code / MCC
+- Bit 32 Acquiring Institution Identification (AIN) Code (demo)
+- Bit 35 Track 2 cuando aplica
+- Bit 37 Acquirer Reference Number
+- Bit 41 Card Acceptor Terminal Identification
+- Bit 42 Card Acceptor Identification Code
+- Bit 49 Currency Code, Transaction
+- Bit 55 ICC System Related Data para Chip/Expresspay, subset educativo de fase 1
+
+CAPTURA
+- Chip EMV -> perfil AMEX AEIPS, Bit 22 de 12 posiciones
+- Contactless -> perfil Expresspay, Bit 22 de 12 posiciones
+- Banda magnética -> perfil atendido basado en los códigos publicados
+- Ingreso manual -> perfil manual didáctico
+
+IMPORTANTE
+- Bit 22 AMEX NO reutiliza DE22 de 3 dígitos de Visa/Mastercard.
+- En AMEX el Point of Service Data Code tiene 12 posiciones.
+- La combinación de 12 posiciones representa las capacidades configuradas en el POS Virtual.
+- Bit 55 completo se expandirá en el paso dedicado AEIPS/Expresspay.
+- TID/Bit 31 es generado por la Red AMEX durante el ciclo; no se inventa en el 1100 Acquirer->Network de esta fase.

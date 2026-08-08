@@ -35,7 +35,8 @@
     'visa-credit':{id:'visa-credit',label:'Visa Crédito',network:'visa',product:'Crédito',pan:'4111111111111111',expiry:'2912',track2:'4111111111111111=29122011234567890',aid:'A0000000031010'},
     'visa-debit':{id:'visa-debit',label:'Visa Débito',network:'visa',product:'Débito',pan:'4000000000000002',expiry:'2912',track2:'4000000000000002=29122011234567890',aid:'A0000000032010'},
     'mc-credit':{id:'mc-credit',label:'Mastercard Crédito',network:'mastercard',product:'Crédito',pan:'5555555555554444',expiry:'2912',track2:'5555555555554444=29122011234567890',aid:'A0000000041010'},
-    'mc-debit':{id:'mc-debit',label:'Mastercard Débito',network:'mastercard',product:'Débito',pan:'2223000048408210',expiry:'2912',track2:'2223000048408210=29122011234567890',aid:'A0000000043060'}
+    'mc-debit':{id:'mc-debit',label:'Mastercard Débito',network:'mastercard',product:'Débito',pan:'2223000048408210',expiry:'2912',track2:'2223000048408210=29122011234567890',aid:'A0000000043060'},
+    'amex-credit':{id:'amex-credit',label:'American Express Crédito',network:'amex',product:'Crédito',pan:'371449635398431',expiry:'2912',track2:'371449635398431=29122011234567890',aid:'A00000002501'}
   };
   const QR_PROFILES = {
     'mastercard-qr':{label:'Mastercard QR',network:'mastercard',card:'mc-credit',mode:'Merchant Presented'},
@@ -76,6 +77,59 @@
     magstripe:{label:'Banda magnética',de22:'021',hasPin:true,hasDE55:false,hasDE35:true,de35Origin:'Track 2 leído de la banda'},
     manual:{label:'Ingreso manual',de22:'011',hasPin:false,hasDE55:false,hasDE35:false,de35Origin:'No aplica'}
   };
+
+
+  // American Express Bit 22 = Point of Service Data Code (12 positions).
+  // Values are assembled from the terminal/capture capabilities published in
+  // Codes Reference Guide (Oct 2023). This is the simulator's attended POS profile.
+  function amexPosDataCode(modeKey){
+    const pinCap='6'; // terminal capable of capturing up to 6 PIN characters
+    const common={capture:'1',environment:'1',cardmemberPresent:'0',terminalOutput:'4'};
+    if(modeKey==='chip'){
+      // ICC capable + online PIN in this simulator.
+      return ['5','1',common.capture,common.environment,common.cardmemberPresent,'1','5','1','3','3',common.terminalOutput,pinCap].join('');
+    }
+    if(modeKey==='contactless'){
+      // Expresspay contactless, no PIN requested in the current POS flow.
+      return ['5','6',common.capture,common.environment,common.cardmemberPresent,'X','5','0','0','1',common.terminalOutput,pinCap].join('');
+    }
+    if(modeKey==='magstripe'){
+      // Based on the published 12-position attended magnetic-stripe example profile.
+      return ['2','6',common.capture,common.environment,common.cardmemberPresent,'1','2','0','0','1','2','0'].join('');
+    }
+    return ['6','6','0',common.environment,common.cardmemberPresent,'1','6','0','0','1',common.terminalOutput,'0'].join('');
+  }
+
+  function amex1100RequestFields(){
+    const mode=entryModes[state.entryMode]||entryModes.chip;
+    const card=selectedCard();
+    const rows=[
+      field(2,'Primary Account Number (PAN)',state.pan,String(state.pan.length),'LLVAR','American Express Card'),
+      field(3,'Processing Code','004000','6','FIXED','Card Authorization Request'),
+      amountField(),
+      field(7,'Date and Time, Transmission',de7Now(),'10','FIXED','Acquirer local transmission time'),
+      field(11,'Systems Trace Audit Number',state.currentStan,'6','FIXED','Acquirer STAN'),
+      field(12,'Date and Time, Local Transaction',amexLocalDateTime(),'12','FIXED','YYMMDDhhmmss'),
+      field(14,'Card Expiration Date',card.expiry,'4','FIXED','YYMM'),
+      field(19,'Country Code, Acquiring Institution','032','3','FIXED','Argentina · simulator profile'),
+      field(22,'Point of Service Data Code',amexPosDataCode(state.entryMode),'12','FIXED','AMEX GNS · 12 positions'),
+      field(24,'Function Code','100','3','FIXED','Original authorization · amount accurate'),
+      field(26,'Card Acceptor Business Code','5812','4','FIXED','MCC · Eating Places / Restaurants'),
+      field(32,'Acquiring Institution Identification (AIN) Code','12345678901','11','LLVAR','Demo AIN del adquirente'),
+      field(37,'Acquirer Reference Number (ARN)',`${state.currentStan}${String(Date.now()).slice(-6)}`.slice(0,12),'12','FIXED','Referencia del adquirente'),
+      field(41,'Card Acceptor Terminal Identification','TERMID01','8','FIXED','Terminal POS'),
+      field(42,'Card Acceptor Identification Code','1234567890     ','15','FIXED','S/E demo · 10 dígitos + 5 espacios'),
+      field(49,'Currency Code, Transaction','032','3','FIXED','ARS')
+    ];
+    if(mode.hasDE35){
+      rows.push(field(35,'Track 2 Data',card.track2,String(card.track2.length),'LLVAR',mode.de35Origin));
+    }
+    if(mode.hasDE55){
+      // First-phase AEIPS/Expresspay educational subset. Full Bit 55 expansion follows in its dedicated step.
+      rows.push(field(55,'ICC System Related Data','AGNS00019F2608A1B2C3D4E5F6075F2A0200329F1A0200325F3401019F270180','Variable','LLLVAR',state.entryMode==='contactless'?'Expresspay subset':'AEIPS subset'));
+    }
+    return rows.sort((a,b)=>Number(a[0])-Number(b[0]));
+  }
 
   const terminalModels = {
     ingenico:{brand:'ingenico',model:'ICT250'},
@@ -119,6 +173,18 @@
       String(d.getSeconds()).padStart(2,'0')
     ].join('');
   };
+  const amexLocalDateTime = () => {
+    const d=now();
+    return [
+      String(d.getFullYear()).slice(-2),
+      String(d.getMonth()+1).padStart(2,'0'),
+      String(d.getDate()).padStart(2,'0'),
+      String(d.getHours()).padStart(2,'0'),
+      String(d.getMinutes()).padStart(2,'0'),
+      String(d.getSeconds()).padStart(2,'0')
+    ].join('');
+  };
+
   const random6 = () => String(Math.floor(100000+Math.random()*900000));
   const createPinBlock = () => Array.from({length:16},()=>Math.floor(Math.random()*16).toString(16).toUpperCase()).join('');
   const profile = () => window.OSCNetworks ? OSCNetworks.resolve(state.network,state.pan) : {id:'visa',name:'Visa',short:'VISA'};
@@ -459,7 +525,11 @@
     const op=state.operations.find(o=>o.id===message.operationId);
     tr.innerHTML=`
       <td>${message.dateTime}</td>
-      <td>${((op?.network||'').toLowerCase()==='mastercard')?'<span class="brand-logo mc-mark" title="Mastercard"><i></i><i></i></span>':'<span class="brand-logo visa-mark" title="Visa">VISA</span>'}</td>
+      <td>${((op?.network||'').toLowerCase()==='mastercard')
+        ?'<span class="brand-logo mc-mark" title="Mastercard"><i></i><i></i></span>'
+        :((op?.network||'').toLowerCase()==='amex')
+          ?'<span class="brand-logo amex-mark" title="American Express">AMEX</span>'
+          :'<span class="brand-logo visa-mark" title="Visa">VISA</span>'}</td>
       <td class="${message.direction==='SALIENTE'?'direction-out':'direction-in'}">${message.direction}</td>
       <td><span class="message-badge">${message.mti}</span></td>
       <td><span class="operation-tag">${message.operation}</span></td>
@@ -492,7 +562,8 @@
 
   function persistSwitchTransaction(op){
     if(!window.OSCSwitchStore||!op||op.type==='batch')return;
-    const network=(window.OSCNetworks&&window.OSCNetworks.detect(state.pan)?.key)||((state.pan||'').startsWith('4')?'VISA':'MASTERCARD');
+    const detected=window.OSCNetworks&&window.OSCNetworks.detect(state.pan);
+    const network=(detected?.id||detected?.key||profile().id||'visa').toUpperCase();
     const req=state.messages.find(m=>m.operationId===op.id && /00$/.test(m.mti));
     const res=state.messages.find(m=>m.operationId===op.id && /10$/.test(m.mti));
     window.OSCSwitchStore.addTransaction({id:op.id,channel:'POS',network,type:op.type,amountCents:op.amountCents,status:op.status||'APPROVED',responseCode:op.responseCode||state.responseCode||'00',stan:op.stan,rrn:op.rrn,auth:op.auth,batch:op.batch,closed:op.closed,clearingStatus:op.closed?'READY':'PENDING',mtiRequest:req?.mti||'0200',mtiResponse:res?.mti||'0210',panLast4:(op.pan||state.pan||'').slice(-4),raw:req?rawMessage(req):null,requestFields:req?.fields||null,responseFields:res?.fields||null,operationLabel:op.type||'purchase',dateTime:op.createdAt||new Date().toISOString()});
@@ -572,7 +643,8 @@
     const amount=formatAmount(state.amountDigits);
     const el=$('screenAmount');if(el)el.textContent=amount;
     $('flowAmount').textContent=amount;
-    renderFields(state.amountDigits?[field(3,'Processing Code','000000','6','FIXED','Aplicación POS'),amountField()]:[]);
+    const isAmex=profile().id==='amex';
+    renderFields(state.amountDigits?[field(3,'Processing Code',isAmex?'004000':'000000','6','FIXED',isAmex?'AMEX Card Authorization Request':'Aplicación POS'),amountField()]:[]);
   }
 
   function pressNumber(key){
@@ -643,7 +715,9 @@
       renderFields(entryFields().sort((a,b)=>Number(a[0])-Number(b[0])));
       setTimeout(()=>{
         stage.classList.add('hidden');
-        if(mode.hasPin){state.step='pin';setStep(3);screen('PIN','<small>Ingrese PIN</small><strong></strong><span>Presione VERDE para continuar</span>')}
+        if(profile().id==='amex'){
+          $('flowPin').textContent='Fase 1100';$('time3').textContent=timeNow();sendPurchase0200();
+        }else if(mode.hasPin){state.step='pin';setStep(3);screen('PIN','<small>Ingrese PIN</small><strong></strong><span>Presione VERDE para continuar</span>')}
         else{$('flowPin').textContent='No requerido';$('time3').textContent=timeNow();sendPurchase0200()}
       },650);
     },1500);
@@ -652,23 +726,37 @@
   function sendPurchase0200(){
     state.step='processing';state.currentStan=random6();state.currentAuth='';setStep(4);
     const op=createOperation('purchase');
-    const fields=purchaseRequestFields();
+    const isAmex=profile().id==='amex';
+    const requestMti=isAmex?'1100':'0200';
+    const fields=isAmex?amex1100RequestFields():purchaseRequestFields();
     renderFields(fields);
-    screen('PROCESANDO','<small>Enviando 0200</small><strong>...</strong><span>Aguarde</span>');
+    screen('PROCESANDO',`<small>Enviando ${requestMti}</small><strong>...</strong><span>${isAmex?'American Express GNS':'Aguarde'}</span>`);
     setTimeout(()=>{
       $('time4').textContent=timeNow();
       addMessage({
-        id:`MSG-${Date.now()}-0200`,operationId:op.id,mti:'0200',operation:'COMPRA',
+        id:`MSG-${Date.now()}-${requestMti}`,operationId:op.id,mti:requestMti,operation:'COMPRA',
         direction:'SALIENTE',dateTime:dateTimeNow(),responseCode:'',fields,bitmap:bitmapHex(fields),
         amountCents:op.amountCents,stan:op.stan,batch:op.batch
       });
       state.selectedSourceOperationId=op.id;state.step='waiting';setStep(5);
-      screen('PROCESANDO','<small>Esperando 0210</small><strong>...</strong><span>Aguarde</span>');
+      if(isAmex){
+        op.status='1100 ENVIADO';
+        screen('1100 ENVIADO','<small>POS Authorization Request</small><strong>AMEX</strong><span>Fase 1 completada · 1110 será el próximo paso</span>');
+        $('flowResponse').textContent='1110 · Próximo paso';
+        renderMessage(state.messages[0]);
+        refreshHistoryStatuses();
+      }else{
+        screen('PROCESANDO','<small>Esperando 0210</small><strong>...</strong><span>Aguarde</span>');
+      }
     },800);
   }
 
   function sendPurchaseResponse(){
     if(state.step!=='waiting'||state.currentOperation!=='purchase')return;
+    if(profile().id==='amex'){
+      alert('American Express: el 1100 ya fue generado. La respuesta 1110 se incorpora en el siguiente entregable.');
+      return;
+    }
     const op=state.operations.find(o=>o.id===state.selectedSourceOperationId);
     const response=scenarios[state.responseCode];
     state.currentAuth=state.responseCode==='00'?random6():'-';
@@ -1003,6 +1091,12 @@ ${rawMessage(msg)}`;
     if(summary && state.paymentMethod==='card') summary.textContent=`${selectedCard().label} · PAN de prueba asignado automáticamente · •••• ${state.pan.slice(-4)} · ${p.name}`;
     const step=document.querySelector('#step2 small');
     if(step && state.entryMode) step.textContent=state.paymentMethod==='qr'?`${selectedQr().label} · Wallet`:`${p.name} · ${(entryModes[state.entryMode]||entryModes.chip).label}`;
+    $('amexPhaseNotice')?.classList.toggle('hidden',p.id!=='amex');
+    const sendBtn=$('sendResponse');
+    if(sendBtn){
+      sendBtn.disabled=p.id==='amex';
+      sendBtn.title=p.id==='amex'?'Fase 1 AMEX: sólo POS Authorization Request 1100':'';
+    }
   }
   function setPaymentMethod(method){
     state.paymentMethod=method;

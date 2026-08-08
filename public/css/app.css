@@ -393,3 +393,5 @@ button{font:inherit;color:inherit}
 .mc-mark i{position:absolute;top:1px;width:19px;height:19px;border-radius:50%}
 .mc-mark i:first-child{left:2px;background:#eb001b}
 .mc-mark i:last-child{left:15px;background:#f79e1b;opacity:.92}
+
+.brand-logo.amex-mark{display:inline-flex;align-items:center;justify-content:center;font-weight:900;font-style:italic;letter-spacing:-.03em;color:#6bb8ff;font-size:1rem}

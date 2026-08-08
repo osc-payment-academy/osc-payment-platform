@@ -12,6 +12,12 @@
 .refund-controls small{grid-column:1/-1;color:#8fa9bc}.refund-controls #refundAmountWrap.hidden{display:none}
 @media(max-width:700px){.refund-controls{grid-template-columns:1fr}}
 
+
+.test-card.amex .card-network{color:#70b7ff}
+.test-card.amex.active{border-color:#2f9bff;box-shadow:0 0 0 3px rgba(47,155,255,.16);background:linear-gradient(180deg,#0b2a43,#0c2133)}
+.amex-phase-notice{margin-top:8px;border:1px solid #2b6590;background:#092137;border-radius:9px;padding:9px 11px;color:#9ecdf0;font-size:.72rem;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.amex-phase-notice strong{color:#6cc1ff}.amex-phase-notice.hidden{display:none}
+
 </style>
 </head>
 <body>
@@ -132,11 +138,15 @@
       <button type="button" class="test-card mastercard" data-test-card="mc-debit" onclick="window.OSCSelectTestCard && window.OSCSelectTestCard('mc-debit')">
         <span class="card-network">MASTERCARD</span><strong>DÉBITO</strong><small>•••• 8210 · BIN 222300</small>
       </button>
-      <button type="button" class="test-card disabled" disabled>
-        <span class="card-network">AMERICAN EXPRESS</span><strong>PRÓXIMAMENTE</strong><small>Arquitectura preparada</small>
+      <button type="button" class="test-card amex" data-test-card="amex-credit" onclick="window.OSCSelectTestCard && window.OSCSelectTestCard('amex-credit')">
+        <span class="card-network">AMERICAN EXPRESS</span><strong>CRÉDITO</strong><small>•••• 8431 · BIN 371449 · 1100 activo</small>
       </button>
     </div>
     <div class="selected-test-card" id="selectedTestCardSummary">Visa Crédito · PAN de prueba asignado automáticamente</div>
+    <div id="amexPhaseNotice" class="amex-phase-notice hidden">
+      <strong>American Express · Fase 1</strong>
+      <span>POS Authorization Request 1100 activo. La respuesta 1110 se incorpora en el siguiente paso.</span>
+    </div>
   </div>
   <div id="qrPaymentConfig" class="payment-config hidden">
     <label for="qrTypeSelect">Tipo de QR</label>
@@ -384,6 +394,6 @@
 <script>document.addEventListener('DOMContentLoaded',()=>{document.querySelectorAll('.pos-scenario-mini button').forEach((b,i)=>b.onclick=()=>{document.querySelectorAll('.pos-scenario-mini button').forEach(x=>x.classList.remove('active'));b.classList.add('active');const original=document.querySelectorAll('#scenarioGrid button')[i];if(original)original.click()});const log=document.getElementById('posTechEvents');const status=document.getElementById('flowResponse');if(log&&status)new MutationObserver(()=>{const d=document.createElement('div');d.textContent=new Date().toLocaleTimeString('es-AR')+' · '+status.textContent;log.prepend(d);while(log.children.length>8)log.lastChild.remove()}).observe(status,{childList:true,subtree:true,characterData:true})});</script>
 <script src="js/permissions.js"></script>
 
-<div id="osc-version-badge" style="position:fixed;right:14px;bottom:12px;z-index:99999;background:#0d2238;border:1px solid #2f83ff;color:#9fd0ff;padding:7px 11px;border-radius:999px;font:600 12px/1.1 Inter,Segoe UI,Arial,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.28)">Baseline v3.5.3.9 · Core Pilot + Refund</div>
+<div id="osc-version-badge" style="position:fixed;right:14px;bottom:12px;z-index:99999;background:#0d2238;border:1px solid #2f83ff;color:#9fd0ff;padding:7px 11px;border-radius:999px;font:600 12px/1.1 Inter,Segoe UI,Arial,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.28)">Baseline v3.5.3.10 · AMEX POS 1100</div>
 </body>
 </html>

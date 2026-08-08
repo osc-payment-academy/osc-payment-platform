@@ -3,6 +3,7 @@
   const profiles = {
     visa: {id:'visa', name:'Visa', short:'VISA', color:'#1a66ff', manual:'Visa Base I / perfil educativo Visa', status:'Activo'},
     mastercard: {id:'mastercard', name:'Mastercard', short:'MC', color:'#ff5f00', manual:'Mastercard authorization profile / perfil educativo', status:'Activo'},
+    amex: {id:'amex', name:'American Express', short:'AMEX', color:'#2f78c4', manual:'American Express GNS Network Specifications - Authorization · Oct 2023', status:'1100 activo'},
     amex: {id:'amex', name:'American Express', short:'AMEX', color:'#2e77bb', manual:'American Express profile (arquitectura preparada)', status:'Preparado'}
   };
   function detect(pan){
@@ -11,6 +12,7 @@
     const first2=Number(n.slice(0,2));
     const first6=Number(n.slice(0,6));
     if((first2>=51 && first2<=55) || (first6>=222100 && first6<=272099)) return profiles.mastercard;
+    if(first2===34 || first2===37) return profiles.amex;
     if(/^(34|37)/.test(n)) return profiles.amex;
     return {id:'unknown',name:'No identificada',short:'?',color:'#64748b',manual:'Perfil ISO 8583 genérico',status:'Revisar BIN'};
   }
