@@ -1,0 +1,9 @@
+OSC-ACADEMY v3.5.3.6 · Arquitectura Private Modules
+- Organization/Tenant + Feature Flags.
+- Core compartido; módulos privados habilitados por organización.
+- Seguridad final: backend debe validar usuario -> organización -> feature; ocultar UI no es suficiente.
+- Ambientes: DEV (desarrollo), STAGING (QA/demo privada), PROD (estable).
+- Git: main=producción, develop=integración, feature/<cliente>-<marca>-<funcionalidad>=trabajo aislado, PR antes de merge.
+- Metadatos: Cliente, Marca, Canal, Manual/versión, Core/Private, Feature flag, Casos de prueba, Estado, Ambiente.
+- Manuales/logs/tramas/resultados privados no deben cruzarse entre organizaciones.
+- Esta baseline crea UI y foundation local. Autenticación, persistencia multi-tenant y enforcement server-side quedan para infraestructura.

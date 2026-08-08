@@ -1,0 +1,3 @@
+OSC-ACADEMY Baseline v3.5.3.6
+NUEVO: menú Desarrollos bajo demanda; Laboratorio de Nuevas Funcionalidades; Diagnóstico de Procesos Productivos; foundation Organization/Tenant + Feature Flags; metadatos Marca/Canal/Manual-versión/Core-Private; AMEX Próximamente; guía DEV/STAGING/PROD y Git.
+SE CONSERVA: ATM SMS Visa Electron/Débito y Mastercard/Maestro 0200/0210, partial dispense/reversas y Core existente.

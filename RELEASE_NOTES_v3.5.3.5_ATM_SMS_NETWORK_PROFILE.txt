@@ -1,0 +1,28 @@
+OSC-ACADEMY Baseline v3.5.3.5
+ATM SMS Network Profile
+
+OBJETIVO
+Consolidar el comportamiento del canal ATM sin exponer en la interfaz conversiones internas SMS/DMS de las redes.
+
+REGLA DEL SIMULADOR ATM
+- Visa Débito / Electron: operación ATM 0200 -> 0210.
+- Mastercard / Maestro: operación ATM 0200 -> 0210.
+- Reversa/advice del canal ATM: 0420 -> 0430 cuando corresponda al escenario.
+- La selección de PIN o forma de captura NO cambia el MTI base del canal ATM.
+- No se visualiza ni se simula en esta pantalla una eventual conversión interna de la red hacia DMS.
+
+SE CONSERVA
+- Selección Visa / Mastercard.
+- Chip EMV / Contactless / Banda magnética.
+- DE22 según captura.
+- DE55 didáctico para EMV.
+- Inventario de cassettes.
+- Reconciliación.
+- Dispensación parcial Mastercard.
+- Reversa total.
+- Logos de red e historial.
+- Parser por red.
+
+NOTA
+El manual Mastercard 2026 de Dual Message se mantiene como referencia para funcionalidades DMS,
+pero no sustituye el perfil Single Message utilizado por el canal ATM del laboratorio.

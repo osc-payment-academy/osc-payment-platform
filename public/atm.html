@@ -303,6 +303,10 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
   #atmEntryModePanel .entry-mode-grid{grid-template-columns:1fr!important}
 }
 
+
+.atm-sms-note{margin:10px 0;padding:10px 12px;border:1px solid #254967;border-radius:9px;background:#0a1b2a;color:#a9c6dd;font-size:.66rem;line-height:1.45}
+.atm-sms-note strong{display:block;color:#55b9ff;margin-bottom:3px;font-size:.7rem}
+
 </style>
 
 <style>
@@ -396,12 +400,12 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
       <a class="nav" href="#" data-op="transfer">Transferencia</a>
       <a class="nav" href="#" data-op="reversal">Reversa técnica</a>
     </nav>
-    <div class="tip"><strong>Consejo OSC</strong><p>La extracción permite mostrar el caso más didáctico: aprobación del host y falla del dispensador, seguida de reversa 0420/0430 conforme al perfil Visa ATM.</p></div>
+    <div class="tip"><strong>Consejo OSC</strong><p>El ATM trabaja con mensajería financiera Single Message: 0200/0210 para la operación y 0420/0430 para reversas/advice cuando corresponda según la red.</p></div>
   </aside>
 
   <main class="main">
     <header class="topbar">
-      <div class="title"><span class="title-icon">🏧</span><div><h1>ATM Virtual · v3.5.3.4</h1><p>Banda, Chip y Contactless · cassettes · dispensación parcial</p></div></div>
+      <div class="title"><span class="title-icon">🏧</span><div><h1>ATM Virtual · v3.5.3.5</h1><p>Banda, Chip y Contactless · cassettes · dispensación parcial</p></div></div>
       <div class="top-actions"><a href="pos.html">← POS</a><a href="parser.html">Parser →</a><button id="reconcileAtm">🧾 Reconciliación</button><button id="newOperation">Nueva operación</button></div>
     </header>
 
@@ -536,7 +540,7 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
             <article data-step="1" class="active"><span>1</span><div><strong>Lectura de tarjeta</strong><small>Chip EMV</small></div><b>✓</b></article>
             <article data-step="2"><span>2</span><div><strong>Ingreso de PIN</strong><small>DE52 / DE53</small></div><b>✓</b></article>
             <article data-step="3"><span>3</span><div><strong>Selección de operación</strong><small>Extracción, consulta de saldo o transferencia</small></div><b>✓</b></article>
-            <article data-step="4"><span>4</span><div><strong>Construcción ISO8583</strong><small>0200 / 0210</small></div><b>✓</b></article>
+            <article data-step="4"><span>4</span><div><strong>Construcción ISO8583</strong><small>ATM SMS · 0200 / 0210</small></div><b>✓</b></article>
             <article data-step="5"><span>5</span><div><strong>Respuesta del host</strong><small id="hostStatus">Pendiente</small></div><b>✓</b></article>
             <article data-step="6"><span>6</span><div><strong>Dispositivo físico</strong><small id="deviceStatus">Pendiente</small></div><b>✓</b></article>
             <article data-step="7"><span>7</span><div><strong>Reversa técnica</strong><small id="reversalStatus">No requerida</small></div><b>✓</b></article>
@@ -550,8 +554,12 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
             <button data-scenario="dispenserFail">00 + falla dispensador</button>
           </div>
 
-          <details class="manual-navigator">
-            <summary>📖 Flujo de mensajes Visa ATM y referencia técnica</summary>
+          <div class="reference-note atm-sms-note">
+  <strong>Perfil del canal ATM</strong>
+  <span>Visa Débito/Electron y Mastercard/Maestro se simulan desde el ATM con 0200 → 0210. Las reversas del canal se presentan como 0420 → 0430 según el escenario documentado.</span>
+</div>
+<details class="manual-navigator">
+            <summary>📖 Flujo de mensajes ATM Visa / Mastercard y referencia técnica</summary>
             <div class="manual-flow-grid">
               <article><b>0200</b><strong>Cash Disbursement</strong><small>Solicitud financiera de extracción.</small><span>Manual Visa Full Service ATM · Capítulo 5 · pág. 646*</span></article>
               <article><b>0210</b><strong>Financial Response</strong><small>Respuesta a la solicitud 0200.</small><span>Capítulo 5 · sección relacionada con 0200</span></article>
@@ -1391,6 +1399,6 @@ document.addEventListener('DOMContentLoaded',()=>{
 </script>
 <script src="js/permissions.js"></script>
 
-<div id="osc-version-badge" style="position:fixed;right:14px;bottom:12px;z-index:99999;background:#0d2238;border:1px solid #2f83ff;color:#9fd0ff;padding:7px 11px;border-radius:999px;font:600 12px/1.1 Inter,Segoe UI,Arial,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.28)">Baseline v3.5.3.4 · Compact Header + MC Partial Reversal</div>
+<div id="osc-version-badge" style="position:fixed;right:14px;bottom:12px;z-index:99999;background:#0d2238;border:1px solid #2f83ff;color:#9fd0ff;padding:7px 11px;border-radius:999px;font:600 12px/1.1 Inter,Segoe UI,Arial,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.28)">Baseline v3.5.3.5 · ATM SMS Network Profile</div>
 </body>
 </html>
