@@ -3,8 +3,7 @@
   const profiles = {
     visa: {id:'visa', name:'Visa', short:'VISA', color:'#1a66ff', manual:'Visa Base I / perfil educativo Visa', status:'Activo'},
     mastercard: {id:'mastercard', name:'Mastercard', short:'MC', color:'#ff5f00', manual:'Mastercard authorization profile / perfil educativo', status:'Activo'},
-    amex: {id:'amex', name:'American Express', short:'AMEX', color:'#2f78c4', manual:'American Express GNS Network Specifications - Authorization · Oct 2023', status:'1100 activo'},
-    amex: {id:'amex', name:'American Express', short:'AMEX', color:'#2e77bb', manual:'American Express profile (arquitectura preparada)', status:'Preparado'}
+    amex: {id:'amex', name:'American Express', short:'AMEX', color:'#2f78c4', manual:'American Express GNS Network Specifications - Authorization · Oct 2023', status:'Core Online activo'}
   };
   function detect(pan){
     const n=clean(pan);

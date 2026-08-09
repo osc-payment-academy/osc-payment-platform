@@ -99,7 +99,7 @@ select:focus,input:focus,textarea:focus{border-color:#2f83ff;box-shadow:0 0 0 2p
       <div class="top-actions"><a href="pos.html">← POS Virtual</a><a href="parser.html">Parser →</a><button id="resetAll">Nueva construcción</button></div>
     </header>
 
-    <div class="content"><div class="network-constructor"><select id="constructorNetworkSelect"><option value="auto">Automático por DE2 / PAN</option><option value="visa">Visa</option><option value="mastercard">Mastercard</option><option value="amex">American Express (preparado)</option></select><div id="constructorNetworkBadge" class="network-constructor-badge"></div></div>
+    <div class="content"><div class="network-constructor"><select id="constructorNetworkSelect"><option value="auto">Automático por DE2 / PAN</option><option value="visa">Visa</option><option value="mastercard">Mastercard</option><option value="amex">American Express</option></select><div id="constructorNetworkBadge" class="network-constructor-badge"></div></div><div id="amexConstructorHelp" style="margin:8px 0 12px;padding:9px 11px;border:1px solid #2f78c4;border-radius:8px;background:#0b2033;color:#9fcff5;font-size:.65rem">American Express: presets documentados para POS 1100/1110, ATM 1200/1210 y Reversal 1420/1430. El Bit 22 AMEX utiliza 12 posiciones.</div>
       <div class="builder-grid" id="builderMode">
         <section class="panel">
           <h2>1. CONFIGURACIÓN DEL MENSAJE</h2>
@@ -258,8 +258,13 @@ select:focus,input:focus,textarea:focus{border-color:#2f83ff;box-shadow:0 0 0 2p
     {de:14,name:'Date, Expiration',fmt:'N4',len:4,desc:'Vencimiento YYMM.'},
     {de:18,name:'Merchant Type',fmt:'N4',len:4,desc:'Código de categoría del comercio.'},
     {de:22,name:'Point-of-Service Entry Mode',fmt:'N3',len:3,desc:'Forma de captura: manual, banda, chip o contactless.'},
-    {de:25,name:'POS Condition Code',fmt:'N2',len:2,desc:'Condición del punto de servicio.'},
-    {de:32,name:'Acquiring Institution ID',fmt:'LLVAR N',max:11,desc:'Identifica a la entidad adquirente.'},
+    {de:24,name:'Function Code',fmt:'N3',len:3,desc:'AMEX: 100 autorización original, 200 ATM financial, 400 full reversal, 401 partial reversal.'},
+    {de:25,name:'POS Condition Code / Message Reason Code',fmt:'N4',max:4,desc:'Visa/MC: condición POS; AMEX reversal: Message Reason Code.'},
+    {de:26,name:'Card Acceptor Business Code / MCC',fmt:'N4',len:4,desc:'AMEX ATM utiliza MCC 6011.'},
+    {de:30,name:'Original Amounts',fmt:'N24',len:24,desc:'AMEX ATM reversal: importes originales.'},
+    {de:31,name:'Acquirer Reference Data / TID',fmt:'LLVAR AN',max:32,desc:'AMEX Transaction Identifier generado por la red.'},
+    {de:32,name:'Acquiring Institution ID',fmt:'LLVAR N',max:14,desc:'Identifica a la entidad adquirente / AIN.'},
+    {de:33,name:'Forwarding Institution ID',fmt:'LLVAR N',max:14,desc:'AMEX ATM response forwarding institution.'},
     {de:35,name:'Track 2 Data',fmt:'LLVAR Z',max:37,desc:'Track 2 o Track 2 Equivalent Data.'},
     {de:37,name:'Retrieval Reference Number',fmt:'AN12',len:12,desc:'Referencia para correlación y rastreo.'},
     {de:38,name:'Authorization ID Response',fmt:'AN6',len:6,desc:'Código de autorización en respuestas aprobadas.'},
@@ -270,8 +275,10 @@ select:focus,input:focus,textarea:focus{border-color:#2f83ff;box-shadow:0 0 0 2p
     {de:49,name:'Currency Code, Transaction',fmt:'N3',len:3,desc:'Código numérico de moneda.'},
     {de:52,name:'PIN Data',fmt:'B64',len:16,desc:'PIN Block cifrado representado en hexadecimal.'},
     {de:53,name:'Security-Related Control Information',fmt:'N16',len:16,desc:'Información de control relacionada con PIN y seguridad.'},
+    {de:50,name:'Reconciliation Currency Code',fmt:'N3',len:3,desc:'AMEX ATM response: moneda de reconciliación.'},
     {de:54,name:'Additional Amounts',fmt:'LLLVAR ANS',max:120,desc:'Saldos u otros importes adicionales.'},
-    {de:55,name:'ICC-Related Data',fmt:'LLLVAR B',max:510,desc:'Datos EMV en formato TLV.'},
+    {de:55,name:'ICC-Related Data',fmt:'LLLVAR B',max:510,desc:'Datos EMV/ICC en formato TLV; AMEX AEIPS / Expresspay.'},
+    {de:56,name:'Original Data Elements',fmt:'LLVAR AN',max:42,desc:'AMEX: correlación con el mensaje original en reversas.'},
     {de:60,name:'Additional POS Information',fmt:'LLLVAR N',max:12,desc:'Información adicional del POS.'},
     {de:62,name:'Custom Payment Service Fields',fmt:'LLLVAR B',max:999,desc:'Campo compuesto con bitmap interno.'},
     {de:63,name:'Private-Use Field',fmt:'LLLVAR B',max:999,desc:'Campo privado con subcampos.'},
@@ -314,9 +321,71 @@ select:focus,input:focus,textarea:focus{border-color:#2f83ff;box-shadow:0 0 0 2p
     }
   };
 
+  const AMEX_PRESETS = {
+    purchase:{
+      mti:'1100',
+      fields:{
+        2:'371449******8431',3:'004000',4:'000000001250',11:'123456',
+        12:'260809162800',19:'032',22:'C10101010110',24:'100',
+        32:'12345678901',35:'371449******8431=2912201********',
+        37:'123456789012',41:'TERM0001',42:'OSCACADEMY00001',
+        43:'OSC ACADEMY POS                         ',49:'032',
+        55:'9F2608A1B2C3D4E5F6079F2701809F0206000000001250'
+      }
+    },
+    withdrawal:{
+      mti:'1200',
+      fields:{
+        2:'371449******8431',3:'014000',4:'000000010000',11:'223344',
+        12:'260809162800',19:'032',22:'C10101010110',24:'200',26:'6011',
+        32:'12345678901',35:'371449******8431=2912201********',
+        37:'223344789012',41:'ATM00001',43:'OSC ACADEMY ATM                         ',
+        49:'032',52:'1122334455667788',
+        55:'9F2608A1B2C3D4E5F6079F2701809F0206000000010000'
+      }
+    },
+    reversal:{
+      mti:'1420',
+      fields:{
+        2:'371449******8431',3:'024000',4:'000000001250',11:'123456',
+        12:'260809162800',22:'C10101010110',24:'400',25:'4000',
+        31:'A1B2C3D4E5F607182930',32:'12345678901',37:'123456789012',
+        41:'TERM0001',42:'OSCACADEMY00001',49:'032',
+        56:'110012345626080916280012345678901'
+      }
+    },
+    network:{
+      mti:'1100',
+      fields:{2:'371449******8431',3:'004000',4:'000000000100',11:'900001',12:'260809162800',22:'C10101010110',24:'100',41:'TERM0001',49:'032'}
+    }
+  };
+
   const state = {mti:'0200',values:{},selected:new Set(),filter:''};
-  function refreshConstructorNetwork(){const sel=document.getElementById('constructorNetworkSelect');const badge=document.getElementById('constructorNetworkBadge');if(!sel||!badge||!window.OSCNetworks)return;const p=OSCNetworks.resolve(sel.value,state.values[2]||'');badge.innerHTML=OSCNetworks.badge(p);}
-  document.addEventListener('DOMContentLoaded',()=>{const s=document.getElementById('constructorNetworkSelect');if(s)s.addEventListener('change',refreshConstructorNetwork);setTimeout(refreshConstructorNetwork,0);});
+  function currentConstructorNetwork(){return document.getElementById('constructorNetworkSelect')?.value||'auto'}
+  function updatePresetLabels(){
+    const isAmex=currentConstructorNetwork()==='amex';
+    const labels={
+      purchase:isAmex?'1100 → 1110':'0200 → 0210',
+      withdrawal:isAmex?'1200 → 1210':'0200 → 0210',
+      reversal:isAmex?'1420 → 1430':'0400 → 0410',
+      network:isAmex?'Ejemplo AMEX':'0800 → 0810'
+    };
+    Object.entries(labels).forEach(([key,val])=>{
+      const b=document.querySelector(`[data-preset="${key}"] small`); if(b)b.textContent=val;
+    });
+  }
+  function refreshConstructorNetwork(){
+    const sel=document.getElementById('constructorNetworkSelect'),badge=document.getElementById('constructorNetworkBadge');
+    if(!sel||!badge||!window.OSCNetworks)return;
+    const p=OSCNetworks.resolve(sel.value,state.values[2]||'');
+    badge.innerHTML=OSCNetworks.badge(p);
+    updatePresetLabels();
+  }
+  document.addEventListener('DOMContentLoaded',()=>{
+    const s=document.getElementById('constructorNetworkSelect');
+    if(s)s.addEventListener('change',()=>{refreshConstructorNetwork();loadPreset(document.querySelector('[data-preset].active')?.dataset.preset||'purchase')});
+    setTimeout(refreshConstructorNetwork,0);
+  });
 
   function dateTime7(){
     const d=new Date();
@@ -367,23 +436,37 @@ select:focus,input:focus,textarea:focus{border-color:#2f83ff;box-shadow:0 0 0 2p
   function validate(){
     const messages=[];
     if(!/^\d{4}$/.test(state.mti)) messages.push({type:'error',text:'El MTI debe contener 4 dígitos.'});
-    orderedDefs().forEach(def=>{
+    orderedDefs().map(activeConstructorDef).forEach(def=>{
       const value=state.values[def.de]||'';
       if(!value) messages.push({type:'warn',text:`DE${def.de} está activo pero no tiene valor.`});
       if(def.len && value.length!==def.len) messages.push({type:'warn',text:`DE${def.de}: longitud ${value.length}; esperada ${def.len}.`});
       if(def.max && value.length>def.max) messages.push({type:'error',text:`DE${def.de}: supera la longitud máxima ${def.max}.`});
     });
     if(state.selected.has(52) && !state.selected.has(53)) messages.push({type:'warn',text:'DE52 está presente sin DE53.'});
-    if(state.mti.startsWith('04') && !state.selected.has(90)) messages.push({type:'warn',text:'Para una reversa se recomienda incluir DE90.'});
+    if(currentConstructorNetwork()!=='amex' && state.mti.startsWith('04') && !state.selected.has(90)) messages.push({type:'warn',text:'Para una reversa se recomienda incluir DE90.'});
+    if(currentConstructorNetwork()==='amex' && state.mti==='1420' && !state.selected.has(24)) messages.push({type:'warn',text:'AMEX 1420: incluya Bit 24 Function Code (400/401).'});
+    if(currentConstructorNetwork()==='amex' && state.mti==='1420' && !state.selected.has(25)) messages.push({type:'warn',text:'AMEX 1420: incluya Bit 25 Message Reason Code.'});
     if(!messages.length) messages.push({type:'ok',text:'La estructura seleccionada supera las validaciones básicas.'});
     return messages;
+  }
+
+
+  function activeConstructorDef(def){
+    if(currentConstructorNetwork()!=='amex') return def;
+    const d={...def};
+    if(d.de===12){d.name='Date and Time, Local Transaction';d.fmt='N12';d.len=12;d.desc='AMEX: YYMMDDhhmmss.'}
+    if(d.de===22){d.name='Point of Service Data Code';d.fmt='AN12';d.len=12;d.desc='AMEX Bit 22: 12 posiciones de capacidad/presencia/captura/autenticación.'}
+    if(d.de===25){d.name='Message Reason Code';d.fmt='N4';d.len=4;d.max=4;d.desc='AMEX reversal reason code.'}
+    if(d.de===39){d.name='Action Code';d.fmt='N3';d.len=3;d.desc='AMEX: 000 approved, 100 deny, 101 expired, 107 call issuer, 116 insufficient funds, 400 reversal accepted.'}
+    return d;
   }
 
   function renderFields(){
     const q=state.filter.toLowerCase();
     document.getElementById('fieldList').innerHTML=FIELD_DEFS
       .filter(def=>!q || `de${def.de} ${def.name} ${def.fmt}`.toLowerCase().includes(q))
-      .map(def=>{
+      .map(baseDef=>{
+        const def=activeConstructorDef(baseDef);
         const selected=state.selected.has(def.de);
         const value=state.values[def.de]||'';
         return `<article class="field-row ${selected?'selected':''}" data-de="${def.de}">
@@ -440,7 +523,7 @@ select:focus,input:focus,textarea:focus{border-color:#2f83ff;box-shadow:0 0 0 2p
   }
 
   function loadPreset(name){
-    const preset=PRESETS[name];
+    const preset=(currentConstructorNetwork()==='amex'?AMEX_PRESETS:PRESETS)[name];
     state.mti=preset.mti;
     state.values={...preset.fields};
     state.selected=new Set(Object.keys(preset.fields).map(Number));
@@ -476,7 +559,7 @@ TRAMA COMO VIAJA EN EL MENSAJE
 ${raw()}`,e.target));
   document.getElementById('openParser').addEventListener('click',()=>{
     localStorage.setItem('oscAcademyParserPayload',JSON.stringify({
-      source:'Constructor ISO8583',mti:state.mti,annotated:annotated(),raw:raw(),createdAt:new Date().toISOString()
+      source:'Constructor ISO8583',mti:state.mti,annotated:annotated(),raw:raw(),createdAt:new Date().toISOString(),network:currentConstructorNetwork()==='auto'?(OSCNetworks?.detectFromPan?.(state.values[2]||'')?.id||'visa'):currentConstructorNetwork()
     }));
     location.href='parser.html';
   });

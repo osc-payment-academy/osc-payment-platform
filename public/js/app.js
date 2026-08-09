@@ -1261,7 +1261,7 @@ ${rawMessage(msg)}`;
   }
   function openSelectedInParser(){
     const msg=state.messages.find(m=>m.id===state.selectedMessageId);if(!msg){alert('Seleccione un mensaje del historial.');return}
-    localStorage.setItem('oscAcademyParserPayload',JSON.stringify({source:'POS Virtual',mti:msg.mti,annotated:annotatedMessage(msg),raw:rawMessage(msg),createdAt:new Date().toISOString()}));
+    localStorage.setItem('oscAcademyParserPayload',JSON.stringify({source:'POS Virtual',mti:msg.mti,annotated:annotatedMessage(msg),raw:rawMessage(msg),createdAt:new Date().toISOString(),network:(state.operations.find(o=>o.id===msg.operationId)?.network||profile().id)}));
     location.href='parser.html';
   }
 

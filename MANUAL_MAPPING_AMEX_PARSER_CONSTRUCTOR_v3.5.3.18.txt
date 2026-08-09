@@ -1,0 +1,31 @@
+OSC-ACADEMY v3.5.3.18 · AMEX Parser + Constructor
+
+FUENTES AMEX UTILIZADAS (documentación ya cargada en el proyecto)
+1. American Express Network Specifications - Authorization · October 2023
+   - POS Authorization Request 1100: Chapter 5, p. 5-1 onward.
+   - POS Authorization Response 1110: Chapter 5, p. 5-37 onward.
+   - ATM Financial Transaction Request 1200: Chapter 5, p. 5-91 onward.
+   - ATM Financial Transaction Response 1210: Chapter 5, p. 5-105 onward.
+   - Reversal Advice / Response: 1420 / 1430.
+2. American Express Codes Reference Guide · October 2023
+   - Processing Code 004000 Card Authorization Request.
+   - Processing Code 014000 / 014008 Cash.
+   - Processing Code 024000 Merchant/S-E Initiated Reversal.
+   - Function Codes: 100 Original Authorization, 200 ATM, 400 Full Reversal, 401 Partial Reversal.
+   - Action Codes: 000 Approved, 100 Deny, 101 Expired, 107 Please Call Issuer, 116 Not sufficient funds.
+   - Reversal reasons documented in the existing project mappings.
+3. Existing OSC Academy AMEX mappings v3.5.3.10 through v3.5.3.16.
+
+PARSER
+- AMEX is enabled as a selectable profile.
+- Internal OSC Academy annotated messages are parsed preserving exact AMEX field values.
+- AMEX field semantics include Bit 22 (12 positions), Bit 24 Function Code, Bit 31 TID, Bit 39 Action Code, Bit 55 ICC, etc.
+- Recognizes 1100, 1110, 1200, 1210, 1420 and 1430.
+
+CONSTRUCTOR
+- AMEX is enabled.
+- Preset Compra => 1100.
+- Preset Extracción ATM => 1200.
+- Preset Reversa => 1420.
+- Network-specific labels and field validation.
+- Sends the selected AMEX profile to Parser.

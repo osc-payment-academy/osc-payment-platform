@@ -1,0 +1,23 @@
+OSC-ACADEMY Baseline v3.5.3.18
+AMEX PARSER + CONSTRUCTOR
+
+NUEVO
+- Parser ISO8583 habilita American Express.
+- Parser reconoce el catálogo de campos AMEX utilizado por el Core Online.
+- MTI AMEX soportados en el laboratorio: 1100/1110, 1200/1210, 1420/1430.
+- Semántica AMEX para Bit 22 (12 posiciones), Bit 24 Function Code, Bit 31 TID, Bit 39 Action Code y Bit 55 ICC.
+- POS envía la marca al Parser para que las tramas AMEX se abran con el perfil correcto.
+- Constructor habilita American Express.
+- Presets AMEX:
+  * Compra POS: 1100
+  * Extracción ATM: 1200
+  * Reversa: 1420
+- Labels del Constructor cambian según la marca.
+- Constructor envía marca + trama al Parser.
+- Se elimina la definición AMEX duplicada de network-profiles.js y queda un único perfil "Core Online activo".
+
+SE CONSERVA
+- Todo el Core AMEX ya desarrollado: POS 1100/1110, ATM 1200/1210, AEIPS, Expresspay, reversas 1420/1430.
+- Devolución POS del Core Pilot.
+- Base II, IPM y Switch Emisor permanecen ocultos del menú.
+- No se incorpora Disputas/Contracargos.

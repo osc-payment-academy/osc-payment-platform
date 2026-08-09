@@ -494,7 +494,7 @@
     <div id="iso-root">
       <div class="header">
         <h1>OSC <span>ACADEMY</span> — Parser ISO8583</h1>
-        <div class="tag">Laboratorio interactivo · VisaNet · Enmascarado PCI DSS</div>
+        <div class="tag">Laboratorio interactivo · Visa · Mastercard · American Express · Enmascarado PCI DSS</div>
       </div>
 
       <div class="row">
@@ -504,11 +504,11 @@
             <div class="mode-btn active" aria-pressed="true">Detección automática: Texto/ASCII o HEX de red</div>
           </div>
           <label class="field-label">Log de la trama</label>
-          <div class="network-parser-bar"><select id="parserNetworkSelect"><option value="">Seleccione la marca...</option><option value="visa">Visa</option><option value="mastercard">Mastercard</option><option value="amex" disabled>American Express (Próximamente)</option></select><div id="parserNetworkBadge" class="network-parser-badge"><span>El perfil se resolverá al analizar la trama.</span></div></div><textarea id="iso-input" class="mono" placeholder="Pegue aquí la trama ISO 8583 en formato Texto / ASCII (bitmap en hex)"></textarea>
+          <div class="network-parser-bar"><select id="parserNetworkSelect"><option value="">Seleccione la marca...</option><option value="visa">Visa</option><option value="mastercard">Mastercard</option><option value="amex">American Express</option></select><div id="parserNetworkBadge" class="network-parser-badge"><span>El perfil se resolverá al analizar la trama.</span></div></div><textarea id="iso-input" class="mono" placeholder="Pegue aquí la trama ISO 8583 en formato Texto / ASCII (bitmap en hex)"></textarea>
           <div style="margin-top:12px; display:flex; gap:10px; align-items:center;">
             <button class="parse-btn" id="parse-btn">Parsear trama</button>
             <button class="clear-btn" id="clear-btn" type="button">Borrar trama</button>
-            <span id="mode-help" style="font-size:11px; color:var(--text-dim);">Detección automática: una cadena formada únicamente por pares HEX se interpreta como mensaje VisaNet de red; las tramas con texto o espacios se interpretan como log ASCII.</span>
+            <span id="mode-help" style="font-size:11px; color:var(--text-dim);">Detección automática: la trama se interpreta según la marca seleccionada. Visa/Mastercard y American Express pueden utilizar estructuras y longitudes diferentes.</span>
           </div>
         </div>
         <div class="col">
@@ -534,7 +534,7 @@
           <div class="format-legend-item"><span class="format-legend-code mono">VAR</span><span class="format-legend-text">Longitud variable binaria según VisaNet</span></div>
           <div class="format-legend-item"><span class="format-legend-code mono">B/HEX</span><span class="format-legend-text">Dato binario mostrado en hexadecimal</span></div>
         </div>
-        <div class="format-legend-note">En tramas VisaNet de red, los campos numéricos suelen viajar en BCD, los campos de texto en EBCDIC y los prefijos de longitud como valores binarios.</div>
+        <div class="format-legend-note">La representación física depende de la interfaz de red. El laboratorio interpreta la estructura según el perfil seleccionado; American Express usa su propio catálogo de bits y MTI.</div>
       </div>
       <div id="table-area"></div>
     </div>
@@ -734,6 +734,60 @@
       };
 
       const mode = 'ascii';
+
+      // American Express GNS Authorization · October 2023
+      // Catálogo mínimo para los mensajes implementados en OSC Academy:
+      // 1100/1110 POS, 1200/1210 ATM y 1420/1430 Reversal.
+      const BASE_FIELD_DEFS = JSON.parse(JSON.stringify(FIELD_DEFS));
+      const AMEX_FIELD_DEFS = {
+        2:{name:"Primary Account Number",fmt:"LLVAR N",prefix:2,desc:"American Express Card Number. PAN enmascarado en la visualización."},
+        3:{name:"Processing Code",fmt:"N",len:6,desc:"Código de procesamiento American Express. Ej.: 004000 Card Authorization Request; 014000/014008 Cash; 024000 Merchant/S-E Initiated Reversal."},
+        4:{name:"Amount, Transaction",fmt:"N",len:12,desc:"Importe de la transacción."},
+        11:{name:"Systems Trace Audit Number",fmt:"N",len:6,desc:"STAN del mensaje originador."},
+        12:{name:"Date and Time, Local Transaction",fmt:"N",len:12,desc:"Fecha/hora local AMEX en formato YYMMDDhhmmss."},
+        19:{name:"Acquiring Institution Country Code",fmt:"N",len:3,desc:"País de la institución adquirente."},
+        22:{name:"Point of Service Data Code",fmt:"AN",len:12,desc:"Bit 22 AMEX de 12 posiciones: capacidades, presencia de tarjeta, modo de captura y método de autenticación."},
+        24:{name:"Function Code",fmt:"N",len:3,desc:"Función del mensaje. Ej.: 100 autorización original, 200 ATM financial request, 400 full reversal, 401 partial reversal."},
+        25:{name:"Message Reason Code",fmt:"N",len:4,desc:"Motivo del advice/reversal. Ej.: 4000 customer cancellation, 4006 response too late, 4007 terminal unable to complete, 4004 completed partially."},
+        26:{name:"Card Acceptor Business Code / MCC",fmt:"N",len:4,desc:"MCC. Para ATM se utiliza 6011 en el perfil implementado."},
+        30:{name:"Original Amounts",fmt:"N",len:24,desc:"Importes originales requeridos en el reversal ATM AMEX."},
+        31:{name:"Acquirer Reference Data / Transaction Identifier (TID)",fmt:"LLVAR AN",prefix:2,desc:"TID generado por American Express Network y reutilizado para correlación cuando aplica."},
+        32:{name:"Acquiring Institution Identification",fmt:"LLVAR N",prefix:2,desc:"Identificación de la institución adquirente (AIN)."},
+        33:{name:"Forwarding Institution Identification",fmt:"LLVAR N",prefix:2,desc:"Identificación de la institución de forwarding; utilizada en la respuesta ATM del perfil."},
+        35:{name:"Track 2 Data",fmt:"LLVAR Z",prefix:2,desc:"Track 2 / Track 2 equivalent."},
+        37:{name:"Retrieval Reference Number / Acquirer Reference Number",fmt:"AN",len:12,desc:"Referencia de rastreo/correlación."},
+        38:{name:"Approval Code",fmt:"AN",len:6,desc:"Código de aprobación cuando la operación es aprobada."},
+        39:{name:"Action Code",fmt:"N",len:3,desc:"Resultado AMEX. Ej.: 000 Approved, 100 Deny, 101 Expired, 107 Please Call Issuer, 116 Not sufficient funds; 400 Reversal Accepted en 1430."},
+        41:{name:"Card Acceptor Terminal Identification",fmt:"ANS",len:8,desc:"Identificador del POS/ATM."},
+        42:{name:"Card Acceptor Identification",fmt:"ANS",len:15,desc:"Identificador del comercio cuando aplica."},
+        43:{name:"Card Acceptor Name/Location",fmt:"ANS",len:40,desc:"Nombre y ubicación del comercio/ATM."},
+        49:{name:"Transaction Currency Code",fmt:"N",len:3,desc:"Moneda de la transacción."},
+        50:{name:"Reconciliation Currency Code",fmt:"N",len:3,desc:"Moneda de reconciliación."},
+        52:{name:"Personal Identification Number (PIN)",fmt:"B/HEX",len:16,desc:"PIN Block cifrado representado en hexadecimal."},
+        55:{name:"ICC System Related Data",fmt:"LLLVAR B",prefix:3,desc:"Datos ICC BER-TLV. En AMEX se utiliza para AEIPS Chip y Expresspay Contactless."},
+        56:{name:"Original Data Elements",fmt:"LLVAR AN",prefix:2,desc:"Datos de la transacción original utilizados en reversas para correlación."}
+      };
+
+      function selectedParserNetwork(){
+        return document.getElementById('parserNetworkSelect')?.value || '';
+      }
+      function applyParserFieldProfile(){
+        const net=selectedParserNetwork();
+        Object.keys(FIELD_DEFS).forEach(k=>delete FIELD_DEFS[k]);
+        const src=net==='amex'?AMEX_FIELD_DEFS:BASE_FIELD_DEFS;
+        Object.keys(src).forEach(k=>FIELD_DEFS[k]=JSON.parse(JSON.stringify(src[k])));
+      }
+      function amexMtiDescription(mti){
+        return ({
+          '1100':'POS Authorization Request',
+          '1110':'POS Authorization Response',
+          '1200':'ATM Financial Transaction Request',
+          '1210':'ATM Financial Transaction Response',
+          '1420':'Reversal Advice',
+          '1430':'Reversal Advice Response'
+        })[mti]||'Mensaje American Express GNS';
+      }
+
       const inputArea = document.getElementById('iso-input');
 
       function hexToAsciiString(hex) {
@@ -1179,7 +1233,33 @@
         return {mti,primaryHex,secondaryHex,allBits,fields,errors,warnings,consumed:pos,total:bytes.length,representation:'HEX VisaNet V.I.P.',visaHeader};
       }
 
+
+      function parseAnnotatedTrama(raw){
+        const text=String(raw||'').trim();
+        if(!/^\d{4}\|[0-9A-Fa-f]{16,32}\|/.test(text)) return null;
+        applyParserFieldProfile();
+        const parts=text.split('|');
+        const mti=parts.shift();
+        const bitmapRaw=(parts.shift()||'').toUpperCase();
+        const primaryHex=bitmapRaw.slice(0,16), secondaryHex=bitmapRaw.length>16?bitmapRaw.slice(16,32):null;
+        let allBits=bitsFromHexBitmap(primaryHex);
+        if(secondaryHex) allBits=allBits.concat(bitsFromHexBitmap(secondaryHex));
+        const fields=[];
+        const warnings=[], errors=[];
+        for(const token of parts){
+          const eq=token.indexOf('=');
+          if(eq<1) continue;
+          const num=Number(token.slice(0,eq));
+          const value=token.slice(eq+1);
+          const def=FIELD_DEFS[num]||{name:`Field ${num}`,fmt:'—',desc:'Campo no documentado en el perfil activo.'};
+          fields.push({num,name:def.name,fmt:def.fmt,len:value.length,prefixDisplay:'Trama didáctica',value,desc:def.desc,page:def.page});
+        }
+        return {mti,primaryHex,secondaryHex,allBits,fields,errors,warnings,consumed:text.length,total:text.length,annotated:true};
+      }
+
       function parseTrama(raw) {
+        applyParserFieldProfile();
+        const annotatedResult=parseAnnotatedTrama(raw); if(annotatedResult) return annotatedResult;
         const errors = [];
         const warnings = [];
         let clean = raw.replace(/[\r\n\t]+/g, '');
@@ -1338,12 +1418,15 @@
         const networkSelect=document.getElementById('parserNetworkSelect');
         const de2=result && result.fields ? result.fields.find(f=>Number(f.num)===2) : null;
         const selected=networkSelect ? networkSelect.value : '';
-        if(!selected){alert('Seleccione primero la marca de la trama: Visa o Mastercard.');return null;}
+        if(!selected){alert('Seleccione primero la marca de la trama: Visa, Mastercard o American Express.');return null;}
         const net=window.OSCNetworks ? OSCNetworks.resolve(selected,de2?de2.value:'') : {name:'Perfil ISO genérico',manual:'—',color:'#64748b'};
         const netBadge=document.getElementById('parserNetworkBadge');
         if(netBadge) netBadge.innerHTML=OSCNetworks.badge(net)+(de2?`<small> · BIN ${(de2.value||'').slice(0,6)}</small>`:'<small> · DE2 no disponible</small>');
         if(result) result.networkProfile=net;
 
+        if(selected==='amex' && result?.mti){
+          result.amexMessageName=amexMtiDescription(result.mti);
+        }
         const bitmapArea = document.getElementById('bitmap-area');
         const errorArea = document.getElementById('error-area');
         const summaryArea = document.getElementById('summary-area');
@@ -1439,7 +1522,7 @@
         `;
       }
 
-      document.getElementById('parserNetworkSelect').addEventListener('change',()=>{const raw=document.getElementById('iso-input').value;if(raw.trim())render(parseTrama(raw));});
+      document.getElementById('parserNetworkSelect').addEventListener('change',()=>{applyParserFieldProfile();const raw=document.getElementById('iso-input').value;if(raw.trim())render(parseTrama(raw));});
 
       document.getElementById('parse-btn').addEventListener('click', () => {
         const raw = document.getElementById('iso-input').value;

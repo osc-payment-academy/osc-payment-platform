@@ -409,7 +409,7 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
 
   <main class="main">
     <header class="topbar">
-      <div class="title"><span class="title-icon">🏧</span><div><h1>ATM Virtual · v3.5.3.17</h1><p>Banda, Chip y Contactless · cassettes · dispensación parcial</p></div></div>
+      <div class="title"><span class="title-icon">🏧</span><div><h1>ATM Virtual · v3.5.3.16</h1><p>Banda, Chip y Contactless · cassettes · dispensación parcial</p></div></div>
       <div class="top-actions"><a href="pos.html">← POS</a><a href="parser.html">Parser →</a><button id="reconcileAtm">🧾 Reconciliación</button><button id="newOperation">Nueva operación</button></div>
     </header>
 
@@ -1430,7 +1430,7 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
   function send0200(){
     if(state.brand==='amex' && state.operation!=='withdrawal'){
       setScreen('OPERACIÓN NO HABILITADA','<strong>AMEX ATM</strong><small>En esta fase se implementa Cash Disbursement 1200/1210. Consulta de saldo y transferencia quedan pendientes de validación documental.</small>');
-      addTechEvent('AMEX ATM: extracción 1200/1210 y reversa 1420/1430 habilitadas','done');
+      addTechEvent('AMEX ATM: sólo extracción habilitada en v3.5.3.15','done');
       state.step='done';return;
     }
     if(state.operation==='withdrawal' && Number(state.amount||0)>cashInventoryCents()){
@@ -1685,6 +1685,6 @@ document.addEventListener('DOMContentLoaded',()=>{
 </script>
 <script src="js/permissions.js"></script>
 
-<div id="osc-version-badge" style="position:fixed;right:14px;bottom:12px;z-index:99999;background:#0d2238;border:1px solid #2f83ff;color:#9fd0ff;padding:7px 11px;border-radius:999px;font:600 12px/1.1 Inter,Segoe UI,Arial,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.28)">Baseline v3.5.3.17 · Core Pilot + AMEX Consolidated</div>
+<div id="osc-version-badge" style="position:fixed;right:14px;bottom:12px;z-index:99999;background:#0d2238;border:1px solid #2f83ff;color:#9fd0ff;padding:7px 11px;border-radius:999px;font:600 12px/1.1 Inter,Segoe UI,Arial,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.28)">Baseline v3.5.3.16 · AMEX ATM 1420/1430</div>
 </body>
 </html>
