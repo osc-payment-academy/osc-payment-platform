@@ -1,0 +1,30 @@
+OSC-ACADEMY Baseline v3.5.3.17
+CORE PILOT + AMEX CONSOLIDATED
+
+BASE CONFIRMADA
+- Se toma directamente v3.5.3.16_AMEX_ATM_Reversal_UIFix como fuente.
+- No se reconstruye AMEX desde v3.5.3.9.
+
+AMEX PRESERVADO
+- POS AMEX 1100/1110.
+- AMEX Crédito y Débito en POS.
+- AEIPS Chip y Expresspay Contactless.
+- Reversa/anulación AMEX 1420/1430.
+- ATM AMEX 1200/1210.
+- Reversa ATM AMEX 1420/1430.
+- Historial, TID y ajustes visuales desarrollados en v3.5.3.10 a v3.5.3.16.
+
+CORE PILOT PRESERVADO
+- POS con Devolución total/parcial.
+- DE3 200000 Purchase Return / Refund.
+- Clearing normal preparado para compras, devoluciones y ATM.
+- Persistencia ATM desde workspace compartido.
+- Private Modules foundation.
+
+MÓDULOS OCULTOS DEL MENÚ, NO BORRADOS
+- Visa BASE II / Compensación.
+- Mastercard IPM / Compensación.
+- Switch Emisor.
+
+RESERVADO
+- El desarrollo experimental de Disputas/Contracargos permanece fuera de esta línea Core Pilot.
