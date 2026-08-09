@@ -1,0 +1,17 @@
+MANUAL MAPPING v3.5.3.20
+
+VISA — 15 October 2025
+- POS Full Service: 0100 authorization o 0200 full financial.
+- Acquirer reversa cuando no recibe respuesta, llega tarde, se cancela o no puede entregar respuesta.
+- Field 63.3:
+  2501 Transaction voided by customer
+  2502 Transaction not completed
+  2503 No confirmation from point of service
+  2504 Partial dispense by ATM (misdispense) or POS partial reversal
+- Visa encourages ATM acquirers to send 0420 and receive 0430.
+- Field 95 partial reversal: 42 AN; positions 1-12 actual amount; positions 13-42 zero-filled.
+
+MASTERCARD
+- Dual Message Authorization System Guide 26.Q1, 24 Feb 2026 replaces CIS and Authorization Manual.
+- DE20 removed from 0100, 0110, 0120, 0130, 0400, 0410, 0420, 0430, 0800.
+- M/Chip Requirements 29 Apr 2025 used for chip/contactless and DE55 educational tag set.

@@ -1,0 +1,22 @@
+MANUAL MAPPING · AMEX CORE COMPLETION · v3.5.3.19
+
+American Express Network Specifications - Authorization · October 2023
+- POS Authorization Request/Response: 1100 / 1110.
+- ATM Financial Transaction Request/Response: 1200 / 1210.
+- POS/ATM Reversal Advice/Response: 1420 / 1430.
+- ATM Reconciliation: FAS captures ATM authorization data; FAS creates ATM First Presentment 1240; Network sends reconciliation file to Acquirer.
+- ATM Reconciliation Header: 500 bytes, Record Type 0.
+- ATM Reconciliation Trailer: 500 bytes, Record Type 9.
+- ATM Record: Approval Code positions 385-390; Additional Reference Number 391-398; TID 400-414.
+
+American Express Codes Reference Guide · October 2023
+- Authorization Processing Code 204000: Credit / Refund.
+- Clearing Processing Code 200000: Credit / Returns.
+- Action Code 000: Approved.
+- Action Code 400: Reversal Accepted.
+
+American Express Network Specifications - Financial/Non-Financial · October 2023
+- POS First/Second Presentment: MTI 1240, record length 1400.
+- POS First Presentment outclears from Acquirer to Network.
+- ATM First Presentment 1240 is created by FAS and is NOT outcleared by Acquirers.
+- ATM Second Presentments may outclear from Acquirer.

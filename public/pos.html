@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>OSC Academy · POS Virtual · v3.5.3.9</title>
+  <title>OSC Academy · POS Virtual · v3.5.3.20</title>
   <link rel="stylesheet" href="css/app.css">
 <style>.de-learning-row{cursor:pointer}.de-learning-row:hover td{background:#12304a!important}.concept-discovery{position:fixed;inset:0;z-index:120000;background:#020913df;display:grid;place-items:center;padding:20px}.concept-discovery.hidden{display:none}.concept-dialog{position:relative;width:min(570px,100%);padding:25px;border:1px solid #2f83ff;border-radius:16px;background:linear-gradient(180deg,#102740,#071522);box-shadow:0 30px 100px #000c}.concept-close{position:absolute;right:14px;top:14px;border:0;background:transparent;color:#bcd0e2;font-size:18px;cursor:pointer}.concept-kicker{font-size:11px;color:#67bbff;font-weight:800;letter-spacing:.08em}.concept-dialog h2{margin:12px 0 8px}.concept-dialog p{color:#afc0d0;line-height:1.6}.concept-lab{padding:14px;border:1px solid #2e5e83;border-radius:10px;background:#0a1d2f;display:grid;gap:4px}.concept-lab span,.concept-lab small{color:#8fa7bb;font-size:11px}.concept-actions{display:flex;justify-content:space-between;align-items:center;margin-top:16px}.concept-actions button,.concept-actions a{padding:10px 13px;border:1px solid #2d699b;border-radius:8px;background:#123d62;color:white;text-decoration:none;font-size:12px}.concept-actions button{cursor:pointer}
 .refund-controls{margin-top:12px;padding:12px;border:1px solid #31516d;border-radius:10px;background:#0b1d2c;display:grid;grid-template-columns:1fr 1fr;gap:10px}
@@ -308,7 +308,7 @@
 
 
         <section class="pos-middle-section pos-scenario-full"><h3>ESCENARIOS DE RESPUESTA</h3><div class="scenario-grid" id="scenarioGrid"><button class="selected success" data-code="00">✓ 00 - APROBADA</button><button class="danger" data-code="51">◉ 51 - FONDOS INSUFICIENTES</button><button class="purple" data-code="54">◉ 54 - TARJETA VENCIDA</button><button class="warning" data-code="05">◉ 05 - NO APROBAR</button><button class="blue" data-code="91">◉ 91 - EMISOR NO DISPONIBLE</button><button class="neutral" data-code="TO">◉ TIME OUT - SIN RESPUESTA</button></div><div class="scenario-actions"><label>Respuesta Automática <span class="switch"></span></label><button id="sendResponse" type="button">Enviar Respuesta ▷</button></div></section>
-        <section class="pos-middle-section"><h3>MODO TÉCNICO · EVENTOS EN TIEMPO REAL</h3><div class="pos-tech-events" id="posTechEvents"><div>Esperando inicio de operación.</div><div>El POS construirá la solicitud 0200.</div></div></section>
+        <section class="pos-middle-section"><h3>MODO TÉCNICO · EVENTOS EN TIEMPO REAL</h3><div class="pos-tech-events" id="posTechEvents"><div>Esperando inicio de operación.</div><div>El POS construirá 0100 o 0200 según marca/producto.</div></div></section>
         <div class="result-box" id="resultBox">
           <h3>RESULTADO</h3>
           <div class="result-content"><span>✓</span><div><strong id="resultText">EN ESPERA</strong><b id="resultCode">--</b></div></div>
@@ -398,6 +398,6 @@
 <script>document.addEventListener('DOMContentLoaded',()=>{document.querySelectorAll('.pos-scenario-mini button').forEach((b,i)=>b.onclick=()=>{document.querySelectorAll('.pos-scenario-mini button').forEach(x=>x.classList.remove('active'));b.classList.add('active');const original=document.querySelectorAll('#scenarioGrid button')[i];if(original)original.click()});const log=document.getElementById('posTechEvents');const status=document.getElementById('flowResponse');if(log&&status)new MutationObserver(()=>{const d=document.createElement('div');d.textContent=new Date().toLocaleTimeString('es-AR')+' · '+status.textContent;log.prepend(d);while(log.children.length>8)log.lastChild.remove()}).observe(status,{childList:true,subtree:true,characterData:true})});</script>
 <script src="js/permissions.js"></script>
 
-<div id="osc-version-badge" style="position:fixed;right:14px;bottom:12px;z-index:99999;background:#0d2238;border:1px solid #2f83ff;color:#9fd0ff;padding:7px 11px;border-radius:999px;font:600 12px/1.1 Inter,Segoe UI,Arial,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.28)">Baseline v3.5.3.16 · Clean Start + AMEX ATM Reversal</div>
+<div id="osc-version-badge" style="position:fixed;right:14px;bottom:12px;z-index:99999;background:#0d2238;border:1px solid #2f83ff;color:#9fd0ff;padding:7px 11px;border-radius:999px;font:600 12px/1.1 Inter,Segoe UI,Arial,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.28)">Baseline v3.5.3.20 · Visa/MC Current Manuals</div>
 </body>
 </html>

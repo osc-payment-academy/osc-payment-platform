@@ -409,7 +409,7 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
 
   <main class="main">
     <header class="topbar">
-      <div class="title"><span class="title-icon">🏧</span><div><h1>ATM Virtual · v3.5.3.16</h1><p>Banda, Chip y Contactless · cassettes · dispensación parcial</p></div></div>
+      <div class="title"><span class="title-icon">🏧</span><div><h1>ATM Virtual · v3.5.3.20</h1><p>Banda, Chip y Contactless · cassettes · dispensación parcial</p></div></div>
       <div class="top-actions"><a href="pos.html">← POS</a><a href="parser.html">Parser →</a><button id="reconcileAtm">🧾 Reconciliación</button><button id="newOperation">Nueva operación</button></div>
     </header>
 
@@ -950,6 +950,26 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
     addTechEvent(`Forma de lectura seleccionada: ${p.label} · DE22=${p.de22}`,'done');
   }
 
+
+  function atmEmvDe55(){
+    const d=now();
+    const date=String(d.getFullYear()).slice(-2)+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0');
+    const net=state.brand;
+    const aid=net==='mastercard'?(state.cardType==='debit'?'A0000000043060':'A0000000041010'):'A0000000031010';
+    const amount=String(state.amount||0).padStart(12,'0').slice(-12);
+    const iad=net==='mastercard'?'0110A00003220000000000000000000000':'06010A03A0B800';
+    const tags=[
+      ['9F26','08','A1B2C3D4E5F60708'],['9F27','01','80'],
+      ['9F10',String(iad.length/2).padStart(2,'0'),iad],['9F37','04','A1B2C3D4'],
+      ['9F36','02','0012'],['95','05','0000000000'],['9A','03',date],
+      ['9F02','06',amount],['9C','01',state.operation==='withdrawal'?'01':'00'],
+      ['5F2A','02','0840'],['82','02','1800'],['9F1A','02','0032'],
+      ['9F34','03','020300'],['84',String(aid.length/2).padStart(2,'0'),aid],
+      ['9F33','03','E0F8C8'],['9F35','01','14']
+    ];
+    return tags.map(([t,l,v])=>t+l+v).join('');
+  }
+
   function requestFields(){
     const fields=[
       field(2,'Primary Account Number',state.pan,'LLVAR','Tarjeta'),
@@ -968,7 +988,7 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
       field(53,'Security Control Information','2000000000000000','N16','Seguridad PIN')
     ];
     if(state.operation!=='balance') fields.splice(3,0,field(4,'Transaction Amount',String(state.amount||0).padStart(12,'0'),'N12','Usuario'));
-    if(captureProfile().de55) fields.push(field(55,'ICC System Related Data','9F2608A1B2C3D4E5F60708950500000000009F360200129F3704A1B2C3D4','LLLVAR','Datos EMV didácticos'));
+    if(captureProfile().de55){const v=atmEmvDe55();fields.push(field(55,'ICC System Related Data',v,'LLLVAR','BER-TLV · Visa VSDC / Mastercard M/Chip'));}
     fields.push(field(102,'Account Identification 1','001234567890','LLVAR','Cuenta origen'));
     if(state.operation==='transfer') fields.push(field(103,'Account Identification 2',state.destination||'009876543210','LLVAR','Cuenta destino'));
     return fields.sort((a,b)=>Number(a[0])-Number(b[0]));
@@ -1062,8 +1082,19 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
       field(49,'Currency Code','840','N3','Operación original'),
       field(90,'Original Data Elements',`0200${state.stan}${de7Now()}12345678901`.padEnd(42,'0').slice(0,42),'N42','Relación con 0200 original')
     ];
-    // Mastercard MDS: DE60 450/0018 = zero dispense/over dispense, card returned, POI failure.
+    // Visa 15-Oct-2025: ATM full reversals carry Field 63.3 = 2501/2502/2503.
+    if(state.brand==='visa') fields.push(field(63,'V.I.P. Private-Use · SF3 Message Reason Code','2503','N4','No confirmation from point of service'));
+    // Mastercard profile retained for zero dispense/POI failure.
     if(state.brand==='mastercard') fields.push(field(60,'Advice Reason Code','4500018','LLLVAR','Mastercard · Zero dispense · card returned · POI failure'));
+    return fields.sort((a,b)=>Number(a[0])-Number(b[0]));
+  }
+
+
+  function visaPartialReversalFields(dispensedCents){
+    const actual=String(dispensedCents||0).padStart(12,'0');
+    const fields=reversalFields().filter(r=>![63,60].includes(Number(r[0])));
+    fields.push(field(63,'V.I.P. Private-Use · SF3 Message Reason Code','2504','N4','Partial dispense by ATM (misdispense)'));
+    fields.push(field(95,'Replacement Amounts',actual+'000000000000'+'000000000'+'000000000','AN42','SF1 actual amount; restantes 30 posiciones en cero'));
     return fields.sort((a,b)=>Number(a[0])-Number(b[0]));
   }
 
@@ -1151,16 +1182,20 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
       return;
     }
 
-    // Visa mantiene el circuito previamente aprobado: 0220/0230 Adjustment por misdispense.
-    setScreen('DISPENSACIÓN PARCIAL',`<strong>${moneyCents(dispensed)} entregados</strong><small>No dispensado: ${moneyCents(difference)} · Generando 0220</small>`);
-    const req=adjustmentFields(difference); addMessage('0220','Adjustment · ATM misdispense','',req);
+    // Visa 15-Oct-2025: partial dispense is an ATM partial reversal.
+    setScreen('DISPENSACIÓN PARCIAL',`<strong>${moneyCents(dispensed)} entregados</strong><small>No dispensado: ${moneyCents(difference)} · Generando 0420 Visa</small>`);
+    $('reversalStatus').textContent='0420 · reversa parcial Visa';
+    const req=visaPartialReversalFields(dispensed); addMessage('0420','Reversa parcial Visa · misdispense','',req);
+    addTechEvent(`Visa partial reversal: DE63.3=2504 · DE95.1=${String(dispensed).padStart(12,'0')}`,'warn');
     setTimeout(()=>{
-      const res=[...req,field(39,'Response Code','00','AN2','Host')].sort((a,b)=>Number(a[0])-Number(b[0]));
-      addMessage('0230','Respuesta Adjustment','00',res);
-      persistAtmAdjustment(req,res,difference,dispensed);
-      $('reversalStatus').textContent='0220/0230 · ajuste por diferencia';
-      addTechEvent(`Partial dispense Visa: aprobado ${moneyCents(approved)}, dispensado ${moneyCents(dispensed)}, ajuste ${moneyCents(difference)}`,'done');
-      setScreen('AJUSTE COMPLETADO',`<strong>${moneyCents(difference)} ajustados</strong><small>Importe efectivo dispensado: ${moneyCents(dispensed)}</small>`);
+      const res=req.filter(r=>Number(r[0])!==63);
+      res.push(field(39,'Response Code','00','AN2','Host'));
+      res.sort((a,b)=>Number(a[0])-Number(b[0]));
+      addMessage('0430','Respuesta reversa parcial Visa','00',res);
+      persistAtmPartialReversalVisa(req,res,difference,dispensed);
+      $('reversalStatus').textContent='0430 aprobada · reversa parcial Visa';
+      addTechEvent(`Visa 0430 aprobada · liberado ${moneyCents(difference)} · efectivo real ${moneyCents(dispensed)}`,'done');
+      setScreen('REVERSA PARCIAL COMPLETADA',`<strong>${moneyCents(difference)} liberados</strong><small>Importe final dispensado: ${moneyCents(dispensed)}</small>`);
     },700);
   }
 
@@ -1378,6 +1413,25 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
     });
   }
 
+
+  function persistAtmPartialReversalVisa(req,res,reversedCents,dispensedCents){
+    if(!window.OSCSwitchStore)return;
+    window.OSCSwitchStore.addTransaction({
+      id:`ATM-${state.stan}-withdrawal-partial-visa`,channel:'ATM',network:'VISA',type:'withdrawal',
+      amountCents:Number(dispensedCents||0),currency:'USD',status:'APPROVED',responseCode:'00',stan:state.stan,
+      rrn:req.find(r=>r[0]==='37')?.[2]||'',auth:state.auth||'',batch:1,closed:false,clearingStatus:'PENDING',
+      mtiRequest:'0200',mtiResponse:'0210',panLast4:state.pan.slice(-4),
+      operationLabel:`Extracción Visa · dispensación parcial ${moneyCents(dispensedCents)}`,dateTime:new Date().toISOString()
+    });
+    window.OSCSwitchStore.addTransaction({
+      id:`ATM-${state.stan}-reversal-partial-visa`,channel:'ATM',network:'VISA',type:'reversal',
+      amountCents:Number(reversedCents||0),currency:'USD',status:'APPROVED',responseCode:'00',stan:req.find(r=>r[0]==='11')?.[2]||state.stan,
+      rrn:req.find(r=>r[0]==='37')?.[2]||'',auth:state.auth||'',batch:1,closed:false,clearingStatus:'EXCLUDED',
+      mtiRequest:'0420',mtiResponse:'0430',panLast4:state.pan.slice(-4),
+      operationLabel:`Reversa parcial Visa · DE63.3=2504 · no dispensado ${moneyCents(reversedCents)}`,dateTime:new Date().toISOString()
+    });
+  }
+
   function persistAtmPartialReversal(req,res,reversedCents,dispensedCents){
     if(!window.OSCSwitchStore)return;
     window.OSCSwitchStore.addTransaction({
@@ -1409,7 +1463,8 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
   function moneyCents(c){return (Number(c||0)/100).toLocaleString('es-AR',{style:'currency',currency:'USD'})}
   function openReconcile(){
     const s=reconciliationSnapshot(),d=new Date();
-    $('reconcilePaper').innerHTML=`<h3>OSC BANK</h3><h4>RECONCILIACIÓN ATM</h4><div class="ticket-row"><span>ATM ID</span><b>ATM00001</b></div><div class="ticket-row"><span>Fecha</span><b>${d.toLocaleDateString('es-AR')}</b></div><div class="ticket-row"><span>Hora</span><b>${d.toLocaleTimeString('es-AR',{hour12:false})}</b></div><div class="ticket-rule"></div><b>EXTRACCIONES APROBADAS</b><div class="ticket-row"><span>Cantidad</span><b>${s.withdrawals.length}</b></div><div class="ticket-row"><span>Importe</span><b>${moneyCents(s.withdrawalAmount)}</b></div><div class="ticket-rule"></div><b>REVERSAS</b><div class="ticket-row"><span>Cantidad</span><b>${s.reversals.length}</b></div><div class="ticket-row"><span>Importe</span><b>${moneyCents(s.reversalAmount)}</b></div><div class="ticket-rule"></div><div class="ticket-row"><span>CONSULTAS DE SALDO</span><b>${s.balance.length}</b></div><div class="ticket-row"><span>TRANSFERENCIAS</span><b>${s.transfers.length}</b></div><div class="ticket-row"><span>Importe transferido</span><b>${moneyCents(s.transferAmount)}</b></div><div class="ticket-rule"></div><div class="ticket-row"><b>TOTAL FINANCIERO NETO</b><b>${moneyCents(s.net)}</b></div><div class="ticket-status">✓ CONSISTENTE</div><div class="ticket-rule"></div><div style="text-align:center">Se generarán los mensajes<br><b>0520 → 0530</b></div>`;
+    const amexPending=s.pending.filter(t=>t.network==='AMEX');
+    $('reconcilePaper').innerHTML=`<h3>OSC BANK</h3><h4>RECONCILIACIÓN ATM</h4><div class="ticket-row"><span>ATM ID</span><b>ATM00001</b></div><div class="ticket-row"><span>Fecha</span><b>${d.toLocaleDateString('es-AR')}</b></div><div class="ticket-row"><span>Hora</span><b>${d.toLocaleTimeString('es-AR',{hour12:false})}</b></div><div class="ticket-rule"></div><b>EXTRACCIONES APROBADAS</b><div class="ticket-row"><span>Cantidad</span><b>${s.withdrawals.length}</b></div><div class="ticket-row"><span>Importe</span><b>${moneyCents(s.withdrawalAmount)}</b></div><div class="ticket-rule"></div><b>REVERSAS</b><div class="ticket-row"><span>Cantidad</span><b>${s.reversals.length}</b></div><div class="ticket-row"><span>Importe</span><b>${moneyCents(s.reversalAmount)}</b></div><div class="ticket-rule"></div><div class="ticket-row"><span>CONSULTAS DE SALDO</span><b>${s.balance.length}</b></div><div class="ticket-row"><span>TRANSFERENCIAS</span><b>${s.transfers.length}</b></div><div class="ticket-row"><span>Importe transferido</span><b>${moneyCents(s.transferAmount)}</b></div><div class="ticket-rule"></div><div class="ticket-row"><b>TOTAL FINANCIERO NETO</b><b>${moneyCents(s.net)}</b></div><div class="ticket-status">✓ CONSISTENTE</div><div class="ticket-rule"></div><div style="text-align:center">${amexPending.length?`<b>AMEX:</b> conciliación contra archivo FAS de red<br><small>El adquirente no origina el First Presentment ATM 1240.</small>${s.pending.some(t=>t.network!=='AMEX')?'<br><br><b>Visa / Mastercard:</b> 0520 → 0530':''}`:'Se generarán los mensajes<br><b>0520 → 0530</b>'}</div>`;
     $('reconcileTxDetail').innerHTML=s.pending.length?`<table><thead><tr><th>RED</th><th>TIPO</th><th>STAN</th><th>IMPORTE</th><th>ESTADO</th></tr></thead><tbody>${s.pending.map(t=>`<tr><td>${t.network}</td><td>${t.type}</td><td>${t.stan}</td><td>${moneyCents(t.amountCents)}</td><td>${t.status}</td></tr>`).join('')}</tbody></table>`:'<p>No hay operaciones pendientes.</p>';
     $('reconcileModal').hidden=false;
   }
@@ -1417,14 +1472,33 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
   function confirmReconciliation(){
     const s=reconciliationSnapshot();if(!s.pending.length){alert('No hay transacciones ATM pendientes para reconciliar.');return;}
     const stan=random6(),at=new Date();
-    const fields0520=[field(7,'Transmission Date & Time',de7Now(),'N10','ATM'),field(11,'System Trace Audit Number',stan,'N6','ATM'),field(41,'Terminal ID','ATM00001','ANS8','ATM'),field(74,'Credits Number','0000000000','N10','Totales'),field(76,'Debits Number',String(s.withdrawals.length+s.transfers.length).padStart(10,'0'),'N10','Totales'),field(77,'Debits Reversal Number',String(s.reversals.length).padStart(10,'0'),'N10','Totales'),field(88,'Debits Amount',String(s.withdrawalAmount+s.transferAmount).padStart(16,'0'),'N16','Totales'),field(89,'Debits Reversal Amount',String(s.reversalAmount).padStart(16,'0'),'N16','Totales')];
-    const fields0530=[...fields0520,field(39,'Response Code','00','AN2','Switch')].sort((a,b)=>Number(a[0])-Number(b[0]));
-    addMessage('0520','Reconciliación ATM',' ',fields0520.sort((a,b)=>Number(a[0])-Number(b[0])));
-    addMessage('0530','Respuesta de reconciliación','00',fields0530);
-    const rec=window.OSCSwitchStore.reconcileATM({atmId:'ATM00001',requestMti:'0520',responseMti:'0530'});
+    const nonAmex=s.pending.filter(t=>t.network!=='AMEX');
+    const amex=s.pending.filter(t=>t.network==='AMEX');
+
+    if(nonAmex.length){
+      const nonAmexWithdrawal=nonAmex.filter(t=>t.type==='withdrawal'&&t.clearingStatus==='PENDING');
+      const nonAmexTransfer=nonAmex.filter(t=>t.type==='transfer'&&t.clearingStatus==='PENDING');
+      const nonAmexReversals=nonAmex.filter(t=>t.type==='reversal');
+      const sum=x=>x.reduce((z,t)=>z+Number(t.amountCents||0),0);
+      const fields0520=[field(7,'Transmission Date & Time',de7Now(),'N10','ATM'),field(11,'System Trace Audit Number',stan,'N6','ATM'),field(41,'Terminal ID','ATM00001','ANS8','ATM'),field(74,'Credits Number','0000000000','N10','Totales'),field(76,'Debits Number',String(nonAmexWithdrawal.length+nonAmexTransfer.length).padStart(10,'0'),'N10','Totales'),field(77,'Debits Reversal Number',String(nonAmexReversals.length).padStart(10,'0'),'N10','Totales'),field(88,'Debits Amount',String(sum(nonAmexWithdrawal)+sum(nonAmexTransfer)).padStart(16,'0'),'N16','Totales'),field(89,'Debits Reversal Amount',String(sum(nonAmexReversals)).padStart(16,'0'),'N16','Totales')];
+      const fields0530=[...fields0520,field(39,'Response Code','00','AN2','Switch')].sort((x,y)=>Number(x[0])-Number(y[0]));
+      addMessage('0520','Reconciliación ATM',' ',fields0520.sort((x,y)=>Number(x[0])-Number(y[0])));
+      addMessage('0530','Respuesta de reconciliación','00',fields0530);
+    }
+
+    const rec=window.OSCSwitchStore.reconcileATM({atmId:'ATM00001',requestMti:nonAmex.length?'0520':'AMEX-FAS-RECON',responseMti:nonAmex.length?'0530':'AMEX-FAS-RECON'});
     localStorage.setItem('oscAcademyLastAtmReconciliation',JSON.stringify({at:at.toISOString(),summary:s,reconciliation:rec}));
-    addTechEvent(`0530 recibido · ${rec.readyCount} operaciones listas para clearing`,'done');
-    closeReconcile();alert('ATM reconciliado correctamente. Las operaciones financieras vigentes quedaron READY para clearing.');
+
+    if(amex.length){
+      addTechEvent(`AMEX FAS Recon · ${rec.amexCount||0} operación(es) conciliada(s) contra archivo de red`,'done');
+    }
+    if(nonAmex.length){
+      addTechEvent(`0530 recibido · ${rec.readyCount} operaciones Visa/Mastercard listas para clearing`,'done');
+    }
+    closeReconcile();
+    alert(amex.length
+      ? `ATM reconciliado. AMEX: ${rec.amexCount||0} operación(es) conciliada(s) contra FAS; no se genera First Presentment ATM desde el adquirente.${nonAmex.length?` Visa/Mastercard READY: ${rec.readyCount}.`:''}`
+      : 'ATM reconciliado correctamente. Las operaciones financieras vigentes quedaron READY para clearing.');
   }
 
   function send0200(){
@@ -1634,7 +1708,7 @@ ${raw(m)}`;
     const file=manualFiles[btn.dataset.manual],page=btn.dataset.page||1,title=btn.dataset.title||'Manual oficial',osc=btn.dataset.osc||'';
     $('manualTitle').textContent=title;$('manualRef').textContent=`Página ${page} · Documento en inglés`;
     const src=`${file}#page=${page}&zoom=page-width`;$('manualFrame').src=src;$('compareFrame').src=src;
-    $('manualOsc').innerHTML=`<h2>${title}</h2><p>${osc}</p><p><b>Referencia:</b> Visa Full Service ATM Online Messages · página ${page}.</p><p class="notice">La numeración puede variar según la edición utilizada por su organización.</p>`;
+    $('manualOsc').innerHTML=`<h2>${title}</h2><p>${osc}</p><p><b>Referencia:</b> VisaNet Authorization-Only Online Messages · 15 Oct 2025 · página ${page}.</p><p class="notice">La numeración puede variar según la edición utilizada por su organización.</p>`;
     $('compareOsc').innerHTML=$('manualOsc').innerHTML;$('manualDrawer').hidden=false;
   }
   document.querySelectorAll('.manual-open').forEach(b=>b.addEventListener('click',()=>openManual(b)));
@@ -1685,6 +1759,6 @@ document.addEventListener('DOMContentLoaded',()=>{
 </script>
 <script src="js/permissions.js"></script>
 
-<div id="osc-version-badge" style="position:fixed;right:14px;bottom:12px;z-index:99999;background:#0d2238;border:1px solid #2f83ff;color:#9fd0ff;padding:7px 11px;border-radius:999px;font:600 12px/1.1 Inter,Segoe UI,Arial,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.28)">Baseline v3.5.3.16 · AMEX ATM 1420/1430</div>
+<div id="osc-version-badge" style="position:fixed;right:14px;bottom:12px;z-index:99999;background:#0d2238;border:1px solid #2f83ff;color:#9fd0ff;padding:7px 11px;border-radius:999px;font:600 12px/1.1 Inter,Segoe UI,Arial,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.28)">Baseline v3.5.3.20 · Visa/MC Current Manuals</div>
 </body>
 </html>

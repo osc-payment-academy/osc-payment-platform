@@ -446,6 +446,8 @@ select:focus,input:focus,textarea:focus{border-color:#2f83ff;box-shadow:0 0 0 2p
     if(currentConstructorNetwork()!=='amex' && state.mti.startsWith('04') && !state.selected.has(90)) messages.push({type:'warn',text:'Para una reversa se recomienda incluir DE90.'});
     if(currentConstructorNetwork()==='amex' && state.mti==='1420' && !state.selected.has(24)) messages.push({type:'warn',text:'AMEX 1420: incluya Bit 24 Function Code (400/401).'});
     if(currentConstructorNetwork()==='amex' && state.mti==='1420' && !state.selected.has(25)) messages.push({type:'warn',text:'AMEX 1420: incluya Bit 25 Message Reason Code.'});
+    if(currentConstructorNetwork()==='mastercard' && ['0100','0110','0120','0130','0400','0410','0420','0430','0800'].includes(state.mti) && state.selected.has(20)) messages.push({type:'error',text:`Mastercard 26.Q1: DE20 fue removido de ${state.mti}.`});
+    if(currentConstructorNetwork()==='visa' && ['0400','0420'].includes(state.mti) && state.selected.has(95) && !state.selected.has(63)) messages.push({type:'warn',text:'Visa 15-Oct-2025: partial reversal requiere Field 63.3; ATM misdispense usa 2504.'});
     if(!messages.length) messages.push({type:'ok',text:'La estructura seleccionada supera las validaciones básicas.'});
     return messages;
   }

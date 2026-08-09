@@ -340,6 +340,39 @@
     return field(4,'Transaction Amount',String(amountDigits||'0').padStart(12,'0'),'12','FIXED','Monto de la operación');
   }
 
+
+  // Visa VSDC / Mastercard M/Chip educational BER-TLV data set.
+  function emvDateYYMMDD(){
+    const d=now();
+    return String(d.getFullYear()).slice(-2)+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0');
+  }
+  function networkEmvDe55({amountDigits=null,modeKey=null,networkId=null,aid=null,txnType='00'}={}){
+    const net=networkId||profile().id;
+    const mode=modeKey||state.entryMode;
+    const cardAid=aid||selectedCard().aid||(net==='mastercard'?'A0000000041010':'A0000000031010');
+    const amt=String(amountDigits??state.amountDigits??'0').padStart(12,'0').slice(-12);
+    const cvm=mode==='contactless'?'1F0302':(entryModes[mode]?.hasPin?'020300':'1E0300');
+    const iad=net==='mastercard'?'0110A00003220000000000000000000000':'06010A03A0B800';
+    const tags=[
+      ['9F26','08','A1B2C3D4E5F60708'],['9F27','01','80'],
+      ['9F10',String(iad.length/2).padStart(2,'0'),iad],['9F37','04','A1B2C3D4'],
+      ['9F36','02','0012'],['95','05','0000000000'],['9A','03',emvDateYYMMDD()],
+      ['9F02','06',amt],['9C','01',txnType],['5F2A','02','0032'],['82','02','1800'],
+      ['9F1A','02','0032'],['9F34','03',cvm],
+      ['84',String(cardAid.length/2).padStart(2,'0'),cardAid],
+      ['9F33','03','E0F8C8'],['9F35','01','22']
+    ];
+    return tags.map(([t,l,v])=>t+l+v).join('');
+  }
+  function posMessageProfile(card=selectedCard()){
+    if(profile().id==='amex') return {request:'1100',response:'1110',family:'AMEX'};
+    const product=(card?.product||'').toLowerCase();
+    const debit=product.includes('débito')||product.includes('debito');
+    return debit
+      ? {request:'0200',response:'0210',reversal:'0420',reversalResponse:'0430',family:'SMS/FULL-FINANCIAL'}
+      : {request:'0100',response:'0110',reversal:'0400',reversalResponse:'0410',family:'DMS/AUTHORIZATION'};
+  }
+
   function entryFields(){
     const mode=entryModes[state.entryMode]||entryModes.chip;
     const rows=[
@@ -354,7 +387,7 @@
       field(49,'Transaction Currency Code','032','3','FIXED','Configuración comercio')
     ];
     if(state.paymentMethod!=='qr' && mode.hasDE35) rows.push(field(35,'Track 2 Data',selectedCard().track2,String(selectedCard().track2.length),'LLVAR',mode.de35Origin));
-    if(state.paymentMethod!=='qr' && mode.hasDE55) rows.push(field(55,'ICC Data (EMV)','9F2608A1B2C3D4E5F607','20','LLLVAR',mode.label));
+    if(state.paymentMethod!=='qr' && mode.hasDE55){const v=networkEmvDe55({modeKey:state.entryMode,networkId:profile().id,aid:selectedCard().aid});rows.push(field(55,'ICC Data (EMV)',v,String(v.length/2)+' bytes','LLLVAR',`${mode.label} · BER-TLV completo`));}
     if(state.paymentMethod==='qr') rows.push(field(48,'Additional Data - QR',`QR|${selectedQr().mode}|${profile().name}`,'Variable','LLLVAR','Wallet / aplicación QR'));
     return rows;
   }
@@ -390,7 +423,8 @@
     return rows;
   }
 
-  function originalDataElements(source, originalMti='0200'){
+  function originalDataElements(source, originalMti=null){
+    originalMti=originalMti||source.requestMti||source.mtiRequest||'0200';
     return `${originalMti}${source.stan}${source.de7}${String(source.acquirerId||'12345678901').padStart(11,'0')}`.padEnd(42,'0').slice(0,42);
   }
 
@@ -495,7 +529,7 @@
       field(42,'Merchant ID','MERCHANT01','10','FIXED','Configuración comercio'),
       field(49,'Transaction Currency Code','032','3','FIXED','Moneda')
     ];
-    if(mode.hasDE55) rows.push(field(55,'ICC Data (EMV)','9F2608A1B2C3D4E5F607','20','LLLVAR','Entorno refund'));
+    if(mode.hasDE55){const v=networkEmvDe55({amountDigits:digits,modeKey:source.entryMode||state.entryMode,networkId:(source.network||profile().id),aid:(TEST_CARDS[source.cardId]?.aid||selectedCard().aid),txnType:'20'});rows.push(field(55,'ICC Data (EMV)',v,String(v.length/2)+' bytes','LLLVAR','Refund · BER-TLV'));}
     return rows.sort((a,b)=>Number(a[0])-Number(b[0]));
   }
 
@@ -503,6 +537,73 @@
     const rows=refundRequestFields(source,refundCents).filter(r=>!['55'].includes(r[0]));
     if(code==='00') rows.push(field(38,'Authorization Identification Response',auth,'6','FIXED','Host'));
     rows.push(field(39,'Response Code',code,'2','FIXED','Host'));
+    return rows.sort((a,b)=>Number(a[0])-Number(b[0]));
+  }
+
+  // American Express Authorization on Credit / Refund.
+  // Network Specifications - Authorization + Codes Reference Guide (Oct 2023).
+  // MTI 1100/1110, Processing Code 204000 (Credit/Refund).
+  function amexRefund1100Fields(source,refundCents){
+    const mode=entryModes[source.entryMode]||entryModes[state.entryMode]||entryModes.chip;
+    const pan=source.pan||state.pan;
+    const card=TEST_CARDS[source.cardId]||selectedCard();
+    const amount=String(Math.round(refundCents||0)).padStart(12,'0');
+    const rows=[
+      field(2,'Primary Account Number (PAN)',pan,String(pan.length),'LLVAR','Cuenta usada en el Charge original'),
+      field(3,'Processing Code','204000','6','FIXED','AMEX Credit / Refund'),
+      field(4,'Amount, Transaction',amount,'12','FIXED','Importe del crédito'),
+      field(7,'Date and Time, Transmission',de7Now(),'10','FIXED','Transmisión adquirente'),
+      field(11,'Systems Trace Audit Number',state.currentStan,'6','FIXED','Nuevo STAN del refund'),
+      field(12,'Date and Time, Local Transaction',amexLocalDateTime(),'12','FIXED','YYMMDDhhmmss'),
+      field(14,'Card Expiration Date',card?.expiry||'2912','4','FIXED','Tarjeta original'),
+      field(19,'Country Code, Acquiring Institution','032','3','FIXED','Argentina · perfil simulador'),
+      field(22,'Point of Service Data Code',amexPosDataCode(source.entryMode||state.entryMode),'12','FIXED','AMEX GNS · 12 posiciones'),
+      field(24,'Function Code','100','3','FIXED','Original authorization · amount accurate'),
+      field(26,'Card Acceptor Business Code','5812','4','FIXED','MCC del comercio'),
+      field(32,'Acquiring Institution Identification (AIN) Code',source.acquirerId||'12345678901','11','LLVAR','Adquirente'),
+      field(37,'Acquirer Reference Number (ARN)',`${state.currentStan}${String(Date.now()).slice(-6)}`.slice(0,12),'12','FIXED','Nueva referencia del crédito'),
+      field(41,'Card Acceptor Terminal Identification','TERMID01','8','FIXED','Terminal POS'),
+      field(42,'Card Acceptor Identification Code','1234567890     ','15','FIXED','S/E original'),
+      field(49,'Currency Code, Transaction','032','3','FIXED','Misma moneda del Charge')
+    ];
+    if(mode.hasDE35 && card?.track2){
+      rows.push(field(35,'Track 2 Data',card.track2,String(card.track2.length),'LLVAR','Tarjeta presentada'));
+    }
+    if(mode.hasDE55 && ['chip','contactless'].includes(source.entryMode||state.entryMode)){
+      const savedMode=state.entryMode;
+      state.entryMode=source.entryMode||state.entryMode;
+      const icc=amexBit55(state.entryMode);
+      rows.push(field(55,'ICC System Related Data',icc,String(icc.length/2)+' bytes','LLLVAR',amexBit55Description(state.entryMode)));
+      state.entryMode=savedMode;
+    }
+    return rows.sort((a,b)=>Number(a[0])-Number(b[0]));
+  }
+
+  function amexRefund1110Fields(refundOp, action=AMEX_ACTION_CODES.approved){
+    const req=(state.messages||[]).find(m=>m.operationId===refundOp.id && m.mti==='1100');
+    const reqFields=req?.fields||[];
+    const get=(de,fb='')=>reqFields.find(r=>String(r[0])===String(de))?.[2]??fb;
+    const tid=refundOp.amexTid || (refundOp.amexTid=makeAmexTid());
+    const rows=[
+      field(2,'Primary Account Number (PAN)',get(2,refundOp.pan||state.pan),String(get(2,refundOp.pan||state.pan).length),'LLVAR','Echo'),
+      field(3,'Processing Code',get(3,'204000'),'6','FIXED','Credit / Refund'),
+      field(4,'Amount, Transaction',get(4,String(refundOp.amountCents||0).padStart(12,'0')),'12','FIXED','Echo'),
+      field(7,'Date and Time, Transmission',get(7,de7Now()),'10','FIXED','Echo'),
+      field(11,'Systems Trace Audit Number',get(11,refundOp.stan),'6','FIXED','Echo'),
+      field(12,'Date and Time, Local Transaction',get(12,amexLocalDateTime()),'12','FIXED','Echo'),
+      field(24,'Function Code',get(24,'100'),'3','FIXED','Echo'),
+      field(31,'Acquirer Reference Data, Transaction Identifier (TID)',tid,String(tid.length),'LLVAR','Generado para el ciclo AMEX'),
+      field(32,'Acquiring Institution Identification (AIN) Code',get(32,'12345678901'),'11','LLVAR','Echo'),
+      field(37,'Acquirer Reference Number (ARN)',get(37,refundOp.rrn||''),'12','FIXED','Correlación'),
+      field(39,'Action Code',action.code,'3','FIXED',action.label),
+      field(41,'Card Acceptor Terminal Identification',get(41,'TERMID01'),'8','FIXED','Echo'),
+      field(42,'Card Acceptor Identification Code',get(42,'1234567890     '),'15','FIXED','Echo'),
+      field(49,'Currency Code, Transaction',get(49,'032'),'3','FIXED','Echo')
+    ];
+    if(action.code==='000'){
+      const approval=refundOp.auth || (refundOp.auth=random6());
+      rows.push(field(38,'Approval Code',approval,'6','FIXED','Approval del crédito'));
+    }
     return rows.sort((a,b)=>Number(a[0])-Number(b[0]));
   }
 
@@ -944,7 +1045,9 @@
     state.step='processing';state.currentStan=random6();state.currentAuth='';setStep(4);
     const op=createOperation('purchase');
     const isAmex=profile().id==='amex';
-    const requestMti=isAmex?'1100':'0200';
+    const msgProfile=posMessageProfile();
+    const requestMti=msgProfile.request;
+    op.requestMti=requestMti;op.responseMti=msgProfile.response;op.messageFamily=msgProfile.family;
     const fields=isAmex?amex1100RequestFields():purchaseRequestFields();
     renderFields(fields);
     screen('PROCESANDO',`<small>Enviando ${requestMti}</small><strong>...</strong><span>${isAmex?'American Express GNS':'Aguarde'}</span>`);
@@ -963,7 +1066,7 @@
         renderMessage(state.messages[0]);
         refreshHistoryStatuses();
       }else{
-        screen('PROCESANDO','<small>Esperando 0210</small><strong>...</strong><span>Aguarde</span>');
+        screen('PROCESANDO',`<small>Esperando ${op.responseMti||'0210'}</small><strong>...</strong><span>${op.messageFamily||'ISO8583'}</span>`);
       }
     },800);
   }
@@ -983,13 +1086,17 @@
     screen(op.status==='APROBADA'?'APROBADA':'RECHAZADA',`<small>${response.label}</small><strong>${state.responseCode}</strong><span>${op.status==='APROBADA'?'Retire tarjeta':'Operación finalizada'}</span>`);
     if(state.responseCode!=='TO'){
       const fields=purchaseResponseFields(state.responseCode,op);
+      const responseMti=op.responseMti||posMessageProfile(TEST_CARDS[op.cardId||state.testCard]).response;
       addMessage({
-        id:`MSG-${Date.now()}-0210`,operationId:op.id,mti:'0210',operation:'COMPRA',
+        id:`MSG-${Date.now()}-${responseMti}`,operationId:op.id,mti:responseMti,operation:'COMPRA',
         direction:'ENTRANTE',dateTime:dateTimeNow(),responseCode:state.responseCode,fields,bitmap:bitmapHex(fields),
         amountCents:op.amountCents,stan:op.stan,batch:op.batch
       });
       renderMessage(state.messages[0]);
-    }else op.status='TIMEOUT';
+    }else{
+      op.status='TIMEOUT';
+      setTimeout(()=>runAutomaticTimeoutReversal(op),350);
+    }
     setStep(6);
     setTimeout(()=>{$('time6').textContent=timeNow();printReceipt(op);state.transactions++;$('sessionTx').textContent=state.transactions;state.step='done';refreshHistoryStatuses()},600);
   }
@@ -1047,6 +1154,43 @@
     if(state.modalMode==='refund')runRefund(source);else runVoid(source);
   }
 
+
+  function technicalReversalFields(source){
+    const rows=[
+      field(2,'Primary Account Number (PAN)',source.pan||state.pan,String((source.pan||state.pan||'').length),'LLVAR','Operación original'),
+      field(3,'Processing Code','000000','6','FIXED','Operación original'),
+      field(4,'Transaction Amount',String(source.amountDigits||source.amountCents||0).padStart(12,'0').slice(-12),'12','FIXED','Importe original'),
+      field(7,'Transmission Date & Time',de7Now(),'10','FIXED','Nueva reversa técnica'),
+      field(11,'System Trace Audit Number (STAN)',random6(),'6','FIXED','STAN de reversa'),
+      field(32,'Acquiring Institution Identification Code',source.acquirerId||'12345678901','11','LLVAR','Adquirente'),
+      field(37,'Retrieval Reference Number',source.rrn||'','12','FIXED','Correlación'),
+      field(41,'Terminal ID','TERMID01','8','FIXED','Terminal'),
+      field(42,'Merchant ID','MERCHANT01','10','FIXED','Comercio'),
+      field(49,'Transaction Currency Code','032','3','FIXED','ARS'),
+      field(90,'Original Data Elements',originalDataElements(source),'42','FIXED','Mensaje original')
+    ];
+    if((source.network||profile().id)==='visa'){
+      rows.push(field(63,'V.I.P. Private-Use · SF3 Message Reason Code','2502','4','FIXED','Transaction not completed / timeout'));
+    }
+    return rows.sort((a,b)=>Number(a[0])-Number(b[0]));
+  }
+  function runAutomaticTimeoutReversal(source){
+    if((source.network||'').toLowerCase()==='amex') return;
+    const p=posMessageProfile(TEST_CARDS[source.cardId||state.testCard]);
+    const req=technicalReversalFields(source);
+    const revOp=createOperation('reversal',source);
+    revOp.status='APROBADA';revOp.network=source.network;revOp.requestMti=p.reversal;revOp.responseMti=p.reversalResponse;
+    addMessage({id:`MSG-${Date.now()}-${p.reversal}`,operationId:revOp.id,mti:p.reversal,operation:'REVERSA AUTOMÁTICA - TIMEOUT',direction:'SALIENTE',dateTime:dateTimeNow(),responseCode:'',fields:req,bitmap:bitmapHex(req),amountCents:source.amountCents,stan:req.find(r=>r[0]==='11')?.[2]||revOp.stan,batch:source.batch});
+    const res=req.filter(r=>![90,63].includes(Number(r[0])));
+    res.push(field(39,'Response Code','00','2','FIXED','Reversa aceptada'));
+    res.sort((a,b)=>Number(a[0])-Number(b[0]));
+    setTimeout(()=>{
+      addMessage({id:`MSG-${Date.now()}-${p.reversalResponse}`,operationId:revOp.id,mti:p.reversalResponse,operation:'RESPUESTA REVERSA AUTOMÁTICA',direction:'ENTRANTE',dateTime:dateTimeNow(),responseCode:'00',fields:res,bitmap:bitmapHex(res),amountCents:source.amountCents,stan:revOp.stan,batch:source.batch});
+      source.status='REVERSADA';source.responseCode='TO';persistSwitchTransaction(source);persistSwitchTransaction(revOp);renderMessage(state.messages[0]);refreshHistoryStatuses();
+      screen('TIMEOUT GESTIONADO',`<small>${p.reversal} → ${p.reversalResponse}</small><strong>REVERSA</strong><span>El Switch Adquirente cerró la incertidumbre técnica</span>`);
+    },450);
+  }
+
   function runReversal(source){
     state.currentOperation='reversal';state.currentStan=random6();
     screen('REVERSA','<small>Generando 0400</small><strong>...</strong><span>Aguarde</span>');
@@ -1080,15 +1224,37 @@
     if(!refundCents||refundCents<=0){alert('Ingrese un importe de devolución válido.');return}
     if(refundCents>available){alert(`El importe supera el saldo disponible para devolver: ${formatCents(available)}`);return}
 
+    const isAmex=(source.network||source.cardBrand||'').toLowerCase()==='amex';
     state.currentOperation='refund';state.currentStan=random6();state.amountDigits=String(refundCents);
-    screen('DEVOLUCIÓN','<small>Purchase Return / Refund</small><strong>...</strong><span>Generando crédito</span>');
     const op=createOperation('refund',source);
-    op.amountCents=refundCents;op.amountDigits=String(refundCents);op.rrn=source.rrn;
+    op.amountCents=refundCents;op.amountDigits=String(refundCents);
     op.refundMode=refundCents===available?'TOTAL':'PARCIAL';
+    op.network=isAmex?'amex':op.network;
 
+    if(isAmex){
+      screen('DEVOLUCIÓN AMEX','<small>Authorization on Credit</small><strong>1100</strong><span>Processing Code 204000 · Credit / Refund</span>');
+      const req=amexRefund1100Fields(source,refundCents);
+      op.rrn=req.find(r=>r[0]==='37')?.[2]||op.rrn;
+      addMessage({id:`MSG-${Date.now()}-AMEX-REF-1100`,operationId:op.id,mti:'1100',operation:`DEVOLUCIÓN AMEX ${op.refundMode}`,direction:'SALIENTE',dateTime:dateTimeNow(),responseCode:'',fields:req,bitmap:bitmapHex(req),amountCents:refundCents,stan:op.stan,batch:op.batch});
+      setTimeout(()=>{
+        const action=AMEX_ACTION_CODES.approved;
+        op.status='APROBADA'; op.responseCode=action.code;
+        const res=amexRefund1110Fields(op,action);
+        op.auth=res.find(r=>r[0]==='38')?.[2]||op.auth;
+        op.amexTid=res.find(r=>r[0]==='31')?.[2]||op.amexTid;
+        addMessage({id:`MSG-${Date.now()}-AMEX-REF-1110`,operationId:op.id,mti:'1110',operation:`DEVOLUCIÓN AMEX ${op.refundMode}`,direction:'ENTRANTE',dateTime:dateTimeNow(),responseCode:action.code,fields:res,bitmap:bitmapHex(res),amountCents:refundCents,stan:op.stan,batch:op.batch});
+        persistSwitchTransaction(op);
+        renderMessage(state.messages[0]);
+        screen('DEVOLUCIÓN AMEX APROBADA',`<small>${op.refundMode} · Authorization on Credit</small><strong>${formatCents(refundCents)}</strong><span>1100 → 1110 · DE3 204000 · Action Code 000</span>`);
+        printReceipt(op);refreshHistoryStatuses();state.step='done';
+      },850);
+      return;
+    }
+
+    screen('DEVOLUCIÓN','<small>Purchase Return / Refund</small><strong>...</strong><span>Generando crédito</span>');
+    op.rrn=source.rrn;
     const req=refundRequestFields(source,refundCents);
     addMessage({id:`MSG-${Date.now()}-REFREQ`,operationId:op.id,mti:'0200',operation:`DEVOLUCIÓN ${op.refundMode}`,direction:'SALIENTE',dateTime:dateTimeNow(),responseCode:'',fields:req,bitmap:bitmapHex(req),amountCents:refundCents,stan:op.stan,batch:op.batch});
-
     setTimeout(()=>{
       const code='00',auth=random6();op.auth=auth;op.status='APROBADA';
       const res=refundResponseFields(source,refundCents,code,auth);
@@ -1103,24 +1269,30 @@
   function runVoid(source){
     if((source.network||'').toLowerCase()==='amex'){runAmexVoid1420(source);return}
     state.currentOperation='void';state.currentStan=random6();
-    screen('ANULACIÓN','<small>Enviando solicitud</small><strong>...</strong><span>Aguarde</span>');
-    const op=createOperation('void',source);op.rrn=source.rrn;op.auth=source.auth;
-    const req=voidRequestFields(source);
+    const p=posMessageProfile(TEST_CARDS[source.cardId||state.testCard]);
+    screen('ANULACIÓN',`<small>Enviando ${p.reversal}</small><strong>...</strong><span>Reversa de la operación aprobada</span>`);
+    const op=createOperation('void',source);op.rrn=source.rrn;op.auth=source.auth;op.requestMti=p.reversal;op.responseMti=p.reversalResponse;
+    const req=reversalRequestFields(source);
+    if((source.network||profile().id)==='visa') req.push(field(63,'V.I.P. Private-Use · SF3 Message Reason Code','2501','4','FIXED','Transaction voided by customer'));
+    req.sort((a,b)=>Number(a[0])-Number(b[0]));
     addMessage({
-      id:`MSG-${Date.now()}-VOIDREQ`,operationId:op.id,mti:'0200',operation:'ANULACIÓN',
+      id:`MSG-${Date.now()}-${p.reversal}`,operationId:op.id,mti:p.reversal,operation:'ANULACIÓN',
       direction:'SALIENTE',dateTime:dateTimeNow(),responseCode:'',fields:req,bitmap:bitmapHex(req),
       amountCents:op.amountCents,stan:op.stan,batch:op.batch
     });
     setTimeout(()=>{
       const code='00';op.status='APROBADA';source.status='ANULADA';
-      const res=voidResponseFields(source,code);
+      const res=req.filter(r=>![90,63].includes(Number(r[0])));
+      res.push(field(39,'Response Code',code,'2','FIXED','Reversa/anulación aceptada'));
+      res.sort((a,b)=>Number(a[0])-Number(b[0]));
       addMessage({
-        id:`MSG-${Date.now()}-VOIDRES`,operationId:op.id,mti:'0210',operation:'ANULACIÓN',
+        id:`MSG-${Date.now()}-${p.reversalResponse}`,operationId:op.id,mti:p.reversalResponse,operation:'ANULACIÓN',
         direction:'ENTRANTE',dateTime:dateTimeNow(),responseCode:code,fields:res,bitmap:bitmapHex(res),
         amountCents:op.amountCents,stan:op.stan,batch:op.batch
       });
+      persistSwitchTransaction(op);persistSwitchTransaction(source);
       renderMessage(state.messages[0]);
-      screen('ANULACIÓN APROBADA','<small>Compra anulada</small><strong>00</strong><span>Proceso finalizado</span>');
+      screen('ANULACIÓN APROBADA',`<small>${p.reversal} → ${p.reversalResponse}</small><strong>00</strong><span>Compra anulada</span>`);
       printReceipt(op);refreshHistoryStatuses();state.step='done';
     },850);
   }
@@ -1146,7 +1318,7 @@
       approvedCount:approved.length,refundCount:refunds.length,voidedCount:voided.length,reversedCount:reversed.length,
       approvedCents,refundCents,voidedCents,reversedCents,netCents:approvedCents-refundCents,
       totalMessages:state.messages.filter(m=>m.batch===state.batchNumber).length,
-      networks:[byNetwork('VISA'),byNetwork('MASTERCARD')],
+      networks:[byNetwork('VISA'),byNetwork('MASTERCARD'),byNetwork('AMEX')],
       detail:[...purchases,...refunds].slice().sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||''))
     };
   }

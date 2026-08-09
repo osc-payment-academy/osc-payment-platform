@@ -1,0 +1,51 @@
+OSC-ACADEMY Baseline v3.5.3.19 · AMEX Core Completion
+
+BASE
+- Parte de v3.5.3.18 AMEX Parser + Constructor.
+- Conserva todo el Core Visa, Mastercard y AMEX previamente implementado.
+
+1. POS AMEX · DEVOLUCIÓN / AUTHORIZATION ON CREDIT
+- La devolución AMEX ya no usa el flujo genérico 0200/0210.
+- Request AMEX: MTI 1100.
+- Response AMEX: MTI 1110.
+- Processing Code: 204000 (Credit / Refund).
+- Function Code: 100.
+- Action Code aprobado: 000.
+- Soporta devolución TOTAL y PARCIAL respetando el saldo remanente de la compra original.
+- Genera nuevo STAN/ARN y TID para el ciclo AMEX.
+- Persiste la devolución para cierre de lote y clearing.
+- El cierre de lote POS ahora incluye AMEX en los totales por red.
+
+2. SWITCH ADQUIRENTE · AMEX
+- Nuevo visor AMERICAN EXPRESS.
+- POS First Presentment 1240 separado de Visa CTF y Mastercard IPM.
+- Compras/devoluciones AMEX POS cerradas generan artifact AMEX_POS_1240.
+- Devoluciones se representan con Processing Code 200000 en clearing.
+- Vista técnica genera registros POS 1240 de 1400 bytes con las posiciones documentadas por el manual.
+- Header 9824 y Trailer 9825 se muestran como envolvente lógica del archivo.
+- La interfaz avisa que es un laboratorio educativo, no un encoder de certificación.
+
+3. ATM AMEX · RECONCILIACIÓN FAS
+- Se eliminó la suposición de que AMEX ATM debe quedar READY para un First Presentment originado por el adquirente.
+- Las extracciones AMEX pasan a estado AMEX_RECONCILED.
+- Se crea artifact AMEX_ATM_RECON.
+- El visor genera:
+  * Header Record de 500 bytes (Record Type 0).
+  * Detail Record de 500 bytes por transacción, con posiciones documentadas conocidas.
+  * Trailer Record de 500 bytes (Record Type 9).
+- Se preservan Approval Code, Additional Reference Number y TID en sus posiciones documentadas.
+- AMEX ATM no se mezcla con el clearing outgoing POS.
+
+4. REGLA CLAVE
+- POS AMEX First Presentment 1240: lo origina el Acquirer.
+- ATM AMEX First Presentment 1240: lo crea FAS a partir del 1200; el Acquirer reconcilia el archivo que recibe de la Network.
+
+5. SE CONSERVA
+- POS AMEX 1100/1110.
+- ATM AMEX 1200/1210.
+- Reversas 1420/1430.
+- AEIPS y Expresspay.
+- Parser AMEX.
+- Constructor AMEX.
+- Base II / IPM / Switch Emisor ocultos del menú del Core Pilot.
+- Disputas/Contracargos fuera del Core Pilot.

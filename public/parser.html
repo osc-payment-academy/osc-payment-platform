@@ -1414,6 +1414,24 @@
         return {mti, primaryHex, secondaryHex, allBits, fields, errors, warnings, consumed:pos, total:working.length, trailer};
       }
 
+
+      function applyCurrentManualValidations(result,selected){
+        if(!result||!result.fields)return result;
+        result.warnings=result.warnings||[];result.errors=result.errors||[];
+        const mti=String(result.mti||'');
+        const nums=new Set(result.fields.map(f=>Number(f.num)));
+        if(selected==='mastercard'){
+          const noDe20=new Set(['0100','0110','0120','0130','0400','0410','0420','0430','0800']);
+          if(noDe20.has(mti)&&nums.has(20)){
+            result.errors.push(`Mastercard 26.Q1: DE20 fue removido del mensaje ${mti}; elimínelo para el perfil DMS vigente.`);
+          }
+        }
+        if(selected==='visa' && ['0400','0420'].includes(mti)){
+          if(nums.has(95) && !nums.has(63)) result.warnings.push('Visa 15-Oct-2025: partial reversal requiere Field 63.3; ATM misdispense usa 2504.');
+        }
+        return result;
+      }
+
       function render(result) {
         const networkSelect=document.getElementById('parserNetworkSelect');
         const de2=result && result.fields ? result.fields.find(f=>Number(f.num)===2) : null;
@@ -1422,7 +1440,7 @@
         const net=window.OSCNetworks ? OSCNetworks.resolve(selected,de2?de2.value:'') : {name:'Perfil ISO genérico',manual:'—',color:'#64748b'};
         const netBadge=document.getElementById('parserNetworkBadge');
         if(netBadge) netBadge.innerHTML=OSCNetworks.badge(net)+(de2?`<small> · BIN ${(de2.value||'').slice(0,6)}</small>`:'<small> · DE2 no disponible</small>');
-        if(result) result.networkProfile=net;
+        if(result){result.networkProfile=net;applyCurrentManualValidations(result,selected);}
 
         if(selected==='amex' && result?.mti){
           result.amexMessageName=amexMtiDescription(result.mti);

@@ -1,0 +1,31 @@
+OSC-ACADEMY Baseline v3.5.3.20
+VISA / MASTERCARD CURRENT-MANUAL CONFORMANCE
+
+Base: v3.5.3.19 AMEX Core Completion.
+
+Fuentes vigentes:
+VISA
+- Full Service POS Online Messages - Processing Specifications (International), Effective 15 Oct 2025.
+- Full Service POS Online Messages - Technical Specifications, Effective 15 Oct 2025.
+- VisaNet Authorization-Only Online Messages - Technical Specifications, Effective 15 Oct 2025.
+
+MASTERCARD
+- Mastercard Network Processing - Dual Message Authorization System Guide, Release 26.Q1, 24 Feb 2026.
+- M/Chip Requirements for Contact and Contactless, 29 Apr 2025.
+- Issuer Credit and Debit Test Cases 25.Q4 v1, 24 Jun 2025.
+
+Ajustes:
+- POS Crédito Visa/Mastercard: perfil educativo DMS/Auth 0100 -> 0110.
+- POS Débito Visa/Mastercard: perfil educativo SMS/Full Financial 0200 -> 0210.
+- Anulación usa 0400/0410 o 0420/0430 según el MTI original.
+- Visa anulación: Field 63.3 = 2501.
+- Timeout POS: reversa técnica automática; Visa Field 63.3 = 2502.
+- DE55 Visa/Mastercard enriquecido con tags EMV principales.
+- Visa ATM full reversal: Field 63.3 = 2503.
+- Visa ATM partial dispense: 0420 -> 0430, Field 63.3 = 2504 y Field 95 (42 posiciones).
+- Se elimina del simulador Visa el 0220/0230 Adjustment como solución del misdispense.
+- Parser/Constructor Mastercard alertan si aparece DE20 en mensajes donde 26.Q1 lo removió.
+- Página Mastercard ISO actualizada desde CIS 2013 a Guide 26.Q1.
+- Manual Navigator ATM Visa actualizado a referencia 15 Oct 2025.
+
+Nota: simulador educativo, no encoder de certificación de red.
