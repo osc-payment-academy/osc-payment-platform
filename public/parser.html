@@ -541,6 +541,7 @@
   </div>
 
   <script src="js/network-profiles.js"></script>
+<script src="js/help-catalog.js"></script>
 <script>
     // --- LÓGICA DE AUTENTICACIÓN ---
     window.onload = function() {
@@ -1517,7 +1518,7 @@
               f.num === 55 ? maskEMVData(f.value) :
               f.value
             }</td>
-            <td class="fdesc"><div>${f.desc || '—'}</div>${f.page ? '<div class="ref">Visa TS, pág. ' + f.page + '</div>' : ''}</td>
+            <td class="fdesc"><div>${f.desc || '—'}</div><button type="button" class="osc-help-trigger manual" data-manual-de="${f.num}">📘 Ver en manual</button></td>
           </tr>
         `).join('');
 
@@ -1539,6 +1540,13 @@
           </table>
         `;
       }
+
+      document.addEventListener('click',e=>{
+        const btn=e.target.closest?.('[data-manual-de]');
+        if(!btn)return;
+        e.preventDefault();
+        OSCHelp.openTechnical(Number(btn.dataset.manualDe),document.getElementById('parserNetworkSelect')?.value||'visa');
+      });
 
       document.getElementById('parserNetworkSelect').addEventListener('change',()=>{applyParserFieldProfile();const raw=document.getElementById('iso-input').value;if(raw.trim())render(parseTrama(raw));});
 

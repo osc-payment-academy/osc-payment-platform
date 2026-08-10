@@ -244,7 +244,15 @@ select:focus,input:focus,textarea:focus{border-color:#2f83ff;box-shadow:0 0 0 2p
   </main>
 </div>
 
-<script src="js/network-profiles.js"></script>
+<script src="js/network-profiles.js">  document.addEventListener('click',e=>{
+    const btn=e.target.closest?.('[data-manual-de]');
+    if(!btn)return;
+    e.preventDefault();e.stopPropagation();
+    OSCHelp.openTechnical(Number(btn.dataset.manualDe),document.getElementById('constructorNetworkSelect')?.value||'visa');
+  });
+
+</script>
+<script src="js/help-catalog.js"></script>
 <script>
 (() => {
   const FIELD_DEFS = [
@@ -480,7 +488,7 @@ select:focus,input:focus,textarea:focus{border-color:#2f83ff;box-shadow:0 0 0 2p
           </div>
           <div class="field-editor">
             <textarea data-value="${def.de}" placeholder="Ingrese el valor de DE${def.de}">${value}</textarea>
-            <div class="field-help">${def.desc}</div>
+            <div class="field-help">${def.desc} <button type="button" class="osc-help-trigger manual" data-manual-de="${def.de}">📘</button></div>
           </div>
         </article>`;
       }).join('');

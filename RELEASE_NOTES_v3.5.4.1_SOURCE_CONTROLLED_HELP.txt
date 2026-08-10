@@ -1,0 +1,24 @@
+OSC-ACADEMY Baseline v3.5.4.1
+SOURCE-CONTROLLED CONTEXTUAL HELP
+
+BASELINE PADRE
+- OSC-ACADEMY_Baseline_v3.5.3.20_VISA_MC_Conformance
+- Se partió directamente del ZIP entregado por el usuario.
+- No se utilizó un workspace intermedio como fuente.
+
+NUEVO
+- ☝️ Ayuda contextual reutilizable en POS y ATM:
+  Banda Magnética, Chip EMV, Contactless, Entrada Manual, Devolución,
+  Dispensación Parcial y Reconciliación ATM.
+- 📘 Referencia técnica en Parser y Constructor:
+  nombre oficial del DE en inglés, formato/longitud, origen,
+  resumen traducido al español y manual/página cuando existe mapeo validado.
+- Si una referencia marca+DE no está mapeada, se muestra “Referencia exacta pendiente”
+  y NO se inventa capítulo o página.
+- Nuevo public/js/help-catalog.js como componente compartido.
+
+CONTROL DE FUENTES
+- Se genera BASELINE_MANIFEST.json con hashes SHA-256.
+- Regla automática: ningún archivo del baseline padre puede desaparecer.
+- La construcción falla si detecta archivos eliminados.
+- Se registra lista de archivos añadidos, modificados y preservados.

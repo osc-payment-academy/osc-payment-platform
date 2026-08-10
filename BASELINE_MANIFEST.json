@@ -1,0 +1,403 @@
+{
+  "product": "OSC-ACADEMY",
+  "version": "3.5.4.1",
+  "parent_baseline": "OSC-ACADEMY_Baseline_v3.5.3.20_VISA_MC_Conformance",
+  "parent_source_file": "OSC-ACADEMY_Baseline_v3.5.3.20_VISA_MC_Conformance(1).zip",
+  "policy": {
+    "build_from_last_approved_zip": true,
+    "no_silent_file_deletion": true,
+    "fail_build_if_parent_file_missing": true,
+    "sha256_inventory": true
+  },
+  "parent_file_count": 92,
+  "file_count_before_manifest": 94,
+  "removed_files": [],
+  "added_files_before_manifest": [
+    "RELEASE_NOTES_v3.5.4.1_SOURCE_CONTROLLED_HELP.txt",
+    "public/js/help-catalog.js"
+  ],
+  "changed_parent_files": [
+    "public/atm.html",
+    "public/constructor.html",
+    "public/parser.html",
+    "public/pos.html"
+  ],
+  "unchanged_parent_file_count": 88,
+  "parent_inventory": {
+    ".gitignore": {
+      "size": 35,
+      "sha256": "a67b7ffbe26d49d8ba0467b76c2da61a27287a9f13942022a782082ef5f27d7b"
+    },
+    "ARCHITECTURE_PRIVATE_MODULES_v3.5.3.6.txt": {
+      "size": 805,
+      "sha256": "ce04b42b51f716aea1d8ee1c7c85d5fd8110d27c3f0e07a4ff79032d1ea40e70"
+    },
+    "DOMAIN_SETUP_v2.8.1.txt": {
+      "size": 539,
+      "sha256": "538bf11f94575fbf17b1025e67ad17c9fe17c2c7c2432b87573ecb2f4487cd90"
+    },
+    "MANUAL_MAPPING_AMEX_AEIPS_EXPRESSPAY_v3.5.3.13.txt": {
+      "size": 860,
+      "sha256": "fa753c712dea76a8cf45043df6aba8ccdbdd9f12f30561a1633eaab8f1f3bf9f"
+    },
+    "MANUAL_MAPPING_AMEX_ATM_1200_1210_v3.5.3.15.txt": {
+      "size": 1135,
+      "sha256": "9e3144e6c70e346055e8b410a7c426ad793e77bc1ddf5d4ac2af38122ea9738f"
+    },
+    "MANUAL_MAPPING_AMEX_ATM_REVERSAL_v3.5.3.16.txt": {
+      "size": 868,
+      "sha256": "567b2358bd645b9d69acc3e875b4dd8992aa90818766d4b46634f6e265351cc6"
+    },
+    "MANUAL_MAPPING_AMEX_CORE_COMPLETION_v3.5.3.19.txt": {
+      "size": 1213,
+      "sha256": "7f4cefff2a1509aa4b9fecc8bd711a478bc7f87ec44baf464fb028278b00c852"
+    },
+    "MANUAL_MAPPING_AMEX_PARSER_CONSTRUCTOR_v3.5.3.18.txt": {
+      "size": 1598,
+      "sha256": "9c4d457c08f9aaced167b9975a7ad8d5a33bba3021030f2ed88232ab0f00e115"
+    },
+    "MANUAL_MAPPING_AMEX_POS_1100_v3.5.3.10.txt": {
+      "size": 871,
+      "sha256": "0e526573e5793679451b31c246910e285e2921431bc9bba85fb6f0af234a13f3"
+    },
+    "MANUAL_MAPPING_AMEX_POS_1110_v3.5.3.11.txt": {
+      "size": 516,
+      "sha256": "502f2e9ed482d49756708ba5a11f0de7a16aded7912c061f3f9e2698122a38cc"
+    },
+    "MANUAL_MAPPING_AMEX_POS_DEBIT_v3.5.3.12.txt": {
+      "size": 1043,
+      "sha256": "c15d43e06d98fa832f09711f0231cda27861a4db6fe2e4a00f4d89e20c629da9"
+    },
+    "MANUAL_MAPPING_AMEX_REVERSAL_v3.5.3.14.txt": {
+      "size": 1197,
+      "sha256": "40df2c5564d63e88caca5120b81928cb8385da079545a3173c9e7f7152760a8f"
+    },
+    "MANUAL_MAPPING_v3.5.3.20_VISA_MC.txt": {
+      "size": 848,
+      "sha256": "c93fe070bc065749b41e68bff6e39da52db54891a4c3aa07f7eebe2785eb4529"
+    },
+    "README.md": {
+      "size": 1713,
+      "sha256": "1e7763eac8c58940ac0914010fe56ec975800edff668534220140b58220c0338"
+    },
+    "RELEASE_NOTES_BASELINE_v2.4.txt": {
+      "size": 626,
+      "sha256": "af5e401f4237d0f343bb425ac8b7056e09b17574ddd63dcff5eacc62e50ac69c"
+    },
+    "RELEASE_NOTES_v2.5.1_REINSTALL.txt": {
+      "size": 748,
+      "sha256": "1b83db7f17e33e98dde15fe9ef46abb589f3e6259001f191486e13e1f08d3bcb"
+    },
+    "RELEASE_NOTES_v2.5.2_VALORES_EXPANDIBLES.txt": {
+      "size": 640,
+      "sha256": "c349c6db9753fee6905b8fc0633e9cf1028f77924b94e7e042472b131bb15c4e"
+    },
+    "RELEASE_NOTES_v2.5_MODO_ESTUDIO_DE.txt": {
+      "size": 902,
+      "sha256": "93c2061115b3cd76676f6a2e9af3d8eda87fe6b52bfea8369a2a312a49c4b9d6"
+    },
+    "RELEASE_NOTES_v2.6_CONSOLIDADA.txt": {
+      "size": 608,
+      "sha256": "f31b5019ebe27b0b507fdf4037c652640a40144bdf509008d73474dac4e880ac"
+    },
+    "RELEASE_NOTES_v2.7_POS_CURSO_INTERACTIVO.txt": {
+      "size": 788,
+      "sha256": "6d621eac7448502ce02ecc60b5b0a6f4f31edda34e92ed98dd1ffe0d6b79205a"
+    },
+    "RELEASE_NOTES_v2.8_AJUSTES_POS_CONSTRUCTOR_CURSO.txt": {
+      "size": 657,
+      "sha256": "988a48d0e1ce887ea89fdb4545c073f0c629be9a8788e22e1aed604adb2143ea"
+    },
+    "RELEASE_NOTES_v2.9.1_FIX_SIN_PLANTILLA.txt": {
+      "size": 439,
+      "sha256": "dc8dfb30dc1a27d65515f42f34eee57045477597236bb8d49045615da7938c40"
+    },
+    "RELEASE_NOTES_v2.9_LAB_INTERACTIVO.txt": {
+      "size": 1290,
+      "sha256": "62d10b301f99bcb43e36c8290f96cb5e71e30ea98384a8eb045f8a65b0b8dfcc"
+    },
+    "RELEASE_NOTES_v3.0.1_SPRINT1_CORRECCIONES.txt": {
+      "size": 994,
+      "sha256": "d2dd5d7fd8cfbc57093420223295ecb2216a9c67a9d087b18722ccee139f84fc"
+    },
+    "RELEASE_NOTES_v3.0.2_SPRINT1_FIX_SELECTION_TICKET.txt": {
+      "size": 961,
+      "sha256": "f43433d087e001198fc50d497f1d4a5a614eeed8b25c730ecc1d07a465947d37"
+    },
+    "RELEASE_NOTES_v3.0.3_SPRINT1_HOTFIX.txt": {
+      "size": 457,
+      "sha256": "f1e0f15e5d7800ecfc52699002072a23355df02f6439b4c4191ec7e43cd82b88"
+    },
+    "RELEASE_NOTES_v3.0_MULTI_NETWORK.txt": {
+      "size": 1274,
+      "sha256": "53958843e5a558a498097290a327951b3e17769010b6701d317498c24f32ea7d"
+    },
+    "RELEASE_NOTES_v3.0_SPRINT1_POS.txt": {
+      "size": 1026,
+      "sha256": "923a1b34632aadc693b540c3a46a0be573f401043093891c4bf4144eec4abe58"
+    },
+    "RELEASE_NOTES_v3.1.1_SPRINT2_HOTFIX.txt": {
+      "size": 607,
+      "sha256": "3f8c1fa18d4fd3fa1d2c0c6c6666d3302cd077a734310a8cb853457c47c44002"
+    },
+    "RELEASE_NOTES_v3.1_SPRINT2_SWITCH.txt": {
+      "size": 1102,
+      "sha256": "9cdc20067eea04fb1067eeb181f1b671f33b918a2f182c855a39cf5eed6ecf8a"
+    },
+    "RELEASE_NOTES_v3.2_VISORS_CLEARING.txt": {
+      "size": 665,
+      "sha256": "5de5596df59860401e17606b564839b2367ff7c19a34490f134cf062e874920d"
+    },
+    "RELEASE_NOTES_v3.3.1_ATM_UI_REVERSA.txt": {
+      "size": 849,
+      "sha256": "151affbd2d4787e0b51a86cedd52c26c581f442eee86d8ff0f5b75a9dc66f018"
+    },
+    "RELEASE_NOTES_v3.3.2_ATM_REVERSA_AUTOMATICA.txt": {
+      "size": 912,
+      "sha256": "1f099b92c85d679eb41283f41a72ca5fb7952126b9abadd39d67575aa7cd1861"
+    },
+    "RELEASE_NOTES_v3.3.3_VISA_ATM_CONFORMANCE.txt": {
+      "size": 1065,
+      "sha256": "0f385ac53ad29fb36b9a7043a684d0560ccfc5f92308b858f7b5d825b8341dc4"
+    },
+    "RELEASE_NOTES_v3.3.4.1_ATM_SWITCH_PERSISTENCE.txt": {
+      "size": 789,
+      "sha256": "cbb3d25637a5c01a717930e5e744d836a6493a3816e2450765117c94580dd7af"
+    },
+    "RELEASE_NOTES_v3.3.4_ATM_RC1.txt": {
+      "size": 750,
+      "sha256": "59144c8841d5f96f90772fa08ddf756f56327e02253ef525255b925348e57722"
+    },
+    "RELEASE_NOTES_v3.3.6_ATM_RECONCILIATION_MANUAL_NAVIGATOR.txt": {
+      "size": 595,
+      "sha256": "567fe621c0cc7eaf510a4b4db290436f32c926590cdb860676ca1b7a2a5698a5"
+    },
+    "RELEASE_NOTES_v3.3_SMART_LEARNING_EBOOK_PROTEGIDO.txt": {
+      "size": 743,
+      "sha256": "e2f754cd719f447ddb09ead372bb09eaaf05183e7044a6b83b5b7bd075070de4"
+    },
+    "RELEASE_NOTES_v3.4.1_ATM_HEADER_HOTFIX.txt": {
+      "size": 417,
+      "sha256": "ff32d61e8f5e4dcc9019171c3fac7dd72ef657f1b183612a4eb73bc18177ed50"
+    },
+    "RELEASE_NOTES_v3.4.2_SHARED_PAYMENT_SELECTOR.txt": {
+      "size": 522,
+      "sha256": "46d497fe6368be81821339dad227899f60d40c46b57ac8195e3e1e367004b9e3"
+    },
+    "RELEASE_NOTES_v3.4_SWITCH_EMISOR_INCOMING_MVP.txt": {
+      "size": 753,
+      "sha256": "82199342e25d0ead781267ebb87bc43d3dd0153f890483415fc50241c12c142a"
+    },
+    "RELEASE_NOTES_v3.5.2_POS_BATCH_TICKET.txt": {
+      "size": 427,
+      "sha256": "a7881fadd48ca301a644cec133b5c7ef4f381e0acd4d37e02d56d5401ec5d6bb"
+    },
+    "RELEASE_NOTES_v3.5.3.10_AMEX_POS_1100.txt": {
+      "size": 2101,
+      "sha256": "650b117261aa6244d97593b5c7f702400b9eab35b3222e87f546cce14942e707"
+    },
+    "RELEASE_NOTES_v3.5.3.11_AMEX_POS_1110.txt": {
+      "size": 1523,
+      "sha256": "421a7405dc9f581b68dd01b0f876aa923edd6c0d9059f24e790404bbd391c3a1"
+    },
+    "RELEASE_NOTES_v3.5.3.12_AMEX_POS_DEBIT.txt": {
+      "size": 1910,
+      "sha256": "69e8c05003eb3508cbdcd897d6cdf162bf014c9ad0a6d7ca47ac985b68566140"
+    },
+    "RELEASE_NOTES_v3.5.3.13_AMEX_AEIPS_EXPRESSPAY.txt": {
+      "size": 1602,
+      "sha256": "2afa7a6117ff5a6a174182b8c82cf30ef5414502c39af9f3bee892b3cda49673"
+    },
+    "RELEASE_NOTES_v3.5.3.14_AMEX_REVERSAL_HISTORY_FIX.txt": {
+      "size": 1378,
+      "sha256": "2142f1fc0f2d93b1b2d6ddf5868a5d41a967e421b362332296e7b7c0985c0af5"
+    },
+    "RELEASE_NOTES_v3.5.3.15_AMEX_ATM_1200_1210_UI_FIX.txt": {
+      "size": 1574,
+      "sha256": "025bcd88f93654f58fef10ee5e00290f1ec88a418827da61b1800a2198f13152"
+    },
+    "RELEASE_NOTES_v3.5.3.16.txt": {
+      "size": 1054,
+      "sha256": "2bdde82c1e0727d0bcb3add692ccbe8920f33ec304bdf193e5264dfc24823eaf"
+    },
+    "RELEASE_NOTES_v3.5.3.18_AMEX_PARSER_CONSTRUCTOR.txt": {
+      "size": 1048,
+      "sha256": "09a33c8c3047a7d124af97a155c7e301fb2be851fd294b45b3014bf5b5b9a1fb"
+    },
+    "RELEASE_NOTES_v3.5.3.19_AMEX_CORE_COMPLETION.txt": {
+      "size": 2306,
+      "sha256": "c44adf66ebd67c705b9bbb40b65f5e1cedb52d7b9ee2fc27442c4e766fb94581"
+    },
+    "RELEASE_NOTES_v3.5.3.1_ATM_CAPTURE_PARTIAL_HOTFIX.txt": {
+      "size": 1060,
+      "sha256": "2378482e6df978bc134d868c59d5fad172144d367580a9d61a2db1e9e9e3c5e0"
+    },
+    "RELEASE_NOTES_v3.5.3.20_VISA_MC_CURRENT_MANUALS.txt": {
+      "size": 1570,
+      "sha256": "205860efdd80e4df45cdef766e15aaa81d72f289337d075d64b56206a9d1c840"
+    },
+    "RELEASE_NOTES_v3.5.3.2_POS_ATM_CAPTURE_VISUALS.txt": {
+      "size": 918,
+      "sha256": "ddbbb5fa7053d17f9e017fdee0ede5f7ebfd4bbd63a36baf284f5c995515bb0d"
+    },
+    "RELEASE_NOTES_v3.5.3.3_ATM_EMBEDDED_CAPTURE_STYLES.txt": {
+      "size": 902,
+      "sha256": "3a8213e4a796184521a7e0bd732dc1ef96db1f35544c9a4f186d79305c7c6177"
+    },
+    "RELEASE_NOTES_v3.5.3.4_ATM_COMPACT_HEADER_MC_PARTIAL_REVERSAL.txt": {
+      "size": 1305,
+      "sha256": "caed4106471073b4a7f42dbbdb2d455711c95a331c3560dce05ca0546c67bb75"
+    },
+    "RELEASE_NOTES_v3.5.3.5_ATM_SMS_NETWORK_PROFILE.txt": {
+      "size": 1046,
+      "sha256": "3722963a432dc9306e10f3bebc6b969290fd1abee23140830d790f307203d895"
+    },
+    "RELEASE_NOTES_v3.5.3.6_PRIVATE_MODULES_ONDEMAND.txt": {
+      "size": 415,
+      "sha256": "5e8d8fe89985fcaf88a5f9b726d84029ca92109962c62e361f896eb5f90fb551"
+    },
+    "RELEASE_NOTES_v3.5.3.7_ATM_PERSISTENT_HISTORY.txt": {
+      "size": 1461,
+      "sha256": "8093f7ba46d4af4e008bca1b3f943497a01ab0042dd9cbaa82e53c607d73d275"
+    },
+    "RELEASE_NOTES_v3.5.3.9_CORE_PILOT_REFUND.txt": {
+      "size": 1634,
+      "sha256": "5e486c33825889048a27621767ef6719bce8d24ce338dddbbdb6a553bef8f657"
+    },
+    "RELEASE_NOTES_v3.5.3_ATM_CAPTURE_CASSETTES_PARTIAL_PARSER.txt": {
+      "size": 1261,
+      "sha256": "0d5b1f95714f7e2eb685256bd930aa9fed3bfcaffd0fe6d40ab929a87a439001"
+    },
+    "package.json": {
+      "size": 211,
+      "sha256": "ecfeed889964433dc2a757b0c9ec5f0d2f3f22fcead57a95b3397a39b63411f3"
+    },
+    "public/Plantilla_Permitidos.csv": {
+      "size": 265,
+      "sha256": "2250148dbbd0d717b54701f2d6a33b58fac6dcc940ccc87a599de9f7dcf03f59"
+    },
+    "public/_headers": {
+      "size": 128,
+      "sha256": "50235084f46ee7e4e36e8c2af728d927e2a072c9e19427dbb9de616ce819e63a"
+    },
+    "public/atm.html": {
+      "size": 127609,
+      "sha256": "4bf9984e17050bd5a8f246c780c166785784135de3706c0d03c5cf558c00bfde"
+    },
+    "public/compensacion.html": {
+      "size": 22994,
+      "sha256": "1f3b54cd18f376f178e3d8fda15bcdf3cae4d3d4a078da0cbb4fc3b848474603"
+    },
+    "public/compensacion_mastercard.html": {
+      "size": 11713,
+      "sha256": "dada24b924fff8672768924a5215f55d91b40ebba25d88d8f31e3bc7cf7017b2"
+    },
+    "public/constructor.html": {
+      "size": 61255,
+      "sha256": "8311e29c5144a77c7d65b56bed20e73d9ed85997f3379fb2cd8198ad183fd809"
+    },
+    "public/css/app.css": {
+      "size": 43036,
+      "sha256": "e1d10bd2d86ee8225a986fe59410f6ac66a84dc69320f25651e0d830158bea6f"
+    },
+    "public/cuenta_cliente.html": {
+      "size": 3391,
+      "sha256": "f92ab502b4ad98a19149252ce6a4ff99a4806ec9cf414035a8e07620b9ef9cf9"
+    },
+    "public/curso_interactivo.html": {
+      "size": 24359,
+      "sha256": "4160de9a72fd814a04c4970d57f0dc73fd3b077172096ee439e21537bbfd5da3"
+    },
+    "public/documentacion.html": {
+      "size": 2019,
+      "sha256": "1aed07ee94fcb59776ad53604f6102627e09b050bdb598ae8ed27ad053f211ef"
+    },
+    "public/ebook.html": {
+      "size": 3300,
+      "sha256": "0e4b88cac26515a0933ef51987ae3161458516b010cb26cdd9a0ba825bd08c06"
+    },
+    "public/index.html": {
+      "size": 13573,
+      "sha256": "19fcf808802135edaa1185dfe1746ea86c92895738455a81f966259c68cb883b"
+    },
+    "public/js/app.js": {
+      "size": 96748,
+      "sha256": "99b21392398909392297c989557f3d291ce4c795dedc08c317bf35d05158b906"
+    },
+    "public/js/issuer-store.js": {
+      "size": 2636,
+      "sha256": "56fa6af98fc74a89c1bbe81437c1e3f26e63380304f591a2550d2a7e8da0e15b"
+    },
+    "public/js/network-profiles.js": {
+      "size": 1701,
+      "sha256": "324c060023e8fe20513d81e96b2a31d6294d69fc0595c3a7680fc80b21b00bde"
+    },
+    "public/js/permissions.js": {
+      "size": 1303,
+      "sha256": "4fae20a92ee4f29a3e7951af99263493796050acec65ea04b3c2674e1143040c"
+    },
+    "public/js/switch-store.js": {
+      "size": 5852,
+      "sha256": "0539557a397776415e717b7c35c6010f3bcc19cf9db48b0701ac89d4f062a388"
+    },
+    "public/js/tenant-config.js": {
+      "size": 776,
+      "sha256": "317f1033ffd0cbd5cf47a419a5711c35c046e08f2d955861ab21e2447a32780e"
+    },
+    "public/manuals/full-service-atm-online-messages-tech-specs.pdf": {
+      "size": 10906189,
+      "sha256": "97a1b71ca3cd1f700dd40e8f24c090adc87b7eb804f0ad12659d512332f4a687"
+    },
+    "public/manuals/full-service-pos-online-messages-tech-specs.pdf": {
+      "size": 22223897,
+      "sha256": "04ca72a3b7ca5dc004178263388ce06d806cc7abe2935fcd257c0430f16b0b51"
+    },
+    "public/mastercard_iso.html": {
+      "size": 13751,
+      "sha256": "3b9f8219d37162a2305633a5b9440e1dfb0be449c06091728df82c4d4cf5b344"
+    },
+    "public/ondemand_lab.html": {
+      "size": 3889,
+      "sha256": "6737fbba055a97e965f3915f4d4d23b146285d08e3358569cf979e7f7211a1f1"
+    },
+    "public/parser.html": {
+      "size": 79285,
+      "sha256": "8505986801ac1f9e12d9c87750fc501ee1f4c4f859efec50f3daf8df0ad77442"
+    },
+    "public/pos.html": {
+      "size": 25214,
+      "sha256": "53f0ecd18657bf10e1d4a7a7034befe89cc407b7a7da9bfd2ddb8a786ea0043e"
+    },
+    "public/production_diagnostic.html": {
+      "size": 3671,
+      "sha256": "e4dd55cb998e23124feab17382ddb21e2dc71238c9a0606713b337708374058d"
+    },
+    "public/research.html": {
+      "size": 4111,
+      "sha256": "b647e945214c358b10f73e113242ec7b2e8d23ff7492b129caebfb14f51ac536"
+    },
+    "public/switch.html": {
+      "size": 22332,
+      "sha256": "d8325aa2ec3ac94cdb33564fea72a34e29e1a0472d7231ab891f3434dfff75e5"
+    },
+    "public/switch_emisor.html": {
+      "size": 11885,
+      "sha256": "43e61c4f2c063404c33a01dd2f224d1aa82578b60575dc42aca946d8932e7c00"
+    },
+    "schema.sql": {
+      "size": 1831,
+      "sha256": "87d59344e95fe2d5cf9241ab0a405b0d029476474f6e17341484818882f89e69"
+    },
+    "wrangler.jsonc": {
+      "size": 419,
+      "sha256": "14411ab120ba31d0a89a5cb4695bf3a3fb33d6dadef47a92c425eed1aab43b4e"
+    }
+  },
+  "final_file_count": 95,
+  "manifest_sha256": "408c4fe18cd10c40a525977bdaad486cbf2fa6ac3140a42b15c13231ba75eb94",
+  "added_files_final": [
+    "BASELINE_MANIFEST.json",
+    "RELEASE_NOTES_v3.5.4.1_SOURCE_CONTROLLED_HELP.txt",
+    "public/js/help-catalog.js"
+  ]
+}
