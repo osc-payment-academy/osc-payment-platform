@@ -1,5 +1,5 @@
 
-/* OSC Academy v3.5.4.1 · Ayuda contextual + referencia técnica
+/* OSC Academy v3.5.4.2 · Ayuda contextual + referencia técnica
    Baseline padre: v3.5.3.20 VISA/MC Conformance */
 (() => {
   const contextual = {
@@ -116,7 +116,9 @@
     if(document.getElementById('oscHelpModal')) return;
     const style=document.createElement('style');
     style.textContent=`
-      .osc-help-wrap{display:inline-flex;align-items:center;gap:5px}
+      .osc-help-wrap{position:relative;display:block;min-width:0}
+      .osc-help-wrap>.osc-help-trigger{position:absolute;right:5px;top:5px;z-index:30;margin:0;border:1px solid #31516d;background:#071725;color:#9dd7ff;border-radius:999px;padding:4px 5px;cursor:pointer;font-size:11px;line-height:1;box-shadow:0 2px 8px rgba(0,0,0,.28)}
+      .osc-help-wrap>[data-entry],.osc-help-wrap>[data-atm-entry]{width:100%;height:100%}
       .osc-help-trigger{margin-left:5px;border:1px solid #31516d;background:#0b2132;color:#9dd7ff;border-radius:7px;padding:5px 7px;cursor:pointer;font-size:12px;line-height:1}
       .osc-help-trigger.context{color:#f4c66a}.osc-help-trigger.manual{color:#76c7ff}
       .osc-help-trigger:hover{border-color:#4caeff;color:#fff}
@@ -180,11 +182,34 @@
       <p style="margin-top:10px;color:#86a4b8">El nombre oficial se conserva en inglés; la explicación se presenta traducida/resumida con fines educativos.</p>`);
   }
   function attachHelpAfter(el,key){
-    if(!el || el.parentElement?.querySelector(`.osc-help-trigger[data-help-key="${key}"]`)) return;
-    const b=document.createElement('button');
-    b.type='button'; b.className='osc-help-trigger context'; b.dataset.helpKey=key; b.textContent='☝️'; b.title='Ayuda contextual';
-    b.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();openContext(key)});
-    el.insertAdjacentElement('afterend',b);
+    if(!el) return;
+    let wrap=el.parentElement;
+    if(wrap?.classList?.contains('osc-help-wrap') && wrap.querySelector(`.osc-help-trigger[data-help-key="${key}"]`)) return;
+
+    // En los selectores de captura, el CSS del Core aplica estilos a TODOS los <button>.
+    // Por eso la ayuda usa <span role="button"> y comparte una envoltura con el botón original.
+    if(el.matches?.('[data-entry],[data-atm-entry]')){
+      wrap=document.createElement('span');
+      wrap.className='osc-help-wrap';
+      el.parentNode.insertBefore(wrap,el);
+      wrap.appendChild(el);
+    } else {
+      wrap=el.parentElement;
+    }
+
+    const b=document.createElement('span');
+    b.className='osc-help-trigger context';
+    b.dataset.helpKey=key;
+    b.textContent='☝️';
+    b.title='Abrir ayuda contextual';
+    b.setAttribute('role','button');
+    b.setAttribute('tabindex','0');
+    b.setAttribute('aria-label',`Abrir ayuda: ${key}`);
+    const open=e=>{e.preventDefault();e.stopPropagation();openContext(key)};
+    b.addEventListener('click',open);
+    b.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){open(e)}});
+    if(el.matches?.('[data-entry],[data-atm-entry]')) wrap.appendChild(b);
+    else el.insertAdjacentElement('afterend',b);
   }
   function decorateContext(root=document){
     [

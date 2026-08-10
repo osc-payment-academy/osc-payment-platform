@@ -1,15 +1,15 @@
 {
   "product": "OSC-ACADEMY",
-  "version": "3.5.4.1",
-  "parent_baseline": "OSC-ACADEMY_Baseline_v3.5.3.20_VISA_MC_Conformance",
-  "parent_source_file": "OSC-ACADEMY_Baseline_v3.5.3.20_VISA_MC_Conformance(1).zip",
+  "version": "3.5.4.2",
+  "parent_baseline": "OSC-ACADEMY_Baseline_v3.5.4.1_SourceControlled_ContextualHelp",
+  "parent_source_file": "OSC-ACADEMY_Baseline_v3.5.4.1_SourceControlled_ContextualHelp.zip",
   "policy": {
     "build_from_last_approved_zip": true,
     "no_silent_file_deletion": true,
     "fail_build_if_parent_file_missing": true,
     "sha256_inventory": true
   },
-  "parent_file_count": 92,
+  "parent_file_count": 95,
   "file_count_before_manifest": 94,
   "removed_files": [],
   "added_files_before_manifest": [
@@ -18,8 +18,7 @@
   ],
   "changed_parent_files": [
     "public/atm.html",
-    "public/constructor.html",
-    "public/parser.html",
+    "public/js/help-catalog.js",
     "public/pos.html"
   ],
   "unchanged_parent_file_count": 88,
@@ -31,6 +30,10 @@
     "ARCHITECTURE_PRIVATE_MODULES_v3.5.3.6.txt": {
       "size": 805,
       "sha256": "ce04b42b51f716aea1d8ee1c7c85d5fd8110d27c3f0e07a4ff79032d1ea40e70"
+    },
+    "BASELINE_MANIFEST.json": {
+      "size": 15496,
+      "sha256": "8e784f023bc8b2ec74291e426f61abde45c5c70e33d619799663d3d59e5e0a2a"
     },
     "DOMAIN_SETUP_v2.8.1.txt": {
       "size": 539,
@@ -268,6 +271,10 @@
       "size": 1261,
       "sha256": "0d5b1f95714f7e2eb685256bd930aa9fed3bfcaffd0fe6d40ab929a87a439001"
     },
+    "RELEASE_NOTES_v3.5.4.1_SOURCE_CONTROLLED_HELP.txt": {
+      "size": 1089,
+      "sha256": "d2fd63b081f137a5e702f24001322f81cdeb320d3c75803a374a7ad3e715a142"
+    },
     "package.json": {
       "size": 211,
       "sha256": "ecfeed889964433dc2a757b0c9ec5f0d2f3f22fcead57a95b3397a39b63411f3"
@@ -281,8 +288,8 @@
       "sha256": "50235084f46ee7e4e36e8c2af728d927e2a072c9e19427dbb9de616ce819e63a"
     },
     "public/atm.html": {
-      "size": 127609,
-      "sha256": "4bf9984e17050bd5a8f246c780c166785784135de3706c0d03c5cf558c00bfde"
+      "size": 127652,
+      "sha256": "772d98df4d8672698f411b1d5d6c30457822fd6790a90570c54ee5561861f90c"
     },
     "public/compensacion.html": {
       "size": 22994,
@@ -293,8 +300,8 @@
       "sha256": "dada24b924fff8672768924a5215f55d91b40ebba25d88d8f31e3bc7cf7017b2"
     },
     "public/constructor.html": {
-      "size": 61255,
-      "sha256": "8311e29c5144a77c7d65b56bed20e73d9ed85997f3379fb2cd8198ad183fd809"
+      "size": 61683,
+      "sha256": "326032122f3750631a56aeceedf12b73804bbbbb0550b67e232874a3d3141e73"
     },
     "public/css/app.css": {
       "size": 43036,
@@ -323,6 +330,10 @@
     "public/js/app.js": {
       "size": 96748,
       "sha256": "99b21392398909392297c989557f3d291ce4c795dedc08c317bf35d05158b906"
+    },
+    "public/js/help-catalog.js": {
+      "size": 15708,
+      "sha256": "16afa4f8e61644eb87225eaa7dcca3aeea16dc92e128322294b585f48f80fe61"
     },
     "public/js/issuer-store.js": {
       "size": 2636,
@@ -361,12 +372,12 @@
       "sha256": "6737fbba055a97e965f3915f4d4d23b146285d08e3358569cf979e7f7211a1f1"
     },
     "public/parser.html": {
-      "size": 79285,
-      "sha256": "8505986801ac1f9e12d9c87750fc501ee1f4c4f859efec50f3daf8df0ad77442"
+      "size": 79653,
+      "sha256": "343ea73af65e472805980dcfb722cc7919c06970dc14be88f98988f331b533d9"
     },
     "public/pos.html": {
-      "size": 25214,
-      "sha256": "53f0ecd18657bf10e1d4a7a7034befe89cc407b7a7da9bfd2ddb8a786ea0043e"
+      "size": 25257,
+      "sha256": "7417bc47076deb1ef020d30160516e779e368f54ffaebc1dda13451837dde758"
     },
     "public/production_diagnostic.html": {
       "size": 3671,
@@ -393,11 +404,9 @@
       "sha256": "14411ab120ba31d0a89a5cb4695bf3a3fb33d6dadef47a92c425eed1aab43b4e"
     }
   },
-  "final_file_count": 95,
+  "final_file_count": 96,
   "manifest_sha256": "408c4fe18cd10c40a525977bdaad486cbf2fa6ac3140a42b15c13231ba75eb94",
   "added_files_final": [
-    "BASELINE_MANIFEST.json",
-    "RELEASE_NOTES_v3.5.4.1_SOURCE_CONTROLLED_HELP.txt",
-    "public/js/help-catalog.js"
+    "RELEASE_NOTES_v3.5.4.2_CONTEXTUAL_HELP_CLICK_FIX.txt"
   ]
 }

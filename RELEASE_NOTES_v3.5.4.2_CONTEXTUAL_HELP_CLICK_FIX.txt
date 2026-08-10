@@ -1,0 +1,19 @@
+OSC-ACADEMY Baseline v3.5.4.2
+CONTEXTUAL HELP CLICK FIX
+
+BASELINE PADRE
+- v3.5.4.1 SourceControlled ContextualHelp
+
+CORRECCIÓN
+- La manito ☝️ de los modos de captura ahora abre correctamente el popup.
+- Causa: el control de ayuda se había insertado como <button> dentro de la grilla de captura.
+  El CSS histórico de POS/ATM aplica reglas !important a todos los botones de esa grilla,
+  interfiriendo con el control nuevo.
+- Solución: cada modo de captura conserva su botón original y se envuelve en un contenedor.
+  La ayuda se renderiza como control independiente <span role="button"> superpuesto,
+  con click y teclado (Enter/Espacio).
+- No se modificó la lógica transaccional ISO8583.
+
+CONTROL DE FUENTE
+- Ningún archivo de la baseline padre fue eliminado.
+- Build validado por inventario SHA-256.
