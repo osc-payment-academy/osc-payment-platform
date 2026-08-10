@@ -1,15 +1,15 @@
 {
   "product": "OSC-ACADEMY",
-  "version": "3.5.4.3",
-  "parent_baseline": "OSC-ACADEMY_Baseline_v3.5.4.2_ContextualHelp_ClickFix",
-  "parent_source_file": "OSC-ACADEMY_Baseline_v3.5.4.2_ContextualHelp_ClickFix.zip",
+  "version": "3.5.4.4",
+  "parent_baseline": "OSC-ACADEMY_Baseline_v3.5.4.3_HoverHelp_WhitePopups",
+  "parent_source_file": "OSC-ACADEMY_Baseline_v3.5.4.3_HoverHelp_WhitePopups.zip",
   "policy": {
     "build_from_last_approved_zip": true,
     "no_silent_file_deletion": true,
     "fail_build_if_parent_file_missing": true,
     "sha256_inventory": true
   },
-  "parent_file_count": 96,
+  "parent_file_count": 97,
   "file_count_before_manifest": 94,
   "removed_files": [],
   "added_files_before_manifest": [
@@ -18,6 +18,8 @@
   ],
   "changed_parent_files": [
     "public/atm.html",
+    "public/constructor.html",
+    "public/js/app.js",
     "public/js/help-catalog.js",
     "public/pos.html"
   ],
@@ -32,8 +34,8 @@
       "sha256": "ce04b42b51f716aea1d8ee1c7c85d5fd8110d27c3f0e07a4ff79032d1ea40e70"
     },
     "BASELINE_MANIFEST.json": {
-      "size": 15889,
-      "sha256": "98f2549c62ea1545334c5a232c72cb054d29dd88cd078542e10ba80643183e44"
+      "size": 16042,
+      "sha256": "1ef3fb733c848dd58b3dbcd8d7178d9f6211bd1aaf2e4c8e58d8affd24debcf8"
     },
     "DOMAIN_SETUP_v2.8.1.txt": {
       "size": 539,
@@ -279,6 +281,10 @@
       "size": 814,
       "sha256": "2280a2503c28d0f41693f47a6e98f5f62f062a7acf1e7b5a7c58d6aa01b09367"
     },
+    "RELEASE_NOTES_v3.5.4.3_HOVER_HELP_WHITE_POPUPS.txt": {
+      "size": 1130,
+      "sha256": "704baa5fa2987e07f58e03cf0ffe86369cba8572662f1594c4570f6ec36e7949"
+    },
     "package.json": {
       "size": 211,
       "sha256": "ecfeed889964433dc2a757b0c9ec5f0d2f3f22fcead57a95b3397a39b63411f3"
@@ -292,8 +298,8 @@
       "sha256": "50235084f46ee7e4e36e8c2af728d927e2a072c9e19427dbb9de616ce819e63a"
     },
     "public/atm.html": {
-      "size": 127647,
-      "sha256": "84c89baf9f6501bb4d5f026320c21e20a42fa50fecdfb6ff5daa51329113261d"
+      "size": 127653,
+      "sha256": "76d5ba79889e2d4be658e4cb287167e41a7a34bfcee04c7499a7973824b10eae"
     },
     "public/compensacion.html": {
       "size": 22994,
@@ -336,8 +342,8 @@
       "sha256": "99b21392398909392297c989557f3d291ce4c795dedc08c317bf35d05158b906"
     },
     "public/js/help-catalog.js": {
-      "size": 16899,
-      "sha256": "c75b1bac1bf39c65230ecc70a9ca939d279c29dde25996a8198144cd92d8d614"
+      "size": 18152,
+      "sha256": "98180422534312ea7da29012c7f778487220068289ae14d1fd2302126bbf54da"
     },
     "public/js/issuer-store.js": {
       "size": 2636,
@@ -380,8 +386,8 @@
       "sha256": "343ea73af65e472805980dcfb722cc7919c06970dc14be88f98988f331b533d9"
     },
     "public/pos.html": {
-      "size": 25252,
-      "sha256": "64d09a38a291b2fcc0181e3981c16d9db05e40c81f7451c77e1af2de976d8eb2"
+      "size": 25258,
+      "sha256": "044b2e24f07e42b4921443c07993abc6a74bd8507c1906e979b4016854ad82eb"
     },
     "public/production_diagnostic.html": {
       "size": 3671,
@@ -408,9 +414,9 @@
       "sha256": "14411ab120ba31d0a89a5cb4695bf3a3fb33d6dadef47a92c425eed1aab43b4e"
     }
   },
-  "final_file_count": 97,
+  "final_file_count": 98,
   "manifest_sha256": "408c4fe18cd10c40a525977bdaad486cbf2fa6ac3140a42b15c13231ba75eb94",
   "added_files_final": [
-    "RELEASE_NOTES_v3.5.4.3_HOVER_HELP_WHITE_POPUPS.txt"
+    "RELEASE_NOTES_v3.5.4.4_POS_INIT_CONSTRUCTOR_MANUAL_HELP.txt"
   ]
 }

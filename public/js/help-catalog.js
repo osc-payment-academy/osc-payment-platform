@@ -1,5 +1,5 @@
 
-/* OSC Academy v3.5.4.3 · Ayuda contextual + referencia técnica
+/* OSC Academy v3.5.4.4 · Ayuda contextual + referencia técnica
    Baseline padre: v3.5.3.20 VISA/MC Conformance */
 (() => {
   const contextual = {
@@ -16,7 +16,7 @@
     },
     chip: {
       title:'Chip EMV',
-      summary:'El chip realiza una interacción EMV entre tarjeta y terminal y genera información dinámica utilizada durante la autorización.',
+      summary:'El chip realiza una interacción EMV (Europay, Mastercard y Visa) entre tarjeta y terminal y genera información dinámica utilizada durante la autorización.',
       bullets:[
         '<b>DE22:</b> identifica el modo de captura.',
         '<b>DE55:</b> puede transportar datos ICC/EMV en TLV.',

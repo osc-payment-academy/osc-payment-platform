@@ -1,0 +1,34 @@
+OSC-ACADEMY Baseline v3.5.4.4
+POS INIT + CONSTRUCTOR MANUAL HELP
+
+BASELINE PADRE
+- v3.5.4.3 HoverHelp WhitePopups
+
+CAMBIOS
+1. AYUDA CONTEXTUAL
+- Chip EMV ahora explica el significado de las siglas:
+  EMV = Europay, Mastercard y Visa.
+
+2. POS — BUG DE INGRESO
+- El historial POS continúa persistido y puede consultarse.
+- Al ingresar por primera vez a POS, el panel técnico NO selecciona automáticamente
+  la última transacción del historial.
+- MTI, Bitmap, bits y Data Elements arrancan apagados / vacíos.
+- El alumno ve una trama únicamente cuando genera una nueva operación
+  o selecciona explícitamente una fila del historial.
+- Se alinea el comportamiento inicial de POS con ATM.
+
+3. CONSTRUCTOR — DE3
+- Se eliminan los desplegables “Valores posibles” de los tres bloques visuales del DE3.
+- En su lugar se muestra un único acceso:
+  ☝ Ver DE3 en el manual.
+- El popup técnico usa el mismo componente blanco de ayuda.
+- Para conservar la capacidad de construcción, DE3 se puede editar directamente
+  como valor N6 mediante un campo de entrada y botón Aplicar.
+- Se corrige además un script-tag heredado que había quedado mal formado
+  alrededor de network-profiles.js / help-catalog.js.
+
+CONTROL DE FUENTES
+- Build generado exclusivamente sobre v3.5.4.3.
+- Ningún archivo del baseline padre eliminado.
+- Inventario SHA-256 actualizado.

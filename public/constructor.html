@@ -71,6 +71,14 @@ select:focus,input:focus,textarea:focus{border-color:#2f83ff;box-shadow:0 0 0 2p
 @media(max-width:930px){.lab-grid{grid-template-columns:1fr}.study-bitmap{grid-template-columns:repeat(8,1fr)}.study-info-grid{grid-template-columns:1fr}.lab-head{grid-template-columns:1fr}.live-monitor{position:static}.study-card dl{grid-template-columns:110px 1fr}}
 
 .network-constructor{display:grid;grid-template-columns:210px 1fr;gap:8px;margin:8px 0 12px;padding:9px;border:1px solid #234a6b;background:#0a1b2b;border-radius:8px}.network-constructor select{padding:8px}.network-constructor-badge{display:flex;align-items:center;gap:7px;font-size:.6rem}.network-constructor-badge small{color:#90a5b8}.osc-network-dot{width:9px;height:9px;border-radius:50%;display:inline-block}
+
+.study-manual-access{display:flex;justify-content:center;margin-top:8px}
+.study-manual-btn{border:1px solid #78bde8;background:#f8fcff;color:#145f8c;border-radius:8px;padding:7px 11px;cursor:pointer;font-size:.66rem;font-weight:700}
+.study-manual-btn:hover{background:#eaf7ff;border-color:#2f83ff}
+.study-direct-editor{display:flex;align-items:end;gap:8px;margin-top:10px}
+.study-direct-editor label{flex:1;color:#8fa5b8;font-size:.6rem}
+.study-direct-editor input{margin-top:5px}
+
 </style>
 </head>
 <body>
@@ -244,17 +252,16 @@ select:focus,input:focus,textarea:focus{border-color:#2f83ff;box-shadow:0 0 0 2p
   </main>
 </div>
 
-<script src="js/network-profiles.js">  document.addEventListener('click',e=>{
-    const btn=e.target.closest?.('[data-manual-de]');
-    if(!btn)return;
-    e.preventDefault();e.stopPropagation();
-    OSCHelp.openTechnical(Number(btn.dataset.manualDe),document.getElementById('constructorNetworkSelect')?.value||'visa');
-  });
-
-</script>
+<script src="js/network-profiles.js"></script>
 <script src="js/help-catalog.js"></script>
 <script>
 (() => {
+  document.addEventListener('click',e=>{
+    const manualBtn=e.target.closest?.('[data-manual-de]');
+    if(!manualBtn)return;
+    e.preventDefault();e.stopPropagation();
+    OSCHelp.openTechnical(Number(manualBtn.dataset.manualDe),document.getElementById('constructorNetworkSelect')?.value||'visa');
+  });
   const FIELD_DEFS = [
     {de:2,name:'Primary Account Number (PAN)',fmt:'LLVAR N',max:19,desc:'Número de tarjeta. Se recomienda usar valores ficticios o enmascarados.'},
     {de:3,name:'Processing Code',fmt:'N6',len:6,desc:'Define el tipo de operación y las cuentas origen/destino.'},
@@ -624,13 +631,30 @@ ${raw()}`,e.target));
   function serialize(){return [...state.selected].filter(de=>de!==1).sort((a,b)=>a-b).map(de=>{const d=def(de),v=String(state.values[de]??meta(de).example??'');return prefix(d,v)+v}).join('')}
   function annotated(){return [state.mti,bitmapHex(),...[...state.selected].filter(de=>de!==1).sort((a,b)=>a-b).map(de=>`DE${de}=${prefix(def(de),String(state.values[de]??meta(de).example??''))}${state.values[de]??meta(de).example??''}`)].join(' | ')}
   function raw(){return state.mti+bitmapHex()+serialize()}
-  function block(label,value,help,type='part',values=[]){const rows=values.map(v=>`<option value="${v[0]}">${v[0]} · ${v[1]}</option>`).join('');return `<div class="struct-item"><div class="struct-block struct-${type}"><small>${label}</small><strong>${value}</strong><em>${help}</em></div>${rows?`<details class="struct-values"><summary>Valores posibles</summary><div class="struct-values-list"><select data-component="${label}" class="component-select">${rows}</select></div></details>`:''}</div>`}
+  function block(label,value,help,type='part',values=[],showValues=true){const rows=values.map(v=>`<option value="${v[0]}">${v[0]} · ${v[1]}</option>`).join('');return `<div class="struct-item"><div class="struct-block struct-${type}"><small>${label}</small><strong>${value}</strong><em>${help}</em></div>${showValues&&rows?`<details class="struct-values"><summary>Valores posibles</summary><div class="struct-values-list"><select data-component="${label}" class="component-select">${rows}</select></div></details>`:''}</div>`}
   function renderBits(){const make=(start,end,target)=>{target.innerHTML='';for(let de=start;de<=end;de++){const b=document.createElement('button');b.type='button';b.className='study-bit'+(de===1?' secondary-trigger':'')+(state.selected.has(de)?' selected':'')+(state.focused===de?' focused':'');b.textContent=de;b.title=`DE${de} · ${def(de).name}`;b.onclick=()=>toggleField(de);target.appendChild(b)}};make(1,64,primary);make(65,128,secondary);$('secondaryWrap').classList.toggle('hidden',!state.selected.has(1));}
   function toggleField(de){if(de===1){if(state.selected.has(1)){state.selected.delete(1);[...state.selected].filter(x=>x>64).forEach(x=>{state.selected.delete(x);delete state.values[x]})}else state.selected.add(1);state.focused=1;renderAll();return}if(state.selected.has(de)){state.focused=de;showField(de)}else{state.selected.add(de);state.values[de]=details[de]?.example||defaultValue(def(de));state.focused=de;renderAll();showField(de)}}
   function defaultValue(d){if(d.len)return '0'.repeat(Math.min(d.len,42));if(d.max)return '0'.repeat(Math.min(d.max,16));return 'VALOR'}
   function showField(de){if(de===1){$('studyEmpty').classList.remove('hidden');$('studyDetail').classList.add('hidden');return}const d=def(de),m=meta(de);$('studyEmpty').classList.add('hidden');$('studyDetail').classList.remove('hidden');$('studyDeBadge').textContent=`DE${de}`;$('studyName').textContent=d.name;$('studyShort').textContent=d.desc||`Estudio visual de ${d.name}.`;renderStructure(de,m);$('studyInfo').innerHTML=`<dt>Número</dt><dd>DE${de}</dd><dt>Nombre</dt><dd>${d.name}</dd><dt>Formato</dt><dd>${d.fmt||'Según perfil'}</dd><dt>Longitud</dt><dd>${d.len?d.len:(d.max?'Hasta '+d.max:'Según perfil')}</dd><dt>Aprovisiona</dt><dd>${m.origin}</dd><dt>Mensajes habituales</dt><dd>${m.messages}</dd>`;$('studyLearning').innerHTML=`<div class="study-learning-item"><strong>¿QUÉ REPRESENTA?</strong><p>${d.desc||'El significado depende del perfil.'}</p></div><div class="study-learning-item"><strong>SEGURIDAD</strong><p>${m.security||'Aplicar enmascaramiento y controles según el dato.'}</p></div><div class="study-learning-item"><strong>IMPACTO EN LA TRAMA</strong><p>Al completar este campo, su bit queda encendido y el valor se agrega en orden ascendente de Data Element.</p></div>`;renderEditor(de,d,m)}
-  function renderStructure(de,m){let parts=m.parts.map(x=>[...x]);if(de===3){const v=String(state.values[3]||'000000').padEnd(6,'0');parts[0][1]=v.slice(0,2);parts[1][1]=v.slice(2,4);parts[2][1]=v.slice(4,6)}else if(parts.length){const d=def(de),v=String(state.values[de]??m.example??'');parts.forEach(p=>{if(p[0]==='VALOR'||p[0].includes('IMPORTE')||p[0].includes('STAN')||p[0].includes('CÓDIGO'))p[1]=v;if(p[0]==='LONGITUD')p[1]=String(v.length).padStart((d.fmt||'').startsWith('LLLVAR')?3:2,'0')})}$('structureDiagram').innerHTML=parts.map(p=>block(p[0],p[1],p[2],p[3],p[4]||[])).join('');document.querySelectorAll('.component-select').forEach(sel=>{const label=sel.dataset.component;if(de===3){const idx=label==='TIPO DE TRANSACCIÓN'?0:label==='CUENTA ORIGEN'?1:2;sel.value=String(state.values[3]||'000000').slice(idx*2,idx*2+2);sel.onchange=()=>{let v=String(state.values[3]||'000000').padEnd(6,'0').split('');v.splice(idx*2,2,...sel.value.split(''));state.values[3]=v.join('');renderAll();showField(3)}}else if(de===39){sel.value=state.values[39]||'00';sel.onchange=()=>{state.values[39]=sel.value;renderAll();showField(39)}}})}
-  function renderEditor(de,d,m){const isDE3=de===3||de===39;$('studyFieldEditor').innerHTML=isDE3?'<div style="color:#8fa5b8;font-size:.58rem">Usá los desplegables de Valores posibles para modificar el campo.</div>':`<label for="studyValueInput">Valor del campo</label><input id="studyValueInput" value="${String(state.values[de]??m.example??'').replaceAll('&','&amp;').replaceAll('"','&quot;')}"><div class="field-actions"><button id="applyStudyValue" class="primary">Aplicar valor</button></div>`;if(!isDE3){$('applyStudyValue').onclick=()=>{state.values[de]=$('studyValueInput').value;renderAll();showField(de)}}}
+  function renderStructure(de,m){let parts=m.parts.map(x=>[...x]);if(de===3){const v=String(state.values[3]||'000000').padEnd(6,'0');parts[0][1]=v.slice(0,2);parts[1][1]=v.slice(2,4);parts[2][1]=v.slice(4,6)}else if(parts.length){const d=def(de),v=String(state.values[de]??m.example??'');parts.forEach(p=>{if(p[0]==='VALOR'||p[0].includes('IMPORTE')||p[0].includes('STAN')||p[0].includes('CÓDIGO'))p[1]=v;if(p[0]==='LONGITUD')p[1]=String(v.length).padStart((d.fmt||'').startsWith('LLLVAR')?3:2,'0')})}
+    $('structureDiagram').innerHTML=parts.map(p=>block(p[0],p[1],p[2],p[3],p[4]||[],de!==3)).join('')+(de===3?`<div class="study-manual-access"><button type="button" id="studyManualAccess" class="study-manual-btn">☝ Ver DE3 en el manual</button></div>`:'');
+    if(de===3){
+      $('studyManualAccess')?.addEventListener('click',()=>OSCHelp.openTechnical(3,document.getElementById('constructorNetworkSelect')?.value||'visa'));
+    }
+    document.querySelectorAll('.component-select').forEach(sel=>{const label=sel.dataset.component;if(de===3){const idx=label==='TIPO DE TRANSACCIÓN'?0:label==='CUENTA ORIGEN'?1:2;sel.value=String(state.values[3]||'000000').slice(idx*2,idx*2+2);sel.onchange=()=>{let v=String(state.values[3]||'000000').padEnd(6,'0').split('');v.splice(idx*2,2,...sel.value.split(''));state.values[3]=v.join('');renderAll();showField(3)}}else if(de===39){sel.value=state.values[39]||'00';sel.onchange=()=>{state.values[39]=sel.value;renderAll();showField(39)}}})}
+  function renderEditor(de,d,m){
+    if(de===3){
+      $('studyFieldEditor').innerHTML=`<div class="study-direct-editor"><label for="studyValueInput">Valor DE3 (6 dígitos)<input id="studyValueInput" maxlength="6" inputmode="numeric" value="${String(state.values[de]??m.example??'000000').replaceAll('&','&amp;').replaceAll('"','&quot;')}"></label><button id="applyStudyValue" class="primary">Aplicar</button></div>`;
+      $('applyStudyValue').onclick=()=>{const v=$('studyValueInput').value.replace(/\D/g,'').padEnd(6,'0').slice(0,6);state.values[de]=v;renderAll();showField(de)};
+      return;
+    }
+    if(de===39){
+      $('studyFieldEditor').innerHTML='<div style="color:#8fa5b8;font-size:.58rem">Seleccioná un valor documentado en la estructura superior o consultá la referencia técnica.</div>';
+      return;
+    }
+    $('studyFieldEditor').innerHTML=`<label for="studyValueInput">Valor del campo</label><input id="studyValueInput" value="${String(state.values[de]??m.example??'').replaceAll('&','&amp;').replaceAll('"','&quot;')}"><div class="field-actions"><button id="applyStudyValue" class="primary">Aplicar valor</button></div>`;
+    $('applyStudyValue').onclick=()=>{state.values[de]=$('studyValueInput').value;renderAll();showField(de)}
+  }
   function renderMonitor(){const bm=bitmapHex();$('liveMti').textContent=state.mti;$('liveBitmap').textContent=bm;$('liveCount').textContent=[...state.selected].filter(x=>x!==1).length;$('liveAnnotated').textContent=annotated();$('liveRaw').textContent=raw();const des=[...state.selected].filter(x=>x!==1).sort((a,b)=>a-b);$('liveFields').innerHTML=des.length?des.map(de=>`<div class="monitor-field" data-de="${de}"><b>DE${de}</b><span>${def(de).name}</span><code>${String(state.values[de]??'')}</code></div>`).join(''):'<div style="color:#73889b;font-size:.58rem">Sin campos seleccionados.</div>';document.querySelectorAll('.monitor-field').forEach(r=>r.onclick=()=>{state.focused=Number(r.dataset.de);renderBits();showField(state.focused)});$('studySelectionBadge').textContent=`${des.length} campo${des.length===1?'':'s'}`}
   const requirements={0100:[2,3,4,7,11,22,41,42,49],0110:[3,7,11,38,39,41],0200:[2,3,4,7,11,22,41,42,49],0210:[3,7,11,38,39,41],0220:[2,3,4,7,11,41,49],0230:[3,7,11,39],0400:[2,3,4,7,11,37,41,90],0410:[3,7,11,39,90],0420:[2,3,4,7,11,37,41,90],0430:[3,7,11,39,90],0800:[7,11,70],0810:[7,11,39,70]};
   function validate(){const req=requirements[Number(state.mti)]||requirements[state.mti]||[];const missing=req.filter(de=>!state.selected.has(de));const st=$('studyStatus');if(!missing.length){st.className='status-box ok';st.textContent='🟢 Mensaje consistente para el perfil didáctico seleccionado.'}else{st.className='status-box error';st.textContent=`🔴 Validación: faltan ${missing.map(x=>'DE'+x).join(', ')}. La ayuda aparece únicamente después de validar.`}}

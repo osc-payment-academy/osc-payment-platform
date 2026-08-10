@@ -684,8 +684,12 @@
     return state.messages.find(message=>message.mti===mti);
   }
 
-  function updateDualBitmaps(){
-    const message=state.messages.find(item=>item.id===state.selectedMessageId) || state.messages[0];
+  function updateDualBitmaps(forceBlank=false){
+    // Al entrar al POS se restaura el historial, pero NO debe seleccionarse
+    // automáticamente la última trama. La pantalla técnica arranca apagada,
+    // igual que ATM, hasta que el alumno genere o seleccione un mensaje.
+    const selected=state.messages.find(item=>item.id===state.selectedMessageId);
+    const message=forceBlank ? null : (selected || (state.step==='amount' ? null : state.messages[0]));
     const fields=message?.fields||[];
     const hasSecondary=fields.some(row=>Number(row[0])>64);
     const primaryHex=message?.bitmap?.slice(0,16)||'0000000000000000';
@@ -1395,7 +1399,7 @@
     const bm=$('bitmap'); if(bm) bm.textContent='0000000000000000';
     renderFields([]);
     document.querySelectorAll('#historyBody tr').forEach(tr=>tr.classList.remove('selected'));
-    updateDualBitmaps();
+    updateDualBitmaps(true);
   }
 
   function reset(){
@@ -1486,7 +1490,7 @@ ${rawMessage(msg)}`;
     $('sessionTime').textContent=[Math.floor(e/3600),Math.floor((e%3600)/60),e%60].map(v=>String(v).padStart(2,'0')).join(':');
   },1000);
 
-  applyTerminalModel('ingenico');reset();restoreWorkspaceHistory();clearTechnicalMessagePanel();
+  applyTerminalModel('ingenico');restoreWorkspaceHistory();reset();clearTechnicalMessagePanel();
   function refreshNetworkProfile(){
     if(!window.OSCNetworks) return;
     syncPaymentProfile();
