@@ -1,5 +1,5 @@
 
-/* OSC Academy v3.5.4.2 · Ayuda contextual + referencia técnica
+/* OSC Academy v3.5.4.3 · Ayuda contextual + referencia técnica
    Baseline padre: v3.5.3.20 VISA/MC Conformance */
 (() => {
   const contextual = {
@@ -117,22 +117,62 @@
     const style=document.createElement('style');
     style.textContent=`
       .osc-help-wrap{position:relative;display:block;min-width:0}
-      .osc-help-wrap>.osc-help-trigger{position:absolute;right:5px;top:5px;z-index:30;margin:0;border:1px solid #31516d;background:#071725;color:#9dd7ff;border-radius:999px;padding:4px 5px;cursor:pointer;font-size:11px;line-height:1;box-shadow:0 2px 8px rgba(0,0,0,.28)}
       .osc-help-wrap>[data-entry],.osc-help-wrap>[data-atm-entry]{width:100%;height:100%}
-      .osc-help-trigger{margin-left:5px;border:1px solid #31516d;background:#0b2132;color:#9dd7ff;border-radius:7px;padding:5px 7px;cursor:pointer;font-size:12px;line-height:1}
-      .osc-help-trigger.context{color:#f4c66a}.osc-help-trigger.manual{color:#76c7ff}
-      .osc-help-trigger:hover{border-color:#4caeff;color:#fff}
-      .osc-help-overlay{position:fixed;inset:0;background:rgba(2,8,14,.72);display:none;align-items:center;justify-content:center;padding:22px;z-index:99999}
+      .osc-help-wrap>.osc-help-trigger{
+        position:absolute;right:7px;top:7px;z-index:30;margin:0;
+        border:1px solid rgba(20,78,112,.28);background:#ffffff;color:#0e5f91;
+        border-radius:999px;padding:4px 5px;cursor:pointer;font-size:11px;line-height:1;
+        box-shadow:0 2px 8px rgba(0,0,0,.18);
+        opacity:0;visibility:hidden;transform:scale(.82);
+        transition:opacity .16s ease,transform .16s ease,visibility .16s ease;
+        pointer-events:none
+      }
+      .osc-help-wrap.osc-help-ready>.osc-help-trigger,
+      .osc-help-wrap:focus-within>.osc-help-trigger{
+        opacity:1;visibility:visible;transform:scale(1);pointer-events:auto
+      }
+      .osc-help-trigger{
+        margin-left:5px;border:1px solid #b9ccd9;background:#fff;color:#176b9d;
+        border-radius:7px;padding:5px 7px;cursor:pointer;font-size:12px;line-height:1
+      }
+      .osc-help-trigger.context{color:#9a6400}
+      .osc-help-trigger.manual{color:#176b9d}
+      .osc-help-trigger:hover{border-color:#4caeff;color:#084b74;background:#f4fbff}
+
+      .osc-help-overlay{
+        position:fixed;inset:0;background:rgba(4,14,22,.62);display:none;
+        align-items:center;justify-content:center;padding:22px;z-index:99999
+      }
       .osc-help-overlay.show{display:flex}
-      .osc-help-modal{width:min(760px,96vw);max-height:88vh;overflow:auto;border:1px solid #31516d;border-radius:14px;background:#091927;color:#e9f5ff;box-shadow:0 24px 70px rgba(0,0,0,.45)}
-      .osc-help-head{display:flex;justify-content:space-between;gap:14px;align-items:center;padding:16px 18px;border-bottom:1px solid #203d55}
-      .osc-help-head strong{font-size:17px}.osc-help-close{border:0;background:transparent;color:#adc4d5;font-size:22px;cursor:pointer}
-      .osc-help-body{padding:17px 18px;line-height:1.55;font-size:13px}.osc-help-body p{color:#b2c8d8}
-      .osc-help-body ul{padding-left:20px}.osc-help-body li{margin:7px 0;color:#c8dae6}
-      .osc-help-note{margin-top:13px;border:1px solid #2b526f;background:#0c2435;border-radius:9px;padding:10px 12px}
-      .osc-help-source{margin-top:14px;border-top:1px dashed #31516d;padding-top:12px;color:#9fb9cb}
-      .osc-help-source b{color:#eaf5ff}.osc-ref-pending{color:#e7c86e}
-      .osc-help-chip{display:inline-block;border:1px solid #31516d;border-radius:999px;padding:4px 8px;color:#a7c3d8;font-size:11px;margin-right:5px}
+      .osc-help-modal{
+        width:min(760px,96vw);max-height:88vh;overflow:auto;
+        border:1px solid #c9d8e2;border-radius:14px;
+        background:#ffffff;color:#172a38;
+        box-shadow:0 24px 70px rgba(0,0,0,.28)
+      }
+      .osc-help-head{
+        display:flex;justify-content:space-between;gap:14px;align-items:center;
+        padding:16px 18px;border-bottom:1px solid #dce7ee;background:#f8fbfd
+      }
+      .osc-help-head strong{font-size:17px;color:#102a3a}
+      .osc-help-close{border:0;background:transparent;color:#587284;font-size:22px;cursor:pointer}
+      .osc-help-body{padding:17px 18px;line-height:1.55;font-size:13px;color:#263d4d}
+      .osc-help-body p{color:#405867}
+      .osc-help-body ul{padding-left:20px}
+      .osc-help-body li{margin:7px 0;color:#304b5c}
+      .osc-help-note{
+        margin-top:13px;border:1px solid #c7dbe8;background:#f3f9fd;
+        border-radius:9px;padding:10px 12px;color:#24495f
+      }
+      .osc-help-source{
+        margin-top:14px;border-top:1px dashed #b8cbd7;padding-top:12px;color:#587284
+      }
+      .osc-help-source b{color:#203847}
+      .osc-ref-pending{color:#8d6300}
+      .osc-help-chip{
+        display:inline-block;border:1px solid #bfd3df;border-radius:999px;
+        padding:4px 8px;color:#315b73;font-size:11px;margin-right:5px;background:#f7fbfd
+      }
     `;
     document.head.appendChild(style);
     const overlay=document.createElement('div');
@@ -181,10 +221,26 @@
       <div class="osc-help-source"><b>Fuente:</b> ${ref.manual}<br><b>Página:</b> ${ref.page}</div>
       <p style="margin-top:10px;color:#86a4b8">El nombre oficial se conserva en inglés; la explicación se presenta traducida/resumida con fines educativos.</p>`);
   }
+  function armHoverHelp(wrap){
+    let timer=null;
+    const showLater=()=>{
+      clearTimeout(timer);
+      timer=setTimeout(()=>wrap.classList.add('osc-help-ready'),750);
+    };
+    const hide=()=>{
+      clearTimeout(timer);
+      wrap.classList.remove('osc-help-ready');
+    };
+    wrap.addEventListener('mouseenter',showLater);
+    wrap.addEventListener('mouseleave',hide);
+    wrap.addEventListener('focusin',showLater);
+    wrap.addEventListener('focusout',hide);
+  }
+
   function attachHelpAfter(el,key){
     if(!el) return;
     let wrap=el.parentElement;
-    if(wrap?.classList?.contains('osc-help-wrap') && wrap.querySelector(`.osc-help-trigger[data-help-key="${key}"]`)) return;
+    if(wrap?.classList?.contains('osc-help-wrap') && wrap.querySelector(`.osc-help-trigger[data-help-key="${key}"]`)){armHoverHelp(wrap);return;}
 
     // En los selectores de captura, el CSS del Core aplica estilos a TODOS los <button>.
     // Por eso la ayuda usa <span role="button"> y comparte una envoltura con el botón original.
@@ -193,6 +249,7 @@
       wrap.className='osc-help-wrap';
       el.parentNode.insertBefore(wrap,el);
       wrap.appendChild(el);
+      armHoverHelp(wrap);
     } else {
       wrap=el.parentElement;
     }
@@ -200,7 +257,7 @@
     const b=document.createElement('span');
     b.className='osc-help-trigger context';
     b.dataset.helpKey=key;
-    b.textContent='☝️';
+    b.textContent='☝';
     b.title='Abrir ayuda contextual';
     b.setAttribute('role','button');
     b.setAttribute('tabindex','0');

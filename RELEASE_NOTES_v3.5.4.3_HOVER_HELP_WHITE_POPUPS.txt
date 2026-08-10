@@ -1,0 +1,27 @@
+OSC-ACADEMY Baseline v3.5.4.3
+HOVER CONTEXTUAL HELP + WHITE POPUPS
+
+BASELINE PADRE
+- v3.5.4.2 ContextualHelp ClickFix
+
+AJUSTE POS / ATM
+- Se elimina visualmente el segundo recuadro de ayuda.
+- Cada modo de captura conserva un único botón: Chip, Contactless, Banda, etc.
+- La manito de ayuda vive dentro del mismo botón de captura.
+- Al pasar el mouse, no aparece inmediatamente.
+- Si el cursor permanece aproximadamente 750 ms sobre la opción, aparece ☝ en la esquina.
+- Click normal sobre el modo de captura sigue seleccionando la opción.
+- Click sobre ☝ abre la ayuda contextual.
+- Al retirar el mouse, la manito desaparece.
+- Se mantiene soporte por teclado mediante focus.
+
+POPUPS
+- Todos los popups de ayuda contextual pasan a fondo blanco.
+- Las referencias técnicas 📘 de Parser/Constructor también usan fondo blanco.
+- Se mantienen bordes suaves, texto oscuro y bloques informativos celestes claros.
+- No se modifica el contenido técnico ni la lógica ISO8583.
+
+CONTROL DE FUENTE
+- Baseline padre preservada íntegramente.
+- Ningún archivo del padre eliminado.
+- Build validado mediante inventario SHA-256.
