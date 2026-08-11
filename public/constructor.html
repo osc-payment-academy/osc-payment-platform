@@ -115,7 +115,7 @@ select:focus,input:focus,textarea:focus{border-color:#2f83ff;box-shadow:0 0 0 2p
 
           <label class="caption">Plantillas rápidas</label>
           <div class="preset-grid" id="presetGrid">
-            <button data-preset="purchase" class="active"><strong>Compra</strong><small>0200 → 0210</small></button>
+            <button data-preset="purchase"><strong>Compra</strong><small>0200 → 0210</small></button>
             <button data-preset="withdrawal"><strong>Extracción ATM</strong><small>0200 → 0210</small></button>
             <button data-preset="reversal"><strong>Reversa</strong><small>0400 → 0410</small></button>
             <button data-preset="network"><strong>Network Echo</strong><small>0800 → 0810</small></button>
@@ -123,7 +123,7 @@ select:focus,input:focus,textarea:focus{border-color:#2f83ff;box-shadow:0 0 0 2p
           </div>
 
           <label class="caption" for="mtiInput">MTI</label>
-          <input id="mtiInput" maxlength="4" value="0200" inputmode="numeric">
+          <input id="mtiInput" maxlength="4" value="" inputmode="numeric">
 
           <label class="caption">Buscar Data Element</label>
           <div class="field-search"><input id="fieldSearch" placeholder="Ej.: PIN, importe, DE55"><button id="clearSearch">✕</button></div>
@@ -137,7 +137,7 @@ select:focus,input:focus,textarea:focus{border-color:#2f83ff;box-shadow:0 0 0 2p
           <p class="panel-sub">Cada campo seleccionado modifica automáticamente el Bitmap.</p>
 
           <div class="summary">
-            <div><span>MTI</span><strong id="mtiSummary">0200</strong></div>
+            <div><span>MTI</span><strong id="mtiSummary">----</strong></div>
             <div><span>Bitmap primario</span><strong id="bitmapSummary">0000000000000000</strong></div>
             <div><span>Campos activos</span><strong id="fieldCount">0</strong></div>
           </div>
@@ -385,7 +385,7 @@ select:focus,input:focus,textarea:focus{border-color:#2f83ff;box-shadow:0 0 0 2p
     }
   };
 
-  const state = {mti:'0200',values:{},selected:new Set(),filter:''};
+  const state = {mti:'',values:{},selected:new Set(),filter:''};
   function currentConstructorNetwork(){return document.getElementById('constructorNetworkSelect')?.value||'auto'}
   function updatePresetLabels(){
     const isAmex=currentConstructorNetwork()==='amex';
@@ -409,7 +409,7 @@ select:focus,input:focus,textarea:focus{border-color:#2f83ff;box-shadow:0 0 0 2p
   }
   document.addEventListener('DOMContentLoaded',()=>{
     const s=document.getElementById('constructorNetworkSelect');
-    if(s)s.addEventListener('change',()=>{refreshConstructorNetwork();loadPreset(document.querySelector('[data-preset].active')?.dataset.preset||'purchase')});
+    if(s)s.addEventListener('change',()=>{refreshConstructorNetwork();render()});
     setTimeout(refreshConstructorNetwork,0);
   });
 
@@ -588,21 +588,22 @@ TRAMA COMO VIAJA EN EL MENSAJE
 ${raw()}`,e.target));
   document.getElementById('openParser').addEventListener('click',()=>{
     localStorage.setItem('oscAcademyParserPayload',JSON.stringify({
-      source:'Constructor ISO8583',mti:state.mti,annotated:annotated(),raw:raw(),createdAt:new Date().toISOString(),network:currentConstructorNetwork()==='auto'?(OSCNetworks?.detectFromPan?.(state.values[2]||'')?.id||'visa'):currentConstructorNetwork()
+      source:'Constructor ISO8583',mti:state.mti,annotated:annotated(),raw:raw(),createdAt:new Date().toISOString(),network:currentConstructorNetwork()==='auto'?(OSCNetworks?.detectFromPan?.(state.values[2]||'')?.id||''):currentConstructorNetwork()
     }));
     location.href='parser.html';
   });
   document.getElementById('loadExample').addEventListener('click',()=>loadPreset('purchase'));
   document.getElementById('resetAll').addEventListener('click',()=>{
-    state.mti='0200';state.values={};state.selected=new Set();state.filter='';
-    document.getElementById('mtiInput').value='0200';document.getElementById('fieldSearch').value='';render();
+    state.mti='';state.values={};state.selected=new Set();state.filter='';
+    document.getElementById('mtiInput').value='';document.getElementById('fieldSearch').value='';
+    document.querySelectorAll('[data-preset]').forEach(b=>b.classList.remove('active'));render();
   });
   document.getElementById('guidedMode').addEventListener('click',e=>{e.preventDefault();loadPreset('purchase')});
   document.getElementById('freeMode').addEventListener('click',e=>{
     e.preventDefault();state.values={};state.selected=new Set();render()
   });
 
-  loadPreset('purchase');
+  render();
   document.addEventListener('input',e=>{if(e.target && (e.target.dataset?.de==='2' || e.target.name==='de2' || e.target.closest?.('[data-de="2"]')))setTimeout(refreshConstructorNetwork,0);});
   document.addEventListener('change',e=>{if(e.target && (e.target.dataset?.de==='2' || e.target.closest?.('[data-de="2"]')))setTimeout(refreshConstructorNetwork,0);});
 

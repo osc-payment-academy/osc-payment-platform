@@ -1,0 +1,14 @@
+OSC-ACADEMY Baseline v3.5.4.7
+Corrección integral de cambios solicitados
+
+Baseline padre: v3.5.4.6
+
+- Corrige la ayuda de Reconciliación ATM: la manito queda integrada y oculta hasta el hover.
+- Incorpora el texto definitivo aprobado para Chip EMV.
+- Incorpora el texto definitivo aprobado para Contactless / NFC (Tarjeta física).
+- Constructor inicia completamente vacío, sin MTI, plantilla ni Data Elements precargados.
+- Nueva construcción vuelve a un estado completamente vacío.
+- Cambiar la marca no carga automáticamente una plantilla.
+- Automático por DE2/PAN no toma Visa como valor predeterminado.
+- Parser y Constructor muestran acceso al manual junto a cada Data Element.
+- Si la marca no está resuelta, se solicita DE2/PAN o selección manual.

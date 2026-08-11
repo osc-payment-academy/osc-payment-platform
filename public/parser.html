@@ -1545,7 +1545,9 @@
         const btn=e.target.closest?.('[data-manual-de]');
         if(!btn)return;
         e.preventDefault();
-        OSCHelp.openTechnical(Number(btn.dataset.manualDe),document.getElementById('parserNetworkSelect')?.value||'visa');
+        const network=document.getElementById('parserNetworkSelect')?.value||'';
+        if(!network){OSCHelp.showNetworkRequired?.(Number(btn.dataset.manualDe));return;}
+        OSCHelp.openTechnical(Number(btn.dataset.manualDe),network);
       });
 
       document.getElementById('parserNetworkSelect').addEventListener('change',()=>{applyParserFieldProfile();const raw=document.getElementById('iso-input').value;if(raw.trim())render(parseTrama(raw));});

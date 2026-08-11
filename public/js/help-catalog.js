@@ -1,6 +1,6 @@
 
-/* OSC Academy v3.5.4.6 · Ayudas + Constructor/Parser + acceso a manuales
-   Baseline padre: v3.5.4.5 Chip EMV Glossary */
+/* OSC Academy v3.5.4.7 · Corrección integral de ayudas y Constructor
+   Baseline padre: v3.5.4.6 Help + Constructor/Parser Manuals */
 (() => {
   const contextual = {
     magstripe: {
@@ -16,34 +16,35 @@
     },
     chip: {
       title:'Chip EMV',
-      summary:'El chip realiza una interacción EMV entre tarjeta y terminal y genera información dinámica utilizada durante la autorización.',
+      summary:'El chip realiza una interacción EMV entre la tarjeta y el terminal, generando información dinámica utilizada durante la autorización.',
       bullets:[
-        '<b>DE22:</b> identifica el modo de captura.',
-        '<b>DE35:</b> suele estar presente igual que en banda, pero el dato clave diferenciador es <b>DE55</b> (no está en banda).',
-        '<b>DE55 es el campo “estrella”</b> del chip — es donde vive la mayor parte de la data criptográfica (ARQC, TVR, TSI, etc.), a diferencia de banda donde esos campos van vacíos.'
+        '<b>DE22:</b> Identifica el modo de captura de la transacción.',
+        '<b>DE35:</b> Suele estar presente al igual que en banda, pero el dato clave diferenciador es el <b>DE55</b> (ausente en banda).',
+        '<b>DE55:</b> Es el campo “estrella” del chip — concentra la mayor parte de los datos criptográficos (ARQC, TVR, TSI, etc.).'
       ],
       glossary:[
-        '<b>EMV:</b> Europay, Mastercard y Visa, las tres compañías que crearon el estándar en los años 90.',
-        '<b>ARQC</b> (<i>Authorization Request Cryptogram</i>): firma digital única que genera el chip por transacción, prueba autenticidad y evita clonación.',
-        '<b>TVR</b> (<i>Terminal Verification Results</i>): checklist del terminal, indica qué validaciones pasó o falló la transacción.',
-        '<b>TSI</b> (<i>Transaction Status Information</i>): resumen de qué procesos se ejecutaron durante la transacción.',
-        '<b>AID</b> (<i>Application Identifier</i>): identifica qué aplicación de pago del chip se usó (Visa, Mastercard, etc.).',
-        '<b>ATC</b> (<i>Application Transaction Counter</i>): contador que aumenta con cada transacción, ayuda a detectar clonación.',
-        '<b>CVM</b> (<i>Cardholder Verification Method</i>): indica cómo se verificó al titular (PIN, firma, sin verificación).'
+        '<b>EMV:</b> Europay, Mastercard y Visa (estándar creado en los años 90).',
+        '<b>ARQC</b> (<i>Authorization Request Cryptogram</i>): Firma digital única generada por el chip por transacción; prueba autenticidad y evita clonación.',
+        '<b>TVR</b> (<i>Terminal Verification Results</i>): Resultados de verificación del terminal; indica qué validaciones pasaron o fallaron.',
+        '<b>TSI</b> (<i>Transaction Status Information</i>): Resumen de los procesos ejecutados durante la transacción.',
+        '<b>AID</b> (<i>Application Identifier</i>): Identifica la aplicación de pago del chip utilizada (Visa, Mastercard, etc.).',
+        '<b>ATC</b> (<i>Application Transaction Counter</i>): Contador de transacciones de la aplicación que aumenta con cada operación y ayuda a detectar clonación.',
+        '<b>CVM</b> (<i>Cardholder Verification Method</i>): Indica cómo se verificó al titular (PIN, firma, sin verificación).'
       ],
-      iso:'Compará <b>DE22 + DE55</b> con la misma operación realizada por Banda.',
-      lab:'Abrí el Modo Técnico para observar los datos EMV que llegan al mensaje.'
+      iso:'Compará <b>DE22</b> y <b>DE55</b> frente a la misma operación realizada por Banda Magnética.',
+      lab:'Abrí el Modo Técnico para inspeccionar los datos EMV que llegan en el mensaje.'
     },
     contactless: {
-      title:'Contactless / NFC',
-      summary:'La tarjeta o dispositivo se comunica con el lector por proximidad. En perfiles EMV Contactless se generan datos dinámicos usando una interfaz sin contacto.',
+      title:'Contactless / NFC (Tarjeta física)',
+      summary:'El cliente acerca la tarjeta física al lector, sin insertarla ni pasarla. La comunicación es por proximidad (NFC) y, al igual que el chip insertado, genera datos dinámicos únicos por transacción.',
       bullets:[
-        '<b>DE22:</b> refleja la captura contactless según el perfil de la marca.',
-        '<b>DE55:</b> puede contener datos ICC/EMV de la operación.',
-        '<b>Visa, Mastercard y AMEX:</b> la terminología y reglas exactas dependen de cada red.'
+        '<b>DE22:</b> identifica que la captura fue contactless, según el perfil de la marca.',
+        '<b>DE55:</b> puede contener los mismos datos ICC/EMV que una transacción con chip insertado (criptograma, TVR, TSI, etc.), ya que contactless usa el mismo motor EMV.',
+        '<b>DE35:</b> puede transportar Track 2 Equivalent Data, igual que en chip.',
+        '<b>Validación por marca (Visa, Mastercard, AMEX):</b> Asegura que se cumplan las reglas de lectura de proximidad de cada red.'
       ],
-      iso:'Observá cómo cambian <b>DE22</b> y <b>DE55</b> frente a Banda Magnética.',
-      lab:'La referencia técnica por marca se consulta desde Parser/Constructor con 📘.'
+      iso:'Verificá los cambios en el <b>DE22</b> y <b>DE55</b> en comparación con una lectura por banda magnética o chip insertado.',
+      lab:'Consultá la referencia técnica detallada por marca desde Parser/Constructor con 📖.'
     },
     manual: {
       title:'Ingreso Manual',
@@ -126,6 +127,7 @@
     const style=document.createElement('style');
     style.textContent=`
       .osc-help-wrap{position:relative;display:block;min-width:0}
+      .osc-help-wrap.osc-help-inline{display:inline-flex}
       .osc-help-wrap>[data-entry],.osc-help-wrap>[data-atm-entry]{width:100%;height:100%}
       .osc-help-wrap>.osc-help-trigger{
         position:absolute;right:7px;top:7px;z-index:30;margin:0;
@@ -257,9 +259,10 @@
 
     // En los selectores de captura, el CSS del Core aplica estilos a TODOS los <button>.
     // Por eso la ayuda usa <span role="button"> y comparte una envoltura con el botón original.
-    if(el.matches?.('[data-entry],[data-atm-entry]')){
+    const integrated=el.matches?.('[data-entry],[data-atm-entry]') || key==='reconcile';
+    if(integrated){
       wrap=document.createElement('span');
-      wrap.className='osc-help-wrap';
+      wrap.className=`osc-help-wrap${key==='reconcile'?' osc-help-inline':''}`;
       el.parentNode.insertBefore(wrap,el);
       wrap.appendChild(el);
       armHoverHelp(wrap);
@@ -278,7 +281,7 @@
     const open=e=>{e.preventDefault();e.stopPropagation();openContext(key)};
     b.addEventListener('click',open);
     b.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){open(e)}});
-    if(el.matches?.('[data-entry],[data-atm-entry]')) wrap.appendChild(b);
+    if(integrated) wrap.appendChild(b);
     else el.insertAdjacentElement('afterend',b);
   }
   function decorateContext(root=document){

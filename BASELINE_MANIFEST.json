@@ -1,19 +1,19 @@
 {
   "product": "OSC-ACADEMY",
-  "version": "3.5.4.6",
-  "parent_baseline": "OSC-ACADEMY_Baseline_v3.5.4.5_Chip_EMV_Glossary",
-  "parent_source_file": "OSC-ACADEMY_Baseline_v3.5.4.5_Chip_EMV_Glossary.zip",
+  "version": "3.5.4.7",
+  "parent_baseline": "OSC-ACADEMY_Baseline_v3.5.4.6_POS_Init_Constructor_Parser_Manual_Help",
+  "parent_source_file": "OSC-ACADEMY_Baseline_v3.5.4.6_POS_Init_Constructor_Parser_Manual_Help.zip",
   "policy": {
     "build_from_last_approved_zip": true,
     "no_silent_file_deletion": true,
     "fail_build_if_parent_file_missing": true,
     "sha256_inventory": true
   },
-  "parent_file_count": 99,
-  "final_file_count": 100,
+  "parent_file_count": 100,
+  "final_file_count": 101,
   "removed_files": [],
   "added_files": [
-    "RELEASE_NOTES_v3.5.4.6_HELP_CONSTRUCTOR_PARSER_MANUALS.txt"
+    "RELEASE_NOTES_v3.5.4.7_CORRECCION_INTEGRAL_HELP_CONSTRUCTOR.txt"
   ],
   "changed_parent_files": [
     "public/atm.html",
@@ -292,6 +292,10 @@
       "size": 1375,
       "sha256": "83d2582acc2049be6fda5d962df1b38d3fd4ffa0f765daf6a93f6ee9a97951ee"
     },
+    "RELEASE_NOTES_v3.5.4.7_CORRECCION_INTEGRAL_HELP_CONSTRUCTOR.txt": {
+      "size": 765,
+      "sha256": "c4a7c538d5016f37f6744e1b3e7715c5a129d4d63a36c323c6e939056bbb4151"
+    },
     "package.json": {
       "size": 211,
       "sha256": "ecfeed889964433dc2a757b0c9ec5f0d2f3f22fcead57a95b3397a39b63411f3"
@@ -305,8 +309,8 @@
       "sha256": "50235084f46ee7e4e36e8c2af728d927e2a072c9e19427dbb9de616ce819e63a"
     },
     "public/atm.html": {
-      "size": 127662,
-      "sha256": "3fb9a7964427d5f35b689bce7293c5c1ba1a83edd5f67655254361a0cd8cee37"
+      "size": 127649,
+      "sha256": "a8dc5115d498e509caa40da4159197001b92951f93301e7be2fc20379418e062"
     },
     "public/compensacion.html": {
       "size": 22994,
@@ -317,8 +321,8 @@
       "sha256": "dada24b924fff8672768924a5215f55d91b40ebba25d88d8f31e3bc7cf7017b2"
     },
     "public/constructor.html": {
-      "size": 63714,
-      "sha256": "fc431fa51a4224f5b25fe2dfab1692fa8e2b6c6c72c91c9576506c65c8ab6085"
+      "size": 63676,
+      "sha256": "4d4a3f3608c12caac0bb300a1e1b33cedea9f2665827e35c9fcbb40053315b94"
     },
     "public/css/app.css": {
       "size": 43036,
@@ -349,8 +353,8 @@
       "sha256": "e1308b4b9af06ba34d4c54cc180e98c4434d670a245a85dfe2a4bd395ae7552f"
     },
     "public/js/help-catalog.js": {
-      "size": 19797,
-      "sha256": "aab9e6259995bd69158342032f1e48e76033071855e2e304ad82d0c45b20ac0c"
+      "size": 20311,
+      "sha256": "13c76b6027bd3a60a806f0d9475fd6bc861a6b5ed39faf524adaeeb61808adfc"
     },
     "public/js/issuer-store.js": {
       "size": 2636,
@@ -389,12 +393,12 @@
       "sha256": "6737fbba055a97e965f3915f4d4d23b146285d08e3358569cf979e7f7211a1f1"
     },
     "public/parser.html": {
-      "size": 79715,
-      "sha256": "911f5d1ae2aa66834a70b1eb6c31634a7e27988e4ec959303aa119d711d9fe58"
+      "size": 79832,
+      "sha256": "1b92ec6d40a07edfa1524b216f6a184b95d6de1706c121fe12d95bce831e01ef"
     },
     "public/pos.html": {
-      "size": 25266,
-      "sha256": "e20a7035a3d0208dd7512bcee7263852a786e4efdd3cdef67dd818de4cb82a6f"
+      "size": 25253,
+      "sha256": "37058794b48bb1d6de09b29d8bc06c7f62faeebabae45160b3cc9b8c0451256f"
     },
     "public/production_diagnostic.html": {
       "size": 3671,
