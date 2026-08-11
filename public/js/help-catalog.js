@@ -1,6 +1,6 @@
 
-/* OSC Academy v3.5.4.5 · Ayuda contextual + referencia técnica
-   Baseline padre: v3.5.4.4 POS Init + Constructor Manual Help */
+/* OSC Academy v3.5.4.6 · Ayudas + Constructor/Parser + acceso a manuales
+   Baseline padre: v3.5.4.5 Chip EMV Glossary */
 (() => {
   const contextual = {
     magstripe: {
@@ -231,6 +231,9 @@
       <div class="osc-help-source"><b>Fuente:</b> ${ref.manual}<br><b>Página:</b> ${ref.page}</div>
       <p style="margin-top:10px;color:#86a4b8">El nombre oficial se conserva en inglés; la explicación se presenta traducida/resumida con fines educativos.</p>`);
   }
+  function showNetworkRequired(de){
+    show(`☝ DE${de} · Seleccione la marca`,`<p>Para abrir la referencia técnica correcta, primero ingrese el <b>DE2 / PAN</b> para detectar la marca automáticamente o seleccione manualmente Visa, Mastercard o American Express.</p><p>OSC Academy no toma Visa como marca predeterminada.</p>`);
+  }
   function armHoverHelp(wrap){
     let timer=null;
     const showLater=()=>{
@@ -287,6 +290,6 @@
     attachHelpAfter(document.getElementById('partialCash'),'partial');
     attachHelpAfter(document.getElementById('reconcileAtm'),'reconcile');
   }
-  window.OSCHelp={contextual,refs,openContext,openTechnical,decorateContext,selectedNetwork};
+  window.OSCHelp={contextual,refs,openContext,openTechnical,showNetworkRequired,decorateContext,selectedNetwork};
   document.addEventListener('DOMContentLoaded',()=>{ensureModal();decorateContext()});
 })();

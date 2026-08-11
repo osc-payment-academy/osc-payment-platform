@@ -1,0 +1,33 @@
+OSC-ACADEMY Baseline v3.5.4.6
+AYUDAS CONTEXTUALES + CONSTRUCTOR/PARSER + ACCESO A MANUALES
+
+BASELINE PADRE
+- v3.5.4.5 Chip EMV Glossary
+
+CAMBIOS
+1. AYUDAS CONTEXTUALES DE CAPTURA
+- Se actualiza el popup Chip EMV con el texto y glosario aprobados.
+- Se actualiza el popup Contactless / NFC (Tarjeta física), incluyendo DE22,
+  DE35, DE55 y la validación por marca.
+
+2. RECONCILIACIÓN
+- La manito de ayuda deja de mostrarse separada y adopta el mismo comportamiento
+  contextual por hover utilizado en Banda Magnética.
+
+3. CONSTRUCTOR
+- El módulo inicia completamente vacío, sin MTI, plantilla, Data Elements ni
+  tramas precargadas.
+- Las plantillas solo se activan cuando el alumno las selecciona expresamente.
+- Cambiar de marca no carga automáticamente una operación.
+- Cada Data Element dispone de una manito para abrir su referencia técnica.
+
+4. PARSER Y MANUALES POR MARCA
+- Cada campo interpretado en Parser dispone de una manito junto al número DE.
+- En modo Automático por DE2/PAN, el acceso usa la marca realmente detectada.
+- No se presupone Visa cuando el PAN todavía no identifica una marca.
+- Si la marca no está resuelta, se solicita ingresar DE2 o elegirla manualmente.
+
+CONTROL DE FUENTES
+- Build generado exclusivamente sobre la baseline aprobada v3.5.4.5.
+- Ningún archivo de la baseline padre fue eliminado.
+- Inventario SHA-256 actualizado.

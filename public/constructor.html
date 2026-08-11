@@ -34,7 +34,7 @@ select:focus,input:focus,textarea:focus{border-color:#2f83ff;box-shadow:0 0 0 2p
 .preset-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:7px}.preset-grid button{border:1px solid #26445f;background:#0d2133;border-radius:7px;padding:9px 7px;text-align:left;cursor:pointer;font-size:.65rem}.preset-grid button:hover,.preset-grid button.active{border-color:#2f83ff;background:#12375b}.preset-grid strong,.preset-grid small{display:block}.preset-grid small{margin-top:3px;color:#92a5b8}
 .field-search{display:flex;gap:7px}.field-search input{flex:1}.field-search button{border:1px solid #285a87;background:#12375a;border-radius:7px;padding:0 10px;cursor:pointer}
 .field-list{display:grid;gap:6px;max-height:660px;overflow:auto;padding-right:3px}.field-row{border:1px solid #183650;background:#0c1c2c;border-radius:8px;padding:9px}.field-row.selected{border-color:#2588f4;background:#102945}
-.field-head{display:grid;grid-template-columns:24px 42px 1fr auto;gap:7px;align-items:center}.field-head input{width:auto}.de{color:#58aaff;font-weight:700;font-size:.67rem}.fname{font-size:.68rem}.format{font-size:.58rem;color:#8ea1b4}
+.field-head{display:grid;grid-template-columns:24px 42px 1fr auto auto;gap:7px;align-items:center}.field-head input{width:auto}.de{color:#58aaff;font-weight:700;font-size:.67rem}.fname{font-size:.68rem}.format{font-size:.58rem;color:#8ea1b4}
 .field-editor{display:none;margin-top:8px;padding-top:8px;border-top:1px solid #173149}.field-row.selected .field-editor{display:block}.field-editor input,.field-editor textarea{font-family:"Courier New",monospace;font-size:.68rem}.field-editor textarea{min-height:60px;resize:vertical}.field-help{margin-top:6px;color:#91a4b7;font-size:.59rem;line-height:1.4}
 .summary{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.summary div{border:1px solid #193953;background:#0d1e2f;border-radius:7px;padding:9px}.summary span,.summary strong{display:block}.summary span{color:#8fa3b6;font-size:.57rem;text-transform:uppercase}.summary strong{margin-top:4px;color:#55aaff;font:700 .74rem "Courier New",monospace;word-break:break-all}
 .bitmap{display:grid;grid-template-columns:repeat(16,1fr);gap:4px;margin-top:11px}.bit{aspect-ratio:1;border:1px solid #20394e;background:#102030;border-radius:4px;display:grid;place-items:center;color:#718598;font-size:.52rem}.bit.on{border-color:#18d17e;background:rgba(24,209,126,.13);color:#2ae18d;font-weight:700}
@@ -256,11 +256,21 @@ select:focus,input:focus,textarea:focus{border-color:#2f83ff;box-shadow:0 0 0 2p
 <script src="js/help-catalog.js"></script>
 <script>
 (() => {
+  function constructorManualNetwork(){
+    const selected=document.getElementById('constructorNetworkSelect')?.value||'auto';
+    if(selected!=='auto')return selected;
+    return window.OSCConstructorResolvedNetwork||'';
+  }
   document.addEventListener('click',e=>{
     const manualBtn=e.target.closest?.('[data-manual-de]');
     if(!manualBtn)return;
     e.preventDefault();e.stopPropagation();
-    OSCHelp.openTechnical(Number(manualBtn.dataset.manualDe),document.getElementById('constructorNetworkSelect')?.value||'visa');
+    const network=constructorManualNetwork();
+    if(!network){
+      OSCHelp.showNetworkRequired?.(Number(manualBtn.dataset.manualDe));
+      return;
+    }
+    OSCHelp.openTechnical(Number(manualBtn.dataset.manualDe),network);
   });
   const FIELD_DEFS = [
     {de:2,name:'Primary Account Number (PAN)',fmt:'LLVAR N',max:19,desc:'Número de tarjeta. Se recomienda usar valores ficticios o enmascarados.'},
@@ -393,6 +403,7 @@ select:focus,input:focus,textarea:focus{border-color:#2f83ff;box-shadow:0 0 0 2p
     const sel=document.getElementById('constructorNetworkSelect'),badge=document.getElementById('constructorNetworkBadge');
     if(!sel||!badge||!window.OSCNetworks)return;
     const p=OSCNetworks.resolve(sel.value,state.values[2]||'');
+    window.OSCConstructorResolvedNetwork=sel.value==='auto' && !state.values[2]?'':(p?.id||'');
     badge.innerHTML=OSCNetworks.badge(p);
     updatePresetLabels();
   }
@@ -492,10 +503,11 @@ select:focus,input:focus,textarea:focus{border-color:#2f83ff;box-shadow:0 0 0 2p
             <span class="de">DE${def.de}</span>
             <span class="fname">${def.name}</span>
             <span class="format">${def.fmt}</span>
+            <button type="button" class="osc-help-trigger manual" data-manual-de="${def.de}" title="Abrir manual de DE${def.de}" aria-label="Abrir manual de DE${def.de}">☝</button>
           </div>
           <div class="field-editor">
             <textarea data-value="${def.de}" placeholder="Ingrese el valor de DE${def.de}">${value}</textarea>
-            <div class="field-help">${def.desc} <button type="button" class="osc-help-trigger manual" data-manual-de="${def.de}">📘</button></div>
+            <div class="field-help">${def.desc}</div>
           </div>
         </article>`;
       }).join('');
