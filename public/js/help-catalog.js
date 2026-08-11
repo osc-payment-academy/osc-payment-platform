@@ -1,6 +1,6 @@
 
-/* OSC Academy v3.5.4.7 · Corrección integral de ayudas y Constructor
-   Baseline padre: v3.5.4.6 Help + Constructor/Parser Manuals */
+/* OSC Academy v3.5.4.8 · Acceso uniforme a manuales en Constructor y Parser
+   Baseline padre: v3.5.4.7 Corrección integral */
 (() => {
   const contextual = {
     magstripe: {
@@ -222,15 +222,24 @@
     const label=net==='mastercard'?'Mastercard':net==='amex'?'American Express':'Visa';
     const ref=(refs[net]||{})[Number(de)];
     if(!ref){
+      const fallbackLink=net==='visa'
+        ? '<p style="margin-top:14px"><a class="osc-help-manual-link" href="manuals/full-service-pos-online-messages-tech-specs.pdf#page=1" target="_blank" rel="noopener">📖 Abrir manual Visa</a></p>'
+        : net==='mastercard'
+          ? '<p style="margin-top:14px"><a class="osc-help-manual-link" href="mastercard_iso.html" target="_blank" rel="noopener">📖 Abrir referencia Mastercard</a></p>'
+          : '<p style="margin-top:14px"><a class="osc-help-manual-link" href="documentacion.html" target="_blank" rel="noopener">📖 Abrir documentación técnica</a></p>';
       show(`📘 DE${de} · Referencia técnica`,`<span class="osc-help-chip">${label}</span><span class="osc-help-chip">DE${de}</span>
         <p class="osc-ref-pending"><b>Referencia exacta pendiente de mapeo.</b></p>
-        <p>OSC Academy no inventa capítulo ni página. Esta combinación se habilitará cuando la referencia exacta quede validada contra el manual correspondiente.</p>`);
+        <p>La página exacta todavía no está mapeada. Podés abrir igualmente la documentación de la marca para consultar el campo.</p>${fallbackLink}`);
       return;
     }
+    const manualLink=net==='visa'
+      ? `<p style="margin-top:14px"><a class="osc-help-manual-link" href="manuals/full-service-pos-online-messages-tech-specs.pdf#page=${ref.page}" target="_blank" rel="noopener">📖 Abrir manual en la página ${ref.page}</a></p>`
+      : '';
     show(`📘 DE${de} — ${ref.name}`,`<span class="osc-help-chip">${label}</span><span class="osc-help-chip">DE${de}</span>
       <p><b>Nombre oficial:</b> ${ref.name}</p><p><b>Formato / longitud:</b> ${ref.fmt}<br><b>Origen:</b> ${ref.origin}</p>
       <div class="osc-help-note"><b>Explicación en español</b><br>${ref.translated}</div>
       <div class="osc-help-source"><b>Fuente:</b> ${ref.manual}<br><b>Página:</b> ${ref.page}</div>
+      ${manualLink}
       <p style="margin-top:10px;color:#86a4b8">El nombre oficial se conserva en inglés; la explicación se presenta traducida/resumida con fines educativos.</p>`);
   }
   function showNetworkRequired(de){
