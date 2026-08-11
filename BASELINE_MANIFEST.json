@@ -1,8 +1,8 @@
 {
   "product": "OSC-ACADEMY",
-  "version": "3.5.4.8",
-  "parent_baseline": "OSC-ACADEMY_Baseline_v3.5.4.7_POS_Init_Constructor_Parser_Manual_Help_Correccion_Integral",
-  "parent_source_file": "OSC-ACADEMY_Baseline_v3.5.4.7_POS_Init_Constructor_Parser_Manual_Help_Correccion_Integral.zip",
+  "version": "3.5.4.9",
+  "parent_baseline": "OSC-ACADEMY_Baseline_v3.5.4.8_POS_Init_Constructor_Parser_Manual_Por_Campo",
+  "parent_source_file": "OSC-ACADEMY_Baseline_v3.5.4.8_POS_Init_Constructor_Parser_Manual_Por_Campo.zip",
   "policy": {
     "build_from_last_approved_zip": true,
     "no_silent_file_deletion": true,
@@ -13,7 +13,7 @@
   "final_file_count": 102,
   "removed_files": [],
   "added_files": [
-    "RELEASE_NOTES_v3.5.4.8_PARSER_CONSTRUCTOR_MANUAL_POR_CAMPO.txt"
+    "RELEASE_NOTES_v3.5.4.9_VISA_VALID_VALUES_MANUAL_NAVIGATION.txt"
   ],
   "changed_parent_files": [
     "public/atm.html",
@@ -23,7 +23,7 @@
     "public/parser.html",
     "public/pos.html"
   ],
-  "unchanged_parent_file_count": 94,
+  "unchanged_parent_file_count": 95,
   "inventory": {
     ".gitignore": {
       "size": 35,
@@ -301,6 +301,10 @@
       "size": 982,
       "sha256": "731719e97070a4b35b870d0af6d3e32ae8091111182b2f28d4a89ace7339fad8"
     },
+    "RELEASE_NOTES_v3.5.4.9_VISA_VALID_VALUES_MANUAL_NAVIGATION.txt": {
+      "size": 875,
+      "sha256": "b9c8e6b8dd89a9a31a723ac2dadab9cc42cc9e708bfd3795c17f7083ca08656b"
+    },
     "package.json": {
       "size": 211,
       "sha256": "ecfeed889964433dc2a757b0c9ec5f0d2f3f22fcead57a95b3397a39b63411f3"
@@ -314,8 +318,8 @@
       "sha256": "50235084f46ee7e4e36e8c2af728d927e2a072c9e19427dbb9de616ce819e63a"
     },
     "public/atm.html": {
-      "size": 127645,
-      "sha256": "22e7f9b05dd3d2c61d9d2cc14795cdd84b53ba12dbf4413c6f2269c4606581e2"
+      "size": 127658,
+      "sha256": "2938ba8fc1fc544ebac40ea00728c2617a83c745b53a37086d4b64c01807cbf3"
     },
     "public/compensacion.html": {
       "size": 22994,
@@ -326,8 +330,8 @@
       "sha256": "dada24b924fff8672768924a5215f55d91b40ebba25d88d8f31e3bc7cf7017b2"
     },
     "public/constructor.html": {
-      "size": 62871,
-      "sha256": "766486670a1f1885df7e0c81864b08b14d17955cd5fcc910d8df2116454113e9"
+      "size": 63037,
+      "sha256": "ffbc749c5782e496dd66f914c27b0b59895218dfa44b34f921336a7d8d751023"
     },
     "public/css/app.css": {
       "size": 43036,
@@ -350,16 +354,16 @@
       "sha256": "0e4b88cac26515a0933ef51987ae3161458516b010cb26cdd9a0ba825bd08c06"
     },
     "public/index.html": {
-      "size": 13566,
-      "sha256": "0c4432adc70c89bea95b173f4609386f9733d3516bb788d0e20e4ce979e326ae"
+      "size": 13579,
+      "sha256": "e4179a4befc8ed95c70c8b5f69aa0633cdf40fa390039780e964248d8d065dc2"
     },
     "public/js/app.js": {
       "size": 97083,
       "sha256": "e1308b4b9af06ba34d4c54cc180e98c4434d670a245a85dfe2a4bd395ae7552f"
     },
     "public/js/help-catalog.js": {
-      "size": 21202,
-      "sha256": "6445eacee98f7bbf17daeed423dba824c331959f4e51fcb344e0218fa1ef23b5"
+      "size": 25165,
+      "sha256": "8ca7f7f7a7c8d002d2ffdf2e287674eedd01bc1b462e5f66bf4b69c5e334cfec"
     },
     "public/js/issuer-store.js": {
       "size": 2636,
@@ -398,12 +402,12 @@
       "sha256": "6737fbba055a97e965f3915f4d4d23b146285d08e3358569cf979e7f7211a1f1"
     },
     "public/parser.html": {
-      "size": 80137,
-      "sha256": "6c2700f58e8b036fed3b066047bab65c5237b7d5d6f685e862f88dd8bf4779a7"
+      "size": 80221,
+      "sha256": "949a2c66bb93ec1fc25c1578d885202978129d1feeaa10f3e26efa1ebc00246e"
     },
     "public/pos.html": {
-      "size": 25249,
-      "sha256": "f48a57c3b5ad75b5915216428ad03c491d2b665b8bc8b7956a6d92dae22edaa2"
+      "size": 25262,
+      "sha256": "d6ce1b5a88bdb087e37b9bcdafeb786ddb5530fa481f43428d0b4d38f4d803ed"
     },
     "public/production_diagnostic.html": {
       "size": 3671,
