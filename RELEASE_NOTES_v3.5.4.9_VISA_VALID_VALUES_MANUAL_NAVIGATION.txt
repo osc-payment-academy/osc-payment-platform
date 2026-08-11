@@ -1,0 +1,17 @@
+OSC-ACADEMY · Baseline v3.5.4.9
+Navegación Visa por campo desde Parser y Constructor
+
+Baseline padre: v3.5.4.8
+
+Cambios incluidos:
+- Manito compacta, uniforme y visible debajo de cada campo en Parser y Constructor.
+- Eliminación del botón grande de acceso al manual.
+- Apertura del manual Visa en una pestaña nueva y navegable.
+- Posicionamiento inicial en "Field X – Valid Values" cuando el manual incluye esa sección.
+- Posicionamiento en el inicio documentado del campo cuando no existe una subsección Valid Values independiente.
+- Corrección de las páginas Visa según el índice del Capítulo 4 del manual integrado.
+- Mapeo ampliado para los Data Elements habituales de autorización y respuesta.
+
+Alcance:
+- Esta baseline afina exclusivamente Visa.
+- Mastercard y American Express mantienen su comportamiento anterior y se revisarán en etapas posteriores.

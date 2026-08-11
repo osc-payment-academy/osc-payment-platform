@@ -72,8 +72,8 @@ select:focus,input:focus,textarea:focus{border-color:#2f83ff;box-shadow:0 0 0 2p
 
 .network-constructor{display:grid;grid-template-columns:210px 1fr;gap:8px;margin:8px 0 12px;padding:9px;border:1px solid #234a6b;background:#0a1b2b;border-radius:8px}.network-constructor select{padding:8px}.network-constructor-badge{display:flex;align-items:center;gap:7px;font-size:.6rem}.network-constructor-badge small{color:#90a5b8}.osc-network-dot{width:9px;height:9px;border-radius:50%;display:inline-block}
 
-.study-manual-access{display:flex;justify-content:center;margin-top:8px}
-.study-manual-btn{border:1px solid #78bde8;background:#f8fcff;color:#145f8c;border-radius:8px;padding:7px 11px;cursor:pointer;font-size:.66rem;font-weight:700}
+.study-manual-access{display:flex;justify-content:center;margin-top:6px}
+.study-manual-btn{display:inline-grid;place-items:center;width:24px;height:24px;border:1px solid #78bde8;background:#f8fcff;color:#145f8c;border-radius:7px;padding:0;cursor:pointer;font-size:12px;line-height:1}
 .study-manual-btn:hover{background:#eaf7ff;border-color:#2f83ff}
 .study-direct-editor{display:flex;align-items:end;gap:8px;margin-top:10px}
 .study-direct-editor label{flex:1;color:#8fa5b8;font-size:.6rem}
@@ -650,7 +650,7 @@ ${raw()}`,e.target));
   function defaultValue(d){if(d.len)return '0'.repeat(Math.min(d.len,42));if(d.max)return '0'.repeat(Math.min(d.max,16));return 'VALOR'}
   function showField(de){if(de===1){$('studyEmpty').classList.remove('hidden');$('studyDetail').classList.add('hidden');return}const d=def(de),m=meta(de);$('studyEmpty').classList.add('hidden');$('studyDetail').classList.remove('hidden');$('studyDeBadge').textContent=`DE${de}`;$('studyName').textContent=d.name;$('studyShort').textContent=d.desc||`Estudio visual de ${d.name}.`;renderStructure(de,m);$('studyInfo').innerHTML=`<dt>Número</dt><dd>DE${de}</dd><dt>Nombre</dt><dd>${d.name}</dd><dt>Formato</dt><dd>${d.fmt||'Según perfil'}</dd><dt>Longitud</dt><dd>${d.len?d.len:(d.max?'Hasta '+d.max:'Según perfil')}</dd><dt>Aprovisiona</dt><dd>${m.origin}</dd><dt>Mensajes habituales</dt><dd>${m.messages}</dd>`;$('studyLearning').innerHTML=`<div class="study-learning-item"><strong>¿QUÉ REPRESENTA?</strong><p>${d.desc||'El significado depende del perfil.'}</p></div><div class="study-learning-item"><strong>SEGURIDAD</strong><p>${m.security||'Aplicar enmascaramiento y controles según el dato.'}</p></div><div class="study-learning-item"><strong>IMPACTO EN LA TRAMA</strong><p>Al completar este campo, su bit queda encendido y el valor se agrega en orden ascendente de Data Element.</p></div>`;renderEditor(de,d,m)}
   function renderStructure(de,m){let parts=m.parts.map(x=>[...x]);if(de===3){const v=String(state.values[3]||'000000').padEnd(6,'0');parts[0][1]=v.slice(0,2);parts[1][1]=v.slice(2,4);parts[2][1]=v.slice(4,6)}else if(parts.length){const d=def(de),v=String(state.values[de]??m.example??'');parts.forEach(p=>{if(p[0]==='VALOR'||p[0].includes('IMPORTE')||p[0].includes('STAN')||p[0].includes('CÓDIGO'))p[1]=v;if(p[0]==='LONGITUD')p[1]=String(v.length).padStart((d.fmt||'').startsWith('LLLVAR')?3:2,'0')})}
-    $('structureDiagram').innerHTML=parts.map(p=>block(p[0],p[1],p[2],p[3])).join('')+`<div class="study-manual-access"><button type="button" id="studyManualAccess" class="study-manual-btn">☝ Ver DE${de} en el manual</button></div>`;
+    $('structureDiagram').innerHTML=parts.map(p=>block(p[0],p[1],p[2],p[3])).join('')+`<div class="study-manual-access"><button type="button" id="studyManualAccess" class="study-manual-btn" title="Abrir Field ${de} – Valid Values en el manual Visa" aria-label="Abrir Field ${de} – Valid Values en el manual Visa">☝</button></div>`;
     $('studyManualAccess')?.addEventListener('click',()=>{
       const network=constructorManualNetwork();
       if(!network){
@@ -685,6 +685,6 @@ ${raw()}`,e.target));
 </script>
 <script src="js/permissions.js"></script>
 
-<div id="osc-version-badge" style="position:fixed;right:14px;bottom:12px;z-index:99999;background:#0d2238;border:1px solid #2f83ff;color:#9fd0ff;padding:7px 11px;border-radius:999px;font:600 12px/1.1 Inter,Segoe UI,Arial,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.28)">Baseline v3.5.4.8 · Manual por campo</div>
+<div id="osc-version-badge" style="position:fixed;right:14px;bottom:12px;z-index:99999;background:#0d2238;border:1px solid #2f83ff;color:#9fd0ff;padding:7px 11px;border-radius:999px;font:600 12px/1.1 Inter,Segoe UI,Arial,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.28)">Baseline v3.5.4.9 · Navegación Visa Valid Values</div>
 </body>
 </html>

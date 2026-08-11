@@ -1,6 +1,6 @@
 
-/* OSC Academy v3.5.4.8 · Acceso uniforme a manuales en Constructor y Parser
-   Baseline padre: v3.5.4.7 Corrección integral */
+/* OSC Academy v3.5.4.9 · Navegación Visa por campo en Constructor y Parser
+   Baseline padre: v3.5.4.8 Manual por campo */
 (() => {
   const contextual = {
     magstripe: {
@@ -97,22 +97,38 @@
      nunca se inventa capítulo/página. */
   const refs = {
     visa: {
-      2:{name:'Primary Account Number',fmt:'LLVAR N',origin:'Tarjeta / credencial',manual:'Visa Full Service POS Online Messages – Technical Specifications',page:139,translated:'Número de cuenta principal de la tarjeta. En el laboratorio se muestra enmascarado.'},
-      3:{name:'Processing Code',fmt:'N6',origin:'Originador / procesador',manual:'Visa Full Service POS Online Messages – Technical Specifications',page:142,translated:'Identifica el tipo de transacción y las cuentas involucradas.'},
-      4:{name:'Amount, Transaction',fmt:'N12',origin:'POS / ATM',manual:'Visa Full Service POS Online Messages – Technical Specifications',page:149,translated:'Importe de la transacción expresado sin separador decimal.'},
-      7:{name:'Transmission Date and Time',fmt:'N10',origin:'Sistema / red',manual:'Visa Full Service POS Online Messages – Technical Specifications',page:163,translated:'Fecha y hora de transmisión del mensaje.'},
-      11:{name:'System Trace Audit Number',fmt:'N6',origin:'Originador',manual:'Visa Full Service POS Online Messages – Technical Specifications',page:167,translated:'Número de trazabilidad para identificar y correlacionar la transacción.'},
-      22:{name:'Point-of-Service Entry Mode',fmt:'N3',origin:'Terminal',manual:'Visa Full Service POS Online Messages – Technical Specifications',page:186,translated:'Indica cómo fue capturada la credencial en el punto de servicio.'},
-      35:{name:'Track 2 Data',fmt:'LLVAR Z',origin:'Tarjeta / terminal',manual:'Visa Full Service POS Online Messages – Technical Specifications',page:226,translated:'Transporta Track 2 o datos equivalentes según el modo de captura y el perfil Visa.'},
-      37:{name:'Retrieval Reference Number',fmt:'AN12',origin:'Procesador / adquirente',manual:'Visa Full Service POS Online Messages – Technical Specifications',page:231,translated:'Referencia utilizada para rastrear y relacionar mensajes.'},
-      39:{name:'Response Code',fmt:'AN2',origin:'Emisor / red / procesador',manual:'Visa Full Service POS Online Messages – Technical Specifications',page:242,translated:'Indica el resultado de la solicitud.'},
-      41:{name:'Card Acceptor Terminal Identification',fmt:'ANS8',origin:'Terminal',manual:'Visa Full Service POS Online Messages – Technical Specifications',page:253,translated:'Identifica la terminal del aceptador.'},
-      42:{name:'Card Acceptor Identification Code',fmt:'ANS15',origin:'Adquirente / comercio',manual:'Visa Full Service POS Online Messages – Technical Specifications',page:256,translated:'Identifica al aceptador o comercio.'},
-      49:{name:'Currency Code, Transaction',fmt:'N3',origin:'Terminal / adquirente',manual:'Visa Full Service POS Online Messages – Technical Specifications',page:336,translated:'Código numérico de la moneda de la transacción.'},
-      52:{name:'Personal Identification Number (PIN) Data',fmt:'B / 8 bytes',origin:'Terminal seguro',manual:'Visa Full Service POS Online Messages – Technical Specifications',page:340,translated:'Transporta el PIN Block cifrado; nunca el PIN en claro.'},
-      55:{name:'ICC System Related Data',fmt:'LLLVAR B',origin:'Chip / terminal / emisor',manual:'Visa Full Service POS Online Messages – Technical Specifications',page:370,translated:'Contenedor de datos ICC/EMV, normalmente en estructura TLV.'},
-      60:{name:'Additional POS Information',fmt:'Variable',origin:'Terminal / adquirente',manual:'Visa Full Service POS Online Messages – Technical Specifications',page:397,translated:'Información adicional del entorno de aceptación.'},
-      90:{name:'Original Data Elements',fmt:'N42',origin:'Originador de reversa',manual:'Visa Full Service POS Online Messages – Technical Specifications',page:488,translated:'Relaciona una reversa con la transacción original.'}
+      2:{name:'Primary Account Number',fmt:'LLVAR N',origin:'Tarjeta / credencial',manual:'Visa Full Service POS Online Messages – Technical Specifications',page:173,translated:'Número de cuenta principal de la tarjeta. En el laboratorio se muestra enmascarado.'},
+      3:{name:'Processing Code',fmt:'N6',origin:'Originador / procesador',manual:'Visa Full Service POS Online Messages – Technical Specifications',page:177,validPage:185,translated:'Identifica el tipo de transacción y las cuentas involucradas.'},
+      4:{name:'Amount, Transaction',fmt:'N12',origin:'POS / ATM',manual:'Visa Full Service POS Online Messages – Technical Specifications',page:186,translated:'Importe de la transacción expresado sin separador decimal.'},
+      7:{name:'Transmission Date and Time',fmt:'N10',origin:'Sistema / red',manual:'Visa Full Service POS Online Messages – Technical Specifications',page:206,translated:'Fecha y hora de transmisión del mensaje.'},
+      11:{name:'System Trace Audit Number',fmt:'N6',origin:'Originador',manual:'Visa Full Service POS Online Messages – Technical Specifications',page:212,translated:'Número de trazabilidad para identificar y correlacionar la transacción.'},
+      12:{name:'Time, Local Transaction',fmt:'N6',origin:'Terminal / adquirente',manual:'Visa Full Service POS Online Messages – Technical Specifications',page:215,translated:'Hora local de la transacción.'},
+      13:{name:'Date, Local Transaction',fmt:'N4',origin:'Terminal / adquirente',manual:'Visa Full Service POS Online Messages – Technical Specifications',page:217,translated:'Fecha local de la transacción.'},
+      14:{name:'Date, Expiration',fmt:'N4',origin:'Tarjeta / terminal',manual:'Visa Full Service POS Online Messages – Technical Specifications',page:219,translated:'Fecha de vencimiento de la tarjeta.'},
+      18:{name:'Merchant Type',fmt:'N4',origin:'Adquirente / comercio',manual:'Visa Full Service POS Online Messages – Technical Specifications',page:227,translated:'Código de categoría del comercio.'},
+      22:{name:'Point-of-Service Entry Mode',fmt:'N3',origin:'Terminal',manual:'Visa Full Service POS Online Messages – Technical Specifications',page:235,validPage:239,translated:'Indica cómo fue capturada la credencial en el punto de servicio.'},
+      23:{name:'Card Sequence Number',fmt:'N3',origin:'Chip / terminal',manual:'Visa Full Service POS Online Messages – Technical Specifications',page:241,translated:'Número de secuencia de la tarjeta.'},
+      25:{name:'Point-of-Service Condition Code',fmt:'N2',origin:'Terminal / adquirente',manual:'Visa Full Service POS Online Messages – Technical Specifications',page:244,validPage:248,translated:'Describe la condición de la transacción en el punto de servicio.'},
+      32:{name:'Acquiring Institution Identification Code',fmt:'LLVAR N',origin:'Adquirente',manual:'Visa Full Service POS Online Messages – Technical Specifications',page:255,translated:'Identifica a la institución adquirente.'},
+      35:{name:'Track 2 Data',fmt:'LLVAR Z',origin:'Tarjeta / terminal',manual:'Visa Full Service POS Online Messages – Technical Specifications',page:279,translated:'Transporta Track 2 o datos equivalentes según el modo de captura y el perfil Visa.'},
+      37:{name:'Retrieval Reference Number',fmt:'AN12',origin:'Procesador / adquirente',manual:'Visa Full Service POS Online Messages – Technical Specifications',page:284,translated:'Referencia utilizada para rastrear y relacionar mensajes.'},
+      39:{name:'Response Code',fmt:'AN2',origin:'Emisor / red / procesador',manual:'Visa Full Service POS Online Messages – Technical Specifications',page:292,validPage:303,translated:'Indica el resultado de la solicitud.'},
+      41:{name:'Card Acceptor Terminal Identification',fmt:'ANS8',origin:'Terminal',manual:'Visa Full Service POS Online Messages – Technical Specifications',page:310,translated:'Identifica la terminal del aceptador.'},
+      42:{name:'Card Acceptor Identification Code',fmt:'ANS15',origin:'Adquirente / comercio',manual:'Visa Full Service POS Online Messages – Technical Specifications',page:313,translated:'Identifica al aceptador o comercio.'},
+      43:{name:'Card Acceptor Name/Location',fmt:'ANS40',origin:'Adquirente / comercio',manual:'Visa Full Service POS Online Messages – Technical Specifications',page:318,translated:'Nombre y ubicación del aceptador.'},
+      49:{name:'Currency Code, Transaction',fmt:'N3',origin:'Terminal / adquirente',manual:'Visa Full Service POS Online Messages – Technical Specifications',page:449,translated:'Código numérico de la moneda de la transacción.'},
+      52:{name:'Personal Identification Number (PIN) Data',fmt:'B / 8 bytes',origin:'Terminal seguro',manual:'Visa Full Service POS Online Messages – Technical Specifications',page:455,translated:'Transporta el PIN Block cifrado; nunca el PIN en claro.'},
+      53:{name:'Security Related Control Information',fmt:'N16',origin:'Terminal / procesador',manual:'Visa Full Service POS Online Messages – Technical Specifications',page:457,validPage:458,translated:'Información de control relacionada con seguridad.'},
+      54:{name:'Additional Amounts',fmt:'LLLVAR',origin:'Emisor / procesador',manual:'Visa Full Service POS Online Messages – Technical Specifications',page:459,validPage:473,translated:'Importes adicionales asociados a la transacción.'},
+      55:{name:'ICC System Related Data',fmt:'LLLVAR B',origin:'Chip / terminal / emisor',manual:'Visa Full Service POS Online Messages – Technical Specifications',page:477,translated:'Contenedor de datos ICC/EMV, normalmente en estructura TLV.'},
+      59:{name:'National Point-of-Service Geographic Data',fmt:'LLLVAR',origin:'Terminal / adquirente',manual:'Visa Full Service POS Online Messages – Technical Specifications',page:502,validPage:506,translated:'Datos geográficos del punto de servicio.'},
+      60:{name:'Additional POS Information',fmt:'Variable',origin:'Terminal / adquirente',manual:'Visa Full Service POS Online Messages – Technical Specifications',page:507,validPage:521,translated:'Información adicional del entorno de aceptación.'},
+      66:{name:'Settlement Code',fmt:'N1',origin:'Procesador / red',manual:'Visa Full Service POS Online Messages – Technical Specifications',page:676,validPage:677,translated:'Código usado en el proceso de liquidación.'},
+      70:{name:'Network Management Information Code',fmt:'N3',origin:'Red / procesador',manual:'Visa Full Service POS Online Messages – Technical Specifications',page:681,validPage:682,translated:'Identifica la función de gestión de red.'},
+      90:{name:'Original Data Elements',fmt:'N42',origin:'Originador de reversa',manual:'Visa Full Service POS Online Messages – Technical Specifications',page:698,translated:'Relaciona una reversa con la transacción original.'},
+      91:{name:'File Update Code',fmt:'AN1',origin:'Procesador / red',manual:'Visa Full Service POS Online Messages – Technical Specifications',page:700,validPage:701,translated:'Código de actualización de archivo.'},
+      101:{name:'File Name',fmt:'LLVAR',origin:'Procesador / red',manual:'Visa Full Service POS Online Messages – Technical Specifications',page:713,validPage:714,translated:'Identifica el archivo involucrado.'},
+      104:{name:'Transaction Description',fmt:'LLLVAR',origin:'Originador / procesador',manual:'Visa Full Service POS Online Messages – Technical Specifications',page:721,validPage:722,translated:'Descripción y datos ampliados de la transacción.'}
     },
     mastercard: {
       22:{name:'Point of Service Entry Mode',fmt:'N3',origin:'Terminal',manual:'Mastercard M/Chip Requirements—for Contact and Contactless · 29 April 2025',page:320,translated:'Documenta los modos de entrada usados para chip, contactless y otros escenarios de captura.'},
@@ -221,6 +237,11 @@
     const net=(network||selectedNetwork()).toLowerCase();
     const label=net==='mastercard'?'Mastercard':net==='amex'?'American Express':'Visa';
     const ref=(refs[net]||{})[Number(de)];
+    if(net==='visa' && ref){
+      const targetPage=ref.validPage||ref.page;
+      window.open(`manuals/full-service-pos-online-messages-tech-specs.pdf#page=${targetPage}`,'_blank','noopener');
+      return;
+    }
     if(!ref){
       const fallbackLink=net==='visa'
         ? '<p style="margin-top:14px"><a class="osc-help-manual-link" href="manuals/full-service-pos-online-messages-tech-specs.pdf#page=1" target="_blank" rel="noopener">📖 Abrir manual Visa</a></p>'

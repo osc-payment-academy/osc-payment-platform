@@ -319,8 +319,9 @@
       background: rgba(255,255,255,0.015);
     }
     #iso-root .study-manual-btn{
-      border:1px solid #78bde8;background:#f8fcff;color:#145f8c;border-radius:8px;
-      padding:7px 11px;cursor:pointer;font-size:11px;font-weight:700;white-space:nowrap
+      display:inline-grid;place-items:center;width:24px;height:24px;
+      border:1px solid #78bde8;background:#f8fcff;color:#145f8c;border-radius:7px;
+      padding:0;cursor:pointer;font-size:12px;line-height:1
     }
     #iso-root .study-manual-btn:hover{background:#eaf7ff;border-color:#2f83ff}
     #iso-root table.fields td.fdesc .ref {
@@ -1523,7 +1524,7 @@
               f.num === 55 ? maskEMVData(f.value) :
               f.value
             }</td>
-            <td class="fdesc"><button type="button" class="study-manual-btn" data-manual-de="${f.num}" title="Abrir manual de DE${f.num}" aria-label="Abrir manual de DE${f.num}">☝ Ver DE${f.num} en el manual</button></td>
+            <td class="fdesc"><button type="button" class="study-manual-btn" data-manual-de="${f.num}" title="Abrir Field ${f.num} – Valid Values en el manual Visa" aria-label="Abrir Field ${f.num} – Valid Values en el manual Visa">☝</button></td>
           </tr>
         `).join('');
 
@@ -1608,6 +1609,6 @@
 
 <script src="js/permissions.js"></script>
 
-<div id="osc-version-badge" style="position:fixed;right:14px;bottom:12px;z-index:99999;background:#0d2238;border:1px solid #2f83ff;color:#9fd0ff;padding:7px 11px;border-radius:999px;font:600 12px/1.1 Inter,Segoe UI,Arial,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.28)">Baseline v3.5.4.8 · Manual por campo</div>
+<div id="osc-version-badge" style="position:fixed;right:14px;bottom:12px;z-index:99999;background:#0d2238;border:1px solid #2f83ff;color:#9fd0ff;padding:7px 11px;border-radius:999px;font:600 12px/1.1 Inter,Segoe UI,Arial,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.28)">Baseline v3.5.4.9 · Navegación Visa Valid Values</div>
 </body>
 </html>
