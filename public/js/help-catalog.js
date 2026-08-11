@@ -1,5 +1,5 @@
 
-/* OSC Academy v3.5.4.9 · Navegación Visa por campo en Constructor y Parser
+/* OSC Academy v3.5.4.10 · Fix de apertura del manual desde Constructor
    Baseline padre: v3.5.4.8 Manual por campo */
 (() => {
   const contextual = {

@@ -1,0 +1,17 @@
+OSC-ACADEMY · Baseline v3.5.4.10
+Fix manito Constructor · Apertura del manual Visa
+
+Baseline padre
+- OSC-ACADEMY_Baseline_v3.5.4.9_POS_Init_Constructor_Parser_Visa_Valid_Values.zip
+
+Corrección
+- La manito compacta situada debajo del campo activo en Constructor conserva ahora el Data Element mediante data-manual-de.
+- El clic usa el controlador delegado y estable compartido por todos los accesos técnicos del Constructor.
+- Se eliminó la dependencia de un listener temporal recreado junto con la estructura visual del campo.
+- La marca continúa resolviéndose por selección manual o automáticamente mediante DE2/PAN.
+- Para Visa, el destino sigue siendo Field X – Valid Values cuando esa subsección está mapeada.
+- El manual se abre en una pestaña nueva y permanece navegable hacia arriba y hacia abajo.
+
+Alcance
+- No se modificó la lógica transaccional del POS, ATM o Parser.
+- No se eliminó ningún archivo de la baseline padre.
