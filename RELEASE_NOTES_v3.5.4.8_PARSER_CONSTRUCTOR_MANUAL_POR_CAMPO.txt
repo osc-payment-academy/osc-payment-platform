@@ -1,0 +1,18 @@
+OSC-ACADEMY · Baseline v3.5.4.8
+Parser y Constructor · acceso uniforme al manual por Data Element
+
+Baseline padre
+- v3.5.4.7 · Corrección integral.
+
+Cambios incluidos
+- Parser: cada campo interpretado muestra la acción “☝ Ver DEx en el manual”.
+- Parser: se elimina de la tabla la explicación derivada de “valores posibles”; la consulta se dirige al manual técnico.
+- Constructor: se conserva el mismo criterio ya aplicado, con acceso al manual para cada DE.
+- DE3 y demás campos mapeados: la ayuda abre el manual en la página exacta registrada.
+- Campos aún no mapeados: ya no dejan al alumno sin salida; ofrecen abrir la documentación de la marca desde su referencia disponible.
+- La marca utilizada es la seleccionada manualmente o la resuelta por DE2/PAN; Visa no se asume por defecto.
+
+Integridad
+- Se conservan todos los cambios de v3.5.4.7.
+- No se elimina ningún archivo de la baseline padre.
+- Manifiesto SHA-256 actualizado para el paquete completo.
