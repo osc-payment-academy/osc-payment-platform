@@ -1,19 +1,19 @@
 {
   "product": "OSC-ACADEMY",
-  "version": "3.5.4.9",
-  "parent_baseline": "OSC-ACADEMY_Baseline_v3.5.4.8_POS_Init_Constructor_Parser_Manual_Por_Campo",
-  "parent_source_file": "OSC-ACADEMY_Baseline_v3.5.4.8_POS_Init_Constructor_Parser_Manual_Por_Campo.zip",
+  "version": "3.5.4.10",
+  "parent_baseline": "OSC-ACADEMY_Baseline_v3.5.4.9_POS_Init_Constructor_Parser_Visa_Valid_Values",
+  "parent_source_file": "OSC-ACADEMY_Baseline_v3.5.4.9_POS_Init_Constructor_Parser_Visa_Valid_Values.zip",
   "policy": {
     "build_from_last_approved_zip": true,
     "no_silent_file_deletion": true,
     "fail_build_if_parent_file_missing": true,
     "sha256_inventory": true
   },
-  "parent_file_count": 101,
-  "final_file_count": 102,
+  "parent_file_count": 102,
+  "final_file_count": 103,
   "removed_files": [],
   "added_files": [
-    "RELEASE_NOTES_v3.5.4.9_VISA_VALID_VALUES_MANUAL_NAVIGATION.txt"
+    "RELEASE_NOTES_v3.5.4.10_CONSTRUCTOR_MANUAL_CLICK_FIX.txt"
   ],
   "changed_parent_files": [
     "public/atm.html",
@@ -23,7 +23,7 @@
     "public/parser.html",
     "public/pos.html"
   ],
-  "unchanged_parent_file_count": 95,
+  "unchanged_parent_file_count": 96,
   "inventory": {
     ".gitignore": {
       "size": 35,
@@ -77,261 +77,29 @@
       "size": 848,
       "sha256": "c93fe070bc065749b41e68bff6e39da52db54891a4c3aa07f7eebe2785eb4529"
     },
-    "README.md": {
-      "size": 1713,
-      "sha256": "1e7763eac8c58940ac0914010fe56ec975800edff668534220140b58220c0338"
-    },
-    "RELEASE_NOTES_BASELINE_v2.4.txt": {
-      "size": 626,
-      "sha256": "af5e401f4237d0f343bb425ac8b7056e09b17574ddd63dcff5eacc62e50ac69c"
-    },
-    "RELEASE_NOTES_v2.5.1_REINSTALL.txt": {
-      "size": 748,
-      "sha256": "1b83db7f17e33e98dde15fe9ef46abb589f3e6259001f191486e13e1f08d3bcb"
-    },
-    "RELEASE_NOTES_v2.5.2_VALORES_EXPANDIBLES.txt": {
-      "size": 640,
-      "sha256": "c349c6db9753fee6905b8fc0633e9cf1028f77924b94e7e042472b131bb15c4e"
-    },
-    "RELEASE_NOTES_v2.5_MODO_ESTUDIO_DE.txt": {
-      "size": 902,
-      "sha256": "93c2061115b3cd76676f6a2e9af3d8eda87fe6b52bfea8369a2a312a49c4b9d6"
-    },
-    "RELEASE_NOTES_v2.6_CONSOLIDADA.txt": {
-      "size": 608,
-      "sha256": "f31b5019ebe27b0b507fdf4037c652640a40144bdf509008d73474dac4e880ac"
-    },
-    "RELEASE_NOTES_v2.7_POS_CURSO_INTERACTIVO.txt": {
-      "size": 788,
-      "sha256": "6d621eac7448502ce02ecc60b5b0a6f4f31edda34e92ed98dd1ffe0d6b79205a"
-    },
-    "RELEASE_NOTES_v2.8_AJUSTES_POS_CONSTRUCTOR_CURSO.txt": {
-      "size": 657,
-      "sha256": "988a48d0e1ce887ea89fdb4545c073f0c629be9a8788e22e1aed604adb2143ea"
-    },
-    "RELEASE_NOTES_v2.9.1_FIX_SIN_PLANTILLA.txt": {
-      "size": 439,
-      "sha256": "dc8dfb30dc1a27d65515f42f34eee57045477597236bb8d49045615da7938c40"
-    },
-    "RELEASE_NOTES_v2.9_LAB_INTERACTIVO.txt": {
-      "size": 1290,
-      "sha256": "62d10b301f99bcb43e36c8290f96cb5e71e30ea98384a8eb045f8a65b0b8dfcc"
-    },
-    "RELEASE_NOTES_v3.0.1_SPRINT1_CORRECCIONES.txt": {
-      "size": 994,
-      "sha256": "d2dd5d7fd8cfbc57093420223295ecb2216a9c67a9d087b18722ccee139f84fc"
-    },
-    "RELEASE_NOTES_v3.0.2_SPRINT1_FIX_SELECTION_TICKET.txt": {
-      "size": 961,
-      "sha256": "f43433d087e001198fc50d497f1d4a5a614eeed8b25c730ecc1d07a465947d37"
-    },
-    "RELEASE_NOTES_v3.0.3_SPRINT1_HOTFIX.txt": {
-      "size": 457,
-      "sha256": "f1e0f15e5d7800ecfc52699002072a23355df02f6439b4c4191ec7e43cd82b88"
-    },
-    "RELEASE_NOTES_v3.0_MULTI_NETWORK.txt": {
-      "size": 1274,
-      "sha256": "53958843e5a558a498097290a327951b3e17769010b6701d317498c24f32ea7d"
-    },
-    "RELEASE_NOTES_v3.0_SPRINT1_POS.txt": {
-      "size": 1026,
-      "sha256": "923a1b34632aadc693b540c3a46a0be573f401043093891c4bf4144eec4abe58"
-    },
-    "RELEASE_NOTES_v3.1.1_SPRINT2_HOTFIX.txt": {
-      "size": 607,
-      "sha256": "3f8c1fa18d4fd3fa1d2c0c6c6666d3302cd077a734310a8cb853457c47c44002"
-    },
-    "RELEASE_NOTES_v3.1_SPRINT2_SWITCH.txt": {
-      "size": 1102,
-      "sha256": "9cdc20067eea04fb1067eeb181f1b671f33b918a2f182c855a39cf5eed6ecf8a"
-    },
-    "RELEASE_NOTES_v3.2_VISORS_CLEARING.txt": {
-      "size": 665,
-      "sha256": "5de5596df59860401e17606b564839b2367ff7c19a34490f134cf062e874920d"
-    },
-    "RELEASE_NOTES_v3.3.1_ATM_UI_REVERSA.txt": {
-      "size": 849,
-      "sha256": "151affbd2d4787e0b51a86cedd52c26c581f442eee86d8ff0f5b75a9dc66f018"
-    },
-    "RELEASE_NOTES_v3.3.2_ATM_REVERSA_AUTOMATICA.txt": {
-      "size": 912,
-      "sha256": "1f099b92c85d679eb41283f41a72ca5fb7952126b9abadd39d67575aa7cd1861"
-    },
-    "RELEASE_NOTES_v3.3.3_VISA_ATM_CONFORMANCE.txt": {
-      "size": 1065,
-      "sha256": "0f385ac53ad29fb36b9a7043a684d0560ccfc5f92308b858f7b5d825b8341dc4"
-    },
-    "RELEASE_NOTES_v3.3.4.1_ATM_SWITCH_PERSISTENCE.txt": {
-      "size": 789,
-      "sha256": "cbb3d25637a5c01a717930e5e744d836a6493a3816e2450765117c94580dd7af"
-    },
-    "RELEASE_NOTES_v3.3.4_ATM_RC1.txt": {
-      "size": 750,
-      "sha256": "59144c8841d5f96f90772fa08ddf756f56327e02253ef525255b925348e57722"
-    },
-    "RELEASE_NOTES_v3.3.6_ATM_RECONCILIATION_MANUAL_NAVIGATOR.txt": {
-      "size": 595,
-      "sha256": "567fe621c0cc7eaf510a4b4db290436f32c926590cdb860676ca1b7a2a5698a5"
-    },
-    "RELEASE_NOTES_v3.3_SMART_LEARNING_EBOOK_PROTEGIDO.txt": {
-      "size": 743,
-      "sha256": "e2f754cd719f447ddb09ead372bb09eaaf05183e7044a6b83b5b7bd075070de4"
-    },
-    "RELEASE_NOTES_v3.4.1_ATM_HEADER_HOTFIX.txt": {
-      "size": 417,
-      "sha256": "ff32d61e8f5e4dcc9019171c3fac7dd72ef657f1b183612a4eb73bc18177ed50"
-    },
-    "RELEASE_NOTES_v3.4.2_SHARED_PAYMENT_SELECTOR.txt": {
-      "size": 522,
-      "sha256": "46d497fe6368be81821339dad227899f60d40c46b57ac8195e3e1e367004b9e3"
-    },
-    "RELEASE_NOTES_v3.4_SWITCH_EMISOR_INCOMING_MVP.txt": {
-      "size": 753,
-      "sha256": "82199342e25d0ead781267ebb87bc43d3dd0153f890483415fc50241c12c142a"
-    },
-    "RELEASE_NOTES_v3.5.2_POS_BATCH_TICKET.txt": {
-      "size": 427,
-      "sha256": "a7881fadd48ca301a644cec133b5c7ef4f381e0acd4d37e02d56d5401ec5d6bb"
-    },
-    "RELEASE_NOTES_v3.5.3.10_AMEX_POS_1100.txt": {
-      "size": 2101,
-      "sha256": "650b117261aa6244d97593b5c7f702400b9eab35b3222e87f546cce14942e707"
-    },
-    "RELEASE_NOTES_v3.5.3.11_AMEX_POS_1110.txt": {
-      "size": 1523,
-      "sha256": "421a7405dc9f581b68dd01b0f876aa923edd6c0d9059f24e790404bbd391c3a1"
-    },
-    "RELEASE_NOTES_v3.5.3.12_AMEX_POS_DEBIT.txt": {
-      "size": 1910,
-      "sha256": "69e8c05003eb3508cbdcd897d6cdf162bf014c9ad0a6d7ca47ac985b68566140"
-    },
-    "RELEASE_NOTES_v3.5.3.13_AMEX_AEIPS_EXPRESSPAY.txt": {
-      "size": 1602,
-      "sha256": "2afa7a6117ff5a6a174182b8c82cf30ef5414502c39af9f3bee892b3cda49673"
-    },
-    "RELEASE_NOTES_v3.5.3.14_AMEX_REVERSAL_HISTORY_FIX.txt": {
-      "size": 1378,
-      "sha256": "2142f1fc0f2d93b1b2d6ddf5868a5d41a967e421b362332296e7b7c0985c0af5"
-    },
-    "RELEASE_NOTES_v3.5.3.15_AMEX_ATM_1200_1210_UI_FIX.txt": {
-      "size": 1574,
-      "sha256": "025bcd88f93654f58fef10ee5e00290f1ec88a418827da61b1800a2198f13152"
-    },
-    "RELEASE_NOTES_v3.5.3.16.txt": {
-      "size": 1054,
-      "sha256": "2bdde82c1e0727d0bcb3add692ccbe8920f33ec304bdf193e5264dfc24823eaf"
-    },
-    "RELEASE_NOTES_v3.5.3.18_AMEX_PARSER_CONSTRUCTOR.txt": {
-      "size": 1048,
-      "sha256": "09a33c8c3047a7d124af97a155c7e301fb2be851fd294b45b3014bf5b5b9a1fb"
-    },
-    "RELEASE_NOTES_v3.5.3.19_AMEX_CORE_COMPLETION.txt": {
-      "size": 2306,
-      "sha256": "c44adf66ebd67c705b9bbb40b65f5e1cedb52d7b9ee2fc27442c4e766fb94581"
-    },
-    "RELEASE_NOTES_v3.5.3.1_ATM_CAPTURE_PARTIAL_HOTFIX.txt": {
-      "size": 1060,
-      "sha256": "2378482e6df978bc134d868c59d5fad172144d367580a9d61a2db1e9e9e3c5e0"
-    },
-    "RELEASE_NOTES_v3.5.3.20_VISA_MC_CURRENT_MANUALS.txt": {
-      "size": 1570,
-      "sha256": "205860efdd80e4df45cdef766e15aaa81d72f289337d075d64b56206a9d1c840"
-    },
-    "RELEASE_NOTES_v3.5.3.2_POS_ATM_CAPTURE_VISUALS.txt": {
-      "size": 918,
-      "sha256": "ddbbb5fa7053d17f9e017fdee0ede5f7ebfd4bbd63a36baf284f5c995515bb0d"
-    },
-    "RELEASE_NOTES_v3.5.3.3_ATM_EMBEDDED_CAPTURE_STYLES.txt": {
-      "size": 902,
-      "sha256": "3a8213e4a796184521a7e0bd732dc1ef96db1f35544c9a4f186d79305c7c6177"
-    },
-    "RELEASE_NOTES_v3.5.3.4_ATM_COMPACT_HEADER_MC_PARTIAL_REVERSAL.txt": {
-      "size": 1305,
-      "sha256": "caed4106471073b4a7f42dbbdb2d455711c95a331c3560dce05ca0546c67bb75"
-    },
-    "RELEASE_NOTES_v3.5.3.5_ATM_SMS_NETWORK_PROFILE.txt": {
-      "size": 1046,
-      "sha256": "3722963a432dc9306e10f3bebc6b969290fd1abee23140830d790f307203d895"
-    },
-    "RELEASE_NOTES_v3.5.3.6_PRIVATE_MODULES_ONDEMAND.txt": {
-      "size": 415,
-      "sha256": "5e8d8fe89985fcaf88a5f9b726d84029ca92109962c62e361f896eb5f90fb551"
-    },
-    "RELEASE_NOTES_v3.5.3.7_ATM_PERSISTENT_HISTORY.txt": {
-      "size": 1461,
-      "sha256": "8093f7ba46d4af4e008bca1b3f943497a01ab0042dd9cbaa82e53c607d73d275"
-    },
-    "RELEASE_NOTES_v3.5.3.9_CORE_PILOT_REFUND.txt": {
-      "size": 1634,
-      "sha256": "5e486c33825889048a27621767ef6719bce8d24ce338dddbbdb6a553bef8f657"
-    },
-    "RELEASE_NOTES_v3.5.3_ATM_CAPTURE_CASSETTES_PARTIAL_PARSER.txt": {
-      "size": 1261,
-      "sha256": "0d5b1f95714f7e2eb685256bd930aa9fed3bfcaffd0fe6d40ab929a87a439001"
-    },
-    "RELEASE_NOTES_v3.5.4.1_SOURCE_CONTROLLED_HELP.txt": {
-      "size": 1089,
-      "sha256": "d2fd63b081f137a5e702f24001322f81cdeb320d3c75803a374a7ad3e715a142"
-    },
-    "RELEASE_NOTES_v3.5.4.2_CONTEXTUAL_HELP_CLICK_FIX.txt": {
-      "size": 814,
-      "sha256": "2280a2503c28d0f41693f47a6e98f5f62f062a7acf1e7b5a7c58d6aa01b09367"
-    },
-    "RELEASE_NOTES_v3.5.4.3_HOVER_HELP_WHITE_POPUPS.txt": {
-      "size": 1130,
-      "sha256": "704baa5fa2987e07f58e03cf0ffe86369cba8572662f1594c4570f6ec36e7949"
-    },
-    "RELEASE_NOTES_v3.5.4.4_POS_INIT_CONSTRUCTOR_MANUAL_HELP.txt": {
-      "size": 1366,
-      "sha256": "0f14f52511064e4d6946856caafc053b0f8cc196cdc01476a70ccfe21c9fcfa4"
-    },
-    "RELEASE_NOTES_v3.5.4.5_CHIP_EMV_GLOSSARY.txt": {
-      "size": 988,
-      "sha256": "d549045cbfac353533acb157c5f7eb4103fcc04c597e2a1bb84cf6c7ae3f45c9"
-    },
-    "RELEASE_NOTES_v3.5.4.6_HELP_CONSTRUCTOR_PARSER_MANUALS.txt": {
-      "size": 1375,
-      "sha256": "83d2582acc2049be6fda5d962df1b38d3fd4ffa0f765daf6a93f6ee9a97951ee"
-    },
-    "RELEASE_NOTES_v3.5.4.7_CORRECCION_INTEGRAL_HELP_CONSTRUCTOR.txt": {
-      "size": 765,
-      "sha256": "c4a7c538d5016f37f6744e1b3e7715c5a129d4d63a36c323c6e939056bbb4151"
-    },
-    "RELEASE_NOTES_v3.5.4.8_PARSER_CONSTRUCTOR_MANUAL_POR_CAMPO.txt": {
-      "size": 982,
-      "sha256": "731719e97070a4b35b870d0af6d3e32ae8091111182b2f28d4a89ace7339fad8"
-    },
-    "RELEASE_NOTES_v3.5.4.9_VISA_VALID_VALUES_MANUAL_NAVIGATION.txt": {
-      "size": 875,
-      "sha256": "b9c8e6b8dd89a9a31a723ac2dadab9cc42cc9e708bfd3795c17f7083ca08656b"
-    },
     "package.json": {
       "size": 211,
       "sha256": "ecfeed889964433dc2a757b0c9ec5f0d2f3f22fcead57a95b3397a39b63411f3"
-    },
-    "public/Plantilla_Permitidos.csv": {
-      "size": 265,
-      "sha256": "2250148dbbd0d717b54701f2d6a33b58fac6dcc940ccc87a599de9f7dcf03f59"
     },
     "public/_headers": {
       "size": 128,
       "sha256": "50235084f46ee7e4e36e8c2af728d927e2a072c9e19427dbb9de616ce819e63a"
     },
     "public/atm.html": {
-      "size": 127658,
-      "sha256": "2938ba8fc1fc544ebac40ea00728c2617a83c745b53a37086d4b64c01807cbf3"
-    },
-    "public/compensacion.html": {
-      "size": 22994,
-      "sha256": "1f3b54cd18f376f178e3d8fda15bcdf3cae4d3d4a078da0cbb4fc3b848474603"
+      "size": 127652,
+      "sha256": "8accd558f8421e899c557e93c070983bd42c9cb8f41dd34e39ec68b62c01334e"
     },
     "public/compensacion_mastercard.html": {
       "size": 11713,
       "sha256": "dada24b924fff8672768924a5215f55d91b40ebba25d88d8f31e3bc7cf7017b2"
     },
+    "public/compensacion.html": {
+      "size": 22994,
+      "sha256": "1f3b54cd18f376f178e3d8fda15bcdf3cae4d3d4a078da0cbb4fc3b848474603"
+    },
     "public/constructor.html": {
-      "size": 63037,
-      "sha256": "ffbc749c5782e496dd66f914c27b0b59895218dfa44b34f921336a7d8d751023"
+      "size": 62811,
+      "sha256": "246b9cc7bfa9034f54a28d540b1e9e542d4054a8e2e609364c3b12fe1e70a5a4"
     },
     "public/css/app.css": {
       "size": 43036,
@@ -354,16 +122,16 @@
       "sha256": "0e4b88cac26515a0933ef51987ae3161458516b010cb26cdd9a0ba825bd08c06"
     },
     "public/index.html": {
-      "size": 13579,
-      "sha256": "e4179a4befc8ed95c70c8b5f69aa0633cdf40fa390039780e964248d8d065dc2"
+      "size": 13573,
+      "sha256": "d05d87ae900e2b828aba21e7714cbe4725d1d20dab9a0b1b98e6c9197a77a349"
     },
     "public/js/app.js": {
       "size": 97083,
       "sha256": "e1308b4b9af06ba34d4c54cc180e98c4434d670a245a85dfe2a4bd395ae7552f"
     },
     "public/js/help-catalog.js": {
-      "size": 25165,
-      "sha256": "8ca7f7f7a7c8d002d2ffdf2e287674eedd01bc1b462e5f66bf4b69c5e334cfec"
+      "size": 25160,
+      "sha256": "866880291789eae3590809f7cd7972afcfd3cdfe7ece7b5e1ca866050dd5dd88"
     },
     "public/js/issuer-store.js": {
       "size": 2636,
@@ -402,12 +170,16 @@
       "sha256": "6737fbba055a97e965f3915f4d4d23b146285d08e3358569cf979e7f7211a1f1"
     },
     "public/parser.html": {
-      "size": 80221,
-      "sha256": "949a2c66bb93ec1fc25c1578d885202978129d1feeaa10f3e26efa1ebc00246e"
+      "size": 80215,
+      "sha256": "b575edd1ad05ad6d59ff4cf500e60f71c0721af1a9e4148a82520f8cbc94799d"
+    },
+    "public/Plantilla_Permitidos.csv": {
+      "size": 265,
+      "sha256": "2250148dbbd0d717b54701f2d6a33b58fac6dcc940ccc87a599de9f7dcf03f59"
     },
     "public/pos.html": {
-      "size": 25262,
-      "sha256": "d6ce1b5a88bdb087e37b9bcdafeb786ddb5530fa481f43428d0b4d38f4d803ed"
+      "size": 25256,
+      "sha256": "3eac6afac105eca13fdc4db92c596465f4e68269657c264f94994b59e81f7c20"
     },
     "public/production_diagnostic.html": {
       "size": 3671,
@@ -417,13 +189,245 @@
       "size": 4111,
       "sha256": "b647e945214c358b10f73e113242ec7b2e8d23ff7492b129caebfb14f51ac536"
     },
+    "public/switch_emisor.html": {
+      "size": 11885,
+      "sha256": "43e61c4f2c063404c33a01dd2f224d1aa82578b60575dc42aca946d8932e7c00"
+    },
     "public/switch.html": {
       "size": 22332,
       "sha256": "d8325aa2ec3ac94cdb33564fea72a34e29e1a0472d7231ab891f3434dfff75e5"
     },
-    "public/switch_emisor.html": {
-      "size": 11885,
-      "sha256": "43e61c4f2c063404c33a01dd2f224d1aa82578b60575dc42aca946d8932e7c00"
+    "README.md": {
+      "size": 1713,
+      "sha256": "1e7763eac8c58940ac0914010fe56ec975800edff668534220140b58220c0338"
+    },
+    "RELEASE_NOTES_BASELINE_v2.4.txt": {
+      "size": 626,
+      "sha256": "af5e401f4237d0f343bb425ac8b7056e09b17574ddd63dcff5eacc62e50ac69c"
+    },
+    "RELEASE_NOTES_v2.5_MODO_ESTUDIO_DE.txt": {
+      "size": 902,
+      "sha256": "93c2061115b3cd76676f6a2e9af3d8eda87fe6b52bfea8369a2a312a49c4b9d6"
+    },
+    "RELEASE_NOTES_v2.5.1_REINSTALL.txt": {
+      "size": 748,
+      "sha256": "1b83db7f17e33e98dde15fe9ef46abb589f3e6259001f191486e13e1f08d3bcb"
+    },
+    "RELEASE_NOTES_v2.5.2_VALORES_EXPANDIBLES.txt": {
+      "size": 640,
+      "sha256": "c349c6db9753fee6905b8fc0633e9cf1028f77924b94e7e042472b131bb15c4e"
+    },
+    "RELEASE_NOTES_v2.6_CONSOLIDADA.txt": {
+      "size": 608,
+      "sha256": "f31b5019ebe27b0b507fdf4037c652640a40144bdf509008d73474dac4e880ac"
+    },
+    "RELEASE_NOTES_v2.7_POS_CURSO_INTERACTIVO.txt": {
+      "size": 788,
+      "sha256": "6d621eac7448502ce02ecc60b5b0a6f4f31edda34e92ed98dd1ffe0d6b79205a"
+    },
+    "RELEASE_NOTES_v2.8_AJUSTES_POS_CONSTRUCTOR_CURSO.txt": {
+      "size": 657,
+      "sha256": "988a48d0e1ce887ea89fdb4545c073f0c629be9a8788e22e1aed604adb2143ea"
+    },
+    "RELEASE_NOTES_v2.9_LAB_INTERACTIVO.txt": {
+      "size": 1290,
+      "sha256": "62d10b301f99bcb43e36c8290f96cb5e71e30ea98384a8eb045f8a65b0b8dfcc"
+    },
+    "RELEASE_NOTES_v2.9.1_FIX_SIN_PLANTILLA.txt": {
+      "size": 439,
+      "sha256": "dc8dfb30dc1a27d65515f42f34eee57045477597236bb8d49045615da7938c40"
+    },
+    "RELEASE_NOTES_v3.0_MULTI_NETWORK.txt": {
+      "size": 1274,
+      "sha256": "53958843e5a558a498097290a327951b3e17769010b6701d317498c24f32ea7d"
+    },
+    "RELEASE_NOTES_v3.0_SPRINT1_POS.txt": {
+      "size": 1026,
+      "sha256": "923a1b34632aadc693b540c3a46a0be573f401043093891c4bf4144eec4abe58"
+    },
+    "RELEASE_NOTES_v3.0.1_SPRINT1_CORRECCIONES.txt": {
+      "size": 994,
+      "sha256": "d2dd5d7fd8cfbc57093420223295ecb2216a9c67a9d087b18722ccee139f84fc"
+    },
+    "RELEASE_NOTES_v3.0.2_SPRINT1_FIX_SELECTION_TICKET.txt": {
+      "size": 961,
+      "sha256": "f43433d087e001198fc50d497f1d4a5a614eeed8b25c730ecc1d07a465947d37"
+    },
+    "RELEASE_NOTES_v3.0.3_SPRINT1_HOTFIX.txt": {
+      "size": 457,
+      "sha256": "f1e0f15e5d7800ecfc52699002072a23355df02f6439b4c4191ec7e43cd82b88"
+    },
+    "RELEASE_NOTES_v3.1_SPRINT2_SWITCH.txt": {
+      "size": 1102,
+      "sha256": "9cdc20067eea04fb1067eeb181f1b671f33b918a2f182c855a39cf5eed6ecf8a"
+    },
+    "RELEASE_NOTES_v3.1.1_SPRINT2_HOTFIX.txt": {
+      "size": 607,
+      "sha256": "3f8c1fa18d4fd3fa1d2c0c6c6666d3302cd077a734310a8cb853457c47c44002"
+    },
+    "RELEASE_NOTES_v3.2_VISORS_CLEARING.txt": {
+      "size": 665,
+      "sha256": "5de5596df59860401e17606b564839b2367ff7c19a34490f134cf062e874920d"
+    },
+    "RELEASE_NOTES_v3.3_SMART_LEARNING_EBOOK_PROTEGIDO.txt": {
+      "size": 743,
+      "sha256": "e2f754cd719f447ddb09ead372bb09eaaf05183e7044a6b83b5b7bd075070de4"
+    },
+    "RELEASE_NOTES_v3.3.1_ATM_UI_REVERSA.txt": {
+      "size": 849,
+      "sha256": "151affbd2d4787e0b51a86cedd52c26c581f442eee86d8ff0f5b75a9dc66f018"
+    },
+    "RELEASE_NOTES_v3.3.2_ATM_REVERSA_AUTOMATICA.txt": {
+      "size": 912,
+      "sha256": "1f099b92c85d679eb41283f41a72ca5fb7952126b9abadd39d67575aa7cd1861"
+    },
+    "RELEASE_NOTES_v3.3.3_VISA_ATM_CONFORMANCE.txt": {
+      "size": 1065,
+      "sha256": "0f385ac53ad29fb36b9a7043a684d0560ccfc5f92308b858f7b5d825b8341dc4"
+    },
+    "RELEASE_NOTES_v3.3.4_ATM_RC1.txt": {
+      "size": 750,
+      "sha256": "59144c8841d5f96f90772fa08ddf756f56327e02253ef525255b925348e57722"
+    },
+    "RELEASE_NOTES_v3.3.4.1_ATM_SWITCH_PERSISTENCE.txt": {
+      "size": 789,
+      "sha256": "cbb3d25637a5c01a717930e5e744d836a6493a3816e2450765117c94580dd7af"
+    },
+    "RELEASE_NOTES_v3.3.6_ATM_RECONCILIATION_MANUAL_NAVIGATOR.txt": {
+      "size": 595,
+      "sha256": "567fe621c0cc7eaf510a4b4db290436f32c926590cdb860676ca1b7a2a5698a5"
+    },
+    "RELEASE_NOTES_v3.4_SWITCH_EMISOR_INCOMING_MVP.txt": {
+      "size": 753,
+      "sha256": "82199342e25d0ead781267ebb87bc43d3dd0153f890483415fc50241c12c142a"
+    },
+    "RELEASE_NOTES_v3.4.1_ATM_HEADER_HOTFIX.txt": {
+      "size": 417,
+      "sha256": "ff32d61e8f5e4dcc9019171c3fac7dd72ef657f1b183612a4eb73bc18177ed50"
+    },
+    "RELEASE_NOTES_v3.4.2_SHARED_PAYMENT_SELECTOR.txt": {
+      "size": 522,
+      "sha256": "46d497fe6368be81821339dad227899f60d40c46b57ac8195e3e1e367004b9e3"
+    },
+    "RELEASE_NOTES_v3.5.2_POS_BATCH_TICKET.txt": {
+      "size": 427,
+      "sha256": "a7881fadd48ca301a644cec133b5c7ef4f381e0acd4d37e02d56d5401ec5d6bb"
+    },
+    "RELEASE_NOTES_v3.5.3_ATM_CAPTURE_CASSETTES_PARTIAL_PARSER.txt": {
+      "size": 1261,
+      "sha256": "0d5b1f95714f7e2eb685256bd930aa9fed3bfcaffd0fe6d40ab929a87a439001"
+    },
+    "RELEASE_NOTES_v3.5.3.1_ATM_CAPTURE_PARTIAL_HOTFIX.txt": {
+      "size": 1060,
+      "sha256": "2378482e6df978bc134d868c59d5fad172144d367580a9d61a2db1e9e9e3c5e0"
+    },
+    "RELEASE_NOTES_v3.5.3.10_AMEX_POS_1100.txt": {
+      "size": 2101,
+      "sha256": "650b117261aa6244d97593b5c7f702400b9eab35b3222e87f546cce14942e707"
+    },
+    "RELEASE_NOTES_v3.5.3.11_AMEX_POS_1110.txt": {
+      "size": 1523,
+      "sha256": "421a7405dc9f581b68dd01b0f876aa923edd6c0d9059f24e790404bbd391c3a1"
+    },
+    "RELEASE_NOTES_v3.5.3.12_AMEX_POS_DEBIT.txt": {
+      "size": 1910,
+      "sha256": "69e8c05003eb3508cbdcd897d6cdf162bf014c9ad0a6d7ca47ac985b68566140"
+    },
+    "RELEASE_NOTES_v3.5.3.13_AMEX_AEIPS_EXPRESSPAY.txt": {
+      "size": 1602,
+      "sha256": "2afa7a6117ff5a6a174182b8c82cf30ef5414502c39af9f3bee892b3cda49673"
+    },
+    "RELEASE_NOTES_v3.5.3.14_AMEX_REVERSAL_HISTORY_FIX.txt": {
+      "size": 1378,
+      "sha256": "2142f1fc0f2d93b1b2d6ddf5868a5d41a967e421b362332296e7b7c0985c0af5"
+    },
+    "RELEASE_NOTES_v3.5.3.15_AMEX_ATM_1200_1210_UI_FIX.txt": {
+      "size": 1574,
+      "sha256": "025bcd88f93654f58fef10ee5e00290f1ec88a418827da61b1800a2198f13152"
+    },
+    "RELEASE_NOTES_v3.5.3.16.txt": {
+      "size": 1054,
+      "sha256": "2bdde82c1e0727d0bcb3add692ccbe8920f33ec304bdf193e5264dfc24823eaf"
+    },
+    "RELEASE_NOTES_v3.5.3.18_AMEX_PARSER_CONSTRUCTOR.txt": {
+      "size": 1048,
+      "sha256": "09a33c8c3047a7d124af97a155c7e301fb2be851fd294b45b3014bf5b5b9a1fb"
+    },
+    "RELEASE_NOTES_v3.5.3.19_AMEX_CORE_COMPLETION.txt": {
+      "size": 2306,
+      "sha256": "c44adf66ebd67c705b9bbb40b65f5e1cedb52d7b9ee2fc27442c4e766fb94581"
+    },
+    "RELEASE_NOTES_v3.5.3.2_POS_ATM_CAPTURE_VISUALS.txt": {
+      "size": 918,
+      "sha256": "ddbbb5fa7053d17f9e017fdee0ede5f7ebfd4bbd63a36baf284f5c995515bb0d"
+    },
+    "RELEASE_NOTES_v3.5.3.20_VISA_MC_CURRENT_MANUALS.txt": {
+      "size": 1570,
+      "sha256": "205860efdd80e4df45cdef766e15aaa81d72f289337d075d64b56206a9d1c840"
+    },
+    "RELEASE_NOTES_v3.5.3.3_ATM_EMBEDDED_CAPTURE_STYLES.txt": {
+      "size": 902,
+      "sha256": "3a8213e4a796184521a7e0bd732dc1ef96db1f35544c9a4f186d79305c7c6177"
+    },
+    "RELEASE_NOTES_v3.5.3.4_ATM_COMPACT_HEADER_MC_PARTIAL_REVERSAL.txt": {
+      "size": 1305,
+      "sha256": "caed4106471073b4a7f42dbbdb2d455711c95a331c3560dce05ca0546c67bb75"
+    },
+    "RELEASE_NOTES_v3.5.3.5_ATM_SMS_NETWORK_PROFILE.txt": {
+      "size": 1046,
+      "sha256": "3722963a432dc9306e10f3bebc6b969290fd1abee23140830d790f307203d895"
+    },
+    "RELEASE_NOTES_v3.5.3.6_PRIVATE_MODULES_ONDEMAND.txt": {
+      "size": 415,
+      "sha256": "5e8d8fe89985fcaf88a5f9b726d84029ca92109962c62e361f896eb5f90fb551"
+    },
+    "RELEASE_NOTES_v3.5.3.7_ATM_PERSISTENT_HISTORY.txt": {
+      "size": 1461,
+      "sha256": "8093f7ba46d4af4e008bca1b3f943497a01ab0042dd9cbaa82e53c607d73d275"
+    },
+    "RELEASE_NOTES_v3.5.3.9_CORE_PILOT_REFUND.txt": {
+      "size": 1634,
+      "sha256": "5e486c33825889048a27621767ef6719bce8d24ce338dddbbdb6a553bef8f657"
+    },
+    "RELEASE_NOTES_v3.5.4.1_SOURCE_CONTROLLED_HELP.txt": {
+      "size": 1089,
+      "sha256": "d2fd63b081f137a5e702f24001322f81cdeb320d3c75803a374a7ad3e715a142"
+    },
+    "RELEASE_NOTES_v3.5.4.10_CONSTRUCTOR_MANUAL_CLICK_FIX.txt": {
+      "size": 949,
+      "sha256": "339e86e4667648c68c0a003b0e8abf8aa96de78b5fd19cb8bc7afea1756ea6b3"
+    },
+    "RELEASE_NOTES_v3.5.4.2_CONTEXTUAL_HELP_CLICK_FIX.txt": {
+      "size": 814,
+      "sha256": "2280a2503c28d0f41693f47a6e98f5f62f062a7acf1e7b5a7c58d6aa01b09367"
+    },
+    "RELEASE_NOTES_v3.5.4.3_HOVER_HELP_WHITE_POPUPS.txt": {
+      "size": 1130,
+      "sha256": "704baa5fa2987e07f58e03cf0ffe86369cba8572662f1594c4570f6ec36e7949"
+    },
+    "RELEASE_NOTES_v3.5.4.4_POS_INIT_CONSTRUCTOR_MANUAL_HELP.txt": {
+      "size": 1366,
+      "sha256": "0f14f52511064e4d6946856caafc053b0f8cc196cdc01476a70ccfe21c9fcfa4"
+    },
+    "RELEASE_NOTES_v3.5.4.5_CHIP_EMV_GLOSSARY.txt": {
+      "size": 988,
+      "sha256": "d549045cbfac353533acb157c5f7eb4103fcc04c597e2a1bb84cf6c7ae3f45c9"
+    },
+    "RELEASE_NOTES_v3.5.4.6_HELP_CONSTRUCTOR_PARSER_MANUALS.txt": {
+      "size": 1375,
+      "sha256": "83d2582acc2049be6fda5d962df1b38d3fd4ffa0f765daf6a93f6ee9a97951ee"
+    },
+    "RELEASE_NOTES_v3.5.4.7_CORRECCION_INTEGRAL_HELP_CONSTRUCTOR.txt": {
+      "size": 765,
+      "sha256": "c4a7c538d5016f37f6744e1b3e7715c5a129d4d63a36c323c6e939056bbb4151"
+    },
+    "RELEASE_NOTES_v3.5.4.8_PARSER_CONSTRUCTOR_MANUAL_POR_CAMPO.txt": {
+      "size": 982,
+      "sha256": "731719e97070a4b35b870d0af6d3e32ae8091111182b2f28d4a89ace7339fad8"
+    },
+    "RELEASE_NOTES_v3.5.4.9_VISA_VALID_VALUES_MANUAL_NAVIGATION.txt": {
+      "size": 875,
+      "sha256": "b9c8e6b8dd89a9a31a723ac2dadab9cc42cc9e708bfd3795c17f7083ca08656b"
     },
     "schema.sql": {
       "size": 1831,
