@@ -1,30 +1,27 @@
 {
   "product": "OSC-ACADEMY",
-  "version": "3.5.4.4",
-  "parent_baseline": "OSC-ACADEMY_Baseline_v3.5.4.3_HoverHelp_WhitePopups",
-  "parent_source_file": "OSC-ACADEMY_Baseline_v3.5.4.3_HoverHelp_WhitePopups.zip",
+  "version": "3.5.4.5",
+  "parent_baseline": "OSC-ACADEMY_Baseline_v3.5.4.4_POS_Init_ConstructorManual_Help",
+  "parent_source_file": "OSC-ACADEMY_Baseline_v3.5.4.4_POS_Init_ConstructorManual_Help.zip",
   "policy": {
     "build_from_last_approved_zip": true,
     "no_silent_file_deletion": true,
     "fail_build_if_parent_file_missing": true,
     "sha256_inventory": true
   },
-  "parent_file_count": 97,
-  "file_count_before_manifest": 94,
+  "parent_file_count": 98,
+  "final_file_count": 99,
   "removed_files": [],
-  "added_files_before_manifest": [
-    "RELEASE_NOTES_v3.5.4.1_SOURCE_CONTROLLED_HELP.txt",
-    "public/js/help-catalog.js"
+  "added_files": [
+    "RELEASE_NOTES_v3.5.4.5_CHIP_EMV_GLOSSARY.txt"
   ],
   "changed_parent_files": [
     "public/atm.html",
-    "public/constructor.html",
-    "public/js/app.js",
     "public/js/help-catalog.js",
     "public/pos.html"
   ],
-  "unchanged_parent_file_count": 88,
-  "parent_inventory": {
+  "unchanged_parent_file_count": 94,
+  "inventory": {
     ".gitignore": {
       "size": 35,
       "sha256": "a67b7ffbe26d49d8ba0467b76c2da61a27287a9f13942022a782082ef5f27d7b"
@@ -32,10 +29,6 @@
     "ARCHITECTURE_PRIVATE_MODULES_v3.5.3.6.txt": {
       "size": 805,
       "sha256": "ce04b42b51f716aea1d8ee1c7c85d5fd8110d27c3f0e07a4ff79032d1ea40e70"
-    },
-    "BASELINE_MANIFEST.json": {
-      "size": 16042,
-      "sha256": "1ef3fb733c848dd58b3dbcd8d7178d9f6211bd1aaf2e4c8e58d8affd24debcf8"
     },
     "DOMAIN_SETUP_v2.8.1.txt": {
       "size": 539,
@@ -285,6 +278,14 @@
       "size": 1130,
       "sha256": "704baa5fa2987e07f58e03cf0ffe86369cba8572662f1594c4570f6ec36e7949"
     },
+    "RELEASE_NOTES_v3.5.4.4_POS_INIT_CONSTRUCTOR_MANUAL_HELP.txt": {
+      "size": 1366,
+      "sha256": "0f14f52511064e4d6946856caafc053b0f8cc196cdc01476a70ccfe21c9fcfa4"
+    },
+    "RELEASE_NOTES_v3.5.4.5_CHIP_EMV_GLOSSARY.txt": {
+      "size": 988,
+      "sha256": "d549045cbfac353533acb157c5f7eb4103fcc04c597e2a1bb84cf6c7ae3f45c9"
+    },
     "package.json": {
       "size": 211,
       "sha256": "ecfeed889964433dc2a757b0c9ec5f0d2f3f22fcead57a95b3397a39b63411f3"
@@ -298,8 +299,8 @@
       "sha256": "50235084f46ee7e4e36e8c2af728d927e2a072c9e19427dbb9de616ce819e63a"
     },
     "public/atm.html": {
-      "size": 127653,
-      "sha256": "76d5ba79889e2d4be658e4cb287167e41a7a34bfcee04c7499a7973824b10eae"
+      "size": 127646,
+      "sha256": "8169259fa784787858e253fa700f64d3419ac5bd926cf9fefeeda17c9cd92395"
     },
     "public/compensacion.html": {
       "size": 22994,
@@ -310,8 +311,8 @@
       "sha256": "dada24b924fff8672768924a5215f55d91b40ebba25d88d8f31e3bc7cf7017b2"
     },
     "public/constructor.html": {
-      "size": 61683,
-      "sha256": "326032122f3750631a56aeceedf12b73804bbbbb0550b67e232874a3d3141e73"
+      "size": 63201,
+      "sha256": "8ee79f2c4047a83f3261a10221e3302c71e1581e140f47efaa4ecab9380a754f"
     },
     "public/css/app.css": {
       "size": 43036,
@@ -338,12 +339,12 @@
       "sha256": "19fcf808802135edaa1185dfe1746ea86c92895738455a81f966259c68cb883b"
     },
     "public/js/app.js": {
-      "size": 96748,
-      "sha256": "99b21392398909392297c989557f3d291ce4c795dedc08c317bf35d05158b906"
+      "size": 97083,
+      "sha256": "e1308b4b9af06ba34d4c54cc180e98c4434d670a245a85dfe2a4bd395ae7552f"
     },
     "public/js/help-catalog.js": {
-      "size": 18152,
-      "sha256": "98180422534312ea7da29012c7f778487220068289ae14d1fd2302126bbf54da"
+      "size": 19448,
+      "sha256": "41b7d6944234837a1ea90ce36c9792b31f7562b3d187b3cbd33362d1d9feb8cd"
     },
     "public/js/issuer-store.js": {
       "size": 2636,
@@ -386,8 +387,8 @@
       "sha256": "343ea73af65e472805980dcfb722cc7919c06970dc14be88f98988f331b533d9"
     },
     "public/pos.html": {
-      "size": 25258,
-      "sha256": "044b2e24f07e42b4921443c07993abc6a74bd8507c1906e979b4016854ad82eb"
+      "size": 25250,
+      "sha256": "3cb688a79818a3d72c7b6199542fa8aec7d7532302c7e870875d60d7e91b979e"
     },
     "public/production_diagnostic.html": {
       "size": 3671,
@@ -413,10 +414,5 @@
       "size": 419,
       "sha256": "14411ab120ba31d0a89a5cb4695bf3a3fb33d6dadef47a92c425eed1aab43b4e"
     }
-  },
-  "final_file_count": 98,
-  "manifest_sha256": "408c4fe18cd10c40a525977bdaad486cbf2fa6ac3140a42b15c13231ba75eb94",
-  "added_files_final": [
-    "RELEASE_NOTES_v3.5.4.4_POS_INIT_CONSTRUCTOR_MANUAL_HELP.txt"
-  ]
+  }
 }

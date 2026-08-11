@@ -1,0 +1,27 @@
+OSC-ACADEMY Baseline v3.5.4.5
+CHIP EMV — CONTENIDO Y GLOSARIO
+
+BASELINE PADRE
+- v3.5.4.4 POS Init + Constructor Manual Help
+
+CAMBIOS
+1. AYUDA CONTEXTUAL — CHIP EMV
+- Se elimina el desarrollo de la sigla EMV que aparecía entre paréntesis
+  dentro del párrafo introductorio.
+- DE35 ahora aclara que suele estar presente igual que en banda y que el
+  diferenciador clave es DE55.
+- DE55 se identifica como el campo “estrella” del chip y se explica que
+  concentra la mayor parte de la información criptográfica.
+
+2. GLOSARIO EMV
+- Se incorpora una sección específica “Significado de las siglas”.
+- Se explican EMV, ARQC, TVR, TSI, AID, ATC y CVM.
+
+3. ALCANCE
+- El cambio se limita al contenido y presentación de la ayuda contextual.
+- No se modifica la lógica transaccional, generación de tramas ni persistencia.
+
+CONTROL DE FUENTES
+- Build generado exclusivamente sobre v3.5.4.4.
+- Ningún archivo de la baseline padre fue eliminado.
+- Inventario SHA-256 actualizado.

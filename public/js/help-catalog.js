@@ -1,6 +1,6 @@
 
-/* OSC Academy v3.5.4.4 · Ayuda contextual + referencia técnica
-   Baseline padre: v3.5.3.20 VISA/MC Conformance */
+/* OSC Academy v3.5.4.5 · Ayuda contextual + referencia técnica
+   Baseline padre: v3.5.4.4 POS Init + Constructor Manual Help */
 (() => {
   const contextual = {
     magstripe: {
@@ -16,11 +16,20 @@
     },
     chip: {
       title:'Chip EMV',
-      summary:'El chip realiza una interacción EMV (Europay, Mastercard y Visa) entre tarjeta y terminal y genera información dinámica utilizada durante la autorización.',
+      summary:'El chip realiza una interacción EMV entre tarjeta y terminal y genera información dinámica utilizada durante la autorización.',
       bullets:[
         '<b>DE22:</b> identifica el modo de captura.',
-        '<b>DE55:</b> puede transportar datos ICC/EMV en TLV.',
-        '<b>DE35:</b> puede transportar Track 2 Equivalent Data cuando el perfil de la red lo requiere.'
+        '<b>DE35:</b> suele estar presente igual que en banda, pero el dato clave diferenciador es <b>DE55</b> (no está en banda).',
+        '<b>DE55 es el campo “estrella”</b> del chip — es donde vive la mayor parte de la data criptográfica (ARQC, TVR, TSI, etc.), a diferencia de banda donde esos campos van vacíos.'
+      ],
+      glossary:[
+        '<b>EMV:</b> Europay, Mastercard y Visa, las tres compañías que crearon el estándar en los años 90.',
+        '<b>ARQC</b> (<i>Authorization Request Cryptogram</i>): firma digital única que genera el chip por transacción, prueba autenticidad y evita clonación.',
+        '<b>TVR</b> (<i>Terminal Verification Results</i>): checklist del terminal, indica qué validaciones pasó o falló la transacción.',
+        '<b>TSI</b> (<i>Transaction Status Information</i>): resumen de qué procesos se ejecutaron durante la transacción.',
+        '<b>AID</b> (<i>Application Identifier</i>): identifica qué aplicación de pago del chip se usó (Visa, Mastercard, etc.).',
+        '<b>ATC</b> (<i>Application Transaction Counter</i>): contador que aumenta con cada transacción, ayuda a detectar clonación.',
+        '<b>CVM</b> (<i>Cardholder Verification Method</i>): indica cómo se verificó al titular (PIN, firma, sin verificación).'
       ],
       iso:'Compará <b>DE22 + DE55</b> con la misma operación realizada por Banda.',
       lab:'Abrí el Modo Técnico para observar los datos EMV que llegan al mensaje.'
@@ -195,6 +204,7 @@
   function openContext(key){
     const h=contextual[key]; if(!h) return;
     show(`☝️ ${h.title}`,`<p>${h.summary}</p><ul>${h.bullets.map(x=>`<li>${x}</li>`).join('')}</ul>
+      ${h.glossary?`<div class="osc-help-note"><b>Significado de las siglas</b><ul>${h.glossary.map(x=>`<li>${x}</li>`).join('')}</ul></div>`:''}
       <div class="osc-help-note"><b>Campos ISO relacionados</b><br>${h.iso}</div>
       <div class="osc-help-note"><b>Qué observar en OSC Academy</b><br>${h.lab}</div>`);
   }
