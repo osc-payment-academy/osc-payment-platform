@@ -765,7 +765,8 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
       m.stan||'',
       String(m.pan||'').slice(-4),
       m.direction||'',
-      m.operation||''
+      String(m.amount||''),
+      m.batch||'000001'
     ].join('|');
 
     const merged=new Map();
@@ -1330,6 +1331,7 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
 
   let cashTimer=null;
   let cashOutcomeHandled=false;
+  let reversalInProgress=false;
   function finishCash(reason){
     if(cashOutcomeHandled)return;
     cashOutcomeHandled=true;
@@ -1578,6 +1580,8 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
   }
 
   function sendReversal(){
+    if(reversalInProgress)return;
+    reversalInProgress=true;
     setFlow(7);
     if(state.brand==='amex'){
       const device=($('deviceStatus').textContent||'').toLowerCase();
@@ -1658,6 +1662,7 @@ ${raw(m)}`;
     state.step='card';state.pin='';state.amount='';state.destination='';state.stan=null;state.auth=null;state.selectedMessageId=null;
     clearInterval(cashTimer);cashTimer=null;
     cashOutcomeHandled=false;
+    reversalInProgress=false;
     $('atmCard').classList.remove('insert');$('banknotes').classList.remove('dispense','retract');$('cashDoor').classList.remove('open');$('dispenseCountdown').classList.remove('show');$('cashActions').classList.remove('show');
     $('softOptions').classList.remove('touch-operation-grid');
     $('techEvents').innerHTML='<div class="tech-event">Esperando inserción de tarjeta.</div>';
@@ -1759,7 +1764,7 @@ document.addEventListener('DOMContentLoaded',()=>{
 </script>
 <script src="js/permissions.js"></script>
 
-<div id="osc-version-badge" style="position:fixed;right:14px;bottom:12px;z-index:99999;background:#0d2238;border:1px solid #2f83ff;color:#9fd0ff;padding:7px 11px;border-radius:999px;font:600 12px/1.1 Inter,Segoe UI,Arial,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.28)">Baseline v3.5.4.10 · Fix manito Constructor</div>
+<div id="osc-version-badge" style="position:fixed;right:14px;bottom:12px;z-index:99999;background:#0d2238;border:1px solid #2f83ff;color:#9fd0ff;padding:7px 11px;border-radius:999px;font:600 12px/1.1 Inter,Segoe UI,Arial,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.28)">Baseline v3.5.4.11 · Fix reversa ATM duplicada</div>
 <script src="js/help-catalog.js"></script>
 </body>
 </html>
