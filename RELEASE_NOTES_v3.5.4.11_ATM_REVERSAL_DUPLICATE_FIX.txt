@@ -1,0 +1,16 @@
+OSC-ACADEMY v3.5.4.11
+Corrección de reversa ATM duplicada en el historial
+
+Baseline de origen:
+- OSC-ACADEMY_Baseline_v3.5.4.10_POS_Init_Constructor_Parser_Visa_Valid_Values_Manual_Click_Fix.zip
+
+Correcciones:
+- El historial ATM consolida los registros equivalentes generados por el ATM y el Switch usando MTI, STAN, últimos 4 dígitos del PAN, dirección, importe y lote.
+- La descripción de la operación ya no forma parte de la clave de consolidación, evitando que un mismo 0420/0430 aparezca dos veces con textos distintos.
+- Se agregó un bloqueo de ejecución para impedir que sendReversal() se inicie más de una vez dentro de la misma operación.
+- El bloqueo se libera al reiniciar el ATM para permitir una nueva operación legítima.
+
+Resultado esperado:
+- Una extracción aprobada cuyo efectivo no se retira muestra un solo 0420 saliente y un solo 0430 entrante.
+- Se preservan las mejoras de Constructor, Parser y navegación Visa Valid Values incluidas en v3.5.4.10.
+
