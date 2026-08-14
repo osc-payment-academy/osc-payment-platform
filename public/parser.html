@@ -321,8 +321,11 @@
     #iso-root .study-manual-btn{
       display:inline-grid;place-items:center;width:24px;height:24px;
       border:1px solid #78bde8;background:#f8fcff;color:#145f8c;border-radius:7px;
-      padding:0;cursor:pointer;font-size:12px;line-height:1
+      padding:0;cursor:pointer;font-size:12px;line-height:1;
+      opacity:0;visibility:hidden;transform:scale(.78);pointer-events:none;
+      transition:opacity .16s ease,transform .16s ease,visibility .16s ease
     }
+    #iso-root tr.manual-hover-row.manual-ready .study-manual-btn{opacity:1;visibility:visible;transform:scale(1);pointer-events:auto}
     #iso-root .study-manual-btn:hover{background:#eaf7ff;border-color:#2f83ff}
     #iso-root table.fields td.fdesc .ref {
       color: #b7c7dc !important;
@@ -1510,8 +1513,12 @@
           return;
         }
 
-        let rows = result.fields.map(f => `
-          <tr>
+        const manualNetwork=document.getElementById('parserNetworkSelect')?.value||'';
+        let rows = result.fields.map(f => {
+          const manualEnabled=manualNetwork!=='amex' && OSCHelp.hasTechnical?.(f.num,manualNetwork);
+          const heading=manualNetwork==='mastercard'?`DE ${f.num}—${f.name}`:`Field ${f.num} – ${f.name}`;
+          return `
+          <tr class="${manualEnabled?'manual-hover-row':''}">
             <td class="fnum">${f.num}</td>
             <td>${f.name}</td>
             <td class="flen mono">${f.fmt}</td>
@@ -1524,9 +1531,9 @@
               f.num === 55 ? maskEMVData(f.value) :
               f.value
             }</td>
-            <td class="fdesc"><button type="button" class="study-manual-btn" data-manual-de="${f.num}" title="Abrir Field ${f.num} – Valid Values en el manual Visa" aria-label="Abrir Field ${f.num} – Valid Values en el manual Visa">☝</button></td>
+            <td class="fdesc">${manualEnabled?`<button type="button" class="study-manual-btn" data-manual-de="${f.num}" title="Abrir ${heading}" aria-label="Abrir ${heading}">☝</button>`:''}</td>
           </tr>
-        `).join('');
+        `}).join('');
 
         tableArea.innerHTML = `
           <table class="fields">
@@ -1545,6 +1552,11 @@
             <tbody>${rows}</tbody>
           </table>
         `;
+        tableArea.querySelectorAll('tr.manual-hover-row').forEach(row=>{
+          let timer=null;
+          row.addEventListener('mouseenter',()=>{clearTimeout(timer);timer=setTimeout(()=>row.classList.add('manual-ready'),1200)});
+          row.addEventListener('mouseleave',()=>{clearTimeout(timer);row.classList.remove('manual-ready')});
+        });
       }
 
       document.addEventListener('click',e=>{
@@ -1609,6 +1621,6 @@
 
 <script src="js/permissions.js"></script>
 
-<div id="osc-version-badge" style="position:fixed;right:14px;bottom:12px;z-index:99999;background:#0d2238;border:1px solid #2f83ff;color:#9fd0ff;padding:7px 11px;border-radius:999px;font:600 12px/1.1 Inter,Segoe UI,Arial,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.28)">Baseline v3.5.4.11 · Fix reversa ATM duplicada</div>
+<div id="osc-version-badge" style="position:fixed;right:14px;bottom:12px;z-index:99999;background:#0d2238;border:1px solid #2f83ff;color:#9fd0ff;padding:7px 11px;border-radius:999px;font:600 12px/1.1 Inter,Segoe UI,Arial,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.28)">Baseline v3.5.4.12 · Manual contextual Visa y Mastercard</div>
 </body>
 </html>

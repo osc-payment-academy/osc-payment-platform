@@ -1,6 +1,6 @@
 
-/* OSC Academy v3.5.4.10 · Fix de apertura del manual desde Constructor
-   Baseline padre: v3.5.4.8 Manual por campo */
+/* OSC Academy v3.5.4.12 · Navegación directa por campo Visa / Mastercard
+   Baseline padre: v3.5.4.11 */
 (() => {
   const contextual = {
     magstripe: {
@@ -112,6 +112,7 @@
       32:{name:'Acquiring Institution Identification Code',fmt:'LLVAR N',origin:'Adquirente',manual:'Visa Full Service POS Online Messages – Technical Specifications',page:255,translated:'Identifica a la institución adquirente.'},
       35:{name:'Track 2 Data',fmt:'LLVAR Z',origin:'Tarjeta / terminal',manual:'Visa Full Service POS Online Messages – Technical Specifications',page:279,translated:'Transporta Track 2 o datos equivalentes según el modo de captura y el perfil Visa.'},
       37:{name:'Retrieval Reference Number',fmt:'AN12',origin:'Procesador / adquirente',manual:'Visa Full Service POS Online Messages – Technical Specifications',page:284,translated:'Referencia utilizada para rastrear y relacionar mensajes.'},
+      38:{name:'Authorization Identification Response',fmt:'AN6',origin:'Emisor',manual:'Visa Full Service POS Online Messages – Technical Specifications',page:288,translated:'Código de autorización generado por el emisor para una respuesta aprobada.'},
       39:{name:'Response Code',fmt:'AN2',origin:'Emisor / red / procesador',manual:'Visa Full Service POS Online Messages – Technical Specifications',page:292,validPage:303,translated:'Indica el resultado de la solicitud.'},
       41:{name:'Card Acceptor Terminal Identification',fmt:'ANS8',origin:'Terminal',manual:'Visa Full Service POS Online Messages – Technical Specifications',page:310,translated:'Identifica la terminal del aceptador.'},
       42:{name:'Card Acceptor Identification Code',fmt:'ANS15',origin:'Adquirente / comercio',manual:'Visa Full Service POS Online Messages – Technical Specifications',page:313,translated:'Identifica al aceptador o comercio.'},
@@ -130,12 +131,14 @@
       101:{name:'File Name',fmt:'LLVAR',origin:'Procesador / red',manual:'Visa Full Service POS Online Messages – Technical Specifications',page:713,validPage:714,translated:'Identifica el archivo involucrado.'},
       104:{name:'Transaction Description',fmt:'LLLVAR',origin:'Originador / procesador',manual:'Visa Full Service POS Online Messages – Technical Specifications',page:721,validPage:722,translated:'Descripción y datos ampliados de la transacción.'}
     },
-    mastercard: {
-      22:{name:'Point of Service Entry Mode',fmt:'N3',origin:'Terminal',manual:'Mastercard M/Chip Requirements—for Contact and Contactless · 29 April 2025',page:320,translated:'Documenta los modos de entrada usados para chip, contactless y otros escenarios de captura.'},
-      35:{name:'Track 2 Data',fmt:'LLVAR',origin:'Tarjeta / terminal',manual:'Mastercard M/Chip Requirements—for Contact and Contactless · 29 April 2025',page:320,translated:'Puede transportar Track 2 Equivalent Data en chip/contactless o Track 2 real en escenarios magnéticos.'},
-      55:{name:'ICC System Related Data',fmt:'b..255 · LLLVAR',origin:'Chip / terminal / emisor',manual:'Mastercard M/Chip Requirements—for Contact and Contactless · 29 April 2025',page:318,translated:'Contiene datos ICC/EMV requeridos por el perfil Mastercard.'}
-    },
+    mastercard: {},
     amex: {}
+  };
+
+  /* Páginas físicas verificadas en MasterCard Debit Switch Online Specifications (jun03).
+     Cada destino corresponde al encabezado inicial "DE n—Nombre" del Capítulo 4. */
+  const mastercardPages={
+    1:201,2:202,3:203,4:206,5:207,6:209,7:210,8:211,9:212,10:213,11:214,12:215,13:216,14:217,15:218,16:219,17:220,18:221,19:223,20:224,21:225,22:226,23:228,24:229,25:230,26:231,27:232,28:233,29:234,30:235,31:236,32:237,33:238,34:239,35:240,36:242,37:243,38:244,39:245,40:250,41:251,42:252,43:253,44:255,45:257,46:259,47:260,48:261,49:273,50:274,51:275,52:276,53:277,54:278,55:280,56:284,57:285,58:286,59:287,60:288,61:295,62:298,63:299,64:302,65:303,66:304,67:305,68:306,69:307,70:308,71:309,72:310,73:311,74:312,75:313,76:314,77:315,78:316,79:317,80:318,81:319,82:320,83:321,84:322,85:323,86:324,87:325,88:326,89:327,90:328,91:329,92:331,93:332,94:333,95:334,96:336,97:337,98:339,99:340,100:341,101:342,102:343,103:344,104:345,112:347,120:353,121:359,122:360,126:362,127:363,128:364
   };
 
   function ensureModal(){
@@ -235,33 +238,25 @@
   }
   function openTechnical(de, network){
     const net=(network||selectedNetwork()).toLowerCase();
-    const label=net==='mastercard'?'Mastercard':net==='amex'?'American Express':'Visa';
-    const ref=(refs[net]||{})[Number(de)];
-    if(net==='visa' && ref){
-      const targetPage=ref.validPage||ref.page;
-      window.open(`manuals/full-service-pos-online-messages-tech-specs.pdf#page=${targetPage}`,'_blank','noopener');
-      return;
+    const number=Number(de);
+    if(net==='amex') return false;
+    if(net==='visa'){
+      const page=refs.visa[number]?.page;
+      if(!page) return false;
+      window.open(`manuals/full-service-pos-online-messages-tech-specs.pdf#page=${page}`,'_blank','noopener');
+      return true;
     }
-    if(!ref){
-      const fallbackLink=net==='visa'
-        ? '<p style="margin-top:14px"><a class="osc-help-manual-link" href="manuals/full-service-pos-online-messages-tech-specs.pdf#page=1" target="_blank" rel="noopener">📖 Abrir manual Visa</a></p>'
-        : net==='mastercard'
-          ? '<p style="margin-top:14px"><a class="osc-help-manual-link" href="mastercard_iso.html" target="_blank" rel="noopener">📖 Abrir referencia Mastercard</a></p>'
-          : '<p style="margin-top:14px"><a class="osc-help-manual-link" href="documentacion.html" target="_blank" rel="noopener">📖 Abrir documentación técnica</a></p>';
-      show(`📘 DE${de} · Referencia técnica`,`<span class="osc-help-chip">${label}</span><span class="osc-help-chip">DE${de}</span>
-        <p class="osc-ref-pending"><b>Referencia exacta pendiente de mapeo.</b></p>
-        <p>La página exacta todavía no está mapeada. Podés abrir igualmente la documentación de la marca para consultar el campo.</p>${fallbackLink}`);
-      return;
+    if(net==='mastercard'){
+      const page=mastercardPages[number];
+      if(!page) return false;
+      window.open(`manuals/mastercard-debit-switch-online-specifications-jun03.pdf#page=${page}`,'_blank','noopener');
+      return true;
     }
-    const manualLink=net==='visa'
-      ? `<p style="margin-top:14px"><a class="osc-help-manual-link" href="manuals/full-service-pos-online-messages-tech-specs.pdf#page=${ref.page}" target="_blank" rel="noopener">📖 Abrir manual en la página ${ref.page}</a></p>`
-      : '';
-    show(`📘 DE${de} — ${ref.name}`,`<span class="osc-help-chip">${label}</span><span class="osc-help-chip">DE${de}</span>
-      <p><b>Nombre oficial:</b> ${ref.name}</p><p><b>Formato / longitud:</b> ${ref.fmt}<br><b>Origen:</b> ${ref.origin}</p>
-      <div class="osc-help-note"><b>Explicación en español</b><br>${ref.translated}</div>
-      <div class="osc-help-source"><b>Fuente:</b> ${ref.manual}<br><b>Página:</b> ${ref.page}</div>
-      ${manualLink}
-      <p style="margin-top:10px;color:#86a4b8">El nombre oficial se conserva en inglés; la explicación se presenta traducida/resumida con fines educativos.</p>`);
+    return false;
+  }
+  function hasTechnical(de,network){
+    const net=String(network||'').toLowerCase(),number=Number(de);
+    return net==='visa' ? Boolean(refs.visa[number]?.page) : net==='mastercard' ? Boolean(mastercardPages[number]) : false;
   }
   function showNetworkRequired(de){
     show(`☝ DE${de} · Seleccione la marca`,`<p>Para abrir la referencia técnica correcta, primero ingrese el <b>DE2 / PAN</b> para detectar la marca automáticamente o seleccione manualmente Visa, Mastercard o American Express.</p><p>OSC Academy no toma Visa como marca predeterminada.</p>`);
@@ -323,6 +318,6 @@
     attachHelpAfter(document.getElementById('partialCash'),'partial');
     attachHelpAfter(document.getElementById('reconcileAtm'),'reconcile');
   }
-  window.OSCHelp={contextual,refs,openContext,openTechnical,showNetworkRequired,decorateContext,selectedNetwork};
+  window.OSCHelp={contextual,refs,mastercardPages,openContext,openTechnical,hasTechnical,showNetworkRequired,decorateContext,selectedNetwork};
   document.addEventListener('DOMContentLoaded',()=>{ensureModal();decorateContext()});
 })();
