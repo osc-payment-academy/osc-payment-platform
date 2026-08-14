@@ -1,24 +1,26 @@
 {
   "product": "OSC-ACADEMY",
-  "version": "3.5.4.11",
-  "parent_baseline": "OSC-ACADEMY_Baseline_v3.5.4.10_POS_Init_Constructor_Parser_Visa_Valid_Values_Manual_Click_Fix",
-  "parent_source_file": "OSC-ACADEMY_Baseline_v3.5.4.10_POS_Init_Constructor_Parser_Visa_Valid_Values_Manual_Click_Fix.zip",
+  "version": "3.5.4.12",
+  "parent_baseline": "OSC-ACADEMY_Baseline_v3.5.4.11_ATM_Reversal_Duplicate_Fix",
+  "parent_source_file": "OSC-ACADEMY_Baseline_v3.5.4.11_ATM_Reversal_Duplicate_Fix.zip",
   "policy": {
     "build_from_last_approved_zip": true,
     "no_silent_file_deletion": true,
     "fail_build_if_parent_file_missing": true,
     "sha256_inventory": true
   },
-  "parent_file_count": 103,
-  "final_file_count": 104,
+  "parent_file_count": 104,
+  "final_file_count": 106,
   "removed_files": [],
   "added_files": [
-    "RELEASE_NOTES_v3.5.4.11_ATM_REVERSAL_DUPLICATE_FIX.txt"
+    "RELEASE_NOTES_v3.5.4.12_CONTEXTUAL_MANUAL_HOVER_VISA_MC.txt",
+    "public/manuals/mastercard-debit-switch-online-specifications-jun03.pdf"
   ],
   "changed_parent_files": [
     "public/atm.html",
     "public/constructor.html",
     "public/index.html",
+    "public/js/help-catalog.js",
     "public/parser.html",
     "public/pos.html"
   ],
@@ -276,6 +278,10 @@
       "size": 985,
       "sha256": "5c0dbebb6824cea8b3c3cf16c55613f7d1447d0509bf575fd86e86503e87f9c9"
     },
+    "RELEASE_NOTES_v3.5.4.12_CONTEXTUAL_MANUAL_HOVER_VISA_MC.txt": {
+      "size": 1372,
+      "sha256": "07fdfc6d2bad02994747c4c41d6e770081d4c33a388e8291b1da760342e723e4"
+    },
     "RELEASE_NOTES_v3.5.4.1_SOURCE_CONTROLLED_HELP.txt": {
       "size": 1089,
       "sha256": "d2fd63b081f137a5e702f24001322f81cdeb320d3c75803a374a7ad3e715a142"
@@ -325,8 +331,8 @@
       "sha256": "50235084f46ee7e4e36e8c2af728d927e2a072c9e19427dbb9de616ce819e63a"
     },
     "public/atm.html": {
-      "size": 127810,
-      "sha256": "acfda898458a88c5641b8953185de6718b2db8d81cbdd73bb52b9b41fc338a4c"
+      "size": 127820,
+      "sha256": "317bcd4a0cafbedd3f5421571ba77f9d1fe40750d07cd6c2ee44696277b62de8"
     },
     "public/compensacion.html": {
       "size": 22994,
@@ -337,8 +343,8 @@
       "sha256": "dada24b924fff8672768924a5215f55d91b40ebba25d88d8f31e3bc7cf7017b2"
     },
     "public/constructor.html": {
-      "size": 62814,
-      "sha256": "a69c1a489caf0285213a01c9e9597901f29f7bb599ef2fed4fc6cdfa3d9bff9c"
+      "size": 64001,
+      "sha256": "a78344a5f841848fe4523c4ab2386623bb81d6308be51f4b24c4a0bc05675ddb"
     },
     "public/css/app.css": {
       "size": 43036,
@@ -361,16 +367,16 @@
       "sha256": "0e4b88cac26515a0933ef51987ae3161458516b010cb26cdd9a0ba825bd08c06"
     },
     "public/index.html": {
-      "size": 13576,
-      "sha256": "daf545ebef08304e043e7855c887684ae77a3fb622a835f444c50017a3a06fae"
+      "size": 13586,
+      "sha256": "effd61be8e9337d1347fcba65921c92967ad89ddcda6a9398d2ab5724a50c1f8"
     },
     "public/js/app.js": {
       "size": 97083,
       "sha256": "e1308b4b9af06ba34d4c54cc180e98c4434d670a245a85dfe2a4bd395ae7552f"
     },
     "public/js/help-catalog.js": {
-      "size": 25160,
-      "sha256": "866880291789eae3590809f7cd7972afcfd3cdfe7ece7b5e1ca866050dd5dd88"
+      "size": 24107,
+      "sha256": "d19bd66d07e4217c75114e0ca23fef21ae7aec779ed6b204cc69d682a815cf45"
     },
     "public/js/issuer-store.js": {
       "size": 2636,
@@ -400,6 +406,10 @@
       "size": 22223897,
       "sha256": "04ca72a3b7ca5dc004178263388ce06d806cc7abe2935fcd257c0430f16b0b51"
     },
+    "public/manuals/mastercard-debit-switch-online-specifications-jun03.pdf": {
+      "size": 3860480,
+      "sha256": "78affa0e929cb11027065ccaa6cb4e74547f0725506cf99f93995f1b39978d3c"
+    },
     "public/mastercard_iso.html": {
       "size": 13751,
       "sha256": "3b9f8219d37162a2305633a5b9440e1dfb0be449c06091728df82c4d4cf5b344"
@@ -409,12 +419,12 @@
       "sha256": "6737fbba055a97e965f3915f4d4d23b146285d08e3358569cf979e7f7211a1f1"
     },
     "public/parser.html": {
-      "size": 80218,
-      "sha256": "ae16d39e0d6785388d7c60085c4aae06b61484f31a53690298bff500162db0a6"
+      "size": 81178,
+      "sha256": "b6030cfbe05d5ff4da557fa3c4487c4d1e4d8df122cf7f0ff381143e338cb2e4"
     },
     "public/pos.html": {
-      "size": 25259,
-      "sha256": "decf266c47207375913677b82c237327ba27c8846dfcd7e210a4251522597733"
+      "size": 25269,
+      "sha256": "4e5bde3997b02a6db99dc4881c89cb1d89ad2ea371cd8ca000b46106ecc31cb6"
     },
     "public/production_diagnostic.html": {
       "size": 3671,

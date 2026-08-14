@@ -1,0 +1,19 @@
+OSC-ACADEMY v3.5.4.12
+Ayuda contextual por permanencia y navegación directa Visa / Mastercard
+
+Baseline de origen:
+- OSC-ACADEMY_Baseline_v3.5.4.11_ATM_Reversal_Duplicate_Fix.zip
+
+Cambios:
+- Constructor: la manito dejó de mostrarse en ubicaciones permanentes y aparece únicamente junto al recuadro verde del campo activo después de 1,2 segundos de permanencia.
+- Parser: la manito aparece únicamente en la fila sobre la que permanece el puntero durante 1,2 segundos.
+- Se eliminó el popup intermedio de referencia técnica: el clic abre directamente el manual en la sección inicial del campo.
+- Visa navega al encabezado "Field n – Nombre del campo"; se corrigió específicamente DE38 a Field 38 – Authorization Identification Response, página 288.
+- Mastercard usa MasterCard Debit Switch Online Specifications (jun03) y navega al encabezado "DE n—Nombre del campo" del Capítulo 4.
+- American Express no muestra la manito en Constructor ni Parser.
+- Se incorporó el PDF de Mastercard dentro del paquete para que la navegación funcione con el mismo visor y permita desplazarse hacia arriba y hacia abajo.
+
+Resultado esperado:
+- Ninguna manito queda flotando o visible fuera del campo señalado.
+- Visa y Mastercard abren directamente el inicio documentado del Data Element seleccionado.
+- AMEX permanece sin acceso contextual al manual en esta versión.
