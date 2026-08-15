@@ -1,30 +1,41 @@
 {
   "product": "OSC-ACADEMY",
-  "version": "3.5.4.12",
-  "parent_baseline": "OSC-ACADEMY_Baseline_v3.5.4.11_ATM_Reversal_Duplicate_Fix",
-  "parent_source_file": "OSC-ACADEMY_Baseline_v3.5.4.11_ATM_Reversal_Duplicate_Fix.zip",
+  "version": "3.5.4.14",
+  "parent_baseline": "OSC-ACADEMY_Baseline_v3.5.4.13_Constructor_Manual_Hover_Fix",
+  "parent_source_file": "OSC-ACADEMY_Baseline_v3.5.4.13_Constructor_Manual_Hover_Fix.zip",
   "policy": {
     "build_from_last_approved_zip": true,
     "no_silent_file_deletion": true,
     "fail_build_if_parent_file_missing": true,
     "sha256_inventory": true
   },
-  "parent_file_count": 104,
-  "final_file_count": 106,
+  "parent_file_count": 107,
+  "final_file_count": 109,
   "removed_files": [],
   "added_files": [
-    "RELEASE_NOTES_v3.5.4.12_CONTEXTUAL_MANUAL_HOVER_VISA_MC.txt",
-    "public/manuals/mastercard-debit-switch-online-specifications-jun03.pdf"
+    "RELEASE_NOTES_v3.5.4.14_STABLE_MENU_HIDDEN_MODULES.txt",
+    "public/js/navigation.js"
   ],
   "changed_parent_files": [
     "public/atm.html",
+    "public/compensacion.html",
+    "public/compensacion_mastercard.html",
     "public/constructor.html",
+    "public/cuenta_cliente.html",
+    "public/curso_interactivo.html",
+    "public/documentacion.html",
+    "public/ebook.html",
     "public/index.html",
-    "public/js/help-catalog.js",
+    "public/mastercard_iso.html",
+    "public/ondemand_lab.html",
     "public/parser.html",
-    "public/pos.html"
+    "public/pos.html",
+    "public/production_diagnostic.html",
+    "public/research.html",
+    "public/switch.html",
+    "public/switch_emisor.html"
   ],
-  "unchanged_parent_file_count": 98,
+  "unchanged_parent_file_count": 90,
   "inventory": {
     ".gitignore": {
       "size": 35,
@@ -282,6 +293,14 @@
       "size": 1372,
       "sha256": "07fdfc6d2bad02994747c4c41d6e770081d4c33a388e8291b1da760342e723e4"
     },
+    "RELEASE_NOTES_v3.5.4.13_CONSTRUCTOR_MANUAL_HOVER_FIX.txt": {
+      "size": 898,
+      "sha256": "f2a61c3582d02bb5aab14116e2884f109bdc739c30a6d83b146099d3bee09ebe"
+    },
+    "RELEASE_NOTES_v3.5.4.14_STABLE_MENU_HIDDEN_MODULES.txt": {
+      "size": 1209,
+      "sha256": "209beb2a56fabf15a8216910dddceb416a58fdaebbb83961d681f904447a12ba"
+    },
     "RELEASE_NOTES_v3.5.4.1_SOURCE_CONTROLLED_HELP.txt": {
       "size": 1089,
       "sha256": "d2fd63b081f137a5e702f24001322f81cdeb320d3c75803a374a7ad3e715a142"
@@ -331,44 +350,44 @@
       "sha256": "50235084f46ee7e4e36e8c2af728d927e2a072c9e19427dbb9de616ce819e63a"
     },
     "public/atm.html": {
-      "size": 127820,
-      "sha256": "317bcd4a0cafbedd3f5421571ba77f9d1fe40750d07cd6c2ee44696277b62de8"
+      "size": 127838,
+      "sha256": "d9dbd34efa7ec7d40c701e668b69b8f4535238db2b52cafba57234f1f8722d3d"
     },
     "public/compensacion.html": {
-      "size": 22994,
-      "sha256": "1f3b54cd18f376f178e3d8fda15bcdf3cae4d3d4a078da0cbb4fc3b848474603"
+      "size": 23034,
+      "sha256": "afe483a381700677e6e3f7de70c5390257f2cc5182fbe4c544877f17089a41e4"
     },
     "public/compensacion_mastercard.html": {
-      "size": 11713,
-      "sha256": "dada24b924fff8672768924a5215f55d91b40ebba25d88d8f31e3bc7cf7017b2"
+      "size": 11753,
+      "sha256": "5d1fc81110c061445d98d37646c0e12f174a3fe346013ef830813592709c1223"
     },
     "public/constructor.html": {
-      "size": 64001,
-      "sha256": "a78344a5f841848fe4523c4ab2386623bb81d6308be51f4b24c4a0bc05675ddb"
+      "size": 64435,
+      "sha256": "8f133cf2299d20624ecf70119ec245216d1b14b4f1b233da7a594e364bfe429e"
     },
     "public/css/app.css": {
       "size": 43036,
       "sha256": "e1d10bd2d86ee8225a986fe59410f6ac66a84dc69320f25651e0d830158bea6f"
     },
     "public/cuenta_cliente.html": {
-      "size": 3391,
-      "sha256": "f92ab502b4ad98a19149252ce6a4ff99a4806ec9cf414035a8e07620b9ef9cf9"
+      "size": 3431,
+      "sha256": "e8445c32807cc36e769f253a36a1c1973fe3682ac66f81ae2ed96db9616e3358"
     },
     "public/curso_interactivo.html": {
-      "size": 24359,
-      "sha256": "4160de9a72fd814a04c4970d57f0dc73fd3b077172096ee439e21537bbfd5da3"
+      "size": 24399,
+      "sha256": "c949a86b31f4612c871db5833c3749c299765c8ddf60b144929a3c5d6a3d66fa"
     },
     "public/documentacion.html": {
-      "size": 2019,
-      "sha256": "1aed07ee94fcb59776ad53604f6102627e09b050bdb598ae8ed27ad053f211ef"
+      "size": 2059,
+      "sha256": "cdc28889079689dde389621c8653c25af65b4e5f876f05937cf0baa0dfbf4ab2"
     },
     "public/ebook.html": {
-      "size": 3300,
-      "sha256": "0e4b88cac26515a0933ef51987ae3161458516b010cb26cdd9a0ba825bd08c06"
+      "size": 3340,
+      "sha256": "6dd3eebbf8f5937b2307ed39e868fdabf3331622dd1b8bab5b061fb576f6579a"
     },
     "public/index.html": {
-      "size": 13586,
-      "sha256": "effd61be8e9337d1347fcba65921c92967ad89ddcda6a9398d2ab5724a50c1f8"
+      "size": 13667,
+      "sha256": "de2ebdbb9bc17f1a84c446968910a911586ed1adf7e700aeea2aa96d0385b2c9"
     },
     "public/js/app.js": {
       "size": 97083,
@@ -381,6 +400,10 @@
     "public/js/issuer-store.js": {
       "size": 2636,
       "sha256": "56fa6af98fc74a89c1bbe81437c1e3f26e63380304f591a2550d2a7e8da0e15b"
+    },
+    "public/js/navigation.js": {
+      "size": 2693,
+      "sha256": "227c073e5556f4cc12b959a61bc884b91785ef549e5d714cd2b072711590d9dc"
     },
     "public/js/network-profiles.js": {
       "size": 1701,
@@ -411,36 +434,36 @@
       "sha256": "78affa0e929cb11027065ccaa6cb4e74547f0725506cf99f93995f1b39978d3c"
     },
     "public/mastercard_iso.html": {
-      "size": 13751,
-      "sha256": "3b9f8219d37162a2305633a5b9440e1dfb0be449c06091728df82c4d4cf5b344"
+      "size": 13791,
+      "sha256": "0aac9925be042f586ef70f44e26e8c08b9b0b4c6156f9a5f0e58d2a5042e4b13"
     },
     "public/ondemand_lab.html": {
-      "size": 3889,
-      "sha256": "6737fbba055a97e965f3915f4d4d23b146285d08e3358569cf979e7f7211a1f1"
+      "size": 3929,
+      "sha256": "55f7c59eef05e1e22c8b012a8e778b6ea24e8f1d5fedb813d7ed5aadff04eb29"
     },
     "public/parser.html": {
-      "size": 81178,
-      "sha256": "b6030cfbe05d5ff4da557fa3c4487c4d1e4d8df122cf7f0ff381143e338cb2e4"
+      "size": 81196,
+      "sha256": "f580c22be5c948a94605d3c6c15f5e2259e4ee07fde9d43f442265af1808ad36"
     },
     "public/pos.html": {
-      "size": 25269,
-      "sha256": "4e5bde3997b02a6db99dc4881c89cb1d89ad2ea371cd8ca000b46106ecc31cb6"
+      "size": 25287,
+      "sha256": "66c420d7a31d5e7cf0b589a3b47c0ef07faf9fbc1d2725dc54f4dbca612b07c2"
     },
     "public/production_diagnostic.html": {
-      "size": 3671,
-      "sha256": "e4dd55cb998e23124feab17382ddb21e2dc71238c9a0606713b337708374058d"
+      "size": 3711,
+      "sha256": "d8a09fabfb0a5dd8c83f8fc4a97478f70ecb05322f6661bc0d830190f9d902a0"
     },
     "public/research.html": {
-      "size": 4111,
-      "sha256": "b647e945214c358b10f73e113242ec7b2e8d23ff7492b129caebfb14f51ac536"
+      "size": 4151,
+      "sha256": "89b8e3952ffe425e966ed241f7bd4063557f3effa61b6c122ffc7b471b77c3bd"
     },
     "public/switch.html": {
-      "size": 22332,
-      "sha256": "d8325aa2ec3ac94cdb33564fea72a34e29e1a0472d7231ab891f3434dfff75e5"
+      "size": 22372,
+      "sha256": "00d6052002f723ee0eb6a73f610af593f05c9cbfef0d2fd7a979f8dd2113e8fd"
     },
     "public/switch_emisor.html": {
-      "size": 11885,
-      "sha256": "43e61c4f2c063404c33a01dd2f224d1aa82578b60575dc42aca946d8932e7c00"
+      "size": 11925,
+      "sha256": "1cb12b42d1ffb982f13fa86edec6c36239e74609e7729d126ae2a0cd7d57adca"
     },
     "schema.sql": {
       "size": 1831,

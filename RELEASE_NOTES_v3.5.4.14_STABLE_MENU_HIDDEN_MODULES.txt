@@ -1,0 +1,31 @@
+OSC-ACADEMY v3.5.4.14
+Menú global estable y módulos temporalmente ocultos
+
+Baseline de origen:
+- OSC-ACADEMY_Baseline_v3.5.4.13_Constructor_Manual_Hover_Fix.zip
+
+Cambios:
+- Se incorporó una navegación global única con el mismo orden en todas las pantallas.
+- Al ingresar o salir de un módulo, el menú izquierdo conserva siempre la misma disposición.
+- Mastercard ISO queda declarado con visible=false y no se renderiza en el menú.
+- Cuenta del Cliente queda declarada con visible=false y no se renderiza en el menú.
+- Las tarjetas Mastercard ISO y Cuenta del Cliente permanecen en el catálogo del Dashboard con estado false y se filtran de la presentación.
+- Los archivos y funcionalidades de ambos módulos no fueron eliminados; podrán reactivarse posteriormente.
+- Se actualizaron las métricas visibles del Dashboard de acuerdo con los módulos publicados.
+
+Orden fijo:
+1. Dashboard
+2. Curso Interactivo
+3. eBook ISO 8583
+4. Constructor ISO8583
+5. POS Virtual
+6. ATM Virtual
+7. Switch del Adquirente
+8. Parser ISO8583
+9. Documentación Técnica
+10. Investigación
+
+Se conserva:
+- Fix de manito del Constructor de v3.5.4.13.
+- Navegación directa Visa/Mastercard del Parser.
+- AMEX sin manito.
