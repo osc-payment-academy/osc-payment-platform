@@ -1,0 +1,16 @@
+OSC-ACADEMY v3.5.4.13
+Corrección de manito contextual en Constructor
+
+Baseline de origen:
+- OSC-ACADEMY_Baseline_v3.5.4.12_Contextual_Manual_Hover_Visa_Mastercard.zip
+
+Corrección:
+- El módulo de Construcción guiada ahora resuelve la marca dentro de su propio contexto y puede iniciar correctamente el temporizador del recuadro verde.
+- En selección automática, utiliza el DE2 de la construcción guiada para detectar Visa o Mastercard.
+- El botón conserva la marca resuelta al abrir el manual, evitando que el manejador general vuelva a perderla.
+- Se mantiene la demora de 1,2 segundos y la apertura directa en el encabezado inicial del campo.
+- El Parser no fue modificado funcionalmente.
+- AMEX continúa sin mostrar la manito.
+
+Resultado esperado:
+- Al permanecer sobre el recuadro verde DE3, la manito aparece junto al recuadro y abre la sección correcta del manual Visa o Mastercard.

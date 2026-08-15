@@ -12,4 +12,4 @@ const topics=[
 ];
 const grid=document.getElementById('grid');grid.innerHTML=topics.map((t,i)=>`<article class="card"><span class="status">${i<2?'EN INVESTIGACIÓN':'PRÓXIMAMENTE'}</span><span class="votes" id="v${i}">0 interesados</span><h2>${t[0]}</h2><div class="flow">${t[2]}</div><p>${t[1]}</p><button class="btn vote" data-i="${i}">Me interesa</button></article>`).join('');
 topics.forEach((_,i)=>{const n=Number(localStorage.getItem('oscResearchVote'+i)||0);document.getElementById('v'+i).textContent=n+' interesados'});document.querySelectorAll('.vote').forEach(b=>b.onclick=()=>{const i=b.dataset.i,key='oscResearchVote'+i,n=Number(localStorage.getItem(key)||0)+1;localStorage.setItem(key,n);document.getElementById('v'+i).textContent=n+' interesados';b.textContent='✓ Interés registrado';b.disabled=true});
-</script></body></html>
+</script><script src="js/navigation.js"></script></body></html>
