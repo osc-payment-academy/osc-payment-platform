@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>OSC Academy · ATM Virtual</title>
+<link rel="stylesheet" href="css/brand-logos.css">
 <style>
 :root{
   --bg:#06111d;--sidebar:#071522;--panel:#0b1827;--panel2:#0e1f31;--line:#173149;
@@ -703,7 +704,7 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
     const pan=String(message.pan||'');
     const brandText=String(message.brand||'').toLowerCase();
     const inferredBrand=brandText.includes('amex')||/^3[47]/.test(pan)?'amex':(brandText.includes('master')||/^2|^5/.test(pan))?'mastercard':'visa';
-    const brandHtml=inferredBrand==='amex'?'<span class="brand-logo amex-mark" title="American Express">AMEX</span>':inferredBrand==='visa'?'<span class="brand-logo visa-mark" title="Visa">VISA</span>':'<span class="brand-logo mc-mark" title="Mastercard"><i></i><i></i></span>';
+    const brandHtml=window.OSCNetworks?.logo?.(window.OSCNetworks.profiles[inferredBrand])||inferredBrand.toUpperCase();
     tr.innerHTML=`<td>${message.time}</td><td>${brandHtml}</td><td><span class="direction ${message.direction==='Entrante'?'in':'out'}">${message.direction}</span></td><td><b>${message.mti}</b></td><td>${message.operation}</td><td>•••• ${String(message.pan||'').slice(-4)}</td><td>${formatAmount(message.amount)}</td><td>${message.responseCode||'—'}</td><td>${message.stan}</td><td>${message.batch||'000001'}</td><td><span class="status-pill ${message.status==='Aprobada'?'ok':'bad'}">${message.status}</span></td>`;
     tr.addEventListener('click',()=>renderMessage(message));
     return tr;
@@ -1764,7 +1765,7 @@ document.addEventListener('DOMContentLoaded',()=>{
 </script>
 <script src="js/permissions.js"></script>
 
-<div id="osc-version-badge" style="position:fixed;right:14px;bottom:12px;z-index:99999;background:#0d2238;border:1px solid #2f83ff;color:#9fd0ff;padding:7px 11px;border-radius:999px;font:600 12px/1.1 Inter,Segoe UI,Arial,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.28)">Baseline v3.5.4.17 · Usabilidad y clearing dinámico</div>
+<div id="osc-version-badge" style="position:fixed;right:14px;bottom:12px;z-index:99999;background:#0d2238;border:1px solid #2f83ff;color:#9fd0ff;padding:7px 11px;border-radius:999px;font:600 12px/1.1 Inter,Segoe UI,Arial,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.28)">Baseline v3.5.4.18 · Logos y manuales por marca</div>
 <script src="js/help-catalog.js"></script>
 <script src="js/navigation.js"></script></body>
 </html>
