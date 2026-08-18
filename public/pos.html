@@ -126,7 +126,7 @@
   <div class="network-profile-title"><span>MEDIO DE PAGO</span><span id="posNetworkValidation" class="network-validation">Tarjeta de prueba seleccionada</span></div>
   <div class="payment-method-tabs" role="group" aria-label="Medio de pago">
     <button type="button" class="payment-method active" data-payment-method="card">💳 Tarjeta</button>
-    <button type="button" class="payment-method" data-payment-method="qr">▦ QR</button>
+    <span class="qr-method-wrap"><button type="button" class="payment-method" data-payment-method="qr">▦ QR</button><button id="qrEducationHelp" class="qr-education-help" type="button" aria-label="Abrir explicación sobre pagos QR">☝️</button></span>
   </div>
   <div id="cardPaymentConfig" class="payment-config">
     <div class="test-card-heading">SELECCIONE LA TARJETA DE PRUEBA</div>
@@ -307,7 +307,7 @@
         </div>
 
 
-        <section class="pos-middle-section pos-scenario-full"><h3>ESCENARIOS DE RESPUESTA</h3><div class="scenario-grid" id="scenarioGrid"><button class="selected success" data-code="00">✓ 00 - APROBADA</button><button class="danger" data-code="51">◉ 51 - FONDOS INSUFICIENTES</button><button class="purple" data-code="54">◉ 54 - TARJETA VENCIDA</button><button class="warning" data-code="05">◉ 05 - NO APROBAR</button><button class="blue" data-code="91">◉ 91 - EMISOR NO DISPONIBLE</button><button class="neutral" data-code="TO">◉ TIME OUT - SIN RESPUESTA</button></div><div class="scenario-actions"><label>Respuesta Automática <span class="switch"></span></label><button id="sendResponse" type="button">Enviar Respuesta ▷</button></div></section>
+        <section class="pos-middle-section pos-scenario-full"><h3>ESCENARIOS DE RESPUESTA</h3><div class="scenario-grid" id="scenarioGrid"><button class="selected success" data-code="00">✓ 00 - APROBADA</button><button class="danger" data-code="51">◉ 51 - FONDOS INSUFICIENTES</button><button class="purple" data-code="54">◉ 54 - TARJETA VENCIDA</button><button class="warning" data-code="05">◉ 05 - NO APROBAR</button><button class="blue" data-code="91">◉ 91 - EMISOR NO DISPONIBLE</button><button class="neutral" data-code="TO">◉ TIME OUT - SIN RESPUESTA</button></div><div class="scenario-actions"><label class="auto-response-control" for="autoResponse">Respuesta Automática <input id="autoResponse" type="checkbox" role="switch"><span class="switch"></span></label><button id="sendResponse" type="button">Enviar Respuesta ▷</button></div></section>
         <section class="pos-middle-section"><h3>MODO TÉCNICO · EVENTOS EN TIEMPO REAL</h3><div class="pos-tech-events" id="posTechEvents"><div>Esperando inicio de operación.</div><div>El POS construirá 0100 o 0200 según marca/producto.</div></div></section>
         <div class="result-box" id="resultBox">
           <h3>RESULTADO</h3>
@@ -439,7 +439,7 @@
 <script>document.addEventListener('DOMContentLoaded',()=>{document.querySelectorAll('.pos-scenario-mini button').forEach((b,i)=>b.onclick=()=>{document.querySelectorAll('.pos-scenario-mini button').forEach(x=>x.classList.remove('active'));b.classList.add('active');const original=document.querySelectorAll('#scenarioGrid button')[i];if(original)original.click()});const log=document.getElementById('posTechEvents');const status=document.getElementById('flowResponse');if(log&&status)new MutationObserver(()=>{const d=document.createElement('div');d.textContent=new Date().toLocaleTimeString('es-AR')+' · '+status.textContent;log.prepend(d);while(log.children.length>8)log.lastChild.remove()}).observe(status,{childList:true,subtree:true,characterData:true})});</script>
 <script src="js/permissions.js"></script>
 
-<div id="osc-version-badge" style="position:fixed;right:14px;bottom:12px;z-index:99999;background:#0d2238;border:1px solid #2f83ff;color:#9fd0ff;padding:7px 11px;border-radius:999px;font:600 12px/1.1 Inter,Segoe UI,Arial,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.28)">Baseline v3.5.4.15 · Educación QR</div>
+<div id="osc-version-badge" style="position:fixed;right:14px;bottom:12px;z-index:99999;background:#0d2238;border:1px solid #2f83ff;color:#9fd0ff;padding:7px 11px;border-radius:999px;font:600 12px/1.1 Inter,Segoe UI,Arial,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.28)">Baseline v3.5.4.16 · Clearing contextual</div>
 <script src="js/help-catalog.js"></script>
 <script src="js/navigation.js"></script></body>
 </html>
