@@ -1,35 +1,33 @@
 {
   "product": "OSC-ACADEMY",
-  "version": "3.5.4.16",
-  "parent_baseline": "OSC-ACADEMY_Baseline_v3.5.4.15_QR_Education_Flow_Popup",
-  "parent_source_file": "OSC-ACADEMY_Baseline_v3.5.4.15_QR_Education_Flow_Popup.zip",
+  "version": "3.5.4.17",
+  "parent_baseline": "OSC-ACADEMY_Baseline_v3.5.4.16_Dashboard_QR_AutoResponse_Clearing_Contextual",
+  "parent_source_file": "OSC-ACADEMY_Baseline_v3.5.4.16_Dashboard_QR_AutoResponse_Clearing_Contextual.zip",
   "policy": {
     "build_from_last_approved_zip": true,
     "no_silent_file_deletion": true,
     "fail_build_if_parent_file_missing": true,
-    "sha256_inventory": true
+    "sha256_inventory": true,
+    "incremental_install_package": true,
+    "complete_backup_package": true
   },
-  "parent_file_count": 110,
-  "final_file_count": 115,
+  "parent_file_count": 115,
+  "final_file_count": 116,
   "removed_files": [],
   "added_files": [
-    "RELEASE_NOTES_v3.5.4.16_DASHBOARD_QR_AUTO_RESPONSE_CLEARING_HELP.txt",
-    "public/assets/dashboard-pos-iso-visual.png",
-    "public/manuals/mastercard-ipm-clearing-formats.pdf",
-    "public/manuals/visa-base-ii-clearing-tc-01-to-tc-48.pdf",
-    "public/manuals/visa-base-ii-clearing-tc-50-to-tc-92.pdf"
+    "RELEASE_NOTES_v3.5.4.17_USABILITY_CLEARING_RESET.txt"
   ],
   "changed_parent_files": [
     "public/atm.html",
     "public/constructor.html",
-    "public/css/app.css",
     "public/index.html",
     "public/js/app.js",
+    "public/js/help-catalog.js",
     "public/parser.html",
     "public/pos.html",
     "public/switch.html"
   ],
-  "unchanged_parent_file_count": 102,
+  "unchanged_parent_file_count": 107,
   "inventory": {
     ".gitignore": {
       "size": 35,
@@ -303,6 +301,10 @@
       "size": 2057,
       "sha256": "19fb2c80582f853dcb6767ee4b640091cac54f7654f0db9678026305d4e7db63"
     },
+    "RELEASE_NOTES_v3.5.4.17_USABILITY_CLEARING_RESET.txt": {
+      "size": 1779,
+      "sha256": "b29336da7c15aeb84449cbd889f9ade6aabfbd31d968c952a53222a977cb704b"
+    },
     "RELEASE_NOTES_v3.5.4.1_SOURCE_CONTROLLED_HELP.txt": {
       "size": 1089,
       "sha256": "d2fd63b081f137a5e702f24001322f81cdeb320d3c75803a374a7ad3e715a142"
@@ -356,8 +358,8 @@
       "sha256": "03055bebc43594d123ec8da7c3465b9f6b974d9634e991f707e5ac9788ab889f"
     },
     "public/atm.html": {
-      "size": 127844,
-      "sha256": "b08e912e744c3323f44cc89950f8329d62a8f5a97dc1481b997b2dd41eb5c7c6"
+      "size": 127856,
+      "sha256": "62380d87d336aeda156c4696390bd21f45568d661f53190f1be5f4858bb43cab"
     },
     "public/compensacion.html": {
       "size": 23034,
@@ -368,8 +370,8 @@
       "sha256": "5d1fc81110c061445d98d37646c0e12f174a3fe346013ef830813592709c1223"
     },
     "public/constructor.html": {
-      "size": 64441,
-      "sha256": "5be333b79e37fc1abafdf4554ea712d7c6adf1a3cb4efe745dcd6cd1758deb02"
+      "size": 64453,
+      "sha256": "8b636eea9e231640eadc15cfb610616499792287751f817a777774ec905565d9"
     },
     "public/css/app.css": {
       "size": 48752,
@@ -392,16 +394,16 @@
       "sha256": "6dd3eebbf8f5937b2307ed39e868fdabf3331622dd1b8bab5b061fb576f6579a"
     },
     "public/index.html": {
-      "size": 13754,
-      "sha256": "b37a8e46ec487bb13609b8bc0181b4c839a0e34b15c2d8b64297dcc7bbe32e33"
+      "size": 13766,
+      "sha256": "25f4703fc2980f711671d4cb540043c405beb9387f00456f1da5a9a1ef95ff5f"
     },
     "public/js/app.js": {
-      "size": 99691,
-      "sha256": "014a6c1d80c7833be3e08927d8c43bbb175f3bce2395b647565e146b63db5723"
+      "size": 99923,
+      "sha256": "a8825c5d2de3199f431b5bd103862c1d1effd9b73d472918acc135d7b8eda664"
     },
     "public/js/help-catalog.js": {
-      "size": 24107,
-      "sha256": "d19bd66d07e4217c75114e0ca23fef21ae7aec779ed6b204cc69d682a815cf45"
+      "size": 24133,
+      "sha256": "8bbeedfaf8053214d52d16461ae6048eec6bac3e83f8ddfdc9217b9807250b2a"
     },
     "public/js/issuer-store.js": {
       "size": 2636,
@@ -460,12 +462,12 @@
       "sha256": "55f7c59eef05e1e22c8b012a8e778b6ea24e8f1d5fedb813d7ed5aadff04eb29"
     },
     "public/parser.html": {
-      "size": 81202,
-      "sha256": "badc8ba94fb27056da7c09920b47f4bdda51a45a651df67443f724c26f7e5e9e"
+      "size": 81214,
+      "sha256": "8e846ad3d9c296e48e7c55668d494a834c2e7f3e0f4dea945fffcec9957470d2"
     },
     "public/pos.html": {
-      "size": 29086,
-      "sha256": "c94896ccbeb9faabdd74c216e0f5ac02bdbbaa5a55252a17de9ae67681075687"
+      "size": 28964,
+      "sha256": "f7a98203d42c91d6923a8e527272c87b99cddf7247014a46220c6a970b5d0a99"
     },
     "public/production_diagnostic.html": {
       "size": 3711,
@@ -476,8 +478,8 @@
       "sha256": "89b8e3952ffe425e966ed241f7bd4063557f3effa61b6c122ffc7b471b77c3bd"
     },
     "public/switch.html": {
-      "size": 29078,
-      "sha256": "4b463258c7812f6267076c51666f867cdbad172725b6b5bdf519937c884643af"
+      "size": 31288,
+      "sha256": "d25c1fdefe439e35058904968fac312d1fb6965b66a4f04e86807c5dd0bc7add"
     },
     "public/switch_emisor.html": {
       "size": 11925,

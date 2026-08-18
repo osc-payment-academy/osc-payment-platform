@@ -1,0 +1,35 @@
+OSC PAYMENT ACADEMY
+Baseline v3.5.4.17 - Usabilidad POS, clearing didáctico y reinicio integral
+Fecha: 18/08/2026
+
+FUENTE EXCLUSIVA
+- OSC-ACADEMY Baseline v3.5.4.16 Dashboard QR AutoResponse Clearing Contextual.
+
+CAMBIOS
+- POS: la ayuda QR aparece tras 1,2 segundos y se oculta al salir, seleccionar, abrir o cerrar el popup.
+- POS: la ayuda de Devolución queda integrada en su tarjeta; ya no crea un recuadro adicional.
+- POS: se retiraron de la vista los botones sin función Configuración y Finalizar Sesión.
+- Switch: se retiró el recuadro Estado del workspace y se amplió el Ciclo completo.
+- Switch: nodos uniformes; Autorización en verde suave y Cierre POS en amarillo suave.
+- Switch: marcas de agua tenues Visa, Mastercard y American Express en sus visores.
+- Clearing Visa: la Vista Didáctica identifica dinámicamente el TC de cada detalle (incluye 05, 06, 07, 15, 16, 17, 25, 26, 27, 35, 36 y 37).
+- Clearing Visa: el texto contextual cambia según el TC y abre la sección 05.3 del manual, que documenta la estructura compartida del grupo.
+- Vista Didáctica: solamente puede quedar abierto un popup; al abrir el manual se cierran popup y mano.
+- Reiniciar laboratorio: elimina también el historial local ATM y la última reconciliación ATM.
+
+ARCHIVOS FUNCIONALES MODIFICADOS
+- public/pos.html
+- public/switch.html
+- public/js/app.js
+- public/js/help-catalog.js
+
+ARCHIVOS CON ACTUALIZACIÓN DE IDENTIFICADOR DE BASELINE
+- public/index.html
+- public/atm.html
+- public/constructor.html
+- public/parser.html
+
+INSTALACIÓN
+- Usar el paquete incremental y respetar la estructura de carpetas.
+- La baseline completa se conserva solamente como respaldo y fuente de la próxima versión.
+- No es necesario volver a subir manuales ni otros componentes sin cambios.

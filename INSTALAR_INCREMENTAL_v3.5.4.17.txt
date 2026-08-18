@@ -1,0 +1,27 @@
+OSC PAYMENT ACADEMY - INSTALACION INCREMENTAL v3.5.4.17
+
+Este es el paquete que se debe instalar.
+
+1. En GitHub, ingresar a la raíz del repositorio.
+2. Subir estos archivos de la raíz:
+   - BASELINE_MANIFEST.json
+   - RELEASE_NOTES_v3.5.4.17_USABILITY_CLEARING_RESET.txt
+3. Ingresar a la carpeta public y subir/reemplazar:
+   - index.html
+   - pos.html
+   - atm.html
+   - switch.html
+   - constructor.html
+   - parser.html
+4. Ingresar a public/js y subir/reemplazar:
+   - app.js
+   - help-catalog.js
+5. Confirmar el commit.
+
+No subir nuevamente public/manuals, public/assets ni otros archivos.
+No eliminar componentes existentes.
+
+Verificación visual:
+- El badge debe indicar Baseline v3.5.4.17.
+- En Switch ya no debe aparecer Estado del workspace.
+- Reiniciar laboratorio debe dejar vacío también el historial ATM al volver al módulo.
