@@ -43,7 +43,7 @@
   modules.filter(item=>item.visible!==false).forEach(item=>{
     const link=document.createElement('a');
     link.className='nav'+(current===item.href.toLowerCase()?' active':'');
-    link.href=item.href;
+    link.href=new URL(item.href,location.origin+'/').href;
     link.textContent=`${item.icon} ${item.label}`;
     nav.appendChild(link);
   });
