@@ -377,18 +377,18 @@
     const mode=entryModes[state.entryMode]||entryModes.chip;
     const rows=[
       field(2,'Primary Account Number (PAN)',state.pan,String(state.pan.length),'LLVAR',state.paymentMethod==='qr'?'Credencial/token de la wallet':'Tarjeta'),
-      field(3,'Processing Code','000000','6','FIXED','Aplicación POS'),
+      field(3,'Processing Code','000000','6','FIXED',state.paymentMethod==='qr'?'Wallet / procesador adquirente':'Aplicación POS'),
       amountField(),
       field(14,'Expiration Date',selectedCard().expiry,'4','FIXED',state.paymentMethod==='qr'?'Credencial asociada':'Tarjeta'),
       field(22,'Point of Service Entry Mode',state.paymentMethod==='qr'?'010':mode.de22,'3','FIXED',state.paymentMethod==='qr'?'QR educativo / wallet':mode.label),
-      field(25,'Point of Service Condition Code','00','2','FIXED','Aplicación POS'),
+      field(25,'Point of Service Condition Code','00','2','FIXED',state.paymentMethod==='qr'?'Procesador adquirente':'Aplicación POS'),
       field(41,'Terminal ID','TERMID01','8','FIXED','Configuración terminal'),
       field(42,'Merchant ID','MERCHANT01','10','FIXED','Configuración comercio'),
       field(49,'Transaction Currency Code','032','3','FIXED','Configuración comercio')
     ];
     if(state.paymentMethod!=='qr' && mode.hasDE35) rows.push(field(35,'Track 2 Data',selectedCard().track2,String(selectedCard().track2.length),'LLVAR',mode.de35Origin));
     if(state.paymentMethod!=='qr' && mode.hasDE55){const v=networkEmvDe55({modeKey:state.entryMode,networkId:profile().id,aid:selectedCard().aid});rows.push(field(55,'ICC Data (EMV)',v,String(v.length/2)+' bytes','LLLVAR',`${mode.label} · BER-TLV completo`));}
-    if(state.paymentMethod==='qr') rows.push(field(48,'Additional Data - QR',`QR|${selectedQr().mode}|${profile().name}`,'Variable','LLLVAR','Wallet / aplicación QR'));
+    if(state.paymentMethod==='qr') rows.push(field(48,'Additional Data - QR',`QR|${selectedQr().mode}|${profile().name}`,'Variable','LLLVAR','Wallet / procesador QR'));
     return rows;
   }
 
@@ -397,9 +397,9 @@
     const rows=entryFields();
     rows.splice(3,0,
       field(7,'Transmission Date & Time',de7Now(),'10','FIXED','Reloj del sistema'),
-      field(11,'System Trace Audit Number (STAN)',state.currentStan,'6','FIXED','Generado por el POS')
+      field(11,'System Trace Audit Number (STAN)',state.currentStan,'6','FIXED',state.paymentMethod==='qr'?'Generado por el adquirente/procesador':'Generado por el POS')
     );
-    if(mode.hasPin){
+    if(state.paymentMethod!=='qr' && mode.hasPin){
       rows.push(field(52,'PIN Data (Encrypted PIN Block)',state.pinBlock||'—','8 bytes','B64','PIN cifrado'));
       rows.push(field(53,'Security-Related Control Information','2000000000000000','16','FIXED','Seguridad PIN'));
     }
@@ -1009,13 +1009,16 @@
     screen('PAGO CON QR',`<small>${selectedQr().mode}</small><strong>${selectedQr().label}</strong><span>Escanee y confirme desde la wallet</span>`);
     setStep(2);
     setTimeout(()=>{
-      $('qrStageStatus').textContent='QR escaneado · Confirmando pago…';
+      $('qrStageStatus').textContent='QR escaneado · El cliente confirma en la wallet…';
       document.querySelector('#step2 strong').textContent='Lectura / Escaneo';
       document.querySelector('#step2 small').textContent=`${selectedQr().label} · Wallet`;
       $('time2').textContent=timeNow();
       $('flowPin').textContent='No requerido'; $('time3').textContent=timeNow();
       renderFields(entryFields().sort((a,b)=>Number(a[0])-Number(b[0])));
-      setTimeout(()=>{ qr.classList.add('hidden'); sendPurchase0200(); },1100);
+      setTimeout(()=>{
+        $('qrStageStatus').textContent='Wallet inició el pago · Adquirente/procesador prepara la autorización…';
+        setTimeout(()=>{ qr.classList.add('hidden'); sendPurchase0200(); },1200);
+      },1100);
     },1800);
   }
 
@@ -1054,7 +1057,7 @@
     op.requestMti=requestMti;op.responseMti=msgProfile.response;op.messageFamily=msgProfile.family;
     const fields=isAmex?amex1100RequestFields():purchaseRequestFields();
     renderFields(fields);
-    screen('PROCESANDO',`<small>Enviando ${requestMti}</small><strong>...</strong><span>${isAmex?'American Express GNS':'Aguarde'}</span>`);
+    screen('PROCESANDO',`<small>${state.paymentMethod==='qr'?'Procesador envía':'Enviando'} ${requestMti}</small><strong>...</strong><span>${isAmex?'American Express GNS':state.paymentMethod==='qr'?'Hacia la red y el emisor':'Aguarde'}</span>`);
     setTimeout(()=>{
       $('time4').textContent=timeNow();
       addMessage({
@@ -1087,7 +1090,7 @@
     op.auth=state.currentAuth;op.status=state.responseCode==='00'?'APROBADA':'RECHAZADA';
     $('time5').textContent=timeNow();$('flowResponse').textContent=`${state.responseCode} - ${response.label}`;
     $('resultText').textContent=response.label;$('resultCode').textContent=state.responseCode;$('resultDetail').textContent=response.detail;$('authCode').textContent=state.currentAuth;
-    screen(op.status==='APROBADA'?'APROBADA':'RECHAZADA',`<small>${response.label}</small><strong>${state.responseCode}</strong><span>${op.status==='APROBADA'?'Retire tarjeta':'Operación finalizada'}</span>`);
+    screen(op.status==='APROBADA'?'APROBADA':'RECHAZADA',`<small>${response.label}</small><strong>${state.responseCode}</strong><span>${op.status==='APROBADA'?(state.paymentMethod==='qr'?'Wallet y comercio notificados':'Retire tarjeta'):'Operación finalizada'}</span>`);
     if(state.responseCode!=='TO'){
       const fields=purchaseResponseFields(state.responseCode,op);
       const responseMti=op.responseMti||posMessageProfile(TEST_CARDS[op.cardId||state.testCard]).response;
@@ -1527,6 +1530,15 @@ ${rawMessage(msg)}`;
     $('cardPaymentConfig').classList.toggle('hidden',method!=='card');
     $('qrPaymentConfig').classList.toggle('hidden',method!=='qr');
     refreshNetworkProfile(); reset();
+    if(method==='qr') openQrEducationModal();
+  }
+  function openQrEducationModal(){
+    const modal=$('qrEducationModal');
+    if(modal) modal.classList.remove('hidden');
+  }
+  function closeQrEducationModal(){
+    const modal=$('qrEducationModal');
+    if(modal) modal.classList.add('hidden');
   }
   document.addEventListener('DOMContentLoaded',()=>{
     document.querySelectorAll('[data-payment-method]').forEach(btn=>btn.addEventListener('click',()=>setPaymentMethod(btn.dataset.paymentMethod)));
@@ -1543,6 +1555,11 @@ ${rawMessage(msg)}`;
     }
     if(qr){qr.value=state.qrType;qr.addEventListener('change',()=>{state.qrType=qr.value;refreshNetworkProfile();reset();});}
     if(iso){iso.checked=state.showIsoTicket;iso.addEventListener('change',()=>{state.showIsoTicket=iso.checked;const op=state.operations.find(o=>o.id===state.selectedSourceOperationId);if(op&&$('receiptPaper').innerHTML.trim())$('receiptPaper').innerHTML=ticketHtml(op);});}
+    const qrEducation=$('qrEducationModal'), closeQrEducation=$('closeQrEducationModal'), startQrEducation=$('startQrEducationSimulation'), toggleQrFlow=$('toggleQrEducationFlow'), qrFlow=$('qrEducationFlow');
+    if(closeQrEducation) closeQrEducation.addEventListener('click',closeQrEducationModal);
+    if(startQrEducation) startQrEducation.addEventListener('click',closeQrEducationModal);
+    if(qrEducation) qrEducation.addEventListener('click',event=>{if(event.target===qrEducation) closeQrEducationModal();});
+    if(toggleQrFlow&&qrFlow) toggleQrFlow.addEventListener('click',()=>{const hidden=qrFlow.classList.toggle('hidden');toggleQrFlow.textContent=hidden?'Ver flujo':'Ocultar flujo';if(!hidden)qrFlow.scrollIntoView({behavior:'smooth',block:'nearest'});});
     selectTestCard(state.testCard,{resetFlow:false});
   });
 
