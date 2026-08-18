@@ -1,0 +1,25 @@
+OSC-ACADEMY v3.5.4.15
+Popup educativo y flujo de pagos QR
+
+Baseline de origen:
+- OSC-ACADEMY_Baseline_v3.5.4.14_Stable_Menu_Hidden_Modules.zip
+
+Cambios:
+- Se incorporó en POS Virtual un popup educativo al seleccionar el medio de pago QR.
+- Se explica en lenguaje simple cómo funciona un pago QR.
+- Se compara QR estático y QR dinámico.
+- Se muestran Mastercard QR y Visa QR Merchant Presented como alternativas disponibles.
+- Cuenta a cuenta y Wallet propietaria se conservan como opciones próximas.
+- Se agregó el botón "Ver flujo" con la ida completa y los dos caminos de respuesta.
+- Se aclaró que el POS genera y muestra el QR, mientras la wallet inicia el pago.
+- Se aclaró que el adquirente/procesador construye la autorización hacia la red y el emisor.
+- Se explica la confirmación independiente a la wallet del cliente y al POS/comercio.
+- Se contempla la demora eventual entre la aprobación visible en la wallet y la actualización del POS.
+- El botón de video queda visible y deshabilitado como "Próximamente".
+- Se corrigieron los orígenes educativos de los Data Elements QR para no atribuir la autorización directamente al POS.
+
+Se conserva:
+- Menú global estable y módulos temporalmente ocultos de v3.5.4.14.
+- Fix de manito del Constructor de v3.5.4.13.
+- Navegación directa Visa/Mastercard del Parser.
+- AMEX sin manito.

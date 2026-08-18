@@ -1,41 +1,30 @@
 {
   "product": "OSC-ACADEMY",
-  "version": "3.5.4.14",
-  "parent_baseline": "OSC-ACADEMY_Baseline_v3.5.4.13_Constructor_Manual_Hover_Fix",
-  "parent_source_file": "OSC-ACADEMY_Baseline_v3.5.4.13_Constructor_Manual_Hover_Fix.zip",
+  "version": "3.5.4.15",
+  "parent_baseline": "OSC-ACADEMY_Baseline_v3.5.4.14_Stable_Menu_Hidden_Modules",
+  "parent_source_file": "OSC-ACADEMY_Baseline_v3.5.4.14_Stable_Menu_Hidden_Modules.zip",
   "policy": {
     "build_from_last_approved_zip": true,
     "no_silent_file_deletion": true,
     "fail_build_if_parent_file_missing": true,
     "sha256_inventory": true
   },
-  "parent_file_count": 107,
-  "final_file_count": 109,
+  "parent_file_count": 109,
+  "final_file_count": 110,
   "removed_files": [],
   "added_files": [
-    "RELEASE_NOTES_v3.5.4.14_STABLE_MENU_HIDDEN_MODULES.txt",
-    "public/js/navigation.js"
+    "RELEASE_NOTES_v3.5.4.15_QR_EDUCATION_FLOW_POPUP.txt"
   ],
   "changed_parent_files": [
     "public/atm.html",
-    "public/compensacion.html",
-    "public/compensacion_mastercard.html",
     "public/constructor.html",
-    "public/cuenta_cliente.html",
-    "public/curso_interactivo.html",
-    "public/documentacion.html",
-    "public/ebook.html",
+    "public/css/app.css",
     "public/index.html",
-    "public/mastercard_iso.html",
-    "public/ondemand_lab.html",
+    "public/js/app.js",
     "public/parser.html",
-    "public/pos.html",
-    "public/production_diagnostic.html",
-    "public/research.html",
-    "public/switch.html",
-    "public/switch_emisor.html"
+    "public/pos.html"
   ],
-  "unchanged_parent_file_count": 90,
+  "unchanged_parent_file_count": 102,
   "inventory": {
     ".gitignore": {
       "size": 35,
@@ -301,6 +290,10 @@
       "size": 1209,
       "sha256": "209beb2a56fabf15a8216910dddceb416a58fdaebbb83961d681f904447a12ba"
     },
+    "RELEASE_NOTES_v3.5.4.15_QR_EDUCATION_FLOW_POPUP.txt": {
+      "size": 1355,
+      "sha256": "93491d6f4a6e0f229237f2f0d59e737413d601a8bae775d538de9365792cc9b7"
+    },
     "RELEASE_NOTES_v3.5.4.1_SOURCE_CONTROLLED_HELP.txt": {
       "size": 1089,
       "sha256": "d2fd63b081f137a5e702f24001322f81cdeb320d3c75803a374a7ad3e715a142"
@@ -351,7 +344,7 @@
     },
     "public/atm.html": {
       "size": 127838,
-      "sha256": "d9dbd34efa7ec7d40c701e668b69b8f4535238db2b52cafba57234f1f8722d3d"
+      "sha256": "9ea36fdd51ee92cdec1d441c0944092f56870c29fda5275ccd803886d7ce4395"
     },
     "public/compensacion.html": {
       "size": 23034,
@@ -363,11 +356,11 @@
     },
     "public/constructor.html": {
       "size": 64435,
-      "sha256": "8f133cf2299d20624ecf70119ec245216d1b14b4f1b233da7a594e364bfe429e"
+      "sha256": "13f7c4854edf06a40c644293a7b51debc82e1a83d97cb380ce07e832a4cb36ce"
     },
     "public/css/app.css": {
-      "size": 43036,
-      "sha256": "e1d10bd2d86ee8225a986fe59410f6ac66a84dc69320f25651e0d830158bea6f"
+      "size": 47007,
+      "sha256": "52d305e13fe529b72af5450c1a553ec95fed53bae20510889990d29a32de8d1d"
     },
     "public/cuenta_cliente.html": {
       "size": 3431,
@@ -387,11 +380,11 @@
     },
     "public/index.html": {
       "size": 13667,
-      "sha256": "de2ebdbb9bc17f1a84c446968910a911586ed1adf7e700aeea2aa96d0385b2c9"
+      "sha256": "de9bc12ddad52212f54f029124da5cc03f1dee11a165ff761b861d2319c8228e"
     },
     "public/js/app.js": {
-      "size": 97083,
-      "sha256": "e1308b4b9af06ba34d4c54cc180e98c4434d670a245a85dfe2a4bd395ae7552f"
+      "size": 98696,
+      "sha256": "fb3e10eeb5cfb89784ea445439206d290c408b51a29145a32094b160ccd10bdc"
     },
     "public/js/help-catalog.js": {
       "size": 24107,
@@ -443,11 +436,11 @@
     },
     "public/parser.html": {
       "size": 81196,
-      "sha256": "f580c22be5c948a94605d3c6c15f5e2259e4ee07fde9d43f442265af1808ad36"
+      "sha256": "4ebe06e93c4f1482ca5f91ee01fca1e251f62d8d04d464b97fa2fec366f3aab3"
     },
     "public/pos.html": {
-      "size": 25287,
-      "sha256": "66c420d7a31d5e7cf0b589a3b47c0ef07faf9fbc1d2725dc54f4dbca612b07c2"
+      "size": 28809,
+      "sha256": "c920269adb6d3312d626a51d64ddebc73c34c3711ab8f9d15f6dc65449a783e7"
     },
     "public/production_diagnostic.html": {
       "size": 3711,
