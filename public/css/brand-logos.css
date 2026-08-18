@@ -1,0 +1,12 @@
+.network-brand-logo{display:inline-block;width:auto;height:24px;max-width:132px;object-fit:contain;vertical-align:middle}
+.network-brand-logo.visa{height:23px}.network-brand-logo.mastercard{height:32px}.network-brand-logo.amex{height:30px}
+.network-brand-logo.large{height:48px;max-width:190px}.network-brand-logo.visa.large{height:44px}.network-brand-logo.mastercard.large{height:62px}.network-brand-logo.amex.large{height:52px}
+.network-brand-heading{display:flex;align-items:center;min-height:58px;margin-bottom:5px}.network-brand-heading .network-brand-logo{max-width:175px}
+.network-profile-brand{display:inline-flex;align-items:center;gap:8px}.network-profile-brand+small{margin-left:8px}
+.test-card .card-network{display:inline-flex;align-items:center;min-height:20px}
+.test-card.visa .card-network,.test-card.mastercard .card-network,.test-card.amex .card-network{font-size:0!important;color:transparent!important;letter-spacing:0!important}
+.test-card.visa .card-network::before,.test-card.mastercard .card-network::before,.test-card.amex .card-network::before{content:"";display:block;background-repeat:no-repeat;background-position:left center;background-size:contain}
+.test-card.visa .card-network::before{width:54px;height:18px;background-image:url('../assets/brand-visa-white.svg')}
+.test-card.mastercard .card-network::before{width:76px;height:28px;background-image:url('../assets/brand-mastercard.svg')}
+.test-card.amex .card-network::before{width:82px;height:27px;background-image:url('../assets/brand-amex-white.svg')}
+@media(max-width:700px){.network-brand-logo.large{max-width:145px}.network-brand-heading{min-height:48px}}
