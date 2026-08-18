@@ -22,9 +22,15 @@
     return sum%10===0;
   }
   function resolve(selected, pan){ return selected && selected!=='auto' ? profiles[selected] : detect(pan); }
+  function logo(profile,size=''){
+    const p=profile||profiles.visa;
+    if(!profiles[p.id]) return `<strong>${p.name}</strong>`;
+    const file=p.id==='visa'?'brand-visa-white.svg':p.id==='mastercard'?'brand-mastercard.svg':'brand-amex-white.svg';
+    return `<img class="network-brand-logo ${p.id} ${size}" src="assets/${file}" alt="${p.name}">`;
+  }
   function badge(profile){
     const p=profile||profiles.visa;
-    return `<span class="osc-network-dot" style="background:${p.color}"></span><strong>${p.name}</strong><small>${p.manual}</small>`;
+    return `<span class="network-profile-brand">${logo(p)}</span><small>${p.manual}</small>`;
   }
-  window.OSCNetworks={profiles,detect,luhn,resolve,clean,badge};
+  window.OSCNetworks={profiles,detect,luhn,resolve,clean,badge,logo};
 })();

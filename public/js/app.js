@@ -835,6 +835,11 @@
     updateDualBitmaps();
   }
 
+  function networkLogo(network,size=''){
+    const id=String(network||'visa').toLowerCase();
+    const p=window.OSCNetworks?.profiles?.[id]||window.OSCNetworks?.profiles?.visa;
+    return window.OSCNetworks?.logo?.(p,size)||`<strong>${p?.name||'Visa'}</strong>`;
+  }
   function addMessage(message){
     state.messages.unshift(message);
     const tr=document.createElement('tr');
@@ -842,11 +847,7 @@
     const op=state.operations.find(o=>o.id===message.operationId);
     tr.innerHTML=`
       <td>${message.dateTime}</td>
-      <td>${((op?.network||'').toLowerCase()==='mastercard')
-        ?'<span class="brand-logo mc-mark" title="Mastercard"><i></i><i></i></span>'
-        :((op?.network||'').toLowerCase()==='amex')
-          ?'<span class="brand-logo amex-mark" title="American Express">AMEX</span>'
-          :'<span class="brand-logo visa-mark" title="Visa">VISA</span>'}</td>
+      <td>${networkLogo(op?.network||'visa')}</td>
       <td class="${message.direction==='SALIENTE'?'direction-out':'direction-in'}">${message.direction}</td>
       <td><span class="message-badge">${message.mti}</span></td>
       <td><span class="operation-tag">${message.operation}</span></td>
@@ -1126,9 +1127,7 @@
 
   function transactionBrand(op){
     const net=String(op.network||'').toLowerCase();
-    if(net==='amex') return '<span class="tx-brand-large amex">AMEX</span>';
-    if(net==='mastercard') return '<span class="tx-brand-large mc" title="Mastercard"><i></i><i></i></span>';
-    return '<span class="tx-brand-large visa">VISA</span>';
+    return networkLogo(net,'large');
   }
   function transactionMaskedPan(op){
     const card=TEST_CARDS[op.cardId||''];
@@ -1559,12 +1558,16 @@ ${rawMessage(msg)}`;
     if(qr){qr.value=state.qrType;qr.addEventListener('change',()=>{state.qrType=qr.value;$('qrEducationHelp')?.classList.remove('visible');refreshNetworkProfile();reset();});}
     if(iso){iso.checked=state.showIsoTicket;iso.addEventListener('change',()=>{state.showIsoTicket=iso.checked;const op=state.operations.find(o=>o.id===state.selectedSourceOperationId);if(op&&$('receiptPaper').innerHTML.trim())$('receiptPaper').innerHTML=ticketHtml(op);});}
     const qrEducation=$('qrEducationModal'), closeQrEducation=$('closeQrEducationModal'), startQrEducation=$('startQrEducationSimulation'), toggleQrFlow=$('toggleQrEducationFlow'), qrFlow=$('qrEducationFlow');
-    const qrMethod=document.querySelector('[data-payment-method="qr"]'), qrHelp=$('qrEducationHelp');
-    let qrHelpTimer=null;
+    const qrMethod=document.querySelector('[data-payment-method="qr"]'), qrHelp=$('qrEducationHelp'), qrHoverArea=qrMethod?.closest('.qr-method-wrap')||qrMethod;
+    let qrHelpTimer=null,qrHelpHideTimer=null;
     if(qrMethod&&qrHelp){
-      qrMethod.addEventListener('mouseenter',()=>{clearTimeout(qrHelpTimer);qrHelpTimer=setTimeout(()=>qrHelp.classList.add('visible'),1200);});
-      qrMethod.addEventListener('mouseleave',()=>{clearTimeout(qrHelpTimer);qrHelp.classList.remove('visible')});
-      qrMethod.addEventListener('focus',()=>{clearTimeout(qrHelpTimer);qrHelpTimer=setTimeout(()=>qrHelp.classList.add('visible'),1200);});
+      const showQrHelp=()=>{clearTimeout(qrHelpTimer);clearTimeout(qrHelpHideTimer);qrHelpTimer=setTimeout(()=>qrHelp.classList.add('visible'),1800)};
+      const hideQrHelp=()=>{clearTimeout(qrHelpTimer);clearTimeout(qrHelpHideTimer);qrHelpHideTimer=setTimeout(()=>qrHelp.classList.remove('visible'),650)};
+      qrHoverArea.addEventListener('mouseenter',showQrHelp);
+      qrHoverArea.addEventListener('mouseleave',hideQrHelp);
+      qrMethod.addEventListener('focus',showQrHelp);
+      qrMethod.addEventListener('blur',hideQrHelp);
+      qrHelp.addEventListener('mouseenter',()=>clearTimeout(qrHelpHideTimer));
       qrHelp.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();qrHelp.classList.remove('visible');openQrEducationModal();});
     }
     if(closeQrEducation) closeQrEducation.addEventListener('click',closeQrEducationModal);
