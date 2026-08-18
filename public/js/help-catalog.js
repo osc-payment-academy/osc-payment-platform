@@ -284,7 +284,7 @@
 
     // En los selectores de captura, el CSS del Core aplica estilos a TODOS los <button>.
     // Por eso la ayuda usa <span role="button"> y comparte una envoltura con el botón original.
-    const integrated=el.matches?.('[data-entry],[data-atm-entry]') || key==='reconcile';
+    const integrated=el.matches?.('[data-entry],[data-atm-entry],[data-operation="refund"]') || key==='reconcile';
     if(integrated){
       wrap=document.createElement('span');
       wrap.className=`osc-help-wrap${key==='reconcile'?' osc-help-inline':''}`;

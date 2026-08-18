@@ -1528,6 +1528,7 @@ ${rawMessage(msg)}`;
   }
   function setPaymentMethod(method){
     state.paymentMethod=method;
+    $('qrEducationHelp')?.classList.remove('visible');
     document.querySelectorAll('[data-payment-method]').forEach(b=>b.classList.toggle('active',b.dataset.paymentMethod===method));
     $('cardPaymentConfig').classList.toggle('hidden',method!=='card');
     $('qrPaymentConfig').classList.toggle('hidden',method!=='qr');
@@ -1540,6 +1541,7 @@ ${rawMessage(msg)}`;
   function closeQrEducationModal(){
     const modal=$('qrEducationModal');
     if(modal) modal.classList.add('hidden');
+    $('qrEducationHelp')?.classList.remove('visible');
   }
   document.addEventListener('DOMContentLoaded',()=>{
     document.querySelectorAll('[data-payment-method]').forEach(btn=>btn.addEventListener('click',()=>setPaymentMethod(btn.dataset.paymentMethod)));
@@ -1554,16 +1556,16 @@ ${rawMessage(msg)}`;
         selectTestCard(cardButton.dataset.testCard);
       });
     }
-    if(qr){qr.value=state.qrType;qr.addEventListener('change',()=>{state.qrType=qr.value;refreshNetworkProfile();reset();});}
+    if(qr){qr.value=state.qrType;qr.addEventListener('change',()=>{state.qrType=qr.value;$('qrEducationHelp')?.classList.remove('visible');refreshNetworkProfile();reset();});}
     if(iso){iso.checked=state.showIsoTicket;iso.addEventListener('change',()=>{state.showIsoTicket=iso.checked;const op=state.operations.find(o=>o.id===state.selectedSourceOperationId);if(op&&$('receiptPaper').innerHTML.trim())$('receiptPaper').innerHTML=ticketHtml(op);});}
     const qrEducation=$('qrEducationModal'), closeQrEducation=$('closeQrEducationModal'), startQrEducation=$('startQrEducationSimulation'), toggleQrFlow=$('toggleQrEducationFlow'), qrFlow=$('qrEducationFlow');
     const qrMethod=document.querySelector('[data-payment-method="qr"]'), qrHelp=$('qrEducationHelp');
     let qrHelpTimer=null;
     if(qrMethod&&qrHelp){
       qrMethod.addEventListener('mouseenter',()=>{clearTimeout(qrHelpTimer);qrHelpTimer=setTimeout(()=>qrHelp.classList.add('visible'),1200);});
-      qrMethod.addEventListener('mouseleave',()=>clearTimeout(qrHelpTimer));
+      qrMethod.addEventListener('mouseleave',()=>{clearTimeout(qrHelpTimer);qrHelp.classList.remove('visible')});
       qrMethod.addEventListener('focus',()=>{clearTimeout(qrHelpTimer);qrHelpTimer=setTimeout(()=>qrHelp.classList.add('visible'),1200);});
-      qrHelp.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();openQrEducationModal();});
+      qrHelp.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();qrHelp.classList.remove('visible');openQrEducationModal();});
     }
     if(closeQrEducation) closeQrEducation.addEventListener('click',closeQrEducationModal);
     if(startQrEducation) startQrEducation.addEventListener('click',closeQrEducationModal);
