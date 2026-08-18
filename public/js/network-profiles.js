@@ -25,7 +25,7 @@
   function logo(profile,size=''){
     const p=profile||profiles.visa;
     if(!profiles[p.id]) return `<strong>${p.name}</strong>`;
-    const file=p.id==='visa'?'brand-visa-white.svg':p.id==='mastercard'?'brand-mastercard.svg':'brand-amex-white.svg';
+    const file=p.id==='visa'?'brand-visa-white.png':p.id==='mastercard'?'brand-mastercard.png':'brand-amex-white.png';
     return `<img class="network-brand-logo ${p.id} ${size}" src="assets/${file}" alt="${p.name}">`;
   }
   function badge(profile){
