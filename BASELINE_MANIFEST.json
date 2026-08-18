@@ -1,19 +1,23 @@
 {
   "product": "OSC-ACADEMY",
-  "version": "3.5.4.15",
-  "parent_baseline": "OSC-ACADEMY_Baseline_v3.5.4.14_Stable_Menu_Hidden_Modules",
-  "parent_source_file": "OSC-ACADEMY_Baseline_v3.5.4.14_Stable_Menu_Hidden_Modules.zip",
+  "version": "3.5.4.16",
+  "parent_baseline": "OSC-ACADEMY_Baseline_v3.5.4.15_QR_Education_Flow_Popup",
+  "parent_source_file": "OSC-ACADEMY_Baseline_v3.5.4.15_QR_Education_Flow_Popup.zip",
   "policy": {
     "build_from_last_approved_zip": true,
     "no_silent_file_deletion": true,
     "fail_build_if_parent_file_missing": true,
     "sha256_inventory": true
   },
-  "parent_file_count": 109,
-  "final_file_count": 110,
+  "parent_file_count": 110,
+  "final_file_count": 115,
   "removed_files": [],
   "added_files": [
-    "RELEASE_NOTES_v3.5.4.15_QR_EDUCATION_FLOW_POPUP.txt"
+    "RELEASE_NOTES_v3.5.4.16_DASHBOARD_QR_AUTO_RESPONSE_CLEARING_HELP.txt",
+    "public/assets/dashboard-pos-iso-visual.png",
+    "public/manuals/mastercard-ipm-clearing-formats.pdf",
+    "public/manuals/visa-base-ii-clearing-tc-01-to-tc-48.pdf",
+    "public/manuals/visa-base-ii-clearing-tc-50-to-tc-92.pdf"
   ],
   "changed_parent_files": [
     "public/atm.html",
@@ -22,7 +26,8 @@
     "public/index.html",
     "public/js/app.js",
     "public/parser.html",
-    "public/pos.html"
+    "public/pos.html",
+    "public/switch.html"
   ],
   "unchanged_parent_file_count": 102,
   "inventory": {
@@ -294,6 +299,10 @@
       "size": 1355,
       "sha256": "93491d6f4a6e0f229237f2f0d59e737413d601a8bae775d538de9365792cc9b7"
     },
+    "RELEASE_NOTES_v3.5.4.16_DASHBOARD_QR_AUTO_RESPONSE_CLEARING_HELP.txt": {
+      "size": 2057,
+      "sha256": "19fb2c80582f853dcb6767ee4b640091cac54f7654f0db9678026305d4e7db63"
+    },
     "RELEASE_NOTES_v3.5.4.1_SOURCE_CONTROLLED_HELP.txt": {
       "size": 1089,
       "sha256": "d2fd63b081f137a5e702f24001322f81cdeb320d3c75803a374a7ad3e715a142"
@@ -342,9 +351,13 @@
       "size": 128,
       "sha256": "50235084f46ee7e4e36e8c2af728d927e2a072c9e19427dbb9de616ce819e63a"
     },
+    "public/assets/dashboard-pos-iso-visual.png": {
+      "size": 94397,
+      "sha256": "03055bebc43594d123ec8da7c3465b9f6b974d9634e991f707e5ac9788ab889f"
+    },
     "public/atm.html": {
-      "size": 127838,
-      "sha256": "9ea36fdd51ee92cdec1d441c0944092f56870c29fda5275ccd803886d7ce4395"
+      "size": 127844,
+      "sha256": "b08e912e744c3323f44cc89950f8329d62a8f5a97dc1481b997b2dd41eb5c7c6"
     },
     "public/compensacion.html": {
       "size": 23034,
@@ -355,12 +368,12 @@
       "sha256": "5d1fc81110c061445d98d37646c0e12f174a3fe346013ef830813592709c1223"
     },
     "public/constructor.html": {
-      "size": 64435,
-      "sha256": "13f7c4854edf06a40c644293a7b51debc82e1a83d97cb380ce07e832a4cb36ce"
+      "size": 64441,
+      "sha256": "5be333b79e37fc1abafdf4554ea712d7c6adf1a3cb4efe745dcd6cd1758deb02"
     },
     "public/css/app.css": {
-      "size": 47007,
-      "sha256": "52d305e13fe529b72af5450c1a553ec95fed53bae20510889990d29a32de8d1d"
+      "size": 48752,
+      "sha256": "6e2155bcab8c2f37d73eb9e1430207d41a5ade91e7f8bfcd71950c143c73db8a"
     },
     "public/cuenta_cliente.html": {
       "size": 3431,
@@ -379,12 +392,12 @@
       "sha256": "6dd3eebbf8f5937b2307ed39e868fdabf3331622dd1b8bab5b061fb576f6579a"
     },
     "public/index.html": {
-      "size": 13667,
-      "sha256": "de9bc12ddad52212f54f029124da5cc03f1dee11a165ff761b861d2319c8228e"
+      "size": 13754,
+      "sha256": "b37a8e46ec487bb13609b8bc0181b4c839a0e34b15c2d8b64297dcc7bbe32e33"
     },
     "public/js/app.js": {
-      "size": 98696,
-      "sha256": "fb3e10eeb5cfb89784ea445439206d290c408b51a29145a32094b160ccd10bdc"
+      "size": 99691,
+      "sha256": "014a6c1d80c7833be3e08927d8c43bbb175f3bce2395b647565e146b63db5723"
     },
     "public/js/help-catalog.js": {
       "size": 24107,
@@ -426,6 +439,18 @@
       "size": 3860480,
       "sha256": "78affa0e929cb11027065ccaa6cb4e74547f0725506cf99f93995f1b39978d3c"
     },
+    "public/manuals/mastercard-ipm-clearing-formats.pdf": {
+      "size": 5592755,
+      "sha256": "7211e927c971f898c770667c2038c98d8906f4f65d2b9b6e46e3cfc5fbbf7d1e"
+    },
+    "public/manuals/visa-base-ii-clearing-tc-01-to-tc-48.pdf": {
+      "size": 3719913,
+      "sha256": "ef52f02905b4f521c7a3f521bf647852b391ebde02da7d0b9d626ea7085805e9"
+    },
+    "public/manuals/visa-base-ii-clearing-tc-50-to-tc-92.pdf": {
+      "size": 1788217,
+      "sha256": "bb6a9be2323f8b1b490e76cb484b0ae2a1894aad2c8736602e2b42513d476388"
+    },
     "public/mastercard_iso.html": {
       "size": 13791,
       "sha256": "0aac9925be042f586ef70f44e26e8c08b9b0b4c6156f9a5f0e58d2a5042e4b13"
@@ -435,12 +460,12 @@
       "sha256": "55f7c59eef05e1e22c8b012a8e778b6ea24e8f1d5fedb813d7ed5aadff04eb29"
     },
     "public/parser.html": {
-      "size": 81196,
-      "sha256": "4ebe06e93c4f1482ca5f91ee01fca1e251f62d8d04d464b97fa2fec366f3aab3"
+      "size": 81202,
+      "sha256": "badc8ba94fb27056da7c09920b47f4bdda51a45a651df67443f724c26f7e5e9e"
     },
     "public/pos.html": {
-      "size": 28809,
-      "sha256": "c920269adb6d3312d626a51d64ddebc73c34c3711ab8f9d15f6dc65449a783e7"
+      "size": 29086,
+      "sha256": "c94896ccbeb9faabdd74c216e0f5ac02bdbbaa5a55252a17de9ae67681075687"
     },
     "public/production_diagnostic.html": {
       "size": 3711,
@@ -451,8 +476,8 @@
       "sha256": "89b8e3952ffe425e966ed241f7bd4063557f3effa61b6c122ffc7b471b77c3bd"
     },
     "public/switch.html": {
-      "size": 22372,
-      "sha256": "00d6052002f723ee0eb6a73f610af593f05c9cbfef0d2fd7a979f8dd2113e8fd"
+      "size": 29078,
+      "sha256": "4b463258c7812f6267076c51666f867cdbad172725b6b5bdf519937c884643af"
     },
     "public/switch_emisor.html": {
       "size": 11925,

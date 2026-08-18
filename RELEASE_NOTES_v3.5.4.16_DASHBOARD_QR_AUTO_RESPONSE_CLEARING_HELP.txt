@@ -1,0 +1,41 @@
+OSC-ACADEMY v3.5.4.16
+Dashboard, QR, respuesta automática y ayuda contextual de clearing
+
+Baseline de origen:
+- OSC-ACADEMY_Baseline_v3.5.4.15_QR_Education_Flow_Popup.zip
+
+Dashboard:
+- Se conserva intacta la estructura general del Dashboard.
+- En la cabecera se eliminan únicamente los botones Curso interactivo y Abrir POS Virtual.
+- Los cuadros 0200/0210 se reemplazan por la ilustración aprobada de POS, celular y paneles ISO.
+- Las métricas, tarjetas, módulos y secciones posteriores no cambian.
+
+POS Virtual:
+- La explicación QR deja de abrirse automáticamente al seleccionar QR.
+- La manito aparece después de mantener el mouse sobre QR.
+- El popup educativo QR utiliza fondo blanco, alineado con los demás popups.
+- Respuesta Automática se puede activar y desactivar correctamente.
+- La preferencia queda guardada en el navegador hasta que el usuario la cambie.
+- Con Respuesta Automática activa, la respuesta seleccionada se genera después de aceptar el importe y enviar la solicitud.
+- El envío manual permanece disponible cuando el modo automático está desactivado.
+
+Switch del Adquirente:
+- Se mantiene el fondo de Ciclo completo.
+- Cada etapa del flujo utiliza un color suave diferente.
+- Producción y Didáctica pasan a ser vistas acumulables: Didáctica aparece debajo de Producción.
+- Se elimina Campos como pestaña superior.
+- Header, cada registro de Detalle y Trailer muestran una manito después de mantener el mouse unos segundos.
+- La ayuda contextual presenta el botón CAMPOS para abrir el manual en la sección correspondiente.
+- Visa se mapea a TC 90, TC 05 y TC 91/92.
+- Mastercard se mapea a File Header/1644, First Presentment/1240 y File Trailer/1644.
+
+Manuales incorporados:
+- Visa Base II Clearing Interchange Formats, TC 01 to TC 48.
+- Visa Base II Clearing Interchange Formats, TC 50 to TC 92.
+- Mastercard IPM Clearing Formats.
+
+Se conserva:
+- Menú global estable y módulos temporalmente ocultos.
+- Ayuda contextual de Constructor y Parser.
+- Fix de reversa ATM.
+- AMEX sin manito contextual de manual.
