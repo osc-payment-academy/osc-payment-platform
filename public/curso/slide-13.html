@@ -1,0 +1,19 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Curso ISO 8583 · MTI 0200: autorización financiera</title><link rel="stylesheet" href="/curso/curso.css"></head><body><main class="course"><header class="top"><div><small>CURSO INTERACTIVO ISO 8583</small><h1>MTI 0200: autorización financiera</h1></div><div class="progress">Lámina 13 de 21</div></header><section class="stage" aria-label="Copia fiel de la diapositiva 13"><img src="/curso/assets/slide-13.png" alt="MTI 0200: autorización financiera"><div class="hotspot" id="hotspot"><button class="hand" id="hand" type="button" aria-label="Abrir explicación completa">☝️</button></div></section><div class="below"><a class="navbtn" href="slide-12.html">← Anterior</a><span class="hint">Posicioná el mouse unos segundos en cualquier lugar del dibujo.</span><a class="navbtn" href="slide-14.html">Siguiente →</a></div></main><dialog id="explanation"><div class="modal-head"><h2>MTI 0200: autorización financiera</h2><button class="close" type="button" aria-label="Cerrar">×</button></div><div class="modal-body">Cuando enviamos un mensaje de autorización 0200, existen ciertos Data Elements esenciales que viajan en el paquete de datos para identificar al cliente, la transacción, el comercio y la seguridad.
+1. Datos Financieros y del Tarjetahabiente (El &quot;Quién&quot; y el &quot;Cuánto&quot;)
+DE2 (PAN): Número de la tarjeta (variable LLVAR, máx. 19 dígitos).
+DE3 (Código de Procesamiento): Define la operación a realizar (compra, retiro, etc.).
+DE4 (Monto): Valor total de la transacción (longitud fija de 12 dígitos numéricos).
+DE49 (Moneda): Código numérico ISO de la divisa utilizada (ej. 840).
+2. Trazabilidad y Tiempo (El &quot;Cuándo&quot; y el &quot;Rastro&quot;)
+DE7 (Fecha/Hora): Momento exacto de transmisión en formato MMDDhhmmss.
+DE11 (STAN): Número de auditoría/secuencia único para rastrear la transacción.
+3. Origen y Punto de Venta (El &quot;Dónde&quot;)
+DE22 (POS Entry Mode): Indica cómo se capturó la tarjeta (chip, contacless, banda o manual).
+DE41 (Terminal ID): Identificador único del POS o dispositivo.
+DE42 (Comercio ID): Identificador del establecimiento (Card Acceptor ID).
+4. Lectura y Seguridad (El &quot;Cómo se valida&quot;)
+DE35 (Track 2): Datos de la banda magnética (variable LLVAR).
+DE52 (PIN Data): Bloque cifrado del PIN (8 bytes/64 bits) cuando la transacción requiere clave.
+DE55 (Datos EMV): Criptogramas y tags del Chip (variable LLLVAR, hasta 255 bytes).
+💡 Cierre / Tip técnico para destacar
+&quot;Nótese que estos campos manejan diferentes tipos de datos: algunos son FIJOS en longitud y otros son VARIABLES (LLVAR / LLLVAR), lo que optimiza el tamaño del mensaje ISO 8583 según la información que realmente viaja.</div><div class="actions"><button type="button" class="understood">Entendido</button></div></dialog><script src="/curso/curso.js"></script></body></html>

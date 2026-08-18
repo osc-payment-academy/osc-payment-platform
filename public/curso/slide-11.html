@@ -1,0 +1,32 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Curso ISO 8583 · Bitmap primario y secundario</title><link rel="stylesheet" href="/curso/curso.css"></head><body><main class="course"><header class="top"><div><small>CURSO INTERACTIVO ISO 8583</small><h1>Bitmap primario y secundario</h1></div><div class="progress">Lámina 11 de 21</div></header><section class="stage" aria-label="Copia fiel de la diapositiva 11"><img src="/curso/assets/slide-11.png" alt="Bitmap primario y secundario"><div class="hotspot" id="hotspot"><button class="hand" id="hand" type="button" aria-label="Abrir explicación completa">☝️</button></div></section><div class="below"><a class="navbtn" href="slide-10.html">← Anterior</a><span class="hint">Posicioná el mouse unos segundos en cualquier lugar del dibujo.</span><a class="navbtn" href="slide-12.html">Siguiente →</a></div></main><dialog id="explanation"><div class="modal-head"><h2>Bitmap primario y secundario</h2><button class="close" type="button" aria-label="Cerrar">×</button></div><div class="modal-body">Esta lámina amplía el concepto del bitmap que vimos recién.
+Hasta ahora hablamos únicamente del bitmap primario, que tiene capacidad para indicar la presencia de los Data Elements del 2 al 64.
+Pero surge una pregunta muy lógica.
+¿Qué ocurre si un mensaje necesita incluir campos mayores al 64?
+Para resolver ese problema existe el bitmap secundario.
+La decisión de incluirlo se toma mediante el primer bit del bitmap primario.
+Recordemos que ese primer bit no representa ningún Data Element.
+El DE1 no existe.
+Ese bit funciona como un indicador.
+Si vale 0, significa que el mensaje solamente tiene un bitmap primario y, por lo tanto, únicamente puede transportar campos entre el DE2 y el DE64.
+Pero si ese bit vale 1, significa que inmediatamente después del bitmap primario aparece un segundo bitmap de otros 64 bits.
+Es decir, el propio bitmap nos está diciendo que todavía queda otro bitmap por leer.
+Una vez leído el bitmap secundario, el parser ya puede determinar si existen Data Elements comprendidos entre el DE65 y el DE128.
+En el ejemplo de la lámina observamos que algunos bits del bitmap secundario están encendidos.
+Eso indica que el mensaje contiene campos como el DE65, DE67, DE70 y DE128.
+Naturalmente, esto es solo un ejemplo para mostrar el funcionamiento.
+En una transacción real, los campos presentes dependerán del tipo de mensaje que se esté procesando.
+Es importante notar que el mecanismo es exactamente el mismo que vimos para el bitmap primario.
+Cada bit representa un Data Element.
+Si el bit está en uno, el campo está presente.
+Si está en cero, el campo no forma parte de la trama.
+La única diferencia es el rango de campos que controla.
+El bitmap primario administra los campos del 2 al 64.
+El bitmap secundario administra los campos del 65 al 128.
+En Visa es bastante común encontrar mensajes que utilizan únicamente el bitmap primario.
+Sin embargo, existen muchos mensajes que necesitan transportar información adicional.
+En resumen, la regla es muy sencilla y vale la pena recordarla:
+Primer bit del bitmap primario en 0: solamente existe el bitmap primario.
+Primer bit del bitmap primario en 1: el mensaje contiene además un bitmap secundario.
+Bitmap primario: controla los campos DE2 al DE64.
+Bitmap secundario: controla los campos DE65 al DE128.
+Ese único bit es el que le permite al parser saber si debe continuar leyendo otro bitmap antes de comenzar a interpretar los Data Elements.</div><div class="actions"><button type="button" class="understood">Entendido</button></div></dialog><script src="/curso/curso.js"></script></body></html>

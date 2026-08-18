@@ -1,0 +1,46 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Curso ISO 8583 · Estructura general de una trama ISO 8583</title><link rel="stylesheet" href="/curso/curso.css"></head><body><main class="course"><header class="top"><div><small>CURSO INTERACTIVO ISO 8583</small><h1>Estructura general de una trama ISO 8583</h1></div><div class="progress">Lámina 12 de 21</div></header><section class="stage" aria-label="Copia fiel de la diapositiva 12"><img src="/curso/assets/slide-12.png" alt="Estructura general de una trama ISO 8583"><div class="hotspot" id="hotspot"><button class="hand" id="hand" type="button" aria-label="Abrir explicación completa">☝️</button></div></section><div class="below"><a class="navbtn" href="slide-11.html">← Anterior</a><span class="hint">Posicioná el mouse unos segundos en cualquier lugar del dibujo.</span><a class="navbtn" href="slide-13.html">Siguiente →</a></div></main><dialog id="explanation"><div class="modal-head"><h2>Estructura general de una trama ISO 8583</h2><button class="close" type="button" aria-label="Cerrar">×</button></div><div class="modal-body">Esta lámina resume todo lo que vimos hasta ahora y muestra cómo queda organizada una trama ISO 8583 una vez transmitida.
+Hasta este momento analizamos el MTI por un lado, el Bitmap por otro y también hablamos de los Data Elements.
+Ahora vamos a ver cómo conviven todos esos componentes dentro de un mismo mensaje.
+Toda trama ISO 8583 está formada por tres bloques principales.
+Primero aparece el MTI.
+Luego el Bitmap.
+Y finalmente los Data Elements.
+Ese orden nunca cambia.
+Lo primero que recibe el sistema es el MTI.
+En este ejemplo vemos un 0200, que ya sabemos que representa una solicitud de autorización financiera.
+Gracias al MTI, el receptor entiende inmediatamente qué tipo de mensaje está llegando y cómo debe procesarlo.
+A continuación aparece el Bitmap Primario.
+En este ejemplo observamos el valor hexadecimal:
+7A 89 3C 40 00 00 00 00
+Recordemos que este bitmap ocupa siempre 8 bytes y que su función consiste únicamente en indicar qué Data Elements vienen presentes dentro del mensaje.
+No contiene datos del cliente.
+No contiene el monto.
+No contiene la tarjeta.
+Simplemente funciona como un mapa que guía al parser durante la lectura.
+Una vez interpretado el bitmap, comienza la parte más importante de la trama: los Data Elements.
+Aquí es donde viaja toda la información real de la transacción.
+Por ejemplo,
+encontramos el DE2, que contiene el número de tarjeta.
+El DE3, con el Processing Code.
+El DE4, con el monto.
+El DE11, con el STAN.
+El DE41, con el identificador del terminal.
+Y muchos otros campos, dependiendo del tipo de operación.
+Algo muy importante es entender que los Data Elements no ocupan posiciones fijas dentro del mensaje.
+Cada trama puede contener una combinación distinta de campos.
+Una autorización normalmente incluye determinados Data Elements.
+Una reversa puede incluir otros adicionales.
+Un mensaje de administración de red tendrá un conjunto completamente diferente.
+Precisamente por eso existe el Bitmap.
+Sin el Bitmap sería imposible saber dónde empieza y dónde termina cada campo.
+El parser primero consulta el Bitmap y luego va leyendo únicamente los Data Elements indicados, respetando el orden numérico definido por el estándar.
+Otro detalle importante es que la longitud total del mensaje nunca es fija.
+Depende de los campos presentes.
+Una autorización sencilla puede ocupar poco más de cien bytes.
+Otra con información EMV, datos adicionales o campos privados puede ser considerablemente más grande.
+Por eso ISO 8583 se considera un formato muy flexible.
+Todos los mensajes mantienen la misma estructura general, pero cada uno puede transportar una cantidad diferente de información.
+Y cuando aparecen Data Elements mayores al 64, simplemente se incorpora un Bitmap Secundario entre el Bitmap Primario y los Data Elements, tal como vimos en la lámina anterior.
+Si tuviera que resumir esta estructura en una sola frase sería la siguiente:
+El MTI indica qué tipo de mensaje es. El Bitmap indica qué campos vienen presentes. Los Data Elements contienen toda la información necesaria para procesar la transacción.
+Esa estructura es la que encontraremos en prácticamente todos los mensajes ISO 8583, independientemente de si pertenecen a Visa, Mastercard o cualquier otro sistema basado en este estándar.</div><div class="actions"><button type="button" class="understood">Entendido</button></div></dialog><script src="/curso/curso.js"></script></body></html>

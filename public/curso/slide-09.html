@@ -1,0 +1,20 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Curso ISO 8583 · Visa: dos sistemas de mensajería distintos</title><link rel="stylesheet" href="/curso/curso.css"></head><body><main class="course"><header class="top"><div><small>CURSO INTERACTIVO ISO 8583</small><h1>Visa: dos sistemas de mensajería distintos</h1></div><div class="progress">Lámina 9 de 21</div></header><section class="stage" aria-label="Copia fiel de la diapositiva 9"><img src="/curso/assets/slide-09.png" alt="Visa: dos sistemas de mensajería distintos"><div class="hotspot" id="hotspot"><button class="hand" id="hand" type="button" aria-label="Abrir explicación completa">☝️</button></div></section><div class="below"><a class="navbtn" href="slide-08.html">← Anterior</a><span class="hint">Posicioná el mouse unos segundos en cualquier lugar del dibujo.</span><a class="navbtn" href="slide-10.html">Siguiente →</a></div></main><dialog id="explanation"><div class="modal-head"><h2>Visa: dos sistemas de mensajería distintos</h2><button class="close" type="button" aria-label="Cerrar">×</button></div><div class="modal-body">Visa utiliza dos esquemas de mensajería según el tipo de transacción y cómo se procesan los fondos: BASE I (o DMS) para mensajes dobles y SMS para un mensaje único.“
+1. Lado Azul: BASE I / DMS (Dual Message System)
+¿Qué es?: Es el sistema de mensaje doble. Separamos la autorización de la liquidación real del dinero.
+Uso principal: Tarjetas de crédito y débito con firma (sin PIN).
+Flujo del mensaje:
+Se envía un 0100 (Solicitud) y se responde 0110 (Aprobado/Rechazado).
+Importante: El mensaje 0100 solo reserva el cupo disponible; no mueve dinero inmediatamente. La liquidación ocurre más tarde en un lote diferido (BASE II / Batch).
+Reversa (0400 / 0420):
+Como solo se había hecho una reserva de cupo, la reversa libera esa reserva. No hay devolución de fondos porque el dinero aún no había salido.
+2. Lado Verde: SMS (Single Message System)
+¿Qué es?: Es el sistema de mensaje único. Todo ocurre al instante en un solo paso.
+Uso principal: Débito con PIN (como Visa Electron o Interlink) y retiros en cajero.
+Flujo del mensaje:
+Se envía un 0200 (Solicitud financiera) y se responde 0210.
+Importante: Aquí la autorización y la liquidación son simultáneas y en tiempo real. El dinero se debita del saldo del tarjetahabiente de inmediato.
+Reversa (0420 / 0430):
+A diferencia de DMS, aquí la reversa deshace un débito que ya fue aplicado, devolviendo el dinero real a la cuenta del cliente.
+En resumen:
+BASE I (DMS): &quot;Reserva hoy, liquida después&quot;
+SMS: &quot;Autoriza y liquida todo hoy al instante</div><div class="actions"><button type="button" class="understood">Entendido</button></div></dialog><script src="/curso/curso.js"></script></body></html>

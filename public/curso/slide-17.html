@@ -1,0 +1,20 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Curso ISO 8583 · Respuesta a una autorización 0210</title><link rel="stylesheet" href="/curso/curso.css"></head><body><main class="course"><header class="top"><div><small>CURSO INTERACTIVO ISO 8583</small><h1>Respuesta a una autorización 0210</h1></div><div class="progress">Lámina 17 de 21</div></header><section class="stage" aria-label="Copia fiel de la diapositiva 17"><img src="/curso/assets/slide-17.png" alt="Respuesta a una autorización 0210"><div class="hotspot" id="hotspot"><button class="hand" id="hand" type="button" aria-label="Abrir explicación completa">☝️</button></div></section><div class="below"><a class="navbtn" href="slide-16.html">← Anterior</a><span class="hint">Posicioná el mouse unos segundos en cualquier lugar del dibujo.</span><a class="navbtn" href="slide-18.html">Siguiente →</a></div></main><dialog id="explanation"><div class="modal-head"><h2>Respuesta a una autorización 0210</h2><button class="close" type="button" aria-label="Cerrar">×</button></div><div class="modal-body">Cuando el banco emisor evalúa la solicitud de compra, responde de vuelta con un mensaje 0210.
+Este mensaje informa si la transacción fue aprobada o rechazada e incluye los códigos de autorización y de respuesta correspondientes.“
+1. El Flujo del Mensaje (Sección Superior)
+&quot;El POS envía la solicitud 0200 pasando por el adquirente hacia el Banco Emisor.
+El emisor procesa la consulta y genera la respuesta 0210, la cual viaja en sentido inverso hasta llegar de nuevo al punto de venta.&quot;
+2. Trazabilidad y Campos Clave (Anatomía del 0210)
+&quot;Para que el comercio sepa a qué solicitud corresponde esta respuesta, el mensaje 0210 incluye campos de correlación fundamentales:&quot;
+DE11 (STAN): Mantendrá exactamente el mismo número que venía en la solicitud 0200. Es la clave para &#x27;asociar&#x27; la respuesta con la petición original.
+DE37 (RRN - Retrieval Reference Number): Número de referencia único de la transacción en el sistema emisor.
+DE38 (Código de Autorización): El código alfanumérico que confirma que el emisor aprobó la operación (ej. A1B2C3).
+DE39 (Código de Respuesta): El campo determinante del resultado:
+00: Transacción Aprobada (se le puede entregar el producto al cliente).
+Cualquier otro código: Transacción Rechazada.
+3. Códigos de Respuesta Comunes (DE39)
+&quot;Es importante reconocer algunos códigos clave de rechazo en el DE39:&quot;
+05 (Do not honor): Rechazo general por políticas del banco.
+51 (Insufficient funds): Fondos insuficientes en la cuenta o cupo.
+91 o 96: Problemas de conectividad, emisor fuera de línea o fallas en el sistema.
+💡 Cierre / Remate para el público
+&quot;En resumen: el par 0200 / 0210 completa el ciclo de autorización en tiempo real. Si el DE39 devuelve 00 y contamos con el código de autorización en el DE38, la transacción ha sido exitosa y el comercio puede finalizar la venta de forma segura.</div><div class="actions"><button type="button" class="understood">Entendido</button></div></dialog><script src="/curso/curso.js"></script></body></html>

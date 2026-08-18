@@ -1,0 +1,29 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Curso ISO 8583 · Ecosistema de medios de pago en Ecuador</title><link rel="stylesheet" href="/curso/curso.css"></head><body><main class="course"><header class="top"><div><small>CURSO INTERACTIVO ISO 8583</small><h1>Ecosistema de medios de pago en Ecuador</h1></div><div class="progress">Lámina 4 de 21</div></header><section class="stage" aria-label="Copia fiel de la diapositiva 4"><img src="/curso/assets/slide-04.png" alt="Ecosistema de medios de pago en Ecuador"><div class="hotspot" id="hotspot"><button class="hand" id="hand" type="button" aria-label="Abrir explicación completa">☝️</button></div></section><div class="below"><a class="navbtn" href="slide-03.html">← Anterior</a><span class="hint">Posicioná el mouse unos segundos en cualquier lugar del dibujo.</span><a class="navbtn" href="slide-05.html">Siguiente →</a></div></main><dialog id="explanation"><div class="modal-head"><h2>Ecosistema de medios de pago en Ecuador</h2><button class="close" type="button" aria-label="Cerrar">×</button></div><div class="modal-body">En la lámina anterior vimos el circuito de medios de pago de manera conceptual.
+Ahora vamos a bajar ese concepto a un caso real:
+el ecosistema de pagos en Ecuador.
+Imaginemos que un turista español llega a Ecuador y realiza una compra con una tarjeta emitida por un banco de España.
+Aunque para el cliente sea simplemente acercar la tarjeta al POS,
+detrás de esa operación participan varias organizaciones, tanto nacionales como internacionales.
+Comencemos por el lado izquierdo.
+El cliente presenta su tarjeta y el POS captura la información de la compra.
+El comercio envía esa solicitud hacia el adquirente con el que trabaja.
+En Ecuador existen 3 redes (Datafast, Medianet y Austrored)
+Medianet procesa bines de banco bolivariano, internacional y Produbanco
+Datafast procesa bines de Banco Pichincha, Guayaquil, Diners Club y Banco de Pacifico
+AustroRed procesa bines de banco del austro
+Cuando la tarjeta pertenece a una marca internacional, como Visa o Mastercard, la transacción sale del país y viaja hacia la red internacional correspondiente.
+Aquí es importante detenernos un momento.
+Visa y Mastercard no toman la decisión de aprobar una compra.
+Su función principal es actuar como una gran red de comunicaciones, identificando quién emitió la tarjeta y enviando la solicitud al banco correcto, sin importar en qué parte del mundo se encuentre.
+En este ejemplo, la transacción viaja hasta Europa y finalmente llega al banco emisor en España.
+Es allí donde realmente ocurre la autorización.
+El banco emisor valida la tarjeta, verifica el saldo o el límite disponible, aplica controles de seguridad y decide si la operación será aprobada o rechazada.
+Una vez tomada la decisión, la respuesta regresa exactamente por el mismo camino.
+Banco emisor...Red internacional...Red local...Banco adquirente...POS...Y finalmente el comercio recibe el resultado para informar al cliente.
+Todo este recorrido internacional sucede normalmente en apenas unos pocos segundos.“
+INTEROPERABILIDAD
+Las transacciones domesticas se envían por este canal
+Asi evitan costos innecesarios si la envían al exteriorEXPLICACION DE LA FRANJA ISO 8583Cada flecha que vemos representa un intercambio de mensajes. Lo que realmente viaja entre un sistema y otro no son pantallas ni bases de datos. Lo que viaja son mensajes ISO 8583.
+Cada institución puede tener tecnologías diferentes, bases de datos distintas o aplicaciones desarrolladas en diferentes lenguajes.
+Pero cuando necesitan comunicarse para autorizar una transacción, todas hablan el mismo idioma.
+Ese idioma es ISO 8583.</div><div class="actions"><button type="button" class="understood">Entendido</button></div></dialog><script src="/curso/curso.js"></script></body></html>

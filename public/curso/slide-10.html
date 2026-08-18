@@ -1,0 +1,17 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Curso ISO 8583 · Bitmap primario</title><link rel="stylesheet" href="/curso/curso.css"></head><body><main class="course"><header class="top"><div><small>CURSO INTERACTIVO ISO 8583</small><h1>Bitmap primario</h1></div><div class="progress">Lámina 10 de 21</div></header><section class="stage" aria-label="Copia fiel de la diapositiva 10"><img src="/curso/assets/slide-10.png" alt="Bitmap primario"><div class="hotspot" id="hotspot"><button class="hand" id="hand" type="button" aria-label="Abrir explicación completa">☝️</button></div></section><div class="below"><a class="navbtn" href="slide-09.html">← Anterior</a><span class="hint">Posicioná el mouse unos segundos en cualquier lugar del dibujo.</span><a class="navbtn" href="slide-11.html">Siguiente →</a></div></main><dialog id="explanation"><div class="modal-head"><h2>Bitmap primario</h2><button class="close" type="button" aria-label="Cerrar">×</button></div><div class="modal-body">El Bitmap en ISO 8583 actúa como el &#x27;índice&#x27; o &#x27;mapa&#x27; de la transacción: le dice al sistema exactamente qué campos de datos vienen en el mensaje y cuáles no.&quot;
+La estructura (64 bits):
+&quot;Un bitmap estándar consta de 64 casilleros o posiciones, donde cada casilla corresponde a un Data Element (DE) específico del mensaje.&quot;
+El valor del Bit (0 o 1):
+&quot;Para entender qué viaja en la transacción, solo debemos mirar el valor dentro de cada casilla:
+Un 0 significa que el campo está ausente (no llegó en este mensaje).*
+Un 1 significa que el campo está presente y contiene información.&quot;*
+Explicando el ejemplo visual:
+&quot;En el gráfico que están viendo, las casillas destacadas en color muestran los campos activos para esta transacción:
+DE2 (Valor 1): Contiene el número de tarjeta (PAN).*
+DE3 (Valor 1): Indica el código de procesamiento.*
+DE4 (Valor 1): Trae el monto de la transacción.*
+DE7 (Valor 1): Especifica la fecha y hora de transmisión.*
+DE11 (Valor 1): Contiene el número de secuencia o STAN.*
+El resto de las 59 casillas tienen un 0, por lo que el sistema sabe que no debe buscar ni procesar esa información en esta solicitud.&quot;
+💡 Cierre o Remate
+&quot;En resumen: el Bitmap permite que el mensaje sea ligero y dinámico; los sistemas no necesitan adivinar la estructura, simplemente leen los 1 para procesar únicamente la información que está presente.</div><div class="actions"><button type="button" class="understood">Entendido</button></div></dialog><script src="/curso/curso.js"></script></body></html>

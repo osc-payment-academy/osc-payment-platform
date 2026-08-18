@@ -1,0 +1,19 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Curso ISO 8583 · Campos de longitud variable</title><link rel="stylesheet" href="/curso/curso.css"></head><body><main class="course"><header class="top"><div><small>CURSO INTERACTIVO ISO 8583</small><h1>Campos de longitud variable</h1></div><div class="progress">Lámina 15 de 21</div></header><section class="stage" aria-label="Copia fiel de la diapositiva 15"><img src="/curso/assets/slide-15.png" alt="Campos de longitud variable"><div class="hotspot" id="hotspot"><button class="hand" id="hand" type="button" aria-label="Abrir explicación completa">☝️</button></div></section><div class="below"><a class="navbtn" href="slide-14.html">← Anterior</a><span class="hint">Posicioná el mouse unos segundos en cualquier lugar del dibujo.</span><a class="navbtn" href="slide-16.html">Siguiente →</a></div></main><dialog id="explanation"><div class="modal-head"><h2>Campos de longitud variable</h2><button class="close" type="button" aria-label="Cerrar">×</button></div><div class="modal-body">No todos los campos en un mensaje ISO 8583 miden lo mismo. Para que el sistema sepa dónde termina un dato y empieza el siguiente, los campos de longitud variable siempre incluyen un prefijo que indica la cantidad exacta de bytes que siguen.“
+1. ¿Cómo se compone el campo? (Estructura Básica)
+&quot;Un campo variable siempre tiene dos partes: [Prefijo de longitud] + [Datos del campo].
+El prefijo solo indica el tamaño del dato, no se incluye a sí mismo en esa cuenta. Al terminar de leer los bytes indicados, el procesador sabe que ahí comienza el siguiente campo de la trama.“
+2. Los 3 Formatos de Prefijo (El &quot;Cómo se envía&quot;)
+&quot;Dependiendo de la red o el entorno (si estamos en la red en vivo o leyendo un archivo de log), el prefijo puede venir en 3 formatos:&quot;
+ASCII (2 Dígitos / LLVAR):
+&quot;Se usa en logs de texto. Muestra directamente el número como caracteres ASCII, por ejemplo &#x27;37&#x27;.&quot;
+ASCII (3 Dígitos / LLLVAR):
+&quot;Se usa cuando el campo puede ser muy largo (hasta 999 bytes, como el DE55 de EMV). Se representa con 3 dígitos, por ejemplo &#x27;037&#x27;.&quot;
+Binario (HEX de red):
+&quot;Es el formato nativo de VisaNet. Ocupa 1 byte binario.
+Por ejemplo, un prefijo 0x25 en hex equivale a 37 en decimal, indicando que vienen 37 bytes de datos.&quot;
+3. Reglas de Oro para los Desarrolladores/Analistas
+&quot;Bytes, no caracteres: El prefijo indica BYTES, no la cantidad de letras o números.
+&quot;Codificación: En la red (HEX), los datos pueden venir comprimidos en BCD o EBCDIC; en texto/ASCII vienen legibles.
+&quot;Importancia técnica: Interpretarlo mal desalinea toda la lectura de la trama en adelante, generando errores de parseo.“
+💡 Cierre o Remate
+&quot;En resumen: la nomenclatura LLVAR nos avisa que vienen hasta 99 bytes de datos con un prefijo de 2 dígitos (o 1 byte en binario), mientras que LLLVAR indica hasta 999 bytes con prefijo de 3 dígitos. Es la llave para &#x27;desempacar&#x27; correctamente el mensaje.</div><div class="actions"><button type="button" class="understood">Entendido</button></div></dialog><script src="/curso/curso.js"></script></body></html>

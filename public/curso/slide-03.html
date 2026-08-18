@@ -1,0 +1,25 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Curso ISO 8583 · Circuito de medios de pago</title><link rel="stylesheet" href="/curso/curso.css"></head><body><main class="course"><header class="top"><div><small>CURSO INTERACTIVO ISO 8583</small><h1>Circuito de medios de pago</h1></div><div class="progress">Lámina 3 de 21</div></header><section class="stage" aria-label="Copia fiel de la diapositiva 3"><img src="/curso/assets/slide-03.png" alt="Circuito de medios de pago"><div class="hotspot" id="hotspot"><button class="hand" id="hand" type="button" aria-label="Abrir explicación completa">☝️</button></div></section><div class="below"><a class="navbtn" href="slide-02.html">← Anterior</a><span class="hint">Posicioná el mouse unos segundos en cualquier lugar del dibujo.</span><a class="navbtn" href="slide-04.html">Siguiente →</a></div></main><dialog id="explanation"><div class="modal-head"><h2>Circuito de medios de pago</h2><button class="close" type="button" aria-label="Cerrar">×</button></div><div class="modal-body">En este grafico muestro el recorrido que hace una transacción.
+Cuando un cliente acerca o inserta su tarjeta en un POS, parece que todo ocurre en uno o dos segundos.
+Sin embargo, durante ese tiempo participan varios actores que trabajan de manera coordinada para autorizar la compra.
+Veamos ese recorrido.
+Todo comienza con el cliente, que presenta su tarjeta para realizar una compra.
+El comercio captura la información de la tarjeta mediante el POS y genera una solicitud de autorización.
+En este momento todavía nadie sabe si la compra será aprobada o rechazada.
+El primer destino de esa solicitud es el banco adquirente, que es la entidad financiera que presta el servicio al comercio.
+El adquirente recibe el mensaje y determina hacia dónde debe enviarlo.
+Como el adquirente normalmente no tiene conexión directa con todos los bancos emisores del mundo, utiliza una red o switch de pagos, cuya función es enrutar la transacción hacia la red correcta.
+Si la tarjeta es Visa, la solicitud viajará hacia la red Visa; si es Mastercard, viajará hacia Mastercard; y así sucesivamente con cada marca.
+La red de tarjetas actúa como un gran distribuidor internacional.
+Su trabajo consiste en identificar quién emitió esa tarjeta y enviar la solicitud al banco correspondiente.
+Finalmente, la transacción llega al banco emisor que es quien le otorgo la tarjeta al cliente
+Aquí ocurre la decisión más importante de todo el proceso.
+El emisor valida distintos aspectos, por ejemplo:
+Que la tarjeta exista y esté vigente.
+Que no esté bloqueada o denunciada.
+Que el titular tenga fondos o crédito disponible.
+Que la operación no viole reglas de seguridad o prevención de fraude.
+Con esa información decide si la compra se aprueba o se rechaza.
+Una vez tomada la decisión, la respuesta regresa exactamente por el mismo camino, pero en sentido inverso:
+pasa nuevamente por la red de tarjetas, el switch de pagos, el banco adquirente y finalmente llega al POS, que informa el resultado al comercio y al cliente.
+Todo este recorrido ocurre normalmente en apenas dos o tres segundos.
+Y justamente durante todo este viaje, la información se transmite utilizando mensajes ISO 8583, que será el lenguaje que vamos a estudiar durante el resto del curso.</div><div class="actions"><button type="button" class="understood">Entendido</button></div></dialog><script src="/curso/curso.js"></script></body></html>

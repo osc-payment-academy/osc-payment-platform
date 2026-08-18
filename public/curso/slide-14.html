@@ -1,0 +1,17 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Curso ISO 8583 · Información financiera</title><link rel="stylesheet" href="/curso/curso.css"></head><body><main class="course"><header class="top"><div><small>CURSO INTERACTIVO ISO 8583</small><h1>Información financiera</h1></div><div class="progress">Lámina 14 de 21</div></header><section class="stage" aria-label="Copia fiel de la diapositiva 14"><img src="/curso/assets/slide-14.png" alt="Información financiera"><div class="hotspot" id="hotspot"><button class="hand" id="hand" type="button" aria-label="Abrir explicación completa">☝️</button></div></section><div class="below"><a class="navbtn" href="slide-13.html">← Anterior</a><span class="hint">Posicioná el mouse unos segundos en cualquier lugar del dibujo.</span><a class="navbtn" href="slide-15.html">Siguiente →</a></div></main><dialog id="explanation"><div class="modal-head"><h2>Información financiera</h2><button class="close" type="button" aria-label="Cerrar">×</button></div><div class="modal-body">El DE3 o Processing Code es el campo de 6 dígitos que le indica al sistema exactamente qué operación se quiere hacer y de dónde a dónde se moverá el dinero.&quot;
+&quot;Para entenderlo fácilmente, piensen en el DE3 como un código dividido en 3 subcampos de 2 dígitos cada uno:&quot;
+Dígitos 1 y 2  Tipo de Transacción:
+&quot;Define la naturaleza de la operación.
+Por ejemplo: 00 es una compra regular, 01 un retiro de efectivo o Cash Advance, 20 una devolución y 30 una consulta de saldo.&quot;
+Dígitos 3 y 4 Origen de la Cuenta:
+&quot;Indica de qué tipo de cuenta se debitan los fondos.
+Por ejemplo: 10 es cuenta de ahorro, 20 cuenta corriente y 30 crédito. Si la red o terminal no especifica una cuenta particular, se usa 00 (cuenta por defecto).&quot;
+Dígitos 5 y 6 Destino de la Cuenta:
+&quot;Especifica a qué tipo de cuenta se acreditan los fondos.
+Si la operación no involucra transferir dinero a otra cuenta (como en una compra o retiro), este bloque simplemente se deja en 00.&quot;
+💡 Ejemplos prácticos para el público
+&quot;Veamos cómo se lee en la práctica:
+000000: Una compra típica en un comercio (Compra 00 + Cuenta por defecto 00 + Destino 00).
+011000: Retiro de efectivo de una cuenta de ahorros (Extracción 01 + Ahorro 10 + Destino 00).
+402020: Transferencia entre cuentas corrientes (Transferencia 40 + Cuenta corriente origen 20 + Cuenta corriente destino 20).&quot;*
+&quot;Como dato clave para la operación: los valores del DE3 son de longitud fija de 6 dígitos y están definidos por el estándar de la red (como Visa Base I), por lo que siempre deben interpretarse en este orden específico.</div><div class="actions"><button type="button" class="understood">Entendido</button></div></dialog><script src="/curso/curso.js"></script></body></html>

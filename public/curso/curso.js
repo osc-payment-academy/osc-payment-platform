@@ -1,0 +1,6 @@
+const hotspot=document.getElementById('hotspot'),hand=document.getElementById('hand'),dialog=document.getElementById('explanation');let showTimer,hideTimer,lastX=70,lastY=70;
+hotspot.addEventListener('mousemove',event=>{const box=hotspot.getBoundingClientRect();lastX=event.clientX-box.left;lastY=event.clientY-box.top;if(!hotspot.classList.contains('ready')){hand.style.left=lastX+'px';hand.style.top=lastY+'px'}});
+hotspot.addEventListener('mouseenter',()=>{clearTimeout(hideTimer);showTimer=setTimeout(()=>{hand.style.left=lastX+'px';hand.style.top=lastY+'px';hotspot.classList.add('ready')},1800)});
+hotspot.addEventListener('mouseleave',()=>{clearTimeout(showTimer);hideTimer=setTimeout(()=>hotspot.classList.remove('ready'),700)});
+hand.addEventListener('mouseenter',()=>clearTimeout(hideTimer));hand.addEventListener('click',event=>{event.stopPropagation();dialog.showModal()});
+const closePopup=()=>dialog.close();document.querySelector('.close').onclick=closePopup;document.querySelector('.understood').onclick=closePopup;dialog.addEventListener('click',event=>{if(event.target===dialog)closePopup()});

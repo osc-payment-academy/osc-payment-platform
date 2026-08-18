@@ -1,0 +1,18 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Curso ISO 8583 · Campos compuestos</title><link rel="stylesheet" href="/curso/curso.css"></head><body><main class="course"><header class="top"><div><small>CURSO INTERACTIVO ISO 8583</small><h1>Campos compuestos</h1></div><div class="progress">Lámina 16 de 21</div></header><section class="stage" aria-label="Copia fiel de la diapositiva 16"><img src="/curso/assets/slide-16.png" alt="Campos compuestos"><div class="hotspot" id="hotspot"><button class="hand" id="hand" type="button" aria-label="Abrir explicación completa">☝️</button></div></section><div class="below"><a class="navbtn" href="slide-15.html">← Anterior</a><span class="hint">Posicioná el mouse unos segundos en cualquier lugar del dibujo.</span><a class="navbtn" href="slide-17.html">Siguiente →</a></div></main><dialog id="explanation"><div class="modal-head"><h2>Campos compuestos</h2><button class="close" type="button" aria-label="Cerrar">×</button></div><div class="modal-body">Un campo compuesto es como una mini-transacción dentro del mensaje: en lugar de llevar un solo dato, contiene su propio bitmap interno que nos indica qué subcampos vienen empaquetados dentro de él.“
+📌 Puntos clave de la explicación
+1. ¿Cómo se construye un campo compuesto? (Estructura)
+&quot;Se compone de tres partes consecutivas: [Prefijo de longitud] + [Bitmap interno] + [Subcampos presentes].
+El Prefijo nos dice cuántos bytes mide todo el bloque del campo compuesto.
+El Bitmap interno funciona exacto igual que el bitmap principal: cada bit en 1 indica la presencia de un subcampo (ej. 62.1, 62.2), y cada 0 indica ausencia.
+Finalmente, se colocan en fila solo los Subcampos activos en orden numérico ascendente.&quot;
+2. Ejemplos reales en VisaNet (Sección Derecha)
+&quot;Esta técnica se usa en los campos de datos privados de la red para enviar mucha información personalizada sin desperdiciar espacio:&quot;
+DE62 (CPS): Datos del servicio de pago personalizado. Lleva un bitmap interno de 8 bytes (64 bits) para manejar subcampos del 62.1 al 62.26.
+DE63 (Additional Private Data): Con bitmap interno de 3 bytes (24 bits) para subcampos del 63.1 al 63.24.
+DE120, DE123, DE125 y DE127: Todos usan un bitmap interno de 2 bytes (16 bits) para gestionar hasta 16 subcampos adicionales (ej. datos de tokenización en el DE123).
+3. Reglas de lectura y parseo
+&quot;Espacio optimizado: Si un subcampo tiene bit en 0, sencillamente no se envía y no ocupa espacio.
+&quot;Jerarquía: Para que un campo compuesto exista en la trama, primero su bit debe estar encendido en el Bitmap Primario del mensaje.
+&quot;Formato: Cada subcampo dentro del contenedor tiene su propia longitud y codificación (BCD, EBCDIC o ASCII) definida por las especificaciones de VisaNet.&quot;
+💡 Cierre / Remate para el público
+&quot;En resumen: los campos compuestos le dan enorme flexibilidad al estándar ISO 8583. Nos permiten empaquetar decenas de datos específicos —como tokens o datos de lealtad— dentro de un único Data Element sin &#x27;ensuciar&#x27; el mapa de bits principal de la transacción.</div><div class="actions"><button type="button" class="understood">Entendido</button></div></dialog><script src="/curso/curso.js"></script></body></html>

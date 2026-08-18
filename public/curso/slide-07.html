@@ -1,0 +1,39 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Curso ISO 8583 · Estructura del MTI</title><link rel="stylesheet" href="/curso/curso.css"></head><body><main class="course"><header class="top"><div><small>CURSO INTERACTIVO ISO 8583</small><h1>Estructura del MTI</h1></div><div class="progress">Lámina 7 de 21</div></header><section class="stage" aria-label="Copia fiel de la diapositiva 7"><img src="/curso/assets/slide-07.png" alt="Estructura del MTI"><div class="hotspot" id="hotspot"><button class="hand" id="hand" type="button" aria-label="Abrir explicación completa">☝️</button></div></section><div class="below"><a class="navbtn" href="slide-06.html">← Anterior</a><span class="hint">Posicioná el mouse unos segundos en cualquier lugar del dibujo.</span><a class="navbtn" href="slide-08.html">Siguiente →</a></div></main><dialog id="explanation"><div class="modal-head"><h2>Estructura del MTI</h2><button class="close" type="button" aria-label="Cerrar">×</button></div><div class="modal-body">Esta lámina nos permite entender cómo leer el MTI.
+A simple vista parece un número de cuatro dígitos, pero en realidad cada posición tiene un significado completamente distinto.
+Cada uno aporta información diferente sobre el mensaje.
+Comencemos con el
+primer dígito.
+Este indica la versión del estándar ISO 8583 que está utilizando el mensaje.
+En la práctica, el valor 0 corresponde a la versión ISO 8583:1987, que es la más utilizada por Visa, Mastercard y la mayoría de los switches de pagos actuales.
+Es decir, el primer dígito nos dice bajo qué versión del estándar fue construido el mensaje.
+segundo dígito.
+Este representa la clase del mensaje.
+Es probablemente el dígito más importante porque identifica el tipo general de operación.
+En este ejemplo vale 2, lo que significa que estamos frente a una transacción financiera.
+Si el valor fuera 1, hablaríamos de una autorización.
+Si fuera 4, sería un mensaje de reversa.
+Y si fuera 8, sería un mensaje de administración de red.
+En otras palabras, este dígito nos dice para qué sirve el mensaje.
+tercer dígito
+indica la función del mensaje.
+Nos permite saber si estamos vante una solicitud, una respuesta, un aviso o alguna otra variante del mismo proceso.
+En este caso el valor es 0, lo que significa que se trata de una solicitud.
+Si fuera 1, estaríamos viendo la respuesta correspondiente a esa solicitud.
+Por eso una autorización normalmente viaja como un 0200, mientras que la respuesta regresa como un 0210.
+cuarto dígito.
+Este representa el origen del mensaje.
+Indica quién inició el intercambio.
+Dependiendo de la implementación, permite distinguir si el mensaje fue generado por el adquirente, el emisor u otro participante del sistema.
+En nuestro ejemplo el valor también es 0, que corresponde al origen utilizado por las solicitudes normales de autorización.
+Entonces, cuando juntamos los cuatro dígitos obtenemos toda la información del mensaje.
+En el caso del 0200 podemos interpretarlo de la siguiente manera:
+0: versión ISO 8583:1987.
+2: mensaje de clase financiera.
+0: es una solicitud.
+0: origen correspondiente al mensaje inicial.
+Es importante destacar que el MTI no contiene información sobre el monto, la tarjeta o el comercio.
+Su única función es describir qué tipo de mensaje estamos intercambiando.
+Una buena forma de recordarlo es pensar que el MTI funciona como asunto en un mail
+Basta con ver el asunto, ya nos dice de qué trata.
+Antes de analizar los Data Element (campos), ya sabemos si estamos frente a una autorización, una respuesta, una reversa o un mensaje de administración de red.
+En la próxima lámina veremos los MTI más utilizados en la operación diaria y cómo se relacionan entre sí dentro del ciclo de vida de una transacción.</div><div class="actions"><button type="button" class="understood">Entendido</button></div></dialog><script src="/curso/curso.js"></script></body></html>
