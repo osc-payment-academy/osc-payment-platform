@@ -1,0 +1,30 @@
+OSC PAYMENT ACADEMY - INSTALACION v3.5.4.22
+
+Opcion recomendada: paquete incremental
+
+1. Partir de una instalacion v3.5.4.21 operativa.
+2. Abrir la carpeta del paquete incremental v3.5.4.22.
+3. Entrar en su carpeta public.
+4. Copiar public/constructor.html dentro de la carpeta public del repositorio.
+5. Reemplazar solamente el archivo constructor.html existente.
+6. Copiar en la raiz del repositorio:
+   - RELEASE_NOTES_v3.5.4.22_CONSTRUCTOR_REJECT_TECNICO.txt
+   - INSTRUCCIONES_INSTALACION_v3.5.4.22.txt
+   - BASELINE_MANIFEST.json
+7. Confirmar los cambios mediante un commit.
+8. Esperar el despliegue y forzar la recarga del navegador con Ctrl+F5.
+
+Importante
+- No reemplazar ni borrar la carpeta public completa.
+- No es necesario volver a subir manuales, imagenes, CSS ni JavaScript.
+- El paquete incremental contiene unicamente los componentes modificados y los archivos de control.
+
+Comprobacion rapida
+1. Abrir Constructor ISO8583.
+2. Seleccionar una marca.
+3. Pulsar "REJECT tecnico".
+4. Elegir un campo y el tipo de error.
+5. Verificar que la ida y la respuesta aparezcan en la misma pantalla.
+
+Respaldo
+- El ZIP de baseline completa v3.5.4.22 se conserva para recuperacion y no es necesario instalarlo si el incremental funciona correctamente.

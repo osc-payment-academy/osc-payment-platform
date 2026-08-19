@@ -1,0 +1,29 @@
+OSC PAYMENT ACADEMY - BASELINE v3.5.4.22
+Escenario REJECT tecnico en Constructor ISO8583
+
+Base de origen
+- Construida exclusivamente sobre la baseline completa v3.5.4.21.
+- No se eliminaron archivos ni se modifico el Parser.
+
+Constructor ISO8583
+- Se incorpora la plantilla "REJECT tecnico" dentro del Constructor.
+- El alumno puede utilizar la construccion activa o cargar el ejemplo inicial.
+- Puede seleccionar cualquiera de los campos activos y provocar:
+  - formato o valor invalido;
+  - campo omitido.
+- La solicitud danada y la respuesta se muestran en el mismo modulo.
+
+Tratamiento por marca
+- Visa: muestra VisaNet Reject Message Header, Header Field 14 y el mensaje original.
+- Mastercard: muestra la respuesta correspondiente, DE39=30 y DE44 con el numero del campo cuando esta disponible.
+- AMEX: muestra la respuesta correspondiente y Bit 39 Action Code=181.
+- Los codigos Visa incluidos fueron mapeados desde Full Service POS Online Messages, edicion 14-Apr-2025.
+- Cuando Visa define una edicion por subcampo y no existe un codigo generico, el laboratorio lo informa sin inventar un valor.
+
+Alcance educativo
+- Diferencia un rechazo tecnico de una denegacion comercial.
+- Permite comprobar que saldo, riesgo y autorizacion no se evaluan cuando el mensaje no supera los controles de construccion.
+
+Instalacion recomendada
+- Instalar el paquete incremental v3.5.4.22 sobre v3.5.4.21.
+- Conservar la baseline completa v3.5.4.22 como respaldo.
