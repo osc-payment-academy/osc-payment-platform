@@ -89,6 +89,25 @@
       ],
       iso:'Es un proceso operativo de control, no una autorización individual.',
       lab:'Ejecutá varias extracciones y luego abrí Reconciliación.'
+    },
+    dispenserFail: {
+      title:'00 + falla del dispensador',
+      summary:'El emisor aprueba la extracción, pero el dispositivo físico del ATM falla y no entrega el efectivo. Para restituir el saldo, el ATM genera automáticamente una reversa total.',
+      bullets:[
+        '<b>1 · Solicitud:</b> el ATM envía 0200 para Visa/Mastercard o 1200 para AMEX.',
+        '<b>2 · Aprobación:</b> el emisor responde 0210 con código 00 o 1210 con Action Code 000.',
+        '<b>3 · Autorización:</b> la operación queda inicialmente aprobada y el importe podría haberse debitado de la cuenta.',
+        '<b>4 · Falla física:</b> el dispensador no abre, no entrega efectivo ni descuenta billetes de su inventario. La pantalla muestra “ERROR DE DISPENSADOR – No se entregó efectivo”.',
+        '<b>5 · Reversa automática:</b> aproximadamente 850 milisegundos después, el ATM genera 0420 → 0430 para Visa/Mastercard o 1420 → 1430 para AMEX.',
+        '<b>6 · Resultado:</b> la pantalla informa “OPERACIÓN REVERSADA” y “Saldo restituido”.'
+      ],
+      glossary:[
+        '<b>Visa:</b> DE90 relaciona la reversa con el 0200 original. DE63.3 lleva el motivo 2503: no se recibió confirmación del punto de servicio.',
+        '<b>Mastercard:</b> DE90 relaciona la operación original. DE60 lleva 4500018: falla del punto de interacción/sin dispensación.',
+        '<b>AMEX:</b> Bit 24 = 400 (reversa total), Bit 25 = 4017 (posible falla del ATM), Bit 4 = cero (no se entregó dinero) y el 1430 devuelve Action Code 400 (reversa aceptada).'
+      ],
+      iso:'El visor conserva la solicitud de extracción, la respuesta aprobada, la solicitud de reversa y la respuesta de reversa.',
+      lab:'En el Switch, la extracción termina como <b>REVERSED</b>; la reversa queda registrada por separado y ambas operaciones se excluyen del clearing porque el cliente no recibió efectivo.'
     }
   };
 
@@ -147,7 +166,7 @@
     style.textContent=`
       .osc-help-wrap{position:relative;display:block;min-width:0}
       .osc-help-wrap.osc-help-inline{display:inline-flex}
-      .osc-help-wrap>[data-entry],.osc-help-wrap>[data-atm-entry]{width:100%;height:100%}
+      .osc-help-wrap>[data-entry],.osc-help-wrap>[data-atm-entry],.osc-help-wrap>[data-scenario]{width:100%;height:100%}
       .osc-help-wrap>.osc-help-trigger{
         position:absolute;right:7px;top:7px;z-index:30;margin:0;
         border:1px solid rgba(20,78,112,.28);background:#ffffff;color:#0e5f91;
@@ -284,7 +303,7 @@
 
     // En los selectores de captura, el CSS del Core aplica estilos a TODOS los <button>.
     // Por eso la ayuda usa <span role="button"> y comparte una envoltura con el botón original.
-    const integrated=el.matches?.('[data-entry],[data-atm-entry],[data-operation="refund"]') || key==='reconcile';
+    const integrated=el.matches?.('[data-entry],[data-atm-entry],[data-operation="refund"],[data-scenario="dispenserFail"]') || key==='reconcile';
     if(integrated){
       wrap=document.createElement('span');
       wrap.className=`osc-help-wrap${key==='reconcile'?' osc-help-inline':''}`;
@@ -317,6 +336,7 @@
     root.querySelectorAll('[data-operation="refund"]').forEach(el=>attachHelpAfter(el,'refund'));
     attachHelpAfter(document.getElementById('partialCash'),'partial');
     attachHelpAfter(document.getElementById('reconcileAtm'),'reconcile');
+    attachHelpAfter(document.querySelector('[data-scenario="dispenserFail"]'),'dispenserFail');
   }
   window.OSCHelp={contextual,refs,mastercardPages,openContext,openTechnical,hasTechnical,showNetworkRequired,decorateContext,selectedNetwork};
   document.addEventListener('DOMContentLoaded',()=>{ensureModal();decorateContext()});
