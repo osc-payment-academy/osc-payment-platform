@@ -1,0 +1,19 @@
+OSC PAYMENT ACADEMY — BASELINE v3.5.4.21
+Ayuda contextual para falla del dispensador ATM
+
+Base de origen
+- Construida exclusivamente sobre la baseline completa v3.5.4.20.
+
+ATM Virtual
+- El escenario “00 + falla dispensador” conserva su lógica transaccional original.
+- Después de mantener el cursor 750 ms sobre el botón aparece la manito contextual.
+- La manito abre un popup blanco con el flujo completo de autorización, falla física y reversa.
+- Se documentan los mensajes 0200/0210 y 0420/0430 para Visa/Mastercard.
+- Se documentan los mensajes 1200/1210 y 1420/1430 para AMEX.
+- Se detallan DE90, DE63.3=2503, DE60=4500018 y los Bits 24, 25 y 4 de AMEX.
+- Se explica el resultado en el visor, el Switch y la exclusión del clearing.
+- El clic directo sobre el botón continúa seleccionando el escenario sin abrir el popup.
+
+Instalación recomendada
+- Instalar el paquete incremental v3.5.4.21 sobre v3.5.4.20.
+- Conservar la baseline completa v3.5.4.21 como respaldo.

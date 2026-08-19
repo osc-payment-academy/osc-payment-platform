@@ -1,0 +1,22 @@
+OSC PAYMENT ACADEMY v3.5.4.21 — INSTALACIÓN
+
+PAQUETE RECOMENDADO
+OSC-ACADEMY_Incremental_v3.5.4.21_Instalar.zip
+
+Requisito
+- Tener instalada la baseline v3.5.4.20.
+
+Instalación mediante GitHub web
+1. Descomprima el paquete incremental en Windows.
+2. En la raíz del repositorio, suba BASELINE_MANIFEST.json, las notas y estas instrucciones; confirme el commit.
+3. Ingrese a public y suba atm.html; confirme el commit.
+4. Ingrese a public/js y suba help-catalog.js; confirme el commit.
+5. Espere el despliegue y recargue con Ctrl+F5.
+6. Verifique que el ATM muestre Baseline v3.5.4.21.
+7. Mantenga el cursor sobre “00 + falla dispensador”; debe aparecer la manito y abrir un popup blanco.
+
+No reemplace ni elimine la carpeta public completa.
+
+RESPALDO
+OSC-ACADEMY_Baseline_Completa_v3.5.4.21_Backup.zip
+- Conservar como respaldo; no es necesario instalarlo si el incremental funciona correctamente.

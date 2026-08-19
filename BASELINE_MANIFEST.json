@@ -1,8 +1,8 @@
 {
   "product": "OSC-ACADEMY",
-  "version": "3.5.4.20",
-  "parent_baseline": "OSC-ACADEMY v3.5.4.19",
-  "parent_source_file": "OSC-ACADEMY_Baseline_Completa_v3.5.4.19_Backup.zip",
+  "version": "3.5.4.21",
+  "parent_baseline": "OSC-ACADEMY v3.5.4.20",
+  "parent_source_file": "OSC-ACADEMY_Baseline_Completa_v3.5.4.20_Backup.zip",
   "policy": {
     "build_from_last_approved_zip": true,
     "no_silent_file_deletion": true,
@@ -10,28 +10,18 @@
     "incremental_install_package": true,
     "complete_backup_package": true
   },
-  "parent_file_count": 170,
-  "final_file_count": 174,
+  "parent_file_count": 173,
+  "final_file_count": 176,
   "removed_files": [],
   "added_files": [
-    "INSTRUCCIONES_INSTALACION_v3.5.4.20.txt",
-    "RELEASE_NOTES_v3.5.4.20_PSP_NAVEGACION_IDENTIDAD.txt",
-    "public/assets/brand-visa-blue.png"
+    "INSTRUCCIONES_INSTALACION_v3.5.4.21.txt",
+    "RELEASE_NOTES_v3.5.4.21_ATM_DISPENSER_HELP.txt"
   ],
   "changed_parent_files": [
     "public/atm.html",
-    "public/constructor.html",
-    "public/css/app.css",
-    "public/css/brand-logos.css",
-    "public/documentacion.html",
-    "public/index.html",
-    "public/js/navigation.js",
-    "public/js/network-profiles.js",
-    "public/parser.html",
-    "public/pos.html",
-    "public/switch.html"
+    "public/js/help-catalog.js"
   ],
-  "unchanged_parent_file_count": 159,
+  "unchanged_parent_file_count": 171,
   "inventory": {
     ".gitignore": {
       "size": 35,
@@ -48,6 +38,10 @@
     "INSTRUCCIONES_INSTALACION_v3.5.4.20.txt": {
       "size": 1397,
       "sha256": "8405d71d08238af1e4f69ac12d4f7b0d8d7418504d4f2f814efdda5db1481a60"
+    },
+    "INSTRUCCIONES_INSTALACION_v3.5.4.21.txt": {
+      "size": 906,
+      "sha256": "c4072aa3933f4f912565c75c49b8b432b0f28c0483bb34e8aa52796760feb89c"
     },
     "MANUAL_MAPPING_AMEX_AEIPS_EXPRESSPAY_v3.5.3.13.txt": {
       "size": 860,
@@ -333,6 +327,10 @@
       "size": 1430,
       "sha256": "432245c396f51456da16b1f439b3acc0f0c293b8c184d157011c93504bc57b23"
     },
+    "RELEASE_NOTES_v3.5.4.21_ATM_DISPENSER_HELP.txt": {
+      "size": 985,
+      "sha256": "04c30a628a828c0bf1dee5791b6105d29ed203170bf4707f2a90bbcba74cd541"
+    },
     "RELEASE_NOTES_v3.5.4.2_CONTEXTUAL_HELP_CLICK_FIX.txt": {
       "size": 814,
       "sha256": "2280a2503c28d0f41693f47a6e98f5f62f062a7acf1e7b5a7c58d6aa01b09367"
@@ -399,7 +397,7 @@
     },
     "public/atm.html": {
       "size": 127744,
-      "sha256": "8d1ad620dad621a1faa40f162c2799775574c25287babb22ab8f038a7b8d3d0c"
+      "sha256": "f6bc7bc7f53a99a095286d407b709a1b37a41f2a9a6e4a356ee9b99f7dafd781"
     },
     "public/compensacion.html": {
       "size": 23034,
@@ -614,8 +612,8 @@
       "sha256": "edc92510839ca2f9599f1865f5da635defd36449405489e5e05478ac6f95f26d"
     },
     "public/js/help-catalog.js": {
-      "size": 24133,
-      "sha256": "8bbeedfaf8053214d52d16461ae6048eec6bac3e83f8ddfdc9217b9807250b2a"
+      "size": 26209,
+      "sha256": "15ee329dc9e7dcb6aa92d051e140ed6e1073a587a42e8a502dbb5d3f75718cbf"
     },
     "public/js/issuer-store.js": {
       "size": 2636,
