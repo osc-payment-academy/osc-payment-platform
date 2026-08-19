@@ -1595,7 +1595,7 @@
         const stored = localStorage.getItem('oscAcademyParserPayload');
         if (stored) {
           const payload = JSON.parse(stored);
-          if(payload.network){const ns=document.getElementById('parserNetworkSelect');if(ns)ns.value=String(payload.network).toLowerCase();}
+          if(payload.network){const ns=document.getElementById('parserNetworkSelect');if(ns){ns.value=String(payload.network).toLowerCase();applyParserFieldProfile();}}
           if (payload && payload.raw) {
             inputArea.value = payload.raw;
             const result = parseTrama(payload.raw);
@@ -1604,7 +1604,7 @@
             const sourceNotice = document.createElement('div');
             sourceNotice.className = 'osc-source-notice';
             sourceNotice.innerHTML =
-              '<strong>Mensaje recibido desde POS Virtual</strong>' +
+              '<strong>Mensaje recibido desde ' + (payload.source || 'POS Virtual') + '</strong>' +
               '<span>MTI ' + (payload.mti || '—') + ' · ' +
               new Date(payload.createdAt || Date.now()).toLocaleString('es-AR') + '</span>';
             document.getElementById('summary-area').prepend(sourceNotice);
@@ -1622,6 +1622,6 @@
 
 <script src="js/permissions.js"></script>
 
-<div id="osc-version-badge" style="position:fixed;right:14px;bottom:12px;z-index:99999;background:#0d2238;border:1px solid #2f83ff;color:#9fd0ff;padding:7px 11px;border-radius:999px;font:600 12px/1.1 Inter,Segoe UI,Arial,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.28)">Baseline v3.5.4.20 · Curso Interactivo ISO 8583</div>
+<div id="osc-version-badge" style="position:fixed;right:14px;bottom:12px;z-index:99999;background:#0d2238;border:1px solid #2f83ff;color:#9fd0ff;padding:7px 11px;border-radius:999px;font:600 12px/1.1 Inter,Segoe UI,Arial,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.28)">Baseline v3.5.4.23 · REJECT seleccionable en Parser</div>
 <script src="js/navigation.js"></script></body>
 </html>

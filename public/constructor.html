@@ -45,7 +45,7 @@ select:focus,input:focus,textarea:focus{border-color:#2f83ff;box-shadow:0 0 0 2p
 .action-row{display:flex;gap:8px;margin-top:10px}.primary,.secondary,.success{border-radius:7px;padding:9px 12px;cursor:pointer;font-size:.68rem}.primary{border:1px solid #2b78bc;background:linear-gradient(180deg,#2f83ff,#1764bd)}.secondary{border:1px solid #29465f;background:#0d2133}.success{border:1px solid #1b8051;background:#105433;color:#4ce29b}
 .education-card{margin-top:10px;border:1px solid #263f59;background:#0b1c2c;border-radius:8px;padding:10px}.education-card h3{margin:0;color:#5cabff;font-size:.68rem}.education-card p{margin:6px 0 0;color:#aebed0;font-size:.62rem;line-height:1.45}
 .reject-preset{grid-column:1/-1;border-color:#a64b5c!important;background:linear-gradient(135deg,#421923,#702331)!important}.reject-preset:hover,.reject-preset.active{border-color:#ff7183!important;background:linear-gradient(135deg,#5a1d29,#8a2b3c)!important}
-.reject-lab{margin-top:11px;border:1px solid #a64b5c;background:linear-gradient(180deg,#21131a,#111a28);border-radius:10px;padding:11px}.reject-lab.hidden{display:none}.reject-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.reject-head h3{margin:0;color:#ff8b9a;font-size:.72rem}.reject-head p{margin:4px 0 0;color:#c6b5bc;font-size:.59rem;line-height:1.45}.reject-badge{border:1px solid #a64b5c;background:#401923;color:#ff9eaa;border-radius:999px;padding:5px 8px;font-size:.53rem;white-space:nowrap}.reject-flow{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:stretch;margin-top:10px}.reject-message{min-width:0;border:1px solid #294862;background:#071522;border-radius:8px;padding:9px}.reject-message.response{border-color:#a64b5c;background:#1b1118}.reject-message small,.reject-message strong,.reject-message code{display:block}.reject-message small{color:#8fa5b8;font-size:.5rem;text-transform:uppercase}.reject-message strong{margin:4px 0 6px;font-size:.63rem}.reject-message code{white-space:pre-wrap;word-break:break-all;color:#60e6a9;font:.56rem/1.45 monospace}.reject-message.response code{color:#ff9eaa}.reject-arrow{display:grid;place-items:center;color:#ff7183;font-size:1rem}.reject-explain{margin-top:9px;border-left:3px solid #ff7183;background:#27151c;border-radius:5px;padding:8px;color:#e8cad0;font-size:.58rem;line-height:1.5}.reject-explain b{color:#fff}.reject-note{margin-top:6px;color:#9fb0c0;font-size:.54rem;line-height:1.45}@media(max-width:700px){.reject-flow{grid-template-columns:1fr}.reject-arrow{transform:rotate(90deg)}}
+.reject-lab{margin-top:11px;border:1px solid #a64b5c;background:linear-gradient(180deg,#21131a,#111a28);border-radius:10px;padding:11px}.reject-lab.hidden{display:none}.reject-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.reject-head h3{margin:0;color:#ff8b9a;font-size:.72rem}.reject-head p{margin:4px 0 0;color:#c6b5bc;font-size:.59rem;line-height:1.45}.reject-badge{border:1px solid #a64b5c;background:#401923;color:#ff9eaa;border-radius:999px;padding:5px 8px;font-size:.53rem;white-space:nowrap}.reject-flow{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:stretch;margin-top:10px}.reject-message{min-width:0;border:1px solid #294862;background:#071522;border-radius:8px;padding:9px;cursor:pointer;transition:border-color .15s,box-shadow .15s,transform .15s}.reject-message:hover{transform:translateY(-1px)}.reject-message.selected{border-color:#35a3ff;box-shadow:0 0 0 2px rgba(53,163,255,.18)}.reject-message.response{border-color:#a64b5c;background:#1b1118}.reject-message.response.selected{border-color:#ff7183;box-shadow:0 0 0 2px rgba(255,113,131,.22)}.reject-message small,.reject-message strong,.reject-message code{display:block}.reject-message small{color:#8fa5b8;font-size:.5rem;text-transform:uppercase}.reject-message strong{margin:4px 0 6px;font-size:.63rem}.reject-message code{white-space:pre-wrap;word-break:break-all;color:#60e6a9;font:.56rem/1.45 monospace}.reject-message.response code{color:#ff7183}.reject-select-hint{margin-top:7px;color:#86bce5;font-size:.5rem}.reject-message.response .reject-select-hint{color:#ff9eaa}.reject-arrow{display:grid;place-items:center;color:#ff7183;font-size:1rem}.reject-explain{margin-top:9px;border-left:3px solid #ff7183;background:#27151c;border-radius:5px;padding:8px;color:#e8cad0;font-size:.58rem;line-height:1.5}.reject-explain b{color:#fff}.reject-note{margin-top:6px;color:#9fb0c0;font-size:.54rem;line-height:1.45}@media(max-width:700px){.reject-flow{grid-template-columns:1fr}.reject-arrow{transform:rotate(90deg)}}
 .reject-controls{display:grid;grid-template-columns:1fr 1fr auto;gap:7px;align-items:end;margin-top:10px;padding:9px;border:1px solid #50303a;background:#160f15;border-radius:8px}.reject-controls label{color:#c7aeb5;font-size:.52rem;text-transform:uppercase}.reject-controls select{margin-top:5px;padding:7px;font-size:.58rem}.reject-controls button{padding:8px 10px;white-space:nowrap}@media(max-width:700px){.reject-controls{grid-template-columns:1fr}}
 @media(max-width:1250px){.builder-grid{grid-template-columns:300px minmax(0,1fr)}.preview-panel{grid-column:1/-1}.field-list{max-height:500px}}
 @media(max-width:850px){.app{grid-template-columns:1fr}.sidebar{display:none}.builder-grid{grid-template-columns:1fr}.top-actions{display:none}.content{padding:9px}}
@@ -187,9 +187,9 @@ select:focus,input:focus,textarea:focus{border-color:#2f83ff;box-shadow:0 0 0 2p
             <div class="reject-head"><div><h3>REJECT POR MENSAJE MAL CONSTRUIDO</h3><p>Elegí qué campo dañar y observá cómo la marca informa el rechazo técnico.</p></div><span id="rejectNetworkBadge" class="reject-badge">VISA</span></div>
             <div class="reject-controls"><label>Campo a dañar<select id="rejectFieldSelect"></select></label><label>Tipo de error<select id="rejectModeSelect"><option value="invalid">Formato o valor inválido</option><option value="missing">Campo omitido</option></select></label><button type="button" id="applyRejectDamage" class="primary">Aplicar error</button></div>
             <div class="reject-flow">
-              <div class="reject-message"><small>IDA · Solicitud enviada</small><strong id="rejectRequestTitle">0200 con DE4 inválido</strong><code id="rejectRequest"></code></div>
+              <div id="rejectRequestCard" class="reject-message"><small>IDA · Solicitud enviada</small><strong id="rejectRequestTitle">0200 con DE4 inválido</strong><code id="rejectRequest"></code><span class="reject-select-hint">Seleccionar solicitud para el Parser</span></div>
               <div class="reject-arrow">→</div>
-              <div class="reject-message response"><small>VUELTA · Respuesta de la marca</small><strong id="rejectResponseTitle"></strong><code id="rejectResponse"></code></div>
+              <div id="rejectResponseCard" class="reject-message response selected"><small>VUELTA · Respuesta de la marca</small><strong id="rejectResponseTitle"></strong><code id="rejectResponse"></code><span class="reject-select-hint">Seleccionar respuesta para el Parser</span></div>
             </div>
             <div id="rejectExplanation" class="reject-explain"></div>
             <div class="reject-note">Este resultado representa un rechazo técnico: la red no está evaluando saldo ni riesgo, sino la construcción del mensaje.</div>
@@ -406,7 +406,7 @@ select:focus,input:focus,textarea:focus{border-color:#2f83ff;box-shadow:0 0 0 2p
     }
   };
 
-  const state = {mti:'',values:{},selected:new Set(),filter:'',rejectActive:false,rejectField:4,rejectMode:'invalid',rejectBaseValues:null};
+  const state = {mti:'',values:{},selected:new Set(),filter:'',rejectActive:false,rejectField:4,rejectMode:'invalid',rejectBaseValues:null,rejectParserSelection:'response',rejectResponsePayload:null};
   const VISA_REJECT_CODES={
     2:{invalid:'0002',missing:'0251'},3:{invalid:'0008',missing:'0274'},4:{invalid:'0009',missing:'0275'},
     6:{invalid:'0133',missing:'0486'},7:{invalid:'0010',missing:'0276'},10:{invalid:'0032'},11:{invalid:'0011',missing:'0277'},
@@ -587,11 +587,47 @@ select:focus,input:focus,textarea:focus{border-color:#2f83ff;box-shadow:0 0 0 2p
     return detected&&detected!=='unknown'?detected:'visa';
   }
 
+  function responseFieldDef(de,network){
+    if(de===44)return {de:44,name:'Additional Response Data',fmt:'LLVAR AN',max:25};
+    const base=FIELD_DEFS.find(d=>d.de===de)||{de,name:'Data Element',fmt:'ANS'};
+    return network==='amex'?activeConstructorDef(base):base;
+  }
+
+  function serializeIsoPayload(mti,fields,network){
+    const keys=Object.keys(fields).map(Number).sort((a,b)=>a-b);
+    const bits=new Array(128).fill(0);keys.forEach(de=>bits[de-1]=1);if(keys.some(de=>de>64))bits[0]=1;
+    const limit=bits[0]?128:64;let bitmap='';
+    for(let i=0;i<limit;i+=4)bitmap+=parseInt(bits.slice(i,i+4).join(''),2).toString(16).toUpperCase();
+    const encoded=keys.map(de=>{const value=String(fields[de]??''),d=responseFieldDef(de,network);return variablePrefix(d,value)+value}).join('');
+    return {mti,fields,annotated:[mti,bitmap,...keys.map(de=>`DE${de}=${fields[de]}`)].join(' | '),raw:mti+bitmap+encoded};
+  }
+
+  function buildRejectResponsePayload(network,responseMti,field,visaCode){
+    if(network==='visa'){
+      return {mti:state.mti,annotated:`REJECT HEADER | HF14=${visaCode||'EDIT ESPECÍFICO'} | ORIGINAL MTI=${state.mti} | FIELD ${field} ${state.rejectMode==='missing'?'MISSING':'INVALID'}\n${annotated()}`,raw:raw(),network,source:'Constructor · Visa Reject (mensaje original)'};
+    }
+    const original=state.rejectBaseValues||{};
+    const echoes=network==='amex'?[3,4,11,12,19,24,32,37,41,49]:[3,7,11,12,13,15,32,37,41,49];
+    const fields={};echoes.forEach(de=>{if(original[de]!=null)fields[de]=original[de]});
+    fields[39]=network==='amex'?'181':'30';
+    if(network==='mastercard')fields[44]=String(field).padStart(3,'0');
+    return {...serializeIsoPayload(responseMti,fields,network),network,source:`Constructor · ${network==='amex'?'AMEX':'Mastercard'} REJECT`};
+  }
+
+  function updateRejectParserSelectionUI(){
+    if(!state.rejectActive)return;
+    const responseSelected=state.rejectParserSelection==='response';
+    document.getElementById('rejectRequestCard')?.classList.toggle('selected',!responseSelected);
+    document.getElementById('rejectResponseCard')?.classList.toggle('selected',responseSelected);
+    const parserButton=document.getElementById('openParser');
+    if(parserButton)parserButton.textContent=responseSelected?'Analizar respuesta en Parser':'Analizar solicitud en Parser';
+  }
+
   function renderRejectScenario(){
     const lab=document.getElementById('rejectLab');
     if(!lab)return;
     lab.classList.toggle('hidden',!state.rejectActive);
-    if(!state.rejectActive)return;
+    if(!state.rejectActive){const parserButton=document.getElementById('openParser');if(parserButton)parserButton.textContent='Analizar en Parser';return;}
     const network=resolvedRejectNetwork();
     const field=Number(state.rejectField)||4;
     const fieldDef=FIELD_DEFS.find(d=>d.de===field);
@@ -605,7 +641,7 @@ select:focus,input:focus,textarea:focus{border-color:#2f83ff;box-shadow:0 0 0 2p
     const errorLabel=state.rejectMode==='missing'?'omitido':'mal formateado';
     document.getElementById('rejectRequestTitle').textContent=`${state.mti} con DE${field} ${errorLabel}`;
     document.getElementById('rejectRequest').textContent=annotated();
-    let title,response,explanation;
+    let title,response,explanation,visaCode='';
     const responseMti=({0100:'0110',0200:'0210',0220:'0230',0400:'0410',0420:'0430',0800:'0810',1100:'1110',1120:'1130',1200:'1210',1220:'1230',1420:'1430'}[state.mti])||'RESPUESTA';
     if(network==='mastercard'){
       title=`${responseMti} · Format error`;
@@ -616,16 +652,18 @@ select:focus,input:focus,textarea:focus{border-color:#2f83ff;box-shadow:0 0 0 2p
       response=`MTI=${responseMti} | BIT39=181`;
       explanation=`<b>Bit 39 = 181</b> informa un error de formato en la solicitud. AMEX la rechaza antes de tratarla como una operación aprobada o denegada por negocio. En este ejercicio, el error fue provocado en Bit ${field} (${fieldName}).`;
     }else{
-      const visaCode=VISA_REJECT_CODES[field]?.[state.rejectMode];
+      visaCode=VISA_REJECT_CODES[field]?.[state.rejectMode];
       title='VisaNet Reject Message Header';
       response=`REJECT HEADER | HEADER FIELD 14=${visaCode||'EDIT ESPECÍFICO'}\nORIGINAL MTI=${state.mti} | ERROR=FIELD ${field} ${state.rejectMode==='missing'?'MISSING':'INVALID'}`;
       explanation=visaCode
         ? `VisaNet devuelve un <b>Reject Message Header</b>, seguido por el encabezado y los datos originales. <b>Header Field 14 = ${visaCode}</b> identifica el error seleccionado en Field ${field} (${fieldName}); no es un rechazo comercial en DE39.`
         : `VisaNet devuelve un <b>Reject Message Header</b> y conserva el mensaje original. Para Field ${field} (${fieldName}), el manual define ediciones específicas según el contenido o subcampo dañado; el laboratorio no inventa un código genérico.`;
     }
+    state.rejectResponsePayload=buildRejectResponsePayload(network,responseMti,field,visaCode);
     document.getElementById('rejectResponseTitle').textContent=title;
-    document.getElementById('rejectResponse').textContent=response;
+    document.getElementById('rejectResponse').textContent=state.rejectResponsePayload.annotated;
     document.getElementById('rejectExplanation').innerHTML=explanation;
+    updateRejectParserSelectionUI();
   }
 
   function loadRejectScenario(forceDefault=false){
@@ -644,6 +682,7 @@ select:focus,input:focus,textarea:focus{border-color:#2f83ff;box-shadow:0 0 0 2p
       state.rejectField=4;
     }
     state.rejectMode='invalid';
+    state.rejectParserSelection='response';
     state.values={...state.rejectBaseValues};
     state.selected=new Set(Object.keys(state.rejectBaseValues).map(Number));
     state.rejectActive=true;
@@ -715,6 +754,8 @@ select:focus,input:focus,textarea:focus{border-color:#2f83ff;box-shadow:0 0 0 2p
   document.getElementById('rejectFieldSelect').addEventListener('change',e=>{state.rejectField=Number(e.target.value);applyRejectDamage()});
   document.getElementById('rejectModeSelect').addEventListener('change',e=>{state.rejectMode=e.target.value;applyRejectDamage()});
   document.getElementById('applyRejectDamage').addEventListener('click',()=>applyRejectDamage());
+  document.getElementById('rejectRequestCard').addEventListener('click',()=>{state.rejectParserSelection='request';updateRejectParserSelectionUI()});
+  document.getElementById('rejectResponseCard').addEventListener('click',()=>{state.rejectParserSelection='response';updateRejectParserSelectionUI()});
   document.querySelectorAll('[data-copy]').forEach(b=>b.addEventListener('click',()=>copyText(b.dataset.copy==='raw'?raw():annotated(),b)));
   document.getElementById('copyBoth').addEventListener('click',e=>copyText(
 `TRAMA DIDÁCTICA - CON POSICIONES Y SEPARADORES
@@ -724,14 +765,14 @@ TRAMA COMO VIAJA EN EL MENSAJE
 (SIN PIPE, SIN NÚMERO DE CAMPO Y SIN SIGNO IGUAL)
 ${raw()}`,e.target));
   document.getElementById('openParser').addEventListener('click',()=>{
-    localStorage.setItem('oscAcademyParserPayload',JSON.stringify({
-      source:'Constructor ISO8583',mti:state.mti,annotated:annotated(),raw:raw(),createdAt:new Date().toISOString(),network:currentConstructorNetwork()==='auto'?(OSCNetworks?.detectFromPan?.(state.values[2]||'')?.id||''):currentConstructorNetwork()
-    }));
+    const requestPayload={source:'Constructor ISO8583 · Solicitud',mti:state.mti,annotated:annotated(),raw:raw(),network:resolvedRejectNetwork()};
+    const selected=state.rejectActive&&state.rejectParserSelection==='response'&&state.rejectResponsePayload?state.rejectResponsePayload:requestPayload;
+    localStorage.setItem('oscAcademyParserPayload',JSON.stringify({...selected,createdAt:new Date().toISOString()}));
     location.href='parser.html';
   });
   document.getElementById('loadExample').addEventListener('click',()=>loadPreset('purchase'));
   document.getElementById('resetAll').addEventListener('click',()=>{
-    state.mti='';state.values={};state.selected=new Set();state.filter='';state.rejectActive=false;state.rejectBaseValues=null;
+    state.mti='';state.values={};state.selected=new Set();state.filter='';state.rejectActive=false;state.rejectBaseValues=null;state.rejectResponsePayload=null;state.rejectParserSelection='response';
     document.getElementById('mtiInput').value='';document.getElementById('fieldSearch').value='';
     document.querySelectorAll('[data-preset]').forEach(b=>b.classList.remove('active'));document.getElementById('rejectScenarioBtn').classList.remove('active');render();
   });
@@ -832,6 +873,6 @@ ${raw()}`,e.target));
 </script>
 <script src="js/permissions.js"></script>
 
-<div id="osc-version-badge" style="position:fixed;right:14px;bottom:12px;z-index:99999;background:#0d2238;border:1px solid #2f83ff;color:#9fd0ff;padding:7px 11px;border-radius:999px;font:600 12px/1.1 Inter,Segoe UI,Arial,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.28)">Baseline v3.5.4.22 · REJECT técnico por marca</div>
+<div id="osc-version-badge" style="position:fixed;right:14px;bottom:12px;z-index:99999;background:#0d2238;border:1px solid #2f83ff;color:#9fd0ff;padding:7px 11px;border-radius:999px;font:600 12px/1.1 Inter,Segoe UI,Arial,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.28)">Baseline v3.5.4.23 · REJECT seleccionable en Parser</div>
 <script src="js/navigation.js"></script></body>
 </html>
