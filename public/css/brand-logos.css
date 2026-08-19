@@ -6,7 +6,7 @@
 .test-card .card-network{display:inline-flex;align-items:center;min-height:20px}
 .test-card.visa .card-network,.test-card.mastercard .card-network,.test-card.amex .card-network{font-size:0!important;color:transparent!important;letter-spacing:0!important}
 .test-card.visa .card-network::before,.test-card.mastercard .card-network::before,.test-card.amex .card-network::before{content:"";display:block;background-repeat:no-repeat;background-position:left center;background-size:contain}
-.test-card.visa .card-network::before{width:54px;height:18px;background-image:url('../assets/brand-visa-white.png')}
+.test-card.visa .card-network::before{width:54px;height:18px;background-image:url('../assets/brand-visa-blue.png')}
 .test-card.mastercard .card-network::before{width:76px;height:28px;background-image:url('../assets/brand-mastercard.png')}
 .test-card.amex .card-network::before{width:82px;height:27px;background-image:url('../assets/brand-amex-white.png')}
 @media(max-width:700px){.network-brand-logo.large{max-width:145px}.network-brand-heading{min-height:48px}}
