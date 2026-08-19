@@ -1,0 +1,40 @@
+OSC PAYMENT ACADEMY v3.5.4.20 — INSTALACIÓN
+
+PAQUETE RECOMENDADO
+OSC-ACADEMY_Incremental_v3.5.4.20_Instalar.zip
+
+Requisito
+- Tener instalada la baseline v3.5.4.19.
+
+Instalación mediante GitHub web
+1. Descomprima el paquete incremental en Windows.
+2. En GitHub, ingrese a la raíz del repositorio.
+3. Suba primero los archivos de la raíz del paquete y confirme el commit.
+4. Entre en public y suba los archivos sueltos respetando sus ubicaciones.
+5. Entre por separado en public/css, public/js y public/assets para subir sus archivos.
+6. Confirme cada grupo con un commit. No reemplace ni elimine la carpeta public completa.
+7. Espere el despliegue, recargue con Ctrl+F5 y verifique que figure Baseline v3.5.4.20.
+
+Archivos incrementales
+- RELEASE_NOTES_v3.5.4.20_PSP_NAVEGACION_IDENTIDAD.txt
+- BASELINE_MANIFEST.json
+- public/assets/brand-visa-blue.png
+- public/css/app.css
+- public/css/brand-logos.css
+- public/js/navigation.js
+- public/js/network-profiles.js
+- public/index.html
+- public/pos.html
+- public/atm.html
+- public/constructor.html
+- public/parser.html
+- public/switch.html
+- public/documentacion.html
+
+RESPALDO
+OSC-ACADEMY_Baseline_Completa_v3.5.4.20_Backup.zip
+- Contiene la plataforma completa.
+- Conservarlo como respaldo; no es necesario instalarlo si el incremental funciona correctamente.
+
+Verificación
+- Compare el SHA-256 de cada ZIP con el archivo SHA256_v3.5.4.20.txt.

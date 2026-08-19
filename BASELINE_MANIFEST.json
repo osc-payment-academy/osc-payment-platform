@@ -1,33 +1,37 @@
 {
   "product": "OSC-ACADEMY",
-  "version": "3.5.4.17",
-  "parent_baseline": "OSC-ACADEMY_Baseline_v3.5.4.16_Dashboard_QR_AutoResponse_Clearing_Contextual",
-  "parent_source_file": "OSC-ACADEMY_Baseline_v3.5.4.16_Dashboard_QR_AutoResponse_Clearing_Contextual.zip",
+  "version": "3.5.4.20",
+  "parent_baseline": "OSC-ACADEMY v3.5.4.19",
+  "parent_source_file": "OSC-ACADEMY_Baseline_Completa_v3.5.4.19_Backup.zip",
   "policy": {
     "build_from_last_approved_zip": true,
     "no_silent_file_deletion": true,
-    "fail_build_if_parent_file_missing": true,
     "sha256_inventory": true,
     "incremental_install_package": true,
     "complete_backup_package": true
   },
-  "parent_file_count": 115,
-  "final_file_count": 116,
+  "parent_file_count": 170,
+  "final_file_count": 174,
   "removed_files": [],
   "added_files": [
-    "RELEASE_NOTES_v3.5.4.17_USABILITY_CLEARING_RESET.txt"
+    "INSTRUCCIONES_INSTALACION_v3.5.4.20.txt",
+    "RELEASE_NOTES_v3.5.4.20_PSP_NAVEGACION_IDENTIDAD.txt",
+    "public/assets/brand-visa-blue.png"
   ],
   "changed_parent_files": [
     "public/atm.html",
     "public/constructor.html",
+    "public/css/app.css",
+    "public/css/brand-logos.css",
+    "public/documentacion.html",
     "public/index.html",
-    "public/js/app.js",
-    "public/js/help-catalog.js",
+    "public/js/navigation.js",
+    "public/js/network-profiles.js",
     "public/parser.html",
     "public/pos.html",
     "public/switch.html"
   ],
-  "unchanged_parent_file_count": 107,
+  "unchanged_parent_file_count": 159,
   "inventory": {
     ".gitignore": {
       "size": 35,
@@ -40,6 +44,10 @@
     "DOMAIN_SETUP_v2.8.1.txt": {
       "size": 539,
       "sha256": "538bf11f94575fbf17b1025e67ad17c9fe17c2c7c2432b87573ecb2f4487cd90"
+    },
+    "INSTRUCCIONES_INSTALACION_v3.5.4.20.txt": {
+      "size": 1397,
+      "sha256": "8405d71d08238af1e4f69ac12d4f7b0d8d7418504d4f2f814efdda5db1481a60"
     },
     "MANUAL_MAPPING_AMEX_AEIPS_EXPRESSPAY_v3.5.3.13.txt": {
       "size": 860,
@@ -305,9 +313,25 @@
       "size": 1779,
       "sha256": "b29336da7c15aeb84449cbd889f9ade6aabfbd31d968c952a53222a977cb704b"
     },
+    "RELEASE_NOTES_v3.5.4.18_LOGOS_MANUALES_AMEX.txt": {
+      "size": 1610,
+      "sha256": "517a09bad35f37817cd64830a6e29fb38be9c76ce599ff0d0905ec34e8b93d29"
+    },
+    "RELEASE_NOTES_v3.5.4.18a_DLP_PNG_LOGOS.txt": {
+      "size": 576,
+      "sha256": "244b6f3d0728f88a95cf8031c0453dbf9ca85c64933a566c4945534710cb2510"
+    },
+    "RELEASE_NOTES_v3.5.4.19_CURSO_INTERACTIVO.txt": {
+      "size": 1738,
+      "sha256": "547a1cf1a64acf1e93c3919e71db7d813d755db6f0933219baa3b605a7fedfb1"
+    },
     "RELEASE_NOTES_v3.5.4.1_SOURCE_CONTROLLED_HELP.txt": {
       "size": 1089,
       "sha256": "d2fd63b081f137a5e702f24001322f81cdeb320d3c75803a374a7ad3e715a142"
+    },
+    "RELEASE_NOTES_v3.5.4.20_PSP_NAVEGACION_IDENTIDAD.txt": {
+      "size": 1430,
+      "sha256": "432245c396f51456da16b1f439b3acc0f0c293b8c184d157011c93504bc57b23"
     },
     "RELEASE_NOTES_v3.5.4.2_CONTEXTUAL_HELP_CLICK_FIX.txt": {
       "size": 814,
@@ -353,13 +377,29 @@
       "size": 128,
       "sha256": "50235084f46ee7e4e36e8c2af728d927e2a072c9e19427dbb9de616ce819e63a"
     },
+    "public/assets/brand-amex-white.png": {
+      "size": 21353,
+      "sha256": "ad6b2ce1228051935964324ff914189604e50abfe61273384229dabdd5838709"
+    },
+    "public/assets/brand-mastercard.png": {
+      "size": 12980,
+      "sha256": "6eb547557d60f1081fb719f8416e486873ca546109f52d51506a603a462468c8"
+    },
+    "public/assets/brand-visa-blue.png": {
+      "size": 10875,
+      "sha256": "521b3a8a0818e7a189dfe6036ebd945758d829ade0af8e3945349262750271d9"
+    },
+    "public/assets/brand-visa-white.png": {
+      "size": 98206,
+      "sha256": "2655140971c2894f7ce83367406d68cc5d2c9d8efffefa8630a3070afb47e03d"
+    },
     "public/assets/dashboard-pos-iso-visual.png": {
       "size": 94397,
       "sha256": "03055bebc43594d123ec8da7c3465b9f6b974d9634e991f707e5ac9788ab889f"
     },
     "public/atm.html": {
-      "size": 127856,
-      "sha256": "62380d87d336aeda156c4696390bd21f45568d661f53190f1be5f4858bb43cab"
+      "size": 127744,
+      "sha256": "8d1ad620dad621a1faa40f162c2799775574c25287babb22ab8f038a7b8d3d0c"
     },
     "public/compensacion.html": {
       "size": 23034,
@@ -370,36 +410,208 @@
       "sha256": "5d1fc81110c061445d98d37646c0e12f174a3fe346013ef830813592709c1223"
     },
     "public/constructor.html": {
-      "size": 64453,
-      "sha256": "8b636eea9e231640eadc15cfb610616499792287751f817a777774ec905565d9"
+      "size": 64499,
+      "sha256": "ae36c811831c020f672dfaed1560c38b72dfa3327710455cd00c247d67ba0c24"
     },
     "public/css/app.css": {
-      "size": 48752,
-      "sha256": "6e2155bcab8c2f37d73eb9e1430207d41a5ade91e7f8bfcd71950c143c73db8a"
+      "size": 49838,
+      "sha256": "5d6eaa72d7c2741a63f31bb6201657249e2738e8cdd7b25d585d43e50bf8a4fc"
+    },
+    "public/css/brand-logos.css": {
+      "size": 1643,
+      "sha256": "19bce56125aad7787792a7d79c86a7b60691517e93c07868df9a44aae90de3f7"
     },
     "public/cuenta_cliente.html": {
       "size": 3431,
       "sha256": "e8445c32807cc36e769f253a36a1c1973fe3682ac66f81ae2ed96db9616e3358"
     },
+    "public/curso/assets/slide-02.png": {
+      "size": 1034912,
+      "sha256": "05cf90863006f5e35ed8e305dfc300b4afb7e515f796af509af39c639c2d718b"
+    },
+    "public/curso/assets/slide-03.png": {
+      "size": 584212,
+      "sha256": "f9733db59b823ca824d22c8d2c3c6fed5c894e98cc9b00919028ed8520d8064f"
+    },
+    "public/curso/assets/slide-04.png": {
+      "size": 991493,
+      "sha256": "331063eb2aa9e398c257a722adb9db95202683924da1a53350279d3158f667d0"
+    },
+    "public/curso/assets/slide-05.png": {
+      "size": 1002364,
+      "sha256": "c1be181085e172a03c15375761049bfec80e696f363bb831c28fef16d78cf6a6"
+    },
+    "public/curso/assets/slide-06.png": {
+      "size": 567618,
+      "sha256": "dab3b6b66aa0148b07e65704ed8ac0d675e7dd87be815a0c84a39bda926c4f9e"
+    },
+    "public/curso/assets/slide-07.png": {
+      "size": 419308,
+      "sha256": "6e734dd21f35ec6e247130bdd3410779df0a889d8d399c21ad45b1f8e0741f20"
+    },
+    "public/curso/assets/slide-08.png": {
+      "size": 1028919,
+      "sha256": "2e70f6b324a956afc6b1b8e80da5da774ae3847369c43e4ab44cc826a8e386e7"
+    },
+    "public/curso/assets/slide-09.png": {
+      "size": 898255,
+      "sha256": "1d13d656d8c6dd599b86d57a78cccd405dfe42501cab8ea77bce0a07a633e2c3"
+    },
+    "public/curso/assets/slide-10.png": {
+      "size": 679449,
+      "sha256": "bc4305159e77cd2afba080664b00ef9c4c23266a54b6537d96800def2ecce982"
+    },
+    "public/curso/assets/slide-11.png": {
+      "size": 685126,
+      "sha256": "050ee9b70c245f03500c085b17ad679a329b853a6767fb2ad45599c0ce530717"
+    },
+    "public/curso/assets/slide-12.png": {
+      "size": 713447,
+      "sha256": "6a5f3dcac9f8a5150017adb19d38ec554f3321966bee4c27ac24a651f719ba54"
+    },
+    "public/curso/assets/slide-13.png": {
+      "size": 694303,
+      "sha256": "0f9c1f0e004a44bc19796ebd21c059381abfd6af190e28ea7b0b1ba878431e55"
+    },
+    "public/curso/assets/slide-14.png": {
+      "size": 864000,
+      "sha256": "92f06f034305058a630024f480e1ce6d5b781cc591e82633e38f289670bd43ec"
+    },
+    "public/curso/assets/slide-15.png": {
+      "size": 915886,
+      "sha256": "d61f09c48f56e73a3703b2a62b47b4f49f052cf6827c787cd392418dac4fa552"
+    },
+    "public/curso/assets/slide-16.png": {
+      "size": 1029280,
+      "sha256": "0d2d80887e33842490c8529f28a90e57e51101f3d19a184c02d86cfb80b8e4a9"
+    },
+    "public/curso/assets/slide-17.png": {
+      "size": 854929,
+      "sha256": "a6320a8739d56717005483ca8f52c3b00c3899b8146cc68e69696b948d5bc662"
+    },
+    "public/curso/assets/slide-18.png": {
+      "size": 175199,
+      "sha256": "950dfb322ec33819a401b06791e846c55c7c7af550a6280a89b0f1b709403b93"
+    },
+    "public/curso/assets/slide-19.png": {
+      "size": 686349,
+      "sha256": "893d7d78fb0a90c34876ec1170f3e5ec2c122065b1d5165d5e59ef4c3e43d6b6"
+    },
+    "public/curso/assets/slide-20.png": {
+      "size": 871085,
+      "sha256": "529a63957cb48fd072074c32aa97cde87e9c40911c75e4db18c85b2589f16244"
+    },
+    "public/curso/assets/slide-21.png": {
+      "size": 93819,
+      "sha256": "4aac2e333bfe820e8045bc68c0d9f70f69f8cf306a0cbc6fc7dd02e55caa401a"
+    },
+    "public/curso/curso.css": {
+      "size": 2530,
+      "sha256": "f3e7fae735eeb7bb79df43ca58990533edb5f062fb36754246d220892d30da5e"
+    },
+    "public/curso/curso.js": {
+      "size": 1111,
+      "sha256": "b67f0585b64323cf3c4fe82edcdc5cdec40b83b40d80b8dd3da1049b9019f908"
+    },
+    "public/curso/slide-02.html": {
+      "size": 1853,
+      "sha256": "dd604417bb1269910783a1cd5435d2a4d7bb07f08f96e1f84da9134aaa873eba"
+    },
+    "public/curso/slide-03.html": {
+      "size": 3545,
+      "sha256": "8291f08d12b934c5f950880eac5a17c2e42afa9b8786a6b428e64d991bbb0377"
+    },
+    "public/curso/slide-04.html": {
+      "size": 3923,
+      "sha256": "359a93a1b1a12a06ee4861a6705280f9de6cedf951ab3603ed52790f3607a5f7"
+    },
+    "public/curso/slide-05.html": {
+      "size": 1598,
+      "sha256": "559f07a4f3ab4410d0330d76cb99f83e160d243b4783f402c3cc38e0022e6b55"
+    },
+    "public/curso/slide-06.html": {
+      "size": 3879,
+      "sha256": "728d1fad29697a2fe1405413161314f7413d591bc2397ccd40694d3adc5b12aa"
+    },
+    "public/curso/slide-07.html": {
+      "size": 4027,
+      "sha256": "4ec7746072a52928a62122bbc5b85de221cf935ac9e8bf5f117ca57feb971076"
+    },
+    "public/curso/slide-08.html": {
+      "size": 1628,
+      "sha256": "d33d96643871104122c180f7144abb3c4ac86d4872eea9680761d6fda656a212"
+    },
+    "public/curso/slide-09.html": {
+      "size": 2889,
+      "sha256": "202786cb48cbbd27a98d6b3ce77c91b4096e9380bb52702f79a0ea5c8e18d8c4"
+    },
+    "public/curso/slide-10.html": {
+      "size": 2679,
+      "sha256": "9254c79012e6ab01bfad7ec8449c018a7ade215d5a605e23e61d500482dc4fba"
+    },
+    "public/curso/slide-11.html": {
+      "size": 3740,
+      "sha256": "082123d033f896c158fac38e45a948da2979ec1bba32532a4a2e893dd972675a"
+    },
+    "public/curso/slide-12.html": {
+      "size": 4633,
+      "sha256": "cbe7bed5fd389d02303ca6c7805db543ceb71e23c5863ace7e47c987938af879"
+    },
+    "public/curso/slide-13.html": {
+      "size": 3003,
+      "sha256": "e74fc762e1952e72e2ebc38526351112189ebe1ff6d0b20d3a7cfac23b212208"
+    },
+    "public/curso/slide-14.html": {
+      "size": 2915,
+      "sha256": "57a969ed994c68de78d2e95d0a0886c3c938497bed4c6bd6a2b6267328c87e78"
+    },
+    "public/curso/slide-15.html": {
+      "size": 3292,
+      "sha256": "bbc2990fb674a33a3c66301ed437716e33833551a0751df9ce22de87fe4fd851"
+    },
+    "public/curso/slide-16.html": {
+      "size": 3355,
+      "sha256": "caf7010ebb6123afda219584e92eb50a5d19c86112eb01f931fddbdf139fe236"
+    },
+    "public/curso/slide-17.html": {
+      "size": 3224,
+      "sha256": "74c948d0d3525950cb89f6352dedc0c867a42651b287c53492e87876bd2bed78"
+    },
+    "public/curso/slide-18.html": {
+      "size": 3131,
+      "sha256": "095dc282738a6d52d15a12c51b9261d636c64a0fd025a82de509eaa401655b06"
+    },
+    "public/curso/slide-19.html": {
+      "size": 1699,
+      "sha256": "f8f6bc5cb3d0319ac06033cda3b0ad9d556fbc0fcae939a3f4c2e6601d8f7cff"
+    },
+    "public/curso/slide-20.html": {
+      "size": 3265,
+      "sha256": "939fc9ada87e3137a5b7a6e26d03c9743b4735a639a744a65241ea24625b6fd0"
+    },
+    "public/curso/slide-21.html": {
+      "size": 1484,
+      "sha256": "42a98d86b3157a08bdd20f28676cf0e00174d2e3f9031049f958cfa292551ee3"
+    },
     "public/curso_interactivo.html": {
-      "size": 24399,
-      "sha256": "c949a86b31f4612c871db5833c3749c299765c8ddf60b144929a3c5d6a3d66fa"
+      "size": 4911,
+      "sha256": "bb05da9658f86f0699098a64a2d7c8f0b84a25e1363f2717d495e53172bc3c40"
     },
     "public/documentacion.html": {
-      "size": 2059,
-      "sha256": "cdc28889079689dde389621c8653c25af65b4e5f876f05937cf0baa0dfbf4ab2"
+      "size": 6871,
+      "sha256": "ad61eb903772324bf296fa36516c6e6d9350f74c0f00a549fede977e3f285c60"
     },
     "public/ebook.html": {
       "size": 3340,
       "sha256": "6dd3eebbf8f5937b2307ed39e868fdabf3331622dd1b8bab5b061fb576f6579a"
     },
     "public/index.html": {
-      "size": 13766,
-      "sha256": "25f4703fc2980f711671d4cb540043c405beb9387f00456f1da5a9a1ef95ff5f"
+      "size": 13715,
+      "sha256": "695852328a70da85f53bc422750bd2f1f487cabe034911c471ba9648700a2710"
     },
     "public/js/app.js": {
-      "size": 99923,
-      "sha256": "a8825c5d2de3199f431b5bd103862c1d1effd9b73d472918acc135d7b8eda664"
+      "size": 99965,
+      "sha256": "edc92510839ca2f9599f1865f5da635defd36449405489e5e05478ac6f95f26d"
     },
     "public/js/help-catalog.js": {
       "size": 24133,
@@ -410,12 +622,12 @@
       "sha256": "56fa6af98fc74a89c1bbe81437c1e3f26e63380304f591a2550d2a7e8da0e15b"
     },
     "public/js/navigation.js": {
-      "size": 2693,
-      "sha256": "227c073e5556f4cc12b959a61bc884b91785ef549e5d714cd2b072711590d9dc"
+      "size": 3066,
+      "sha256": "4f3bad601b73951b995fb2cee528e70a5f0644b0ad47f57080a65a0b8dafebdb"
     },
     "public/js/network-profiles.js": {
-      "size": 1701,
-      "sha256": "324c060023e8fe20513d81e96b2a31d6294d69fc0595c3a7680fc80b21b00bde"
+      "size": 2020,
+      "sha256": "71a854f2a79d80c1ea439360dcde96191912bf936aa045ee939a41e2e75c43bc"
     },
     "public/js/permissions.js": {
       "size": 1303,
@@ -428,6 +640,26 @@
     "public/js/tenant-config.js": {
       "size": 776,
       "sha256": "317f1033ffd0cbd5cf47a419a5711c35c046e08f2d955861ab21e2447a32780e"
+    },
+    "public/manuals/amex-business-operational-policies-oct2023.pdf": {
+      "size": 5500462,
+      "sha256": "ad4cbd7cce8599bdf74ba543b2e086390bb9756dcb01e93a241e42ef90f525ce"
+    },
+    "public/manuals/amex-codes-reference-guide-oct2023.pdf": {
+      "size": 3039658,
+      "sha256": "0d3899d3ccc229addbb286dcc39cb96625f0c48e55b105e28daa27a9d770b7c5"
+    },
+    "public/manuals/amex-merchant-operating-guide-oct2023.pdf": {
+      "size": 4433774,
+      "sha256": "cbafb49a2cc05b3828b97249d965bbb821cb640d05cabd6f6ab3f458a44ea240"
+    },
+    "public/manuals/amex-merchant-regulations-oct2023.pdf": {
+      "size": 2698821,
+      "sha256": "66c8829c4340ddb30a65d4cde07fb43182446e9d81a314c48adeec2728944949"
+    },
+    "public/manuals/amex-network-specifications-authorization-oct2023.pdf": {
+      "size": 2815549,
+      "sha256": "bbfcdf2d84b8f7ef47f181473c4eb9899915b61068a164d000d5a664aff8aafc"
     },
     "public/manuals/full-service-atm-online-messages-tech-specs.pdf": {
       "size": 10906189,
@@ -462,24 +694,24 @@
       "sha256": "55f7c59eef05e1e22c8b012a8e778b6ea24e8f1d5fedb813d7ed5aadff04eb29"
     },
     "public/parser.html": {
-      "size": 81214,
-      "sha256": "8e846ad3d9c296e48e7c55668d494a834c2e7f3e0f4dea945fffcec9957470d2"
+      "size": 81262,
+      "sha256": "4da7f1b98ebefe596dfce229a8b77542e1c219bd5246d0f4412a3f8cec48b6e7"
     },
     "public/pos.html": {
-      "size": 28964,
-      "sha256": "f7a98203d42c91d6923a8e527272c87b99cddf7247014a46220c6a970b5d0a99"
+      "size": 29833,
+      "sha256": "36c8d8d97d6917dd61c3f66ec4d6e32699aa939a2370b7a539edf1242b3b82fa"
     },
     "public/production_diagnostic.html": {
       "size": 3711,
       "sha256": "d8a09fabfb0a5dd8c83f8fc4a97478f70ecb05322f6661bc0d830190f9d902a0"
     },
     "public/research.html": {
-      "size": 4151,
-      "sha256": "89b8e3952ffe425e966ed241f7bd4063557f3effa61b6c122ffc7b471b77c3bd"
+      "size": 4016,
+      "sha256": "4e32cb76309092ca1443c3cb2c80ec51eb9ec3549b964a84906f73de497226da"
     },
     "public/switch.html": {
-      "size": 31288,
-      "sha256": "d25c1fdefe439e35058904968fac312d1fb6965b66a4f04e86807c5dd0bc7add"
+      "size": 31355,
+      "sha256": "177657838595ef5249b42042b0b02ea302cb141d14cf0d5edc38f54d4ab46982"
     },
     "public/switch_emisor.html": {
       "size": 11925,

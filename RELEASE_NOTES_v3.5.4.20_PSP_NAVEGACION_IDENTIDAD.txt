@@ -1,0 +1,29 @@
+OSC PAYMENT ACADEMY — BASELINE v3.5.4.20
+PSP en flujo QR, navegación depurada e identidad Visa
+
+Base de origen
+- Construida sobre la baseline completa v3.5.4.19.
+
+Educación QR
+- El PSP aparece explícitamente como orquestador entre la wallet y el adquirente/procesador.
+- La ida muestra: POS, wallet, PSP, adquirente/procesador, red y emisor.
+- La vuelta muestra la respuesta común hasta el PSP y sus dos notificaciones: cliente y comercio.
+- Se explica por qué la wallet y el POS pueden mostrar el resultado con algunos segundos de diferencia.
+- Se aclara que la implementación concreta puede variar según wallet, PSP y adquirente.
+
+Identidad Visa
+- Se incorporó el logo Visa azul con V estilizada y fondo transparente.
+- El recurso central se utiliza en Documentación, POS, perfiles de red y Switch del Adquirente.
+
+Módulos reservados
+- Laboratorio de Nuevas Funcionalidades queda oculto, pero conservado.
+- Diagnóstico de Procesos Productivos queda oculto, pero conservado.
+- La sección Desarrollos bajo demanda deja de mostrarse en el menú.
+
+Opciones futuras del POS
+- Biblioteca Técnica, Mis Cursos, Ejercicios, Historial de Transacciones y Certificaciones quedan ocultas.
+- Sus declaraciones permanecen conservadas para habilitarlas individualmente más adelante.
+
+Instalación recomendada
+- Instalar el paquete incremental v3.5.4.20 sobre v3.5.4.19.
+- Conservar la baseline completa v3.5.4.20 como respaldo.
