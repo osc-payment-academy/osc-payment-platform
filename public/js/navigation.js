@@ -13,7 +13,9 @@
     {href:'documentacion.html',icon:'📚',label:'Documentación Técnica'},
     {href:'research.html',icon:'🧪',label:'Investigación'},
     {href:'mastercard_iso.html',icon:'◉',label:'Mastercard ISO',visible:false},
-    {href:'cuenta_cliente.html',icon:'💳',label:'Cuenta del Cliente',visible:false}
+    {href:'cuenta_cliente.html',icon:'💳',label:'Cuenta del Cliente',visible:false},
+    {href:'ondemand_lab.html',icon:'🧩',label:'Laboratorio de Nuevas Funcionalidades',visible:false},
+    {href:'production_diagnostic.html',icon:'🔎',label:'Diagnóstico de Procesos Productivos',visible:false}
   ];
   const managed=new Set(modules.map(item=>item.href));
   const current=(location.pathname.split('/').pop()||'index.html').toLowerCase();
@@ -24,7 +26,8 @@
   style.textContent=`
     .osc-primary-navigation{display:grid!important;gap:4px!important;margin:14px 0 16px!important}
     .osc-primary-navigation .nav{display:block!important;position:static!important;margin:0!important;padding:10px 12px!important;text-decoration:none!important}
-    aside a[href="mastercard_iso.html"],aside a[href="cuenta_cliente.html"]{display:none!important}
+    .future-resources{display:none!important}
+    aside a[href="mastercard_iso.html"],aside a[href="cuenta_cliente.html"],aside a[href="ondemand_lab.html"],aside a[href="production_diagnostic.html"]{display:none!important}
   `;
   document.head.appendChild(style);
 
