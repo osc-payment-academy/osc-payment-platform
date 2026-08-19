@@ -1,0 +1,26 @@
+OSC PAYMENT ACADEMY - INSTALACION v3.5.4.23
+
+Requisito
+- Tener instalada la baseline v3.5.4.22.
+
+Paquete incremental recomendado
+1. Descomprimir el paquete incremental v3.5.4.23.
+2. Entrar en la carpeta public del paquete.
+3. Copiar public/constructor.html dentro de public del repositorio.
+4. Copiar public/parser.html dentro de public del repositorio.
+5. Reemplazar solamente esos dos archivos.
+6. Copiar en la raiz los archivos de notas, instrucciones y manifest.
+7. Confirmar los cambios mediante un commit.
+8. Esperar el despliegue y recargar con Ctrl+F5.
+
+Importante
+- No reemplazar ni borrar la carpeta public completa.
+- No es necesario volver a subir manuales, imagenes, CSS ni JavaScript.
+
+Comprobacion
+1. Abrir Constructor ISO8583 y seleccionar Mastercard.
+2. Activar REJECT tecnico y elegir un campo.
+3. Confirmar que la respuesta 0210 aparezca completa en rojo.
+4. Seleccionar la respuesta roja.
+5. Pulsar "Analizar respuesta en Parser".
+6. Confirmar que el Parser muestre DE39=30 y DE44 con el campo danado.

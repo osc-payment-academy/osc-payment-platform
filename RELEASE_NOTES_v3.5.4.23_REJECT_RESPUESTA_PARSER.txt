@@ -1,0 +1,24 @@
+OSC PAYMENT ACADEMY - BASELINE v3.5.4.23
+Respuesta REJECT seleccionable y analizable en Parser
+
+Base de origen
+- Construida exclusivamente sobre la baseline v3.5.4.22.
+
+Constructor ISO8583
+- La respuesta tecnica se muestra como una trama completa dentro del recuadro rojo.
+- La solicitud verde y la respuesta roja se pueden seleccionar por separado.
+- La respuesta queda seleccionada de manera predeterminada.
+- El boton verde cambia dinamicamente entre:
+  - Analizar solicitud en Parser.
+  - Analizar respuesta en Parser.
+- Mastercard genera una respuesta ISO analizable con MTI correspondiente, DE39=30 y DE44 con el campo que origino el error.
+- AMEX genera la respuesta correspondiente con Bit 39=181.
+- Visa conserva el Reject Message Header y envia al Parser el mensaje original rechazado, porque el encabezado Visa no es un 0210 ISO convencional.
+
+Parser ISO8583
+- Aplica automaticamente el perfil Visa, Mastercard o AMEX antes de interpretar el mensaje recibido.
+- Identifica en pantalla que el mensaje proviene del escenario REJECT del Constructor.
+
+Instalacion recomendada
+- Instalar el paquete incremental v3.5.4.23 sobre v3.5.4.22.
+- Conservar la baseline completa v3.5.4.23 como respaldo.

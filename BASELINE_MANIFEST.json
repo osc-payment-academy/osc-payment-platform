@@ -1,8 +1,8 @@
 {
   "product": "OSC-ACADEMY",
-  "version": "3.5.4.22",
-  "parent_baseline": "OSC-ACADEMY v3.5.4.21",
-  "parent_source_file": "OSC-ACADEMY_Baseline_Completa_v3.5.4.21_Backup.zip",
+  "version": "3.5.4.23",
+  "parent_baseline": "OSC-ACADEMY v3.5.4.22",
+  "parent_source_file": "OSC-ACADEMY_Baseline_Completa_v3.5.4.22_Backup.zip",
   "policy": {
     "build_from_last_approved_zip": true,
     "no_silent_file_deletion": true,
@@ -10,17 +10,18 @@
     "incremental_install_package": true,
     "complete_backup_package": true
   },
-  "parent_file_count": 176,
-  "final_file_count": 178,
+  "parent_file_count": 178,
+  "final_file_count": 180,
   "removed_files": [],
   "added_files": [
-    "INSTRUCCIONES_INSTALACION_v3.5.4.22.txt",
-    "RELEASE_NOTES_v3.5.4.22_CONSTRUCTOR_REJECT_TECNICO.txt"
+    "INSTRUCCIONES_INSTALACION_v3.5.4.23.txt",
+    "RELEASE_NOTES_v3.5.4.23_REJECT_RESPUESTA_PARSER.txt"
   ],
   "changed_parent_files": [
-    "public/constructor.html"
+    "public/constructor.html",
+    "public/parser.html"
   ],
-  "unchanged_parent_file_count": 175,
+  "unchanged_parent_file_count": 176,
   "inventory": {
     ".gitignore": {
       "size": 35,
@@ -45,6 +46,10 @@
     "INSTRUCCIONES_INSTALACION_v3.5.4.22.txt": {
       "size": 1257,
       "sha256": "baea35dfbfd4055a722a6520048714be8df3a2f831f8235c641b3da693947310"
+    },
+    "INSTRUCCIONES_INSTALACION_v3.5.4.23.txt": {
+      "size": 1022,
+      "sha256": "bdf9609ed1cfff4f069462b6f3f0b236d58b965694e581411f35ceccb2375e3b"
     },
     "MANUAL_MAPPING_AMEX_AEIPS_EXPRESSPAY_v3.5.3.13.txt": {
       "size": 860,
@@ -338,6 +343,10 @@
       "size": 1455,
       "sha256": "451706341480f6cc7dc9ccc99b315ae75724e07787e38407bb8372a6e7e82eca"
     },
+    "RELEASE_NOTES_v3.5.4.23_REJECT_RESPUESTA_PARSER.txt": {
+      "size": 1202,
+      "sha256": "bc6f62814f454e1effe069fa49424745367db545c8c01e109f7c6b23330a5232"
+    },
     "RELEASE_NOTES_v3.5.4.2_CONTEXTUAL_HELP_CLICK_FIX.txt": {
       "size": 814,
       "sha256": "2280a2503c28d0f41693f47a6e98f5f62f062a7acf1e7b5a7c58d6aa01b09367"
@@ -415,8 +424,8 @@
       "sha256": "5d1fc81110c061445d98d37646c0e12f174a3fe346013ef830813592709c1223"
     },
     "public/constructor.html": {
-      "size": 76866,
-      "sha256": "458b611d2dac42721f27bdd7b311c63e5ac3e3a8936bee5cb7ed134e3093d3ce"
+      "size": 80714,
+      "sha256": "dac0603b265b4948f1f75f1c2fe355794801312cc4325a9f3ae22149a875ab26"
     },
     "public/css/app.css": {
       "size": 49838,
@@ -699,8 +708,8 @@
       "sha256": "55f7c59eef05e1e22c8b012a8e778b6ea24e8f1d5fedb813d7ed5aadff04eb29"
     },
     "public/parser.html": {
-      "size": 81262,
-      "sha256": "4da7f1b98ebefe596dfce229a8b77542e1c219bd5246d0f4412a3f8cec48b6e7"
+      "size": 81324,
+      "sha256": "a097fb77fe38bc7b9b4486f504b0bbce3f2b063d7155ba0c995d0c2dcfe64f1c"
     },
     "public/pos.html": {
       "size": 29833,
