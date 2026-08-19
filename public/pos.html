@@ -47,8 +47,8 @@
     <a class="nav" href="mastercard_iso.html">◉ Mastercard ISO</a>
 </nav>
 
-    <div class="section">Recursos</div>
-    <nav>
+    <div class="section future-resources" hidden>Recursos</div>
+    <nav class="future-resources" hidden aria-hidden="true">
       <a href="#">▥ <span>Biblioteca Técnica</span></a>
       <a href="#">▱ <span>Mis Cursos</span></a>
       <a href="#">☑ <span>Ejercicios</span></a>
@@ -410,16 +410,18 @@
     </div>
 
     <div id="qrEducationFlow" class="qr-education-flow hidden">
-      <div class="qr-flow-note"><strong>Idea clave</strong><span>El POS genera y muestra el QR. La wallet inicia el pago y el adquirente/procesador construye la autorización hacia la red y el emisor.</span></div>
+      <div class="qr-flow-note"><strong>Idea clave</strong><span>El PSP es el componente neurálgico del pago QR: recibe la solicitud iniciada por la wallet, la comunica al adquirente/procesador y, cuando llega la respuesta, informa el resultado a la wallet y al comercio.</span></div>
+      <div class="qr-psp-explanation"><strong>¿Qué hace el PSP?</strong><span>Orquesta el pago detrás de la aplicación: valida la solicitud, la enruta, conserva la referencia de la operación y distribuye la aprobación o el rechazo a quienes necesitan conocerlo.</span></div>
       <h3>Ida · Solicitud de pago</h3>
-      <div class="qr-flow-path request"><span>POS genera QR</span><b>→</b><span>Wallet escanea y confirma</span><b>→</b><span>Adquirente / procesador</span><b>→</b><span>Red</span><b>→</b><span>Emisor autoriza</span></div>
-      <p class="qr-flow-iso">La mensajería ISO 8583 puede utilizarse entre el procesador/adquirente, la red y el emisor. El POS no envía directamente esa autorización QR.</p>
+      <div class="qr-flow-path request"><span>POS genera QR</span><b>→</b><span>Wallet escanea y confirma</span><b>→</b><span class="psp-step"><small>ORQUESTADOR</small>PSP de la wallet</span><b>→</b><span>Adquirente / procesador</span><b>→</b><span>Red</span><b>→</b><span>Emisor autoriza o rechaza</span></div>
+      <p class="qr-flow-iso">La wallet no se comunica directamente con el emisor. Entrega la solicitud al PSP, que la envía al adquirente/procesador. Desde allí puede utilizarse mensajería ISO 8583 hacia la red y el emisor. El POS solamente generó el QR y espera la confirmación.</p>
       <h3>Vuelta · Dos caminos de respuesta</h3>
+      <p class="qr-flow-return">Respuesta común: <strong>Emisor → Red → Adquirente/procesador → PSP</strong>. Desde el PSP se actualizan los dos participantes:</p>
       <div class="qr-response-branches">
-        <section><span class="branch-number">1</span><div><strong>Confirmación al cliente</strong><p>Emisor → red/adquirente → PSP de la wallet → wallet: “Pago aprobado”.</p></div></section>
-        <section><span class="branch-number">2</span><div><strong>Confirmación al comercio</strong><p>Emisor → red/adquirente → backend del comercio → POS: “Venta aprobada”.</p></div></section>
+        <section><span class="branch-number">1</span><div><strong>Confirmación al cliente</strong><p>PSP → wallet: muestra “Pago aprobado” o informa el motivo del rechazo.</p></div></section>
+        <section><span class="branch-number">2</span><div><strong>Confirmación al comercio</strong><p>PSP → backend del comercio/adquirente → POS: muestra “Venta aprobada” o “Venta rechazada”.</p></div></section>
       </div>
-      <p class="qr-flow-delay">Por eso el cliente puede ver la aprobación primero y el POS recibirla unos segundos después, mediante notificación, consulta o actualización de estado.</p>
+      <p class="qr-flow-delay">Los avisos viajan por canales diferentes. Por eso el cliente puede ver el resultado primero en su wallet y el POS recibirlo algunos segundos después mediante notificación, consulta o actualización de estado. La implementación exacta puede variar según la wallet, el PSP y el adquirente.</p>
     </div>
 
     <div class="qr-education-actions">
@@ -436,7 +438,7 @@
 <script>document.addEventListener('DOMContentLoaded',()=>{document.querySelectorAll('.pos-scenario-mini button').forEach((b,i)=>b.onclick=()=>{document.querySelectorAll('.pos-scenario-mini button').forEach(x=>x.classList.remove('active'));b.classList.add('active');const original=document.querySelectorAll('#scenarioGrid button')[i];if(original)original.click()});const log=document.getElementById('posTechEvents');const status=document.getElementById('flowResponse');if(log&&status)new MutationObserver(()=>{const d=document.createElement('div');d.textContent=new Date().toLocaleTimeString('es-AR')+' · '+status.textContent;log.prepend(d);while(log.children.length>8)log.lastChild.remove()}).observe(status,{childList:true,subtree:true,characterData:true})});</script>
 <script src="js/permissions.js"></script>
 
-<div id="osc-version-badge" style="position:fixed;right:14px;bottom:12px;z-index:99999;background:#0d2238;border:1px solid #2f83ff;color:#9fd0ff;padding:7px 11px;border-radius:999px;font:600 12px/1.1 Inter,Segoe UI,Arial,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.28)">Baseline v3.5.4.19 · Curso Interactivo ISO 8583</div>
+<div id="osc-version-badge" style="position:fixed;right:14px;bottom:12px;z-index:99999;background:#0d2238;border:1px solid #2f83ff;color:#9fd0ff;padding:7px 11px;border-radius:999px;font:600 12px/1.1 Inter,Segoe UI,Arial,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.28)">Baseline v3.5.4.20 · Curso Interactivo ISO 8583</div>
 <script src="js/help-catalog.js"></script>
 <script src="js/navigation.js"></script></body>
 </html>
