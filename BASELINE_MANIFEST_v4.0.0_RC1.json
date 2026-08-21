@@ -1,0 +1,53 @@
+{
+  "product": "OSC-ACADEMY",
+  "version": "4.0.0-RC1",
+  "parent_baseline": "OSC-ACADEMY v3.5.4.23",
+  "parent_source_file": "osc-payment-platform-main.zip",
+  "parent_file_count": 181,
+  "final_file_count": 198,
+  "removed_files": [],
+  "changed_parent_files": ["package.json", "wrangler.jsonc"],
+  "added_files": [
+    "ARCHITECTURE_SAAS_v4.0.0_RC1.txt",
+    "INSTRUCCIONES_INSTALACION_v4.0.0_RC1.txt",
+    "RELEASE_NOTES_v4.0.0_RC1_LOGIN_SAAS.txt",
+    "package-lock.json",
+    "schema_v4.sql",
+    "src/index.js",
+    "public/css/saas.css",
+    "public/js/saas-session.js",
+    "public/login.html",
+    "public/reset.html",
+    "public/expired.html",
+    "public/saas-admin.html",
+    "public/products.html",
+    "public/students.html",
+    "public/support.html",
+    "public/topic.html",
+    "BASELINE_MANIFEST_v4.0.0_RC1.json"
+  ],
+  "verification": {
+    "d1_schema_commands": 22,
+    "d1_schema_status": "PASS",
+    "cloudflare_worker_dry_run": "PASS",
+    "cloudflare_asset_count": 104,
+    "core_files_removed": 0
+  },
+  "sha256": {
+    "package.json": "a8a7ebe3969e693e80187764e8d28344466bbbfec221861d80929ba93cceee80",
+    "package-lock.json": "d6ea9a4759ced8476252b749722f306d1f9edc06fb429095112e00a9276043e7",
+    "wrangler.jsonc": "ad56ba3961271f88c89d4502f76e81abfff7d292ad24b02478908d7119d59c52",
+    "schema_v4.sql": "09c5671b4696c55a1d187c2b4a586d22673cc58eb814050be60b3ad5e2da621e",
+    "src/index.js": "bf48d3d478f53b918116bc174cc9061a0b3eec308cd6f2d0641e2a681a487271",
+    "public/css/saas.css": "d7fe60e0e006a6b088e0e0bed9f0bc8cc7f958ecd15398c308fc26b39075a7de",
+    "public/js/saas-session.js": "89186a29405de7d43a90fe5024a0890022b8f075d75a324a1253e3488e0f9dab",
+    "public/login.html": "38a594647cb0f6e7027d35f44a7b46e665d809bf608d4a50c7d3b00b0ad3478c",
+    "public/reset.html": "292da881bf022ffc865a7bf85fd79cfb070180e16a25022a365520fbba4e043f",
+    "public/expired.html": "b3c3f831863149d90ed6f8193526c8301bca040c7f91ea46c83be7bbb0ad5111",
+    "public/saas-admin.html": "d93f668d6b368c2a395bfcd50c813664bceb264164572b786e2d3b720fe2146e",
+    "public/products.html": "4246b5a2bbf2a4a86c625275ae91e926e7710ecfa2b55733d612ac994880b8cf",
+    "public/students.html": "6c362a41984fd5a56d66485d757aa0dfa1c288caffbaca0edf6a89f7c7500cc7",
+    "public/support.html": "fd0a1617292e077ca4d01bff7a83405c82b3cdbb68a76e2619472fc7f42d2a80",
+    "public/topic.html": "d4a51ee1fa9bf027150dae45bae00f516f3f0e43c865dc1a316e11672143b00e"
+  }
+}

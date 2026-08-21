@@ -1,10 +1,12 @@
 {
   "name": "osc-payment-platform",
-  "version": "2.5.1",
+  "version": "4.0.0-rc.1",
   "private": true,
   "scripts": {
     "dev": "wrangler dev",
-    "deploy": "wrangler deploy"
+    "deploy": "wrangler deploy",
+    "db:local": "wrangler d1 execute osc-academy --local --file=schema_v4.sql",
+    "db:remote": "wrangler d1 execute osc-academy --remote --file=schema_v4.sql"
   },
   "devDependencies": {
     "wrangler": "^4.18.0"

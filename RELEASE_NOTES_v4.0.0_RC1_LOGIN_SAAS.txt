@@ -1,0 +1,46 @@
+OSC-ACADEMY · v4.0.0 RC1
+LOGIN SAAS, CURSOS, SOPORTE ONLINE Y CONVERSION A CONSULTORA
+
+Base de origen
+- Construida exclusivamente sobre la baseline completa v3.5.4.23.
+- No se eliminó ni reemplazó ningún módulo funcional del CORE.
+
+Incluido en esta RC1
+- Autenticación backend con contraseñas PBKDF2 y sesiones HttpOnly.
+- Recuperación de contraseña mediante tokens de un solo uso por 30 minutos.
+- Modelo multi-tenant para OSC, grupos de curso y consultoras.
+- Productos con CORE Payment Academy o base SaaS vacía.
+- Curso en vivo de 120 minutos y licencia práctica de 30 días.
+- Ediciones o grupos con cupos y vencimiento coordinado.
+- Alta grupal de alumnos y workspace individual persistente.
+- Soporte Online privado por edición, con preguntas y respuestas compartidas.
+- Cierre del foro y del acceso al vencer la licencia.
+- Conservación de cuenta y workspace después del vencimiento.
+- Conversión de alumnos seleccionados en consultora.
+- Designación del administrador de la consultora.
+- Migración sin cambiar la identidad del usuario ni borrar su workspace.
+- Registro de auditoría para operaciones administrativas principales.
+- Protección de páginas, manuales, eBook y archivos mediante sesión y licencia.
+
+Alcance de RC1
+- El envío real del correo de recuperación requiere configurar RESET_WEBHOOK_URL.
+- Las notificaciones internas o por correo para nuevas respuestas quedan para el siguiente incremento.
+- La persistencia D1 de todas las operaciones antiguas del CORE se integrará módulo por módulo; esta RC1 crea el workspace y la arquitectura de identidad.
+- No desplegar sin completar el ID de D1, crear el esquema y configurar BOOTSTRAP_KEY.
+
+Pantallas nuevas
+- login.html
+- reset.html
+- expired.html
+- saas-admin.html
+- products.html
+- students.html
+- support.html
+- topic.html
+
+Validaciones realizadas
+- Esquema D1: 22 instrucciones ejecutadas correctamente en base local.
+- Worker: compilación Cloudflare dry-run correcta.
+- Assets: 104 archivos detectados por Cloudflare.
+- Baseline v3.5.4.23 preservada.
+

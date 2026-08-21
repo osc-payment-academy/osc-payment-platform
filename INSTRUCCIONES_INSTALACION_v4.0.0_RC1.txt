@@ -1,0 +1,48 @@
+OSC-ACADEMY · INSTALACION v4.0.0 RC1
+
+IMPORTANTE
+Esta versión agrega backend real y base D1. No debe copiarse directamente a producción sin completar la configuración.
+
+1. Requisito
+- Partir de la baseline completa v3.5.4.23.
+- Tener acceso a la cuenta Cloudflare que publica oscpaymentacademy.com.
+
+2. Instalar dependencias
+npm install
+
+3. Crear la base D1
+npx wrangler d1 create osc-academy
+
+4. Configurar wrangler.jsonc
+- Reemplazar REEMPLAZAR_CON_ID_D1 por el database_id devuelto por Cloudflare.
+
+5. Crear las tablas
+npm run db:remote
+
+6. Configurar la clave de inicialización
+npx wrangler secret put BOOTSTRAP_KEY
+- Utilizar una clave larga, aleatoria y privada.
+
+7. Crear el primer Administrador OSC
+- Ejecutar una única vez POST /api/bootstrap.
+- Enviar el encabezado X-Bootstrap-Key y los campos email, fullName y password.
+- La contraseña debe tener como mínimo 10 caracteres.
+- Después del alta, cambiar o eliminar el secreto BOOTSTRAP_KEY.
+
+8. Recuperación de contraseña
+- Configurar RESET_WEBHOOK_URL para conectar el proveedor de correo.
+- Opcionalmente configurar RESET_WEBHOOK_TOKEN.
+- Sin ese webhook, el sistema genera el token pero no puede enviar el correo.
+
+9. Prueba previa
+npm run dev
+- Probar Login, Panel OSC, creación de producto, curso, alumnos, foro, vencimiento y conversión a consultora.
+
+10. Publicación
+npm run deploy
+
+11. No borrar
+- No borrar public ni los módulos existentes.
+- No ejecutar nuevamente /api/bootstrap sobre un usuario ya creado.
+- No publicar contraseñas temporales ni BOOTSTRAP_KEY en GitHub.
+

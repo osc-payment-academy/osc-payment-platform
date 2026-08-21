@@ -2,10 +2,19 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "osc-payment-platform",
   "compatibility_date": "2026-08-02",
+  "main": "src/index.js",
   "assets": {
     "directory": "./public",
+    "binding": "ASSETS",
     "not_found_handling": "single-page-application"
   },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "osc-academy",
+      "database_id": "2ec05287-2bf9-4215-bde5-52b0ffa9992e"
+    }
+  ],
   "routes": [
     {
       "pattern": "oscpaymentacademy.com",

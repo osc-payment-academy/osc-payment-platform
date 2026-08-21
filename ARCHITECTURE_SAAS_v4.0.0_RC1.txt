@@ -1,0 +1,28 @@
+OSC-ACADEMY · ARQUITECTURA SAAS v4.0.0 RC1
+
+Capa SaaS reutilizable
+- Login, sesiones y recuperación de contraseña.
+- Usuarios, roles, empresas, licencias y auditoría.
+- Cursos, ediciones, soporte grupal y workspaces.
+
+Productos
+- product_payment: utiliza el CORE actual de Payment Academy.
+- Producto vacío: conserva la capa SaaS pero no incorpora módulos del CORE.
+- Los desarrollos nuevos pueden usar fuentes y funcionalidades independientes.
+
+Ciclo comercial
+1. OSC crea curso y edición.
+2. Se asignan 30 días y un límite de cupos.
+3. Los alumnos reciben cuenta y workspace individual.
+4. El grupo utiliza un foro privado durante la vigencia.
+5. Al vencer, se bloquea el acceso sin borrar información.
+6. OSC selecciona alumnos y los convierte en una consultora.
+7. Se asigna administrador y licencia corporativa.
+8. Las mismas identidades y workspaces continúan activos.
+
+Aislamiento
+- Cada grupo o consultora es un tenant independiente.
+- Las membresías vinculan usuarios con tenants y roles.
+- El foro se restringe a la edición correspondiente.
+- Los archivos sensibles requieren sesión y licencia activa.
+

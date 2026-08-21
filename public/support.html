@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Soporte Online · OSC Academy</title>
+  <link rel="stylesheet" href="css/saas.css">
+</head>
+<body>
+<main class="shell">
+  <header class="top">
+    <div><div class="brand"><span>OSC</span> ACADEMY</div><h1>Soporte Online</h1><p class="muted">Una respuesta para todos los alumnos de la edición.</p></div>
+    <nav class="tabs"><a class="btn" href="index.html">Dashboard</a><button class="btn" id="logout">Cerrar sesión</button></nav>
+  </header>
+  <section class="panel">
+    <div class="field"><label>Edición del curso</label><select id="cohort"></select></div>
+    <div id="courseState" class="muted"></div>
+  </section>
+  <section class="panel" id="askPanel">
+    <h2>Nueva consulta</h2>
+    <form id="topicForm" class="form-grid">
+      <div class="field"><label>Módulo</label><select id="moduleKey"><option>GENERAL</option><option>POS</option><option>ATM</option><option>PARSER</option><option>CONSTRUCTOR</option><option>SWITCH_ADQUIRENTE</option><option>ISO_8583</option></select></div>
+      <div class="field"><label>Título</label><input id="topicTitle" required></div>
+      <div class="field full-row"><label>Consulta</label><textarea id="topicBody" required></textarea></div>
+      <div class="full-row"><button class="btn primary">Publicar para todo el grupo</button></div>
+    </form>
+    <div id="message" class="message"></div>
+  </section>
+  <section class="panel"><h2>Consultas del grupo</h2><div id="topics"><p class="muted">Seleccioná una edición.</p></div></section>
+</main>
+<script src="js/saas-session.js"></script>
+<script>
+const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+async function init(){
+  const r=await fetch('/api/auth/me');if(!r.ok)return location.href='login.html';
+  const me=await r.json();
+  cohort.innerHTML=me.cohorts.map(c=>`<option value="${c.id}">${esc(c.course_name)} · ${esc(c.name)}</option>`).join('')||'<option value="">Sin cursos activos</option>';
+  cohort.onchange=load;load();
+}
+async function load(){
+  if(!cohort.value)return;
+  const r=await fetch(`/api/cohorts/${cohort.value}/topics`);if(!r.ok)return;
+  const d=await r.json(),closed=d.cohort.forumStatus!=='OPEN'||new Date(d.cohort.expiresAt)<=new Date();
+  courseState.textContent=`Acceso hasta ${new Date(d.cohort.expiresAt).toLocaleDateString('es-AR')} · Foro ${closed?'cerrado':'activo'}`;
+  askPanel.style.display=closed?'none':'block';
+  topics.innerHTML=d.topics.map(t=>`<article class="topic" tabindex="0" role="link" onclick="location.href='topic.html?id=${t.id}'"><div class="topic-head"><span class="pill">${esc(t.module_key)}</span><span class="muted">${new Date(t.created_at).toLocaleString('es-AR')}</span></div><h3>${esc(t.title)}</h3><p>${esc(t.body)}</p><small class="muted">${esc(t.author_name)} · ${t.reply_count} respuestas · ${esc(t.status)}</small></article>`).join('')||'<p class="muted">Todavía no hay consultas en este grupo.</p>';
+}
+topicForm.onsubmit=async e=>{
+  e.preventDefault();
+  const r=await fetch(`/api/cohorts/${cohort.value}/topics`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({moduleKey:moduleKey.value,title:topicTitle.value,body:topicBody.value})});
+  if(r.ok){topicForm.reset();message.textContent='Consulta publicada para todo el grupo.';message.className='message show ok';load()}
+  else{message.textContent='El foro está cerrado o no tenés acceso.';message.className='message show error'}
+};
+init();
+</script>
+</body></html>

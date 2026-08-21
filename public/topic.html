@@ -1,0 +1,11 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Consulta · Soporte Online</title><link rel="stylesheet" href="css/saas.css"></head>
+<body><main class="shell">
+  <header class="top"><div><div class="brand"><span>OSC</span> ACADEMY</div><h1>Respuesta del grupo</h1></div><nav class="tabs"><a class="btn" href="support.html">← Soporte Online</a><button class="btn" id="logout">Cerrar sesión</button></nav></header>
+  <section class="panel"><div id="replies"><p class="muted">Cargando conversación…</p></div></section>
+  <section class="panel"><h2>Agregar respuesta</h2><form id="replyForm"><div class="field"><label>Respuesta</label><textarea id="replyBody" required></textarea></div><button class="btn primary">Responder a todo el grupo</button></form><div id="message" class="message"></div></section>
+</main><script src="js/saas-session.js"></script><script>
+const topicId=new URLSearchParams(location.search).get('id'),esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+async function load(){const r=await fetch(`/api/topics/${topicId}/replies`);if(!r.ok)return location.href='support.html';const d=await r.json();replies.innerHTML=d.replies.map(x=>`<article class="topic"><div class="topic-head"><strong>${esc(x.author_name)}</strong>${x.instructor_answer?'<span class="pill">Respuesta del instructor</span>':''}</div><p>${esc(x.body)}</p><small class="muted">${new Date(x.created_at).toLocaleString('es-AR')}</small></article>`).join('')||'<p class="muted">Todavía no hay respuestas.</p>'}
+replyForm.onsubmit=async e=>{e.preventDefault();const r=await fetch(`/api/topics/${topicId}/replies`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({body:replyBody.value})});if(r.ok){replyForm.reset();message.textContent='Respuesta publicada para todo el grupo.';message.className='message show ok';load()}else{message.textContent='El foro está cerrado o no tenés acceso.';message.className='message show error'}};load();
+</script></body></html>
