@@ -1,0 +1,18 @@
+INSTALACIÓN DEL HOTFIX v4.0.0 RC1.2
+
+Prerequisito
+OSC-ACADEMY v4.0.0 RC1.1 instalada y funcionando.
+
+Instalación por GitHub
+1. Abrir el repositorio osc-payment-academy/osc-payment-platform.
+2. Seleccionar la rama main.
+3. Elegir Add file > Upload files.
+4. Arrastrar todo el contenido de este paquete conservando las carpetas public y src.
+5. Usar el mensaje de commit:
+   Aplicar hotfix v4.0.0 RC1.2 seguridad navegación y logo OSC
+6. Confirmar Commit directly to the main branch.
+7. Esperar la implementación automática de Cloudflare.
+
+No ejecutar schema_v4.sql.
+No volver a crear BOOTSTRAP_KEY.
+

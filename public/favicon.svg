@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="OSC">
+  <defs>
+    <linearGradient id="blueBg" x1="80" y1="36" x2="436" y2="476" gradientUnits="userSpaceOnUse"><stop stop-color="#2D70D2"/><stop offset="1" stop-color="#174993"/></linearGradient>
+    <linearGradient id="navyO" x1="94" y1="72" x2="410" y2="446" gradientUnits="userSpaceOnUse"><stop stop-color="#10294A"/><stop offset="1" stop-color="#061426"/></linearGradient>
+    <linearGradient id="gold" x1="165" y1="135" x2="350" y2="390" gradientUnits="userSpaceOnUse"><stop stop-color="#F6D477"/><stop offset=".52" stop-color="#D9A52E"/><stop offset="1" stop-color="#B97912"/></linearGradient>
+  </defs>
+  <rect x="16" y="16" width="480" height="480" rx="112" fill="url(#blueBg)"/>
+  <circle cx="256" cy="256" r="174" fill="none" stroke="url(#navyO)" stroke-width="62"/>
+  <path d="M340 170a120 120 0 1 0 0 172" fill="none" stroke="url(#gold)" stroke-width="50" stroke-linecap="square"/>
+  <text x="256" y="322" text-anchor="middle" fill="url(#gold)" font-family="Georgia, 'Times New Roman', serif" font-size="190" font-weight="700">S</text>
+</svg>

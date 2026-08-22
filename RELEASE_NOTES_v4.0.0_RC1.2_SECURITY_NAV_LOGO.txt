@@ -1,0 +1,33 @@
+OSC-ACADEMY v4.0.0 RC1.2 — SECURITY, NAVIGATION AND OSC LOGO
+
+Objetivo
+Cerrar el acceso público accidental a los activos estáticos del CORE y completar
+la navegación administrativa del primer Login SaaS.
+
+Cambios incluidos
+1. Cloudflare Assets ejecuta primero el Worker mediante run_worker_first.
+2. Toda página protegida exige una sesión válida antes de servir el contenido.
+3. www.oscpaymentacademy.com redirige permanentemente al dominio canónico
+   oscpaymentacademy.com, conservando ruta y parámetros.
+4. Nuevo favicon OSC aprobado: O azul oscuro, C y S doradas, fondo azul.
+5. El Dashboard incorpora Cerrar sesión.
+6. El menú administrativo se muestra únicamente al rol OSC_ADMIN e incluye:
+   - Administración SaaS
+   - Productos y base vacía
+   - Alumnos
+   - Soporte Online
+7. El encabezado del Dashboard toma nombre, iniciales y rol desde la sesión real.
+
+Base de datos
+No requiere ejecutar SQL ni modificar D1.
+
+Secretos
+No requiere volver a crear BOOTSTRAP_KEY.
+
+Pruebas requeridas luego de implementar
+- Sin sesión: / debe redirigir a /login.
+- www debe redirigir al dominio sin www.
+- Login del administrador debe abrir el Dashboard.
+- El administrador debe visualizar el bloque Administración.
+- Cerrar sesión debe regresar al Login.
+

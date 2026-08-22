@@ -239,8 +239,12 @@ async function api(request,env,path){
 
 export default {async fetch(request,env){
   const url=new URL(request.url),path=url.pathname;
+  if(url.hostname==='www.oscpaymentacademy.com'){
+    url.hostname='oscpaymentacademy.com';
+    return Response.redirect(url.toString(),308);
+  }
   if(path.startsWith('/api/'))return api(request,env,path);
-  const publicPaths=new Set(['/login','/login.html','/reset','/reset.html','/styles.css','/favicon.ico']);
+  const publicPaths=new Set(['/login','/login.html','/reset','/reset.html','/styles.css','/favicon.ico','/favicon.svg']);
   const assetLike=/\.(css|js|png|jpg|jpeg|svg|webp|ico|woff2)$/i.test(path);
   if(!publicPaths.has(path)&&!assetLike){
     const user=await currentUser(request,env);
