@@ -7,7 +7,7 @@ const randomToken = () => b64(crypto.getRandomValues(new Uint8Array(32)));
 const sha256 = async value => b64(new Uint8Array(await crypto.subtle.digest('SHA-256', enc.encode(value))));
 const passwordHash = async (password, salt) => {
   const key = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveBits']);
-  return b64(new Uint8Array(await crypto.subtle.deriveBits({name:'PBKDF2',salt:enc.encode(salt),iterations:120000,hash:'SHA-256'}, key, 256)));
+  return b64(new Uint8Array(await crypto.subtle.deriveBits({name:'PBKDF2',salt:enc.encode(salt),iterations:100000,hash:'SHA-256'}, key, 256)));
 };
 const cookie = request => Object.fromEntries((request.headers.get('cookie')||'').split(';').map(x=>x.trim().split('=').map(decodeURIComponent)).filter(x=>x.length===2));
 const sessionCookie = (token, maxAge=28800) => `osc_session=${encodeURIComponent(token)}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${maxAge}`;
@@ -240,12 +240,12 @@ async function api(request,env,path){
 export default {async fetch(request,env){
   const url=new URL(request.url),path=url.pathname;
   if(path.startsWith('/api/'))return api(request,env,path);
-  const publicPaths=new Set(['/login.html','/reset.html','/styles.css','/favicon.ico']);
+  const publicPaths=new Set(['/login','/login.html','/reset','/reset.html','/styles.css','/favicon.ico']);
   const assetLike=/\.(css|js|png|jpg|jpeg|svg|webp|ico|woff2)$/i.test(path);
   if(!publicPaths.has(path)&&!assetLike){
     const user=await currentUser(request,env);
-    if(!user)return Response.redirect(`${url.origin}/login.html?next=${encodeURIComponent(path+url.search)}`,302);
-    if(path!=='/expired.html'&&!(await hasActiveLicense(env,user)))return Response.redirect(`${url.origin}/expired.html`,302);
+    if(!user)return Response.redirect(`${url.origin}/login?next=${encodeURIComponent(path+url.search)}`,302);
+    if(path!=='/expired'&&path!=='/expired.html'&&!(await hasActiveLicense(env,user)))return Response.redirect(`${url.origin}/expired`,302);
   }
   return env.ASSETS.fetch(request);
 }};

@@ -1,0 +1,20 @@
+OSC-ACADEMY · HOTFIX v4.0.0 RC1.1
+
+Base de origen
+- v4.0.0 RC1 Login SaaS.
+
+Correcciones
+- Ajusta PBKDF2 de 120.000 a 100.000 iteraciones, máximo admitido por Cloudflare Workers.
+- Evita el error Worker 1101 durante el alta inicial y el Login.
+- Reconoce las rutas públicas /login y /reset además de sus variantes .html.
+- Persiste Workers Logs en wrangler.jsonc para próximos despliegues.
+
+Datos
+- No modifica D1 ni requiere ejecutar nuevamente schema_v4.sql.
+- No elimina ni altera módulos del CORE.
+- El intento fallido anterior no creó usuarios.
+
+Instalación
+- Copiar src/index.js, wrangler.jsonc y estas notas en la raíz del repositorio, preservando la carpeta src.
+- Confirmar el commit y esperar el despliegue automático.
+- Repetir una sola vez POST /api/bootstrap con la BOOTSTRAP_KEY configurada.
