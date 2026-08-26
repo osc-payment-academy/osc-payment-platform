@@ -33,6 +33,31 @@ async function hasActiveLicense(env,user){
   return !!row;
 }
 
+async function productAccess(env,user,productId){
+  if(user.platform_role==='OSC_ADMIN')return {tenantId:'tenant_osc',role:'OSC_ADMIN'};
+  const ts=now();
+  const row=await env.DB.prepare(`SELECT l.tenant_id tenant_id,m.role role FROM licenses l
+    JOIN memberships m ON m.tenant_id=l.tenant_id AND m.user_id=? AND m.status='ACTIVE'
+    WHERE l.product_id=? AND l.status='ACTIVE' AND l.starts_at<=? AND (l.expires_at IS NULL OR l.expires_at>?)
+    ORDER BY l.expires_at DESC LIMIT 1`).bind(user.id,productId,ts,ts).first();
+  return row?{tenantId:row.tenant_id,role:row.role}:null;
+}
+
+const hasSensitiveAnalyticsKey=value=>{
+  const blocked=/(^|_)(pan|track1|track2|pin|pin_block|cvv|cvc|raw|trama|message_raw)($|_)/i;
+  const visit=node=>{
+    if(!node||typeof node!=='object')return false;
+    if(Array.isArray(node))return node.some(visit);
+    return Object.entries(node).some(([key,item])=>blocked.test(key)||visit(item));
+  };
+  return visit(value);
+};
+
+const validAnalyticsPayload=payload=>payload&&/^\d{4}-\d{2}-\d{2}$/.test(String(payload.fecha||''))&&
+  payload.resumen&&Array.isArray(payload.horas)&&payload.horas.length===24&&
+  Array.isArray(payload.intervalos_15_minutos)&&payload.intervalos_15_minutos.length===96&&
+  Array.isArray(payload.codigos)&&!hasSensitiveAnalyticsKey(payload);
+
 async function requireUser(request,env,roles){
   const user=await currentUser(request,env);
   if(!user)return {error:json({error:'AUTH_REQUIRED'},401)};
@@ -88,7 +113,40 @@ async function api(request,env,path){
     const cohorts=(await env.DB.prepare(`SELECT c.id,c.name,c.starts_at,c.expires_at,c.forum_status,co.name course_name
       FROM cohort_enrollments e JOIN cohorts c ON c.id=e.cohort_id JOIN courses co ON co.id=c.course_id
       WHERE e.user_id=? AND e.status='ACTIVE' ORDER BY c.starts_at DESC`).bind(auth.user.id).all()).results;
-    return json({user:auth.user,memberships,cohorts});
+    const analytics=await productAccess(env,auth.user,'product_authorization_analytics');
+    return json({user:auth.user,memberships,cohorts,entitlements:{authorizationAnalytics:!!analytics}});
+  }
+
+  if(path==='/api/authorization-analytics'&&request.method==='GET'){
+    const auth=await requireUser(request,env); if(auth.error)return auth.error;
+    const access=await productAccess(env,auth.user,'product_authorization_analytics');
+    if(!access)return json({error:'PRODUCT_LICENSE_REQUIRED'},403);
+    const requestedTenant=new URL(request.url).searchParams.get('tenantId');
+    const tenantId=auth.user.platform_role==='OSC_ADMIN'&&requestedTenant?requestedTenant:access.tenantId;
+    const rows=(await env.DB.prepare(`SELECT id,analysis_date,source_name,created_at,updated_at FROM authorization_analyses
+      WHERE tenant_id=? AND status='READY' ORDER BY analysis_date DESC`).bind(tenantId).all()).results;
+    if(!rows.length)return json({analyses:[],tenantId});
+    const requestedDate=new URL(request.url).searchParams.get('date');
+    const selected=requestedDate?rows.find(x=>x.analysis_date===requestedDate):rows[0];
+    if(!selected)return json({error:'ANALYSIS_NOT_FOUND'},404);
+    const stored=await env.DB.prepare('SELECT payload_json FROM authorization_analyses WHERE id=?').bind(selected.id).first();
+    return json({analyses:rows,tenantId,data:JSON.parse(stored.payload_json)});
+  }
+
+  if(path==='/api/admin/authorization-analytics'&&request.method==='POST'){
+    const auth=await requireUser(request,env,['OSC_ADMIN']); if(auth.error)return auth.error;
+    const b=await readBody(request),tenantId=String(b.tenantId||'tenant_osc'),payload=b.payload;
+    if(!validAnalyticsPayload(payload))return json({error:'INVALID_OR_UNSAFE_ANALYTICS_PAYLOAD'},400);
+    const tenant=await env.DB.prepare("SELECT id FROM tenants WHERE id=? AND status='ACTIVE'").bind(tenantId).first();
+    if(!tenant)return json({error:'TENANT_NOT_FOUND'},404);
+    const serialized=JSON.stringify(payload);
+    if(serialized.length>1500000)return json({error:'PAYLOAD_TOO_LARGE'},413);
+    const ts=now(),analysisId=id('ana');
+    await env.DB.prepare(`INSERT INTO authorization_analyses(id,tenant_id,analysis_date,source_name,payload_json,status,created_by,created_at,updated_at)
+      VALUES(?,?,?,?,?,'READY',?,?,?) ON CONFLICT(tenant_id,analysis_date) DO UPDATE SET source_name=excluded.source_name,payload_json=excluded.payload_json,status='READY',created_by=excluded.created_by,updated_at=excluded.updated_at`)
+      .bind(analysisId,tenantId,String(payload.fecha),String(payload.fuente||'TCPHandler'),serialized,auth.user.id,ts,ts).run();
+    await audit(env,auth.user.id,'UPSERT_AUTHORIZATION_ANALYSIS','TENANT',tenantId,{analysisDate:payload.fecha,source:payload.fuente||'TCPHandler'});
+    return json({ok:true,tenantId,analysisDate:payload.fecha});
   }
 
   if(path==='/api/auth/forgot'&&request.method==='POST'){
@@ -249,6 +307,7 @@ export default {async fetch(request,env){
   if(!publicPaths.has(path)&&!assetLike){
     const user=await currentUser(request,env);
     if(!user)return Response.redirect(`${url.origin}/login?next=${encodeURIComponent(path+url.search)}`,302);
+    if((path==='/authorization-analytics'||path==='/authorization-analytics.html')&&!(await productAccess(env,user,'product_authorization_analytics')))return Response.redirect(`${url.origin}/expired?product=authorization-analytics`,302);
     if(path!=='/expired'&&path!=='/expired.html'&&!(await hasActiveLicense(env,user)))return Response.redirect(`${url.origin}/expired`,302);
   }
   return env.ASSETS.fetch(request);

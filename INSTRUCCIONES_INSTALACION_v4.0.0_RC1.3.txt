@@ -1,0 +1,23 @@
+OSC PAYMENT PLATFORM — INSTALACIÓN INCREMENTAL v4.0.0 RC1.3
+
+1. Respaldar la versión publicada y la base D1.
+2. Desde la raíz del proyecto ejecutar la migración:
+   npx wrangler d1 execute osc-academy --remote --file=schema_v4_analytics.sql
+3. Publicar el Worker y los assets con el procedimiento habitual del proyecto.
+4. Iniciar sesión como OSC_ADMIN.
+5. Ir a "Authorization Analytics" y cargar TCPHandler_Dashboard.json.
+6. Para facturar a un cliente por separado:
+   - Panel OSC > Convertir alumnos en consultora.
+   - Seleccionar "OSC Authorization Analytics" como producto contratado.
+   - Definir usuarios, cupos y vencimiento.
+
+VALIDACIÓN POSTERIOR
+- Un OSC_ADMIN puede abrir el dashboard y cargar un JSON.
+- Un cliente con licencia Analytics puede abrirlo y consultar únicamente su tenant.
+- Un usuario sin esa licencia es redirigido a la pantalla de producto no habilitado.
+- El JSON debe tener 24 horas, 96 intervalos de 15 minutos y la colección de códigos DE39.
+
+ROLLBACK
+- Reponer el paquete anterior.
+- La tabla authorization_analyses puede permanecer sin afectar al CORE.
+- Para suspender el servicio sin borrar datos, cambiar la licencia correspondiente a INACTIVE.

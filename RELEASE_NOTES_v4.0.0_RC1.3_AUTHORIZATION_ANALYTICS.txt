@@ -1,0 +1,31 @@
+OSC PAYMENT PLATFORM — v4.0.0 RC1.3
+MÓDULO: OSC AUTHORIZATION ANALYTICS
+
+Alcance comercial
+- Producto profesional independiente de OSC Payment Academy.
+- Acceso controlado por licencia del producto product_authorization_analytics.
+- El menú puede mostrar la solución; el Worker valida la licencia antes de servir la página o los datos.
+
+Funciones
+- Carga administrativa del JSON agregado generado por el agente horario PowerShell.
+- Resumen ejecutivo, tasa de aprobación/rechazo, peor hora y peor intervalo de 15 minutos.
+- Ranking de DE39 con definición, categoría Visa y próxima acción sugerida.
+- Historial de análisis por tenant y fecha.
+- Separación explícita entre hallazgo estadístico e investigación de causa raíz.
+
+Seguridad
+- No se almacenan tramas crudas.
+- Se rechazan payloads con claves asociadas a PAN, Track, PIN/PIN Block, CVV/CVC o mensaje crudo.
+- Tamaño máximo del payload: 1.500.000 caracteres.
+- La carga requiere OSC_ADMIN; la consulta requiere una licencia vigente del producto.
+
+Referencia funcional
+- VisaNet Authorization-Only Online Messages — Technical Specifications.
+- Fecha del documento: 14 de abril de 2025.
+- Campo 39, tablas 44 y 45 (páginas impresas 246–252).
+- Los códigos 83 y 99 del caso analizado no se presentan como definiciones Visa estándar: se exige validar el contrato local del procesador.
+
+No incluye
+- Diagnóstico de deadlocks, timeouts o fallas de base de datos.
+- Acceso remoto a sistemas del cliente.
+- Certificación formal de Visa o del procesador.
