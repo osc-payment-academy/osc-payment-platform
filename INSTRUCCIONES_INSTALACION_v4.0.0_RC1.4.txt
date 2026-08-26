@@ -1,0 +1,19 @@
+OSC PAYMENT PLATFORM — INSTALACIÓN INCREMENTAL v4.0.0 RC1.4
+
+PLATAFORMA
+1. Respaldar la versión RC1.3.
+2. Copiar las carpetas public y los archivos package.json/package-lock.json sobre el proyecto actual.
+3. Publicar con el procedimiento habitual.
+4. Esta versión no requiere ejecutar SQL en Cloudflare D1.
+
+AGENTE
+1. Reemplazar 03-Analisis-Horario-TCPHandler.ps1 por la versión 1.2.
+2. Ejecutarlo de la misma forma que en el análisis anterior, sin -Reprocesar.
+3. Los checkpoints válidos se reutilizan, por lo que la ejecución debería concentrarse en la consolidación.
+4. Cargar nuevamente TCPHandler_Dashboard.json desde Administración OSC.
+5. La fecha 2026-04-08 ya existente se actualizará; no se creará un registro duplicado.
+
+CONTROL
+- El JSON debe informar version 1.1.
+- Debe contener codigos_por_hora y codigos_por_intervalo_15_minutos.
+- El dashboard debe permitir seleccionar cualquiera de los 13 códigos observados.

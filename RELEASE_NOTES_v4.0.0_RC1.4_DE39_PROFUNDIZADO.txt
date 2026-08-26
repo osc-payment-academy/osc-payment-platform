@@ -1,0 +1,24 @@
+OSC PAYMENT PLATFORM — v4.0.0 RC1.4
+OSC AUTHORIZATION ANALYTICS — PROFUNDIZACIÓN DE39
+
+NUEVAS FUNCIONES
+- Selector individual de códigos DE39.
+- Evolución de cada código por hora.
+- Diez intervalos de 15 minutos con mayor cantidad para el código seleccionado.
+- Cantidad diaria, participación sobre rechazos, hora pico e intervalo crítico.
+- Clasificación orientativa: negocio, datos, técnico, cumplimiento o contrato local.
+- Detección de concentración horaria frente al peso diario del código.
+- Interpretación y próxima acción según la naturaleza del rechazo.
+- Corrección visual de los separadores en las tarjetas superiores.
+
+AGENTE HORARIO 1.2
+- El JSON pasa a versión 1.1.
+- Agrega codigos_por_hora.
+- Agrega codigos_por_intervalo_15_minutos.
+- Genera TCPHandler_Codigos_Cada_15_Minutos.csv.
+- Reutiliza los checkpoints existentes; no necesita volver a leer las partes ya validadas.
+
+COMPATIBILIDAD
+- El dashboard sigue mostrando los JSON 1.0 ya cargados.
+- Para ver la profundización completa debe regenerarse y publicarse el JSON 1.1.
+- No requiere una nueva migración D1.
