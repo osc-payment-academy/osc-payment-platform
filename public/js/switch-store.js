@@ -1,7 +1,7 @@
 (function(){
   const KEY='oscAcademyAcquirerWorkspaceV1';
   const now=()=>new Date().toISOString();
-  const initial=()=>({version:2,createdAt:now(),updatedAt:now(),retention:{active:'indefinite',expiredDays:90},transactions:[],batches:[],artifacts:[],events:[],atmMessages:[],lastAtmReconciliation:null,constructorPractices:[]});
+  const initial=()=>({version:3,ownerUserId:null,ownerTenantId:null,createdAt:now(),updatedAt:now(),retention:{active:'indefinite',expiredDays:90},transactions:[],batches:[],artifacts:[],events:[],atmMessages:[],lastAtmReconciliation:null,constructorPractices:[]});
   function read(){try{return {...initial(),...JSON.parse(localStorage.getItem(KEY)||'{}')}}catch(e){return initial()}}
   let syncTimer=null,syncInFlight=Promise.resolve(),hydrated=false;
   function pushRemote(db){
@@ -22,11 +22,15 @@
       const response=await fetch('/api/workspace/payment',{headers:{accept:'application/json'}});
       if(!response.ok)throw new Error(`Workspace D1: ${response.status}`);
       const result=await response.json();
+      const owner={ownerUserId:result.workspace?.userId||null,ownerTenantId:result.workspace?.tenantId||null};
       if(result.data&&typeof result.data==='object'){
-        const remote={...initial(),...result.data,version:2};
+        const remote={...initial(),...result.data,...owner,version:3};
         localStorage.setItem(KEY,JSON.stringify(remote));
-      }else if((local.transactions||[]).length||(local.batches||[]).length||(local.artifacts||[]).length||(local.atmMessages||[]).length){
-        hydrated=true;pushRemote({...local,version:2});
+      }else{
+        const sameOwner=local.ownerUserId===owner.ownerUserId&&local.ownerTenantId===owner.ownerTenantId;
+        const next=sameOwner?{...initial(),...local,...owner,version:3}:{...initial(),...owner,version:3};
+        localStorage.setItem(KEY,JSON.stringify(next));
+        hydrated=true;pushRemote(next);
       }
     }catch(error){
       console.warn('D1 no disponible; se mantiene la copia local temporal',error);

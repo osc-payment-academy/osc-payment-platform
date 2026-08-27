@@ -12,6 +12,7 @@
     {href:'parser.html',icon:'◉',label:'Parser ISO8583'},
     {href:'documentacion.html',icon:'📚',label:'Documentación Técnica'},
     {href:'research.html',icon:'🧪',label:'Investigación'},
+    {href:'account.html',icon:'🔐',label:'Mi cuenta'},
     {href:'mastercard_iso.html',icon:'◉',label:'Mastercard ISO',visible:false},
     {href:'cuenta_cliente.html',icon:'💳',label:'Cuenta del Cliente',visible:false},
     {href:'ondemand_lab.html',icon:'🧩',label:'Laboratorio de Nuevas Funcionalidades',visible:false},

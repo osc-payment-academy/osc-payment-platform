@@ -63,7 +63,7 @@ async function paymentWorkspace(env,user){
 
 const validWorkspacePayload=payload=>{
   if(!payload||typeof payload!=='object'||Array.isArray(payload))return false;
-  const allowed=['version','studentId','createdAt','updatedAt','retention','transactions','batches','artifacts','events','atmMessages','lastAtmReconciliation','constructorPractices'];
+  const allowed=['version','studentId','ownerUserId','ownerTenantId','createdAt','updatedAt','retention','transactions','batches','artifacts','events','atmMessages','lastAtmReconciliation','constructorPractices'];
   if(Object.keys(payload).some(key=>!allowed.includes(key)))return false;
   return ['transactions','batches','artifacts','events','atmMessages','constructorPractices'].every(key=>payload[key]===undefined||Array.isArray(payload[key]));
 };
@@ -131,6 +131,21 @@ async function api(request,env,path){
     return json({ok:true},200,{'set-cookie':sessionCookie('',0)});
   }
 
+  if(path==='/api/auth/change-password'&&request.method==='POST'){
+    const auth=await requireUser(request,env); if(auth.error)return auth.error;
+    const body=await readBody(request),currentPassword=String(body.currentPassword||''),newPassword=String(body.newPassword||'');
+    if(newPassword.length<10)return json({error:'WEAK_PASSWORD'},400);
+    const user=await env.DB.prepare('SELECT password_hash,password_salt FROM users WHERE id=?').bind(auth.user.id).first();
+    if(!user||await passwordHash(currentPassword,user.password_salt)!==user.password_hash)return json({error:'INVALID_CURRENT_PASSWORD'},400);
+    const salt=randomToken(),hash=await passwordHash(newPassword,salt),ts=now(),currentToken=cookie(request).osc_session,currentHash=currentToken?await sha256(currentToken):'';
+    await env.DB.batch([
+      env.DB.prepare('UPDATE users SET password_hash=?,password_salt=?,updated_at=? WHERE id=?').bind(hash,salt,ts,auth.user.id),
+      env.DB.prepare('DELETE FROM sessions WHERE user_id=? AND token_hash<>?').bind(auth.user.id,currentHash)
+    ]);
+    await audit(env,auth.user.id,'CHANGE_PASSWORD','USER',auth.user.id);
+    return json({ok:true});
+  }
+
   if(path==='/api/auth/me'&&request.method==='GET'){
     const auth=await requireUser(request,env); if(auth.error)return auth.error;
     const memberships=(await env.DB.prepare(`SELECT m.role,m.status,t.id tenant_id,t.name tenant_name,t.tenant_type
@@ -154,6 +169,7 @@ async function api(request,env,path){
     if(request.method==='PUT'){
       const body=await readBody(request),payload=body.data;
       if(!validWorkspacePayload(payload))return json({error:'INVALID_WORKSPACE_PAYLOAD'},400);
+      if(payload.ownerUserId!==auth.user.id||payload.ownerTenantId!==workspace.tenant_id)return json({error:'WORKSPACE_OWNER_MISMATCH'},403);
       const serialized=JSON.stringify(payload);
       if(serialized.length>2500000)return json({error:'WORKSPACE_TOO_LARGE'},413);
       const ts=now();

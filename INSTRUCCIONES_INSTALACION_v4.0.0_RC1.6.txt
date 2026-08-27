@@ -1,0 +1,18 @@
+INSTALACIÓN v4.0.0 RC1.6
+
+1. Copiar el incremental sobre la plataforma y aceptar reemplazar.
+2. Subir todos los archivos y carpetas del incremental al repositorio.
+3. Confirmar el commit en main.
+4. Esperar la implementación automática en Cloudflare.
+
+No ejecutar SQL: utiliza la tabla workspace_data creada para RC1.5.
+
+LIMPIEZA DE LA CUENTA DE PRUEBA
+1. Ingresar como el alumno de prueba.
+2. Abrir Switch del Adquiriente.
+3. Presionar Reiniciar laboratorio y confirmar.
+4. Volver al POS: el historial debe quedar vacío.
+5. Crear una compra nueva como alumno.
+6. Ingresar en incógnito con el mismo alumno y comprobar persistencia.
+7. Ingresar como administrador y comprobar que conserva únicamente su workspace.
+
