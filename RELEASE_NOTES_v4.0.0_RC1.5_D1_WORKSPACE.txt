@@ -1,0 +1,31 @@
+OSC PAYMENT ACADEMY v4.0.0 RC1.5
+PERSISTENCIA D1 DEL WORKSPACE PERSONAL
+
+Objetivo
+--------
+Persistir el historial operativo del alumno en Cloudflare D1 y aislarlo por
+usuario, tenant y producto.
+
+Incluye
+-------
+- Historial POS y mensajes 0200/0210.
+- Operaciones ATM y sus mensajes.
+- Lotes, conciliaciones y artefactos del Switch Adquiriente.
+- Prácticas del Constructor al validar o abrir una trama en el Parser.
+- Recuperación del workspace al volver a ingresar o cambiar de navegador.
+- Migración automática de la copia local existente cuando D1 aún está vacío.
+- Copia local temporal para tolerar una interrupción breve de red.
+
+Seguridad y aislamiento
+-----------------------
+- La API obtiene user_id desde la sesión autenticada; no lo acepta del navegador.
+- El tenant se obtiene desde la licencia activa del producto.
+- Cada lectura y escritura exige workspace_id + tenant_id + user_id.
+- Un alumno no puede consultar ni modificar el workspace de otro alumno.
+
+Requisito de instalación
+------------------------
+Antes de publicar el Worker, ejecutar una sola vez:
+
+  npx wrangler d1 execute osc-academy --remote --file=schema_v4_workspace_persistence.sql
+

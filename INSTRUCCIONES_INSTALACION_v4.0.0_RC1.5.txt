@@ -1,0 +1,33 @@
+INSTALACIÓN v4.0.0 RC1.5
+
+1. Copiar el incremental sobre la plataforma y aceptar reemplazar archivos.
+
+2. Abrir la terminal en la carpeta de la plataforma.
+
+3. Crear la tabla de persistencia D1 ejecutando una sola vez:
+
+   npx wrangler d1 execute osc-academy --remote --file=schema_v4_workspace_persistence.sql
+
+   El resultado debe indicar que los comandos se ejecutaron correctamente.
+
+4. Publicar la plataforma con el procedimiento habitual:
+
+   npx wrangler deploy
+
+5. Prueba mínima obligatoria:
+
+   a) Ingresar con una cuenta de prueba.
+   b) Generar una compra POS y su respuesta.
+   c) Cerrar sesión.
+   d) Abrir una ventana privada o un segundo navegador.
+   e) Ingresar con la misma cuenta y confirmar que aparece el historial.
+   f) Ingresar con otra cuenta y confirmar que NO aparece la transacción anterior.
+   g) En Constructor, validar una trama y abrirla en el Parser.
+
+IMPORTANTE
+----------
+- No ejecutar nuevamente schema_v4.sql completo: para esta versión basta el
+  archivo schema_v4_workspace_persistence.sql.
+- La creación usa IF NOT EXISTS y puede repetirse sin borrar información.
+- El botón "Reiniciar laboratorio" elimina el workspace personal también en D1.
+

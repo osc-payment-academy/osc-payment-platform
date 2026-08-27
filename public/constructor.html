@@ -273,6 +273,7 @@ select:focus,input:focus,textarea:focus{border-color:#2f83ff;box-shadow:0 0 0 2p
   </main>
 </div>
 
+<script src="js/switch-store.js?v=4.0.0-rc1.5"></script>
 <script src="js/network-profiles.js"></script>
 <script src="js/help-catalog.js"></script>
 <script>
@@ -764,10 +765,13 @@ ${annotated()}
 TRAMA COMO VIAJA EN EL MENSAJE
 (SIN PIPE, SIN NÚMERO DE CAMPO Y SIN SIGNO IGUAL)
 ${raw()}`,e.target));
-  document.getElementById('openParser').addEventListener('click',()=>{
+  document.getElementById('openParser').addEventListener('click',async()=>{
     const requestPayload={source:'Constructor ISO8583 · Solicitud',mti:state.mti,annotated:annotated(),raw:raw(),network:resolvedRejectNetwork()};
     const selected=state.rejectActive&&state.rejectParserSelection==='response'&&state.rejectResponsePayload?state.rejectResponsePayload:requestPayload;
+    await window.OSCSwitchStore?.ready;
+    window.OSCSwitchStore?.addConstructorPractice?.({mode:state.rejectActive?'reject':'constructor',network:selected.network||resolvedRejectNetwork(),mti:selected.mti||state.mti,bitmap:bitmapHex(),annotated:selected.annotated||annotated(),raw:selected.raw||raw(),valid:!validate().some(item=>item.type==='error')});
     localStorage.setItem('oscAcademyParserPayload',JSON.stringify({...selected,createdAt:new Date().toISOString()}));
+    await window.OSCSwitchStore?.flush?.();
     location.href='parser.html';
   });
   document.getElementById('loadExample').addEventListener('click',()=>loadPreset('purchase'));
@@ -863,12 +867,12 @@ ${raw()}`,e.target));
   }
   function renderMonitor(){const bm=bitmapHex();$('liveMti').textContent=state.mti;$('liveBitmap').textContent=bm;$('liveCount').textContent=[...state.selected].filter(x=>x!==1).length;$('liveAnnotated').textContent=annotated();$('liveRaw').textContent=raw();const des=[...state.selected].filter(x=>x!==1).sort((a,b)=>a-b);$('liveFields').innerHTML=des.length?des.map(de=>`<div class="monitor-field" data-de="${de}"><b>DE${de}</b><span>${def(de).name}</span><code>${String(state.values[de]??'')}</code></div>`).join(''):'<div style="color:#73889b;font-size:.58rem">Sin campos seleccionados.</div>';document.querySelectorAll('.monitor-field').forEach(r=>r.onclick=()=>{state.focused=Number(r.dataset.de);renderBits();showField(state.focused)});$('studySelectionBadge').textContent=`${des.length} campo${des.length===1?'':'s'}`}
   const requirements={0100:[2,3,4,7,11,22,41,42,49],0110:[3,7,11,38,39,41],0200:[2,3,4,7,11,22,41,42,49],0210:[3,7,11,38,39,41],0220:[2,3,4,7,11,41,49],0230:[3,7,11,39],0400:[2,3,4,7,11,37,41,90],0410:[3,7,11,39,90],0420:[2,3,4,7,11,37,41,90],0430:[3,7,11,39,90],0800:[7,11,70],0810:[7,11,39,70]};
-  function validate(){const req=requirements[Number(state.mti)]||requirements[state.mti]||[];const missing=req.filter(de=>!state.selected.has(de));const st=$('studyStatus');if(!missing.length){st.className='status-box ok';st.textContent='🟢 Mensaje consistente para el perfil didáctico seleccionado.'}else{st.className='status-box error';st.textContent=`🔴 Validación: faltan ${missing.map(x=>'DE'+x).join(', ')}. La ayuda aparece únicamente después de validar.`}}
+  function validate(){const req=requirements[Number(state.mti)]||requirements[state.mti]||[];const missing=req.filter(de=>!state.selected.has(de));const st=$('studyStatus');if(!missing.length){st.className='status-box ok';st.textContent='🟢 Mensaje consistente para el perfil didáctico seleccionado.'}else{st.className='status-box error';st.textContent=`🔴 Validación: faltan ${missing.map(x=>'DE'+x).join(', ')}. La ayuda aparece únicamente después de validar.`}window.OSCSwitchStore?.ready?.then(()=>window.OSCSwitchStore?.addConstructorPractice?.({mode:'study',network:studyManualNetwork()||'auto',mti:state.mti,bitmap:bitmapHex(),annotated:annotated(),raw:raw(),valid:!missing.length,missing}))}
   function renderAll(){renderBits();renderMonitor();if(state.focused&&state.focused!==1&&state.selected.has(state.focused))showField(state.focused);else if(!state.focused||state.focused===1){$('studyEmpty').classList.remove('hidden');$('studyDetail').classList.add('hidden')}}
   function clearAll(){state.selected.clear();state.values={};state.focused=null;$('studyStatus').className='status-box';$('studyStatus').textContent='🟡 En construcción. Seleccioná campos y luego validá.';renderAll()}
   function openStudy(){builder.classList.add('hidden');study.classList.remove('hidden');state.mti=$('studyMti').value;clearAll();document.querySelectorAll('#presetGrid button').forEach(x=>x.classList.remove('active'));$('studyModeBtn').classList.add('active')}
   function exitStudy(){study.classList.add('hidden');builder.classList.remove('hidden');$('studyModeBtn').classList.remove('active');window.scrollTo({top:0,behavior:'smooth'})}
-  $('studyModeBtn').addEventListener('click',openStudy);$('exitStudyTop').onclick=exitStudy;$('studyMti').onchange=()=>{state.mti=$('studyMti').value;clearAll()};$('removeStudyField').onclick=()=>{if(state.focused&&state.focused!==1){state.selected.delete(state.focused);delete state.values[state.focused];state.focused=null;renderAll()}};$('validateStudy').onclick=validate;$('validateStudySide').onclick=validate;$('clearStudyMessage').onclick=clearAll;$('copyStudyMessage').onclick=()=>navigator.clipboard.writeText(raw());$('openStudyParser').onclick=()=>{localStorage.setItem('osc_iso_message',raw());location.href='parser.html'};
+  $('studyModeBtn').addEventListener('click',openStudy);$('exitStudyTop').onclick=exitStudy;$('studyMti').onchange=()=>{state.mti=$('studyMti').value;clearAll()};$('removeStudyField').onclick=()=>{if(state.focused&&state.focused!==1){state.selected.delete(state.focused);delete state.values[state.focused];state.focused=null;renderAll()}};$('validateStudy').onclick=validate;$('validateStudySide').onclick=validate;$('clearStudyMessage').onclick=clearAll;$('copyStudyMessage').onclick=()=>navigator.clipboard.writeText(raw());$('openStudyParser').onclick=async()=>{const missing=(requirements[Number(state.mti)]||requirements[state.mti]||[]).filter(de=>!state.selected.has(de));await window.OSCSwitchStore?.ready;window.OSCSwitchStore?.addConstructorPractice?.({mode:'study',network:studyManualNetwork()||'auto',mti:state.mti,bitmap:bitmapHex(),annotated:annotated(),raw:raw(),valid:!missing.length,missing});localStorage.setItem('osc_iso_message',raw());await window.OSCSwitchStore?.flush?.();location.href='parser.html'};
 })();
 </script>
 <script src="js/permissions.js"></script>

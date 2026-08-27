@@ -660,7 +660,7 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
 </div>
 
 <script src="js/network-profiles.js"></script>
-<script src="js/switch-store.js?v=3.3.4.1"></script>
+<script src="js/switch-store.js?v=4.0.0-rc1.5"></script>
 <script>
 (() => {
   const $ = id => document.getElementById(id);
@@ -695,7 +695,9 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
   const ATM_HISTORY_KEY='oscAcademyAtmMessageHistoryV1';
 
   function saveAtmHistory(){
-    try{localStorage.setItem(ATM_HISTORY_KEY,JSON.stringify(state.messages.slice(0,120)))}catch(e){console.warn('No se pudo guardar historial ATM',e)}
+    const messages=state.messages.slice(0,120);
+    try{localStorage.setItem(ATM_HISTORY_KEY,JSON.stringify(messages))}catch(e){console.warn('No se pudo guardar historial ATM',e)}
+    if(window.OSCSwitchStore?.setAtmMessages)window.OSCSwitchStore.setAtmMessages(messages);
   }
 
   function historyRow(message){
@@ -716,6 +718,8 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
       const saved=JSON.parse(localStorage.getItem(ATM_HISTORY_KEY)||'[]');
       if(Array.isArray(saved)) localMessages=saved;
     }catch(e){localMessages=[]}
+    const remoteMessages=window.OSCSwitchStore?.read?.().atmMessages;
+    if(Array.isArray(remoteMessages)&&remoteMessages.length)localMessages=remoteMessages;
 
     const restoredFromStore=[];
     try{
@@ -1490,7 +1494,9 @@ nav{display:grid;gap:5px}.nav{padding:10px;border-radius:8px;color:#dce7f1;font-
     }
 
     const rec=window.OSCSwitchStore.reconcileATM({atmId:'ATM00001',requestMti:nonAmex.length?'0520':'AMEX-FAS-RECON',responseMti:nonAmex.length?'0530':'AMEX-FAS-RECON'});
-    localStorage.setItem('oscAcademyLastAtmReconciliation',JSON.stringify({at:at.toISOString(),summary:s,reconciliation:rec}));
+    const reconciliationData={at:at.toISOString(),summary:s,reconciliation:rec};
+    localStorage.setItem('oscAcademyLastAtmReconciliation',JSON.stringify(reconciliationData));
+    window.OSCSwitchStore?.setLastAtmReconciliation?.(reconciliationData);
 
     if(amex.length){
       addTechEvent(`AMEX FAS Recon · ${rec.amexCount||0} operación(es) conciliada(s) contra archivo de red`,'done');
@@ -1697,7 +1703,7 @@ ${raw(m)}`;
   renderCassettes();
   setCaptureMode('chip');
   reset();
-  restoreAtmHistory();
+  (window.OSCSwitchStore?.ready||Promise.resolve()).then(()=>restoreAtmHistory());
 
   window.addEventListener('osc-switch-updated',()=>{
     // Shared workspace changed: keep ATM history synchronized without wiping the active operation.

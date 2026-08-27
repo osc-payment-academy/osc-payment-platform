@@ -1494,7 +1494,8 @@ ${rawMessage(msg)}`;
     $('sessionTime').textContent=[Math.floor(e/3600),Math.floor((e%3600)/60),e%60].map(v=>String(v).padStart(2,'0')).join(':');
   },1000);
 
-  applyTerminalModel('ingenico');restoreWorkspaceHistory();reset();clearTechnicalMessagePanel();
+  applyTerminalModel('ingenico');reset();clearTechnicalMessagePanel();
+  (window.OSCSwitchStore?.ready||Promise.resolve()).then(()=>restoreWorkspaceHistory());
   function refreshNetworkProfile(){
     if(!window.OSCNetworks) return;
     syncPaymentProfile();

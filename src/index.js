@@ -43,6 +43,31 @@ async function productAccess(env,user,productId){
   return row?{tenantId:row.tenant_id,role:row.role}:null;
 }
 
+async function paymentWorkspace(env,user){
+  const productId='product_payment';
+  const access=await productAccess(env,user,productId);
+  if(!access)return null;
+  let workspace=await env.DB.prepare(`SELECT id,tenant_id,user_id,product_id,status,updated_at FROM workspaces_v4
+    WHERE user_id=? AND product_id=? AND tenant_id=? AND status='ACTIVE' LIMIT 1`)
+    .bind(user.id,productId,access.tenantId).first();
+  if(!workspace){
+    const ts=now(),workspaceId=id('ws');
+    await env.DB.prepare(`INSERT INTO workspaces_v4(id,user_id,product_id,tenant_id,status,created_at,updated_at)
+      VALUES(?,?,?,?,'ACTIVE',?,?) ON CONFLICT(user_id,product_id) DO UPDATE SET tenant_id=excluded.tenant_id,status='ACTIVE',updated_at=excluded.updated_at`)
+      .bind(workspaceId,user.id,productId,access.tenantId,ts,ts).run();
+    workspace=await env.DB.prepare(`SELECT id,tenant_id,user_id,product_id,status,updated_at FROM workspaces_v4
+      WHERE user_id=? AND product_id=? LIMIT 1`).bind(user.id,productId).first();
+  }
+  return workspace;
+}
+
+const validWorkspacePayload=payload=>{
+  if(!payload||typeof payload!=='object'||Array.isArray(payload))return false;
+  const allowed=['version','studentId','createdAt','updatedAt','retention','transactions','batches','artifacts','events','atmMessages','lastAtmReconciliation','constructorPractices'];
+  if(Object.keys(payload).some(key=>!allowed.includes(key)))return false;
+  return ['transactions','batches','artifacts','events','atmMessages','constructorPractices'].every(key=>payload[key]===undefined||Array.isArray(payload[key]));
+};
+
 const hasSensitiveAnalyticsKey=value=>{
   const blocked=/(^|_)(pan|track1|track2|pin|pin_block|cvv|cvc|raw|trama|message_raw)($|_)/i;
   const visit=node=>{
@@ -115,6 +140,31 @@ async function api(request,env,path){
       WHERE e.user_id=? AND e.status='ACTIVE' ORDER BY c.starts_at DESC`).bind(auth.user.id).all()).results;
     const analytics=await productAccess(env,auth.user,'product_authorization_analytics');
     return json({user:auth.user,memberships,cohorts,entitlements:{authorizationAnalytics:!!analytics}});
+  }
+
+  if(path==='/api/workspace/payment'){
+    const auth=await requireUser(request,env); if(auth.error)return auth.error;
+    const workspace=await paymentWorkspace(env,auth.user);
+    if(!workspace)return json({error:'PRODUCT_LICENSE_REQUIRED'},403);
+    if(request.method==='GET'){
+      const stored=await env.DB.prepare('SELECT payload_json,revision,updated_at FROM workspace_data WHERE workspace_id=? AND tenant_id=? AND user_id=?')
+        .bind(workspace.id,workspace.tenant_id,auth.user.id).first();
+      return json({workspace:{id:workspace.id,tenantId:workspace.tenant_id,userId:auth.user.id,productId:workspace.product_id},data:stored?JSON.parse(stored.payload_json):null,revision:Number(stored?.revision||0),updatedAt:stored?.updated_at||null});
+    }
+    if(request.method==='PUT'){
+      const body=await readBody(request),payload=body.data;
+      if(!validWorkspacePayload(payload))return json({error:'INVALID_WORKSPACE_PAYLOAD'},400);
+      const serialized=JSON.stringify(payload);
+      if(serialized.length>2500000)return json({error:'WORKSPACE_TOO_LARGE'},413);
+      const ts=now();
+      await env.DB.batch([
+        env.DB.prepare(`INSERT INTO workspace_data(workspace_id,tenant_id,user_id,product_id,payload_json,revision,created_at,updated_at)
+          VALUES(?,?,?,?,?,1,?,?) ON CONFLICT(workspace_id) DO UPDATE SET tenant_id=excluded.tenant_id,user_id=excluded.user_id,product_id=excluded.product_id,payload_json=excluded.payload_json,revision=workspace_data.revision+1,updated_at=excluded.updated_at`)
+          .bind(workspace.id,workspace.tenant_id,auth.user.id,workspace.product_id,serialized,ts,ts),
+        env.DB.prepare('UPDATE workspaces_v4 SET updated_at=? WHERE id=? AND user_id=? AND tenant_id=?').bind(ts,workspace.id,auth.user.id,workspace.tenant_id)
+      ]);
+      return json({ok:true,workspaceId:workspace.id,updatedAt:ts});
+    }
   }
 
   if(path==='/api/authorization-analytics'&&request.method==='GET'){
