@@ -1,1 +1,204 @@
-<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>OSC Authorization Analytics</title><link rel="icon" type="image/svg+xml" href="/favicon.svg"><link rel="stylesheet" href="css/authorization-analytics.css"></head><body><main class="shell"><header class="top"><div><div class="brand"><span>OSC</span> AUTHORIZATION ANALYTICS</div><h1>Resumen ejecutivo de autorizaciones</h1><p class="muted">Producto profesional independiente de OSC Payment Academy.</p></div><div class="row"><label>Fecha analizada<select id="analysisDate"><option>Cargando…</option></select></label><a class="btn" href="index.html">← Plataforma</a></div></header><section id="adminPanel" class="panel admin"><p class="eyebrow">ADMINISTRACIÓN OSC</p><h2>Cargar resultado del agente horario</h2><form id="uploadForm" class="upload"><div><label>Tenant</label><input id="tenantId" value="tenant_osc" required></div><div><label>JSON agregado y anonimizado</label><input id="jsonFile" type="file" accept="application/json,.json" required></div><button class="btn primary">Publicar análisis</button></form><p id="uploadMessage" class="message"></p><p class="sensitive">Solo se aceptan agregados: 24 horas, 96 intervalos y códigos DE39. No cargar tramas, PAN, Track, PIN/PIN Block ni CVV/CVC.</p></section><p id="empty" class="muted"></p><div id="dashboard" hidden><section class="metrics"><article class="metric"><span>FECHA</span><strong id="date">—</strong></article><article class="metric"><span>FINANCIERAS</span><strong id="total">—</strong></article><article class="metric"><span>APROBACIÓN</span><strong id="approved" class="good">—</strong></article><article class="metric"><span>RECHAZADAS · TASA</span><strong><span id="rejected">—</span> · <span id="rejectRate" class="bad">—</span></strong></article><article class="metric"><span>PEOR HORA</span><strong><span id="worst">—</span> · <span id="worstRate" class="warn">—</span></strong></article></section><section class="layout"><article class="panel"><div class="row"><div><p class="eyebrow">TENDENCIA HORARIA</p><h2>Tasa de rechazo por hora</h2></div><div class="legend"><span><i class="dot" style="background:#ff6670"></i>% rechazadas</span></div></div><div id="hourChart" class="chart" aria-label="Gráfico de tasa de rechazo por hora"></div><div class="axis"><span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span>23:00</span></div></article><article class="panel"><p class="eyebrow">PRIORIZACIÓN</p><h2>Hallazgos ejecutivos</h2><div id="findings"></div></article></section><section class="panel"><p class="eyebrow">CAMPO 39 · VISA</p><h2>Motivos ordenados por impacto</h2><p class="muted">Definiciones contrastadas con VisaNet Authorization-Only Online Messages, 14 abril 2025, Field 39, tablas 44–45. Los códigos no definidos allí se marcan para validación contractual local.</p><div class="table-wrap"><table><thead><tr><th>#</th><th>DE39</th><th>Definición</th><th>Cantidad</th><th>% rechazos</th><th>Categoría</th><th>Próxima acción</th></tr></thead><tbody id="codes"></tbody></table></div></section><section class="panel de39-deep"><div class="row"><div><p class="eyebrow">PROFUNDIZACIÓN DE39</p><h2>Comportamiento del código seleccionado</h2></div><label>Código de respuesta<select id="codeSelect"></select></label></div><section class="code-metrics"><article><span>CANTIDAD DEL DÍA</span><strong id="codeTotal">—</strong></article><article><span>% DE RECHAZOS</span><strong id="codeShare">—</strong></article><article><span>HORA DE MAYOR IMPACTO</span><strong id="codePeakHour">—</strong></article><article><span>INTERVALO CRÍTICO</span><strong id="codePeakSlot">—</strong></article></section><section class="layout code-layout"><article><h3>Evolución por hora</h3><div id="codeChart" class="code-chart"></div><div class="axis"><span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span>23:00</span></div></article><article><h3>Lectura del comportamiento</h3><div id="codeInsights"></div></article></section><h3>Intervalos de 15 minutos con mayor cantidad</h3><div class="table-wrap"><table><thead><tr><th>Intervalo</th><th>Cantidad</th><th>Total rechazos</th><th>Participación del código</th><th>Tasa general</th></tr></thead><tbody id="codeSlots"></tbody></table></div></section><section class="panel"><p class="eyebrow">ALCANCE DEL SERVICIO</p><h2>Del indicador a la causa raíz</h2><p class="muted">Este dashboard identifica concentración, horario y prioridad. Un diagnóstico causal requiere acceso controlado o logs correlacionables del switch, aplicación y base de datos (Sybase/Oracle), incluyendo timeouts, bloqueos, deadlocks y errores de conectividad. Las conclusiones deben preservar PCI DSS y no exponer datos sensibles.</p></section></div></main><script src="js/authorization-analytics.js"></script></body></html>
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>OSC Authorization Analytics</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="stylesheet" href="css/authorization-analytics.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <header class="top">
+        <div>
+          <div class="brand"><span>OSC</span> AUTHORIZATION ANALYTICS</div>
+          <h1>Resumen ejecutivo de autorizaciones</h1>
+          <p class="muted">
+            Producto profesional independiente de OSC Payment Academy.
+          </p>
+        </div>
+        <div class="row">
+          <label
+            >Fecha analizada<select id="analysisDate">
+              <option>Cargando…</option>
+            </select></label
+          ><a class="btn" href="index.html">← Plataforma</a>
+        </div>
+      </header>
+      <section id="adminPanel" class="panel admin">
+        <p class="eyebrow">ADMINISTRACIÓN OSC</p>
+        <h2>Cargar resultado del agente horario</h2>
+        <form id="uploadForm" class="upload">
+          <div>
+            <label>Tenant</label
+            ><input id="tenantId" value="tenant_osc" required />
+          </div>
+          <div>
+            <label>JSON agregado y anonimizado</label
+            ><input
+              id="jsonFile"
+              type="file"
+              accept="application/json,.json"
+              required
+            />
+          </div>
+          <button class="btn primary">Publicar análisis</button>
+        </form>
+        <p id="uploadMessage" class="message"></p>
+        <p class="sensitive">
+          Solo se aceptan agregados: 24 horas, 96 intervalos y códigos DE39. No
+          cargar tramas, PAN, Track, PIN/PIN Block ni CVV/CVC.
+        </p>
+      </section>
+      <p id="empty" class="muted"></p>
+      <div id="dashboard" hidden>
+        <section class="metrics">
+          <article class="metric">
+            <span>FECHA</span><strong id="date">—</strong>
+          </article>
+          <article class="metric">
+            <span>FINANCIERAS</span><strong id="total">—</strong>
+          </article>
+          <article class="metric">
+            <span>APROBACIÓN</span><strong id="approved" class="good">—</strong>
+          </article>
+          <article class="metric">
+            <span>RECHAZADAS · TASA</span
+            ><strong
+              ><span id="rejected">—</span> ·
+              <span id="rejectRate" class="bad">—</span></strong
+            >
+          </article>
+          <article class="metric">
+            <span>PEOR HORA</span
+            ><strong
+              ><span id="worst">—</span> ·
+              <span id="worstRate" class="warn">—</span></strong
+            >
+          </article>
+        </section>
+        <section class="layout">
+          <article class="panel">
+            <div class="row">
+              <div>
+                <p class="eyebrow">TENDENCIA HORARIA</p>
+                <h2>Tasa de rechazo por hora</h2>
+              </div>
+              <div class="legend">
+                <span
+                  ><i class="dot" style="background: #ff6670"></i>%
+                  rechazadas</span
+                >
+              </div>
+            </div>
+            <div
+              id="hourChart"
+              class="chart"
+              aria-label="Gráfico de tasa de rechazo por hora"
+            ></div>
+            <div class="axis">
+              <span>00:00</span><span>06:00</span><span>12:00</span
+              ><span>18:00</span><span>23:00</span>
+            </div>
+          </article>
+          <article class="panel">
+            <p class="eyebrow">PRIORIZACIÓN</p>
+            <h2>Hallazgos ejecutivos</h2>
+            <div id="findings"></div>
+          </article>
+        </section>
+        <section class="panel">
+          <p class="eyebrow">CAMPO 39 · VISA</p>
+          <h2>Motivos ordenados por impacto</h2>
+          <p class="muted">
+            Definiciones contrastadas con VisaNet Authorization-Only Online
+            Messages, 14 abril 2025, Field 39, tablas 44–45. Los códigos no
+            definidos allí se marcan para validación contractual local.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>DE39</th>
+                  <th>Definición</th>
+                  <th>Cantidad</th>
+                  <th>% rechazos</th>
+                  <th>Categoría</th>
+                  <th>Próxima acción</th>
+                </tr>
+              </thead>
+              <tbody id="codes"></tbody>
+            </table>
+          </div>
+        </section>
+      <section class="panel de39-deep" hidden aria-hidden="true" data-temporarily-disabled="json-1.1">
+          <div class="row">
+            <div>
+              <p class="eyebrow">PROFUNDIZACIÓN DE39</p>
+              <h2>Comportamiento del código seleccionado</h2>
+            </div>
+            <label>Código de respuesta<select id="codeSelect"></select></label>
+          </div>
+          <section class="code-metrics">
+            <article>
+              <span>CANTIDAD DEL DÍA</span><strong id="codeTotal">—</strong>
+            </article>
+            <article>
+              <span>% DE RECHAZOS</span><strong id="codeShare">—</strong>
+            </article>
+            <article>
+              <span>HORA DE MAYOR IMPACTO</span
+              ><strong id="codePeakHour">—</strong>
+            </article>
+            <article>
+              <span>INTERVALO CRÍTICO</span><strong id="codePeakSlot">—</strong>
+            </article>
+          </section>
+          <section class="layout code-layout">
+            <article>
+              <h3>Evolución por hora</h3>
+              <div id="codeChart" class="code-chart"></div>
+              <div class="axis">
+                <span>00:00</span><span>06:00</span><span>12:00</span
+                ><span>18:00</span><span>23:00</span>
+              </div>
+            </article>
+            <article>
+              <h3>Lectura del comportamiento</h3>
+              <div id="codeInsights"></div>
+            </article>
+          </section>
+          <h3>Intervalos de 15 minutos con mayor cantidad</h3>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Intervalo</th>
+                  <th>Cantidad</th>
+                  <th>Total rechazos</th>
+                  <th>Participación del código</th>
+                  <th>Tasa general</th>
+                </tr>
+              </thead>
+              <tbody id="codeSlots"></tbody>
+            </table>
+          </div>
+        </section>
+        <section class="panel">
+          <p class="eyebrow">ALCANCE DEL SERVICIO</p>
+          <h2>Del indicador a la causa raíz</h2>
+          <p class="muted">
+            Este dashboard identifica concentración, horario y prioridad. Un
+            diagnóstico causal requiere acceso controlado o logs
+            correlacionables del switch, aplicación y base de datos
+            (Sybase/Oracle), incluyendo timeouts, bloqueos, deadlocks y errores
+            de conectividad. Las conclusiones deben preservar PCI DSS y no
+            exponer datos sensibles.
+          </p>
+        </section>
+      </div>
+    </main>
+    <script src="js/authorization-analytics.js"></script>
+  </body>
+</html>

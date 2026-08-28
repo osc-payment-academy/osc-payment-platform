@@ -1471,7 +1471,7 @@ ${rawMessage(msg)}`;
   document.querySelectorAll('[data-code]').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('[data-code]').forEach(b=>b.classList.remove('selected'));btn.classList.add('selected');state.responseCode=btn.dataset.code}));
   $('sendResponse').addEventListener('click',sendPurchaseResponse);
   $('newTest').addEventListener('click',reset);
-  $('printAgain').addEventListener('click',()=>{const op=state.operations.find(o=>o.id===state.selectedSourceOperationId);if(op)printReceipt(op)});
+  $('printAgain').addEventListener('click',()=>{const op=state.operations.find(o=>o.id===state.selectedSourceOperationId)||state.operations.find(o=>o.type!=='batch');if(op)printReceipt(op);else alert('Todavía no hay un ticket disponible para reimprimir. Realizá primero una operación.');});
   $('copyBtn')?.addEventListener('click',copySelectedMessage);
   $('analyzeBtn')?.addEventListener('click',openSelectedInParser);
   $('terminalModel').addEventListener('change',e=>applyTerminalModel(e.target.value));

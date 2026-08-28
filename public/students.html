@@ -1,8 +1,137 @@
-<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Alumnos · Panel OSC</title><link rel="icon" type="image/svg+xml" href="/favicon.svg"><link rel="stylesheet" href="css/saas.css"></head><body><main class="shell">
-<header class="top"><div><div class="brand"><span>OSC</span> ACADEMY</div><h1>Alumnos del curso</h1><p class="muted">Alta grupal, licencia temporal y workspace individual.</p></div><nav class="tabs"><a class="btn" href="saas-admin.html">← Panel OSC</a><button class="btn" id="logout">Cerrar sesión</button></nav></header>
-<section class="panel"><form id="enrollForm"><div class="field"><label>Edición</label><select id="cohortId" required></select></div><div class="field"><label>Alumnos — una persona por línea: Nombre completo | correo</label><textarea id="studentLines" required placeholder="Ana Pérez | ana@ejemplo.com&#10;Juan Gómez | juan@ejemplo.com"></textarea></div><button class="btn primary">Crear accesos y workspaces</button></form><div id="message" class="message"></div></section>
-<section class="panel"><h2>Credenciales creadas</h2><p class="muted">Las contraseñas temporales se muestran una sola vez. Entregalas por un canal seguro.</p><div id="credentials" class="muted">Todavía no se crearon usuarios.</div></section>
-</main><script src="js/saas-session.js"></script><script>
-async function init(){const r=await fetch('/api/admin/overview');if(r.status===403)return location.href='/';if(!r.ok)return;const d=await r.json();cohortId.innerHTML=d.recentCohorts.map(c=>`<option value="${c.id}">${c.course_name} · ${c.name} · vence ${new Date(c.expires_at).toLocaleDateString('es-AR')}</option>`).join('')||'<option value="">Primero creá una edición</option>'}
-enrollForm.onsubmit=async e=>{e.preventDefault();const students=studentLines.value.split('\n').map(line=>{const [fullName,email]=line.split('|').map(x=>x.trim());return{fullName,email}}).filter(x=>x.fullName&&x.email);const r=await fetch(`/api/admin/cohorts/${cohortId.value}/enroll`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({students})});if(r.ok){const d=await r.json();message.textContent=d.students.length+' alumnos incorporados.';message.className='message show ok';credentials.innerHTML=d.students.map(x=>`<article class="topic"><strong>${x.email}</strong><p>ID: ${x.userId}</p>${x.temporaryPassword?`<p>Contraseña temporal: <code>${x.temporaryPassword}</code> <button class="btn copy-password" type="button" data-password="${x.temporaryPassword}">Copiar clave</button></p>`:'<p>Usuario existente: conserva su contraseña</p>'}</article>`).join('');credentials.querySelectorAll('.copy-password').forEach(button=>button.onclick=async()=>{await navigator.clipboard.writeText(button.dataset.password);button.textContent='Copiada ✓'});enrollForm.reset()}else{const d=await r.json();message.textContent=d.error==='SEAT_LIMIT_EXCEEDED'?'Se supera el límite contratado de alumnos.':'No se pudo completar el alta.';message.className='message show error'}};init();
-</script></body></html>
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Alumnos · Panel OSC</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="stylesheet" href="css/saas.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <header class="top">
+        <div>
+          <div class="brand"><span>OSC</span> ACADEMY</div>
+          <h1>Alumnos del curso</h1>
+          <p class="muted">
+            Alta grupal, licencia temporal y workspace individual.
+          </p>
+        </div>
+        <nav class="tabs">
+          <a class="btn" href="saas-admin.html">← Panel OSC</a
+          ><button class="btn" id="logout">Cerrar sesión</button>
+        </nav>
+      </header>
+      <section class="panel">
+        <form id="enrollForm">
+          <div class="field">
+            <label>Edición</label
+            ><select id="cohortId" required></select>
+          </div>
+          <div class="field">
+            <label
+              >Alumnos — una persona por línea: Nombre completo | correo</label
+            ><textarea
+              id="studentLines"
+              required
+              placeholder="Ana Pérez | ana@ejemplo.com&#10;Juan Gómez | juan@ejemplo.com"
+            ></textarea>
+          </div>
+          <button class="btn primary">Crear accesos y workspaces</button>
+        </form>
+        <div id="message" class="message"></div>
+      </section>
+      <section class="panel">
+        <h2>Reinicializar clave de un alumno</h2>
+        <p class="muted">Genera una clave temporal, invalida las sesiones abiertas y no muestra la contraseña anterior.</p>
+        <form id="resetPasswordForm">
+          <div class="field"><label>Correo del alumno</label><input id="resetEmail" type="email" required placeholder="alumno@ejemplo.com" /></div>
+          <button class="btn primary">Generar clave temporal</button>
+        </form>
+        <div id="resetPasswordMessage" class="message"></div>
+      </section>
+      <section class="panel">
+        <h2>Credenciales creadas</h2>
+        <p class="muted">
+          Las contraseñas temporales se muestran una sola vez. Entregalas por un
+          canal seguro.
+        </p>
+        <div id="credentials" class="muted">
+          Todavía no se crearon usuarios.
+        </div>
+      </section>
+    </main>
+    <script src="js/saas-session.js"></script>
+    <script>
+      async function init() {
+        const r = await fetch("/api/admin/overview");
+        if (r.status === 403) return (location.href = "/");
+        if (!r.ok) return;
+        const d = await r.json();
+        cohortId.innerHTML =
+          d.recentCohorts
+            .map(
+              (c) =>
+                `<option value="${c.id}">${c.course_name} · ${c.name} · vence ${new Date(c.expires_at).toLocaleDateString("es-AR")}</option>`,
+            )
+            .join("") || '<option value="">Primero creá una edición</option>';
+      }
+      enrollForm.onsubmit = async (e) => {
+        e.preventDefault();
+        const students = studentLines.value
+          .split("\n")
+          .map((line) => {
+            const [fullName, email] = line.split("|").map((x) => x.trim());
+            return { fullName, email };
+          })
+          .filter((x) => x.fullName && x.email);
+        const r = await fetch(`/api/admin/cohorts/${cohortId.value}/enroll`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ students }),
+        });
+        if (r.ok) {
+          const d = await r.json();
+          message.textContent = d.students.length + " alumnos incorporados.";
+          message.className = "message show ok";
+          credentials.innerHTML = d.students
+            .map(
+              (x) =>
+                `<article class="topic"><strong>${x.email}</strong><p>ID: ${x.userId}</p>${x.temporaryPassword ? `<p>Contraseña temporal: <code>${x.temporaryPassword}</code> <button class="btn copy-password" type="button" data-password="${x.temporaryPassword}">Copiar clave</button></p>` : "<p>Usuario existente: conserva su contraseña</p>"}</article>`,
+            )
+            .join("");
+          credentials.querySelectorAll(".copy-password").forEach(
+            (button) =>
+              (button.onclick = async () => {
+                await navigator.clipboard.writeText(button.dataset.password);
+                button.textContent = "Copiada ✓";
+              }),
+          );
+          enrollForm.reset();
+        } else {
+          const d = await r.json();
+          message.textContent =
+            d.error === "SEAT_LIMIT_EXCEEDED"
+              ? "Se supera el límite contratado de alumnos."
+              : "No se pudo completar el alta.";
+          message.className = "message show error";
+        }
+      };
+      resetPasswordForm.onsubmit = async (e) => {
+        e.preventDefault();
+        const r = await fetch('/api/admin/users/reset-password', {method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({email:resetEmail.value})});
+        const d = await r.json();
+        if (!r.ok) {
+          resetPasswordMessage.textContent = d.error === 'USER_NOT_FOUND' ? 'No se encontró un alumno activo con ese correo.' : 'No se pudo reinicializar la clave.';
+          resetPasswordMessage.className = 'message show error';
+          return;
+        }
+        resetPasswordMessage.innerHTML = `Clave temporal para <strong>${d.email}</strong>: <code>${d.temporaryPassword}</code> <button class="btn" id="copyResetPassword" type="button">Copiar clave</button>`;
+        resetPasswordMessage.className = 'message show ok';
+        copyResetPassword.onclick = async () => { await navigator.clipboard.writeText(d.temporaryPassword); copyResetPassword.textContent = 'Copiada ✓'; };
+        resetPasswordForm.reset();
+      };
+      init();
+    </script>
+  </body>
+</html>

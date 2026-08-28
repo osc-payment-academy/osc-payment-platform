@@ -80,15 +80,15 @@
       lab:'El laboratorio permite comparar importe aprobado, dispensado y diferencia.'
     },
     reconcile: {
-      title:'Reconciliación ATM',
-      summary:'Permite contrastar los totales transaccionales y el efectivo esperado del ATM al cierre del ciclo.',
+      title:'Conciliación ATM',
+      summary:'Permite contrastar los totales transaccionales y el efectivo esperado del ATM al cierre del ciclo. Es posterior e independiente del envío online al Switch adquiriente.',
       bullets:[
         'Relaciona operaciones aprobadas, reversas/ajustes y efectivo dispensado.',
         'Sirve para detectar diferencias operativas.',
         'El detalle exacto depende del operador y del perfil de red.'
       ],
       iso:'Es un proceso operativo de control, no una autorización individual.',
-      lab:'Ejecutá varias extracciones y luego abrí Reconciliación.'
+      lab:'Ejecutá varias extracciones y luego abrí Conciliación.'
     },
     dispenserFail: {
       title:'00 + falla del dispensador',

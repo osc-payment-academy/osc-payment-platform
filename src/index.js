@@ -247,6 +247,22 @@ async function api(request,env,path){
     return json({users:users.total,tenants:tenants.total,cohorts:cohorts.total,licenses:licenses.total,recentCohorts});
   }
 
+  if(path==='/api/admin/users/reset-password'&&request.method==='POST'){
+    const auth=await requireUser(request,env,['OSC_ADMIN']); if(auth.error)return auth.error;
+    const body=await readBody(request),email=String(body.email||'').trim().toLowerCase();
+    if(!email)return json({error:'INVALID_EMAIL'},400);
+    const user=await env.DB.prepare("SELECT id,email FROM users WHERE email=? AND status='ACTIVE'").bind(email).first();
+    if(!user)return json({error:'USER_NOT_FOUND'},404);
+    const temporaryPassword=randomToken().slice(0,14),salt=randomToken(),hash=await passwordHash(temporaryPassword,salt),ts=now();
+    await env.DB.batch([
+      env.DB.prepare('UPDATE users SET password_hash=?,password_salt=?,updated_at=? WHERE id=?').bind(hash,salt,ts,user.id),
+      env.DB.prepare('DELETE FROM sessions WHERE user_id=?').bind(user.id),
+      env.DB.prepare('UPDATE password_reset_tokens SET used_at=? WHERE user_id=? AND used_at IS NULL').bind(ts,user.id)
+    ]);
+    await audit(env,auth.user.id,'ADMIN_RESET_PASSWORD','USER',user.id,{email:user.email});
+    return json({ok:true,email:user.email,temporaryPassword,mustChange:true});
+  }
+
   if(path==='/api/admin/products'){
     const auth=await requireUser(request,env,['OSC_ADMIN']); if(auth.error)return auth.error;
     if(request.method==='GET')return json({products:(await env.DB.prepare('SELECT * FROM products ORDER BY name').all()).results});
