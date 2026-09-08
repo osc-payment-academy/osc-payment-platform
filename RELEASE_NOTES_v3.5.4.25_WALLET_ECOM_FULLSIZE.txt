@@ -1,0 +1,13 @@
+OSC PAYMENT ACADEMY - v3.5.4.25
+WALLET / TOKENIZACION + E-COMMERCE / 3DS - UI FULL SIZE
+
+Cambios:
+- Wallet: experiencia del usuario rediseñada con celular full-size.
+- El celular muestra comercio, monto y botón Pagar con NFC.
+- Wallet: bitmap primario/secundario visual con posiciones activas en verde.
+- E-Commerce: experiencia del usuario rediseñada con laptop y checkout.
+- E-Commerce: flujo 3DS + autorización, bitmaps y Data Elements.
+- Ambos módulos mantienen estructura pedagógica de ATM: experiencia / flujo / mensaje ISO8583 / historial.
+- Switch Emisor permanece reactivado.
+
+Baseline padre: v3.5.4.24
