@@ -1,0 +1,13 @@
+OSC PAYMENT ACADEMY · v3.5.4.24
+
+Baseline de origen: ZIP entregado por usuario (package 4.0.0-rc.1.7).
+
+Cambios:
+- Reactivado Switch Emisor en navegación global y Dashboard.
+- Nuevo módulo Wallet / Tokenización con estructura visual de 4 sectores: teléfono, flujo, zona técnica e historial.
+- Simulación didáctica de provisioning/tokenización y compra contactless/NFC.
+- Nuevo módulo E-Commerce / 3DS con la misma estructura de 4 sectores.
+- Simulación didáctica de 3DS Challenge seguida por autorización ISO 8583.
+- No se modificó la lógica interna existente de ATM, POS, Switch Adquiriente, Parser ni Constructor.
+
+Nota técnica: los DE de los nuevos módulos se presentan como valores didácticos y deben validarse por red/especificación antes de tratarlos como mapping de certificación.
