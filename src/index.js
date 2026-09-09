@@ -120,7 +120,58 @@ async function audit(env,userId,action,type,entityId,detail={}){
     .bind(id('aud'),userId||null,action,type,entityId||null,JSON.stringify(detail),now()).run();
 }
 
+async function ensureBankCustomerSchema(env){
+  await env.DB.prepare(`CREATE TABLE IF NOT EXISTS bank_customers (
+    id TEXT PRIMARY KEY,tenant_id TEXT NOT NULL,owner_user_id TEXT NOT NULL,customer_number TEXT NOT NULL,
+    person_type TEXT NOT NULL DEFAULT 'FISICA',document_type TEXT NOT NULL,document_number TEXT NOT NULL,first_name TEXT NOT NULL DEFAULT '',last_name TEXT NOT NULL DEFAULT '',
+    legal_name TEXT,trade_name TEXT,incorporation_date TEXT,economic_activity TEXT,birth_date TEXT,nationality TEXT,marital_status TEXT,occupation TEXT,email TEXT,phone TEXT,
+    status TEXT NOT NULL DEFAULT 'ACTIVE',created_at TEXT NOT NULL,updated_at TEXT NOT NULL,
+    UNIQUE(tenant_id,customer_number),UNIQUE(tenant_id,document_type,document_number))`).run();
+  await env.DB.prepare(`CREATE TABLE IF NOT EXISTS bank_customer_addresses (
+    id TEXT PRIMARY KEY,customer_id TEXT NOT NULL,address_type TEXT NOT NULL DEFAULT 'DOMICILIO',street TEXT NOT NULL,
+    number TEXT,floor_unit TEXT,city TEXT,province TEXT,postal_code TEXT,country TEXT NOT NULL DEFAULT 'Argentina',
+    is_primary INTEGER NOT NULL DEFAULT 1,created_at TEXT NOT NULL,updated_at TEXT NOT NULL)`).run();
+  // Migraciones compatibles con clientes creados por versiones anteriores.
+  for(const ddl of [
+    "ALTER TABLE bank_customers ADD COLUMN person_type TEXT NOT NULL DEFAULT 'FISICA'",
+    "ALTER TABLE bank_customers ADD COLUMN legal_name TEXT",
+    "ALTER TABLE bank_customers ADD COLUMN trade_name TEXT",
+    "ALTER TABLE bank_customers ADD COLUMN incorporation_date TEXT",
+    "ALTER TABLE bank_customers ADD COLUMN economic_activity TEXT"
+  ]){try{await env.DB.prepare(ddl).run();}catch(e){/* columna ya existente */}}
+  await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_bank_customers_owner ON bank_customers(tenant_id,owner_user_id,created_at DESC)`).run();
+  await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_bank_addresses_customer ON bank_customer_addresses(customer_id)`).run();
+}
+async function bankTenant(env,user){
+  if(user.platform_role==='OSC_ADMIN')return 'tenant_osc';
+  const row=await env.DB.prepare(`SELECT tenant_id FROM memberships WHERE user_id=? AND status='ACTIVE' ORDER BY created_at LIMIT 1`).bind(user.id).first();
+  return row?.tenant_id||`personal_${user.id}`;
+}
 async function api(request,env,path){
+  if(path==='/api/bank/customers'&&(request.method==='GET'||request.method==='POST')){
+    const auth=await requireUser(request,env); if(auth.error)return auth.error; const user=auth.user;
+    await ensureBankCustomerSchema(env); const tenantId=await bankTenant(env,user);
+    if(request.method==='GET'){
+      const rows=(await env.DB.prepare(`SELECT id,customer_number,person_type,document_type,document_number,first_name,last_name,legal_name,trade_name,birth_date,nationality,email,phone,status,created_at FROM bank_customers WHERE tenant_id=? AND owner_user_id=? ORDER BY created_at DESC`).bind(tenantId,user.id).all()).results;
+      return json({customers:rows});
+    }
+    const b=await readBody(request),personType=String(b.personType||'FISICA').toUpperCase(),first=String(b.firstName||'').trim(),last=String(b.lastName||'').trim(),legal=String(b.legalName||'').trim(),doc=String(b.documentNumber||'').trim();
+    if(!['FISICA','JURIDICA'].includes(personType))return json({error:'INVALID_PERSON_TYPE',message:'Tipo de persona inválido.'},400);
+    if(!doc||(personType==='FISICA'&&(!first||!last))||(personType==='JURIDICA'&&!legal))return json({error:'REQUIRED_FIELDS',message:personType==='JURIDICA'?'Razón social e identificación fiscal son obligatorias.':'Nombre, apellido y documento son obligatorios.'},400);
+    const ts=now(),customerId=id('cli'),count=await env.DB.prepare(`SELECT COUNT(*) total FROM bank_customers WHERE tenant_id=?`).bind(tenantId).first();
+    const customerNumber=`CLI-${String((count?.total||0)+1).padStart(6,'0')}`;
+    try{
+      await env.DB.prepare(`INSERT INTO bank_customers(id,tenant_id,owner_user_id,customer_number,person_type,document_type,document_number,first_name,last_name,legal_name,trade_name,incorporation_date,economic_activity,birth_date,nationality,marital_status,occupation,email,phone,status,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?, 'ACTIVE',?,?)`).bind(customerId,tenantId,user.id,customerNumber,personType,String(b.documentType||(personType==='JURIDICA'?'CUIT/RUC':'DNI')),doc,first,last,legal,String(b.tradeName||''),String(b.incorporationDate||''),String(b.economicActivity||''),String(b.birthDate||''),String(b.nationality||''),String(b.maritalStatus||''),String(b.occupation||''),String(b.email||''),String(b.phone||''),ts,ts).run();
+      const a=b.address||{}; if(String(a.street||'').trim())await env.DB.prepare(`INSERT INTO bank_customer_addresses(id,customer_id,address_type,street,number,floor_unit,city,province,postal_code,country,is_primary,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,1,?,?)`).bind(id('adr'),customerId,String(a.type||'DOMICILIO'),String(a.street||''),String(a.number||''),String(a.floorUnit||''),String(a.city||''),String(a.province||''),String(a.postalCode||''),String(a.country||'Argentina'),ts,ts).run();
+      await audit(env,user.id,'BANK_CUSTOMER_CREATE','BANK_CUSTOMER',customerId,{customerNumber}); return json({ok:true,id:customerId,customerNumber},201);
+    }catch(e){return json({error:'CUSTOMER_EXISTS',message:'Ya existe un cliente con ese documento en este banco virtual.'},409);}
+  }
+  const bankCustomerMatch=path.match(/^\/api\/bank\/customers\/([^/]+)$/);
+  if(bankCustomerMatch&&request.method==='GET'){
+    const auth=await requireUser(request,env);if(auth.error)return auth.error;await ensureBankCustomerSchema(env);const tenantId=await bankTenant(env,auth.user);
+    const customer=await env.DB.prepare(`SELECT * FROM bank_customers WHERE id=? AND tenant_id=? AND owner_user_id=?`).bind(bankCustomerMatch[1],tenantId,auth.user.id).first();if(!customer)return json({error:'NOT_FOUND'},404);
+    const addresses=(await env.DB.prepare(`SELECT * FROM bank_customer_addresses WHERE customer_id=? ORDER BY is_primary DESC,created_at`).bind(customer.id).all()).results;return json({customer,addresses});
+  }
   if(path==='/api/bootstrap'&&request.method==='POST'){
     if(!env.BOOTSTRAP_KEY||request.headers.get('x-bootstrap-key')!==env.BOOTSTRAP_KEY)return json({error:'FORBIDDEN'},403);
     const body=await readBody(request),email=String(body.email||'').trim().toLowerCase(),name=String(body.fullName||'').trim(),password=String(body.password||'');

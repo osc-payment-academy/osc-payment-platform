@@ -2,6 +2,7 @@
 (async()=>{
   const modules=[
     {href:'index.html',icon:'⌂',label:'Dashboard'},
+    {href:'clientes.html',icon:'👤',label:'CLIENTES'},
     {href:'curso_interactivo.html',icon:'🎓',label:'Curso Interactivo',key:'course_iso8583',day:1},
     {href:'ebook.html',icon:'📖',label:'eBook ISO 8583'},
     {href:'constructor.html',icon:'⌘',label:'Constructor ISO8583',key:'constructor',day:1},
