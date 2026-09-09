@@ -221,6 +221,28 @@ async function api(request,env,path){
     await env.DB.batch([env.DB.prepare(`UPDATE bank_accounts SET balance=?,updated_at=? WHERE id=?`).bind(newBalance,ts,account.id),env.DB.prepare(`INSERT INTO bank_account_movements(id,tenant_id,owner_user_id,account_id,movement_type,description,amount,balance_after,reference,created_at) VALUES(?,?,?,?,?,?,?,?,?,?)`).bind(movementId,tenantId,auth.user.id,account.id,'DEPOSITO_CAJA','Depósito por Caja',amount,newBalance,reference,ts)]);
     await audit(env,auth.user.id,'BANK_CASH_DEPOSIT','BANK_ACCOUNT',account.id,{amount,newBalance,reference});return json({ok:true,newBalance,reference},201);
   }
+  if(path==='/api/bank/pos/cards'&&request.method==='GET'){
+    const auth=await requireUser(request,env);if(auth.error)return auth.error;const user=auth.user;
+    await ensureBankCustomerSchema(env);await ensureBankPassiveSchema(env);await ensureBankCardSchema(env);const tenantId=await bankTenant(env,user);
+    const rows=(await env.DB.prepare(`SELECT k.id,k.card_number,k.expires_at,k.customer_id,k.linked_account_id,a.account_number,a.account_type,a.currency,a.balance,c.customer_number,c.first_name,c.last_name,c.legal_name FROM bank_cards k JOIN bank_accounts a ON a.id=k.linked_account_id JOIN bank_customers c ON c.id=k.customer_id WHERE k.tenant_id=? AND k.owner_user_id=? AND k.card_type='DEBITO' AND k.status='ACTIVE' AND a.status='ACTIVE' ORDER BY k.created_at DESC`).bind(tenantId,user.id).all()).results;
+    return json({cards:rows.map(x=>({...x,masked_card_number:maskCard(x.card_number)}))});
+  }
+  if(path==='/api/bank/pos/authorize'&&request.method==='POST'){
+    const auth=await requireUser(request,env);if(auth.error)return auth.error;const user=auth.user;
+    await ensureBankCustomerSchema(env);await ensureBankPassiveSchema(env);await ensureBankCardSchema(env);const tenantId=await bankTenant(env,user),b=await readBody(request),cardId=String(b.cardId||''),amountCents=Number(b.amountCents);
+    if(!cardId||!Number.isInteger(amountCents)||amountCents<=0)return json({error:'INVALID_DATA',message:'Tarjeta e importe son obligatorios.'},400);
+    const row=await env.DB.prepare(`SELECT k.*,a.account_number,a.currency,a.balance,a.status account_status,c.customer_number,c.first_name,c.last_name,c.legal_name FROM bank_cards k JOIN bank_accounts a ON a.id=k.linked_account_id JOIN bank_customers c ON c.id=k.customer_id WHERE k.id=? AND k.tenant_id=? AND k.owner_user_id=? AND k.status='ACTIVE'`).bind(cardId,tenantId,user.id).first();
+    if(!row||row.account_status!=='ACTIVE')return json({ok:true,responseCode:'05',approved:false,message:'Tarjeta o cuenta no disponible.'});
+    const amount=amountCents/100,previousBalance=Number(row.balance||0);
+    if(previousBalance<amount)return json({ok:true,responseCode:'51',approved:false,previousBalance,balance:previousBalance,accountNumber:row.account_number,message:'Fondos insuficientes.'});
+    const ts=now(),newBalance=previousBalance-amount,reference=`POS-${Date.now()}`,movementId=id('mov');
+    await env.DB.batch([
+      env.DB.prepare(`UPDATE bank_accounts SET balance=?,updated_at=? WHERE id=? AND tenant_id=? AND owner_user_id=?`).bind(newBalance,ts,row.linked_account_id,tenantId,user.id),
+      env.DB.prepare(`INSERT INTO bank_account_movements(id,tenant_id,owner_user_id,account_id,movement_type,description,amount,balance_after,reference,created_at) VALUES(?,?,?,?,?,?,?,?,?,?)`).bind(movementId,tenantId,user.id,row.linked_account_id,'COMPRA_POS','Compra POS doméstica',-amount,newBalance,reference,ts)
+    ]);
+    await audit(env,user.id,'BANK_POS_PURCHASE','BANK_ACCOUNT',row.linked_account_id,{cardId,amount,previousBalance,newBalance,reference});
+    return json({ok:true,responseCode:'00',approved:true,previousBalance,balance:newBalance,accountNumber:row.account_number,reference,message:'Aprobada por Banco Virtual OSC.'});
+  }
   if(path==='/api/bank/cards'&&(request.method==='GET'||request.method==='POST')){
     const auth=await requireUser(request,env);if(auth.error)return auth.error;const user=auth.user;
     await ensureBankCustomerSchema(env);await ensureBankPassiveSchema(env);await ensureBankCardSchema(env);const tenantId=await bankTenant(env,user);

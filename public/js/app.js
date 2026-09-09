@@ -45,6 +45,7 @@
     'visa-qr':{label:'Visa QR',network:'visa',card:'visa-credit',mode:'Merchant Presented'}
   };
   const selectedCard = () => TEST_CARDS[state.testCard] || TEST_CARDS['visa-credit'];
+  const isDomesticCard = () => selectedCard()?.network==='domestic';
   const isAmexDebit = () => profile().id==='amex' && selectedCard().product==='Débito';
   const amexDebitOnlinePinRequired = () => isAmexDebit() && ['chip','magstripe'].includes(state.entryMode);
 
@@ -54,6 +55,21 @@
     state.pan=card.pan; state.network=card.network;
   }
 
+  async function loadDomesticCards(){
+    const grid=$('testCardGrid'); if(!grid) return;
+    try{
+      const r=await fetch('/api/bank/pos/cards'); if(!r.ok) return;
+      const d=await r.json();
+      (d.cards||[]).forEach((c,i)=>{
+        const key=`domestic-${c.id}`;
+        TEST_CARDS[key]={id:key,label:'OSC Doméstica Débito',network:'domestic',product:'Débito',pan:c.card_number,expiry:String(c.expires_at||'').slice(2,7).replace('-',''),track2:`${c.card_number}=31122011234567890`,aid:'A0000000000001',bankCardId:c.id,accountNumber:c.account_number,balance:Number(c.balance||0)};
+        if(grid.querySelector(`[data-test-card="${key}"]`)) return;
+        const b=document.createElement('button');b.type='button';b.className='test-card domestic';b.dataset.testCard=key;
+        b.innerHTML=`<span class="card-network">OSC</span><strong>DÉBITO DOMÉSTICA</strong><small>${c.masked_card_number} · ${c.account_number}</small>`;
+        grid.appendChild(b);
+      });
+    }catch(e){console.warn('Banco Virtual no disponible para POS',e)}
+  }
   function selectTestCard(cardId,{resetFlow=true}={}){
     if(!TEST_CARDS[cardId]) return;
     state.testCard=cardId;
@@ -1077,10 +1093,28 @@
       }else{
         screen('PROCESANDO',`<small>Esperando ${op.responseMti||'0210'}</small><strong>...</strong><span>${op.messageFamily||'ISO8583'}</span>`);
       }
-      if(state.autoResponse) setTimeout(sendPurchaseResponse,700);
+      if(isDomesticCard()) setTimeout(()=>authorizeDomesticPurchase(op),450);
+      else if(state.autoResponse) setTimeout(sendPurchaseResponse,700);
     },800);
   }
 
+  async function authorizeDomesticPurchase(op){
+    const card=selectedCard();
+    $('flowResponse').textContent='Ruteo doméstico · Banco Virtual';
+    screen('RUTEO DOMÉSTICO',`<small>BIN ${card.pan.slice(0,6)} reconocido</small><strong>BANCO VIRTUAL OSC</strong><span>Consultando saldo de ${card.accountNumber||'cuenta vinculada'}</span>`);
+    try{
+      const r=await fetch('/api/bank/pos/authorize',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({cardId:card.bankCardId,amountCents:Number(op.amountCents||0),stan:op.stan})});
+      const d=await r.json();
+      if(!r.ok) throw new Error(d.message||'No se pudo autorizar');
+      state.responseCode=d.responseCode||'05';
+      op.domestic={accountNumber:d.accountNumber,previousBalance:d.previousBalance,balance:d.balance,reference:d.reference};
+      sendPurchaseResponse();
+    }catch(e){
+      state.responseCode='91';
+      op.domestic={error:String(e.message||e)};
+      sendPurchaseResponse();
+    }
+  }
   function sendPurchaseResponse(){
     if(state.step!=='waiting'||state.currentOperation!=='purchase')return;
     if(profile().id==='amex'){
@@ -1092,7 +1126,7 @@
     state.currentAuth=state.responseCode==='00'?random6():'-';
     op.auth=state.currentAuth;op.status=state.responseCode==='00'?'APROBADA':'RECHAZADA';
     $('time5').textContent=timeNow();$('flowResponse').textContent=`${state.responseCode} - ${response.label}`;
-    $('resultText').textContent=response.label;$('resultCode').textContent=state.responseCode;$('resultDetail').textContent=response.detail;$('authCode').textContent=state.currentAuth;
+    $('resultText').textContent=response.label;$('resultCode').textContent=state.responseCode;$('resultDetail').textContent=isDomesticCard()&&op.domestic?.accountNumber?`${response.detail} · ${op.domestic.accountNumber} · Saldo ${formatCents(Math.round(Number(op.domestic.balance||0)*100))}`:response.detail;$('authCode').textContent=state.currentAuth;
     screen(op.status==='APROBADA'?'APROBADA':'RECHAZADA',`<small>${response.label}</small><strong>${state.responseCode}</strong><span>${op.status==='APROBADA'?(state.paymentMethod==='qr'?'Wallet y comercio notificados':'Retire tarjeta'):'Operación finalizada'}</span>`);
     if(state.responseCode!=='TO'){
       const fields=purchaseResponseFields(state.responseCode,op);
@@ -1577,6 +1611,7 @@ ${rawMessage(msg)}`;
     if(toggleQrFlow&&qrFlow) toggleQrFlow.addEventListener('click',()=>{const hidden=qrFlow.classList.toggle('hidden');toggleQrFlow.textContent=hidden?'Ver flujo':'Ocultar flujo';if(!hidden)qrFlow.scrollIntoView({behavior:'smooth',block:'nearest'});});
     const autoResponse=$('autoResponse');
     if(autoResponse){autoResponse.checked=state.autoResponse;autoResponse.addEventListener('change',()=>{state.autoResponse=autoResponse.checked;localStorage.setItem('oscPosAutoResponse',String(state.autoResponse));});}
+    loadDomesticCards();
     selectTestCard(state.testCard,{resetFlow:false});
   });
 

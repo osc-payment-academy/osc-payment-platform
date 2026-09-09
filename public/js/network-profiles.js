@@ -3,10 +3,12 @@
   const profiles = {
     visa: {id:'visa', name:'Visa', short:'VISA', color:'#1a66ff', manual:'Visa Base I / perfil educativo Visa', status:'Activo'},
     mastercard: {id:'mastercard', name:'Mastercard', short:'MC', color:'#ff5f00', manual:'Mastercard authorization profile / perfil educativo', status:'Activo'},
-    amex: {id:'amex', name:'American Express', short:'AMEX', color:'#2f78c4', manual:'American Express GNS Network Specifications - Authorization · Oct 2023', status:'Core Online activo'}
+    amex: {id:'amex', name:'American Express', short:'AMEX', color:'#2f78c4', manual:'American Express GNS Network Specifications - Authorization · Oct 2023', status:'Core Online activo'},
+    domestic: {id:'domestic', name:'Banco Virtual OSC', short:'DOM', color:'#18b981', manual:'Ruteo doméstico educativo · BIN 990001', status:'Banco Virtual activo'}
   };
   function detect(pan){
     const n=clean(pan);
+    if(/^990001/.test(n)) return profiles.domestic;
     if(/^4/.test(n)) return profiles.visa;
     const first2=Number(n.slice(0,2));
     const first6=Number(n.slice(0,6));
