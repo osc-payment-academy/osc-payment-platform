@@ -147,6 +147,17 @@ async function bankTenant(env,user){
   const row=await env.DB.prepare(`SELECT tenant_id FROM memberships WHERE user_id=? AND status='ACTIVE' ORDER BY created_at LIMIT 1`).bind(user.id).first();
   return row?.tenant_id||`personal_${user.id}`;
 }
+async function ensureBankPassiveSchema(env){
+  await env.DB.prepare(`CREATE TABLE IF NOT EXISTS bank_accounts (
+    id TEXT PRIMARY KEY,tenant_id TEXT NOT NULL,owner_user_id TEXT NOT NULL,customer_id TEXT NOT NULL,account_number TEXT NOT NULL,
+    account_type TEXT NOT NULL,currency TEXT NOT NULL DEFAULT 'ARS',status TEXT NOT NULL DEFAULT 'ACTIVE',balance REAL NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL,updated_at TEXT NOT NULL,UNIQUE(tenant_id,account_number))`).run();
+  await env.DB.prepare(`CREATE TABLE IF NOT EXISTS bank_account_movements (
+    id TEXT PRIMARY KEY,tenant_id TEXT NOT NULL,owner_user_id TEXT NOT NULL,account_id TEXT NOT NULL,movement_type TEXT NOT NULL,
+    description TEXT NOT NULL,amount REAL NOT NULL,balance_after REAL NOT NULL,reference TEXT,created_at TEXT NOT NULL)`).run();
+  await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_bank_accounts_customer ON bank_accounts(tenant_id,owner_user_id,customer_id,created_at DESC)`).run();
+  await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_bank_movements_account ON bank_account_movements(account_id,created_at DESC)`).run();
+}
 async function api(request,env,path){
   if(path==='/api/bank/customers'&&(request.method==='GET'||request.method==='POST')){
     const auth=await requireUser(request,env); if(auth.error)return auth.error; const user=auth.user;
@@ -171,6 +182,34 @@ async function api(request,env,path){
     const auth=await requireUser(request,env);if(auth.error)return auth.error;await ensureBankCustomerSchema(env);const tenantId=await bankTenant(env,auth.user);
     const customer=await env.DB.prepare(`SELECT * FROM bank_customers WHERE id=? AND tenant_id=? AND owner_user_id=?`).bind(bankCustomerMatch[1],tenantId,auth.user.id).first();if(!customer)return json({error:'NOT_FOUND'},404);
     const addresses=(await env.DB.prepare(`SELECT * FROM bank_customer_addresses WHERE customer_id=? ORDER BY is_primary DESC,created_at`).bind(customer.id).all()).results;return json({customer,addresses});
+  }
+  if(path==='/api/bank/accounts'&&(request.method==='GET'||request.method==='POST')){
+    const auth=await requireUser(request,env);if(auth.error)return auth.error;const user=auth.user;await ensureBankCustomerSchema(env);await ensureBankPassiveSchema(env);const tenantId=await bankTenant(env,user);
+    if(request.method==='GET'){
+      const rows=(await env.DB.prepare(`SELECT a.*,c.customer_number,c.person_type,c.first_name,c.last_name,c.legal_name,c.trade_name FROM bank_accounts a JOIN bank_customers c ON c.id=a.customer_id WHERE a.tenant_id=? AND a.owner_user_id=? ORDER BY a.created_at DESC`).bind(tenantId,user.id).all()).results;
+      return json({accounts:rows});
+    }
+    const b=await readBody(request),customerId=String(b.customerId||''),type=String(b.accountType||'').toUpperCase(),currency=String(b.currency||'ARS').toUpperCase();
+    if(!customerId||!['CA','CC'].includes(type)||!['ARS','USD'].includes(currency))return json({error:'INVALID_DATA',message:'Cliente, tipo de cuenta y moneda son obligatorios.'},400);
+    const customer=await env.DB.prepare(`SELECT id FROM bank_customers WHERE id=? AND tenant_id=? AND owner_user_id=? AND status='ACTIVE'`).bind(customerId,tenantId,user.id).first();if(!customer)return json({error:'CUSTOMER_NOT_FOUND',message:'Cliente no encontrado.'},404);
+    const ts=now(),count=await env.DB.prepare(`SELECT COUNT(*) total FROM bank_accounts WHERE tenant_id=?`).bind(tenantId).first(),seq=String((count?.total||0)+1).padStart(6,'0'),accountNumber=`${type}-${seq}`;
+    const accountId=id('acc');await env.DB.prepare(`INSERT INTO bank_accounts(id,tenant_id,owner_user_id,customer_id,account_number,account_type,currency,status,balance,created_at,updated_at) VALUES(?,?,?,?,?,?,?,'ACTIVE',0,?,?)`).bind(accountId,tenantId,user.id,customerId,accountNumber,type,currency,ts,ts).run();
+    await audit(env,user.id,'BANK_ACCOUNT_CREATE','BANK_ACCOUNT',accountId,{accountNumber,type,currency,customerId});return json({ok:true,id:accountId,accountNumber},201);
+  }
+  const bankAccountMatch=path.match(/^\/api\/bank\/accounts\/([^/]+)$/);
+  if(bankAccountMatch&&request.method==='GET'){
+    const auth=await requireUser(request,env);if(auth.error)return auth.error;await ensureBankPassiveSchema(env);const tenantId=await bankTenant(env,auth.user);
+    const account=await env.DB.prepare(`SELECT a.*,c.customer_number,c.person_type,c.first_name,c.last_name,c.legal_name,c.trade_name FROM bank_accounts a JOIN bank_customers c ON c.id=a.customer_id WHERE a.id=? AND a.tenant_id=? AND a.owner_user_id=?`).bind(bankAccountMatch[1],tenantId,auth.user.id).first();if(!account)return json({error:'NOT_FOUND'},404);
+    const movements=(await env.DB.prepare(`SELECT * FROM bank_account_movements WHERE account_id=? ORDER BY created_at DESC LIMIT 100`).bind(account.id).all()).results;return json({account,movements});
+  }
+  const depositMatch=path.match(/^\/api\/bank\/accounts\/([^/]+)\/deposit$/);
+  if(depositMatch&&request.method==='POST'){
+    const auth=await requireUser(request,env);if(auth.error)return auth.error;await ensureBankPassiveSchema(env);const tenantId=await bankTenant(env,auth.user),b=await readBody(request),amount=Number(b.amount);
+    if(!Number.isFinite(amount)||amount<=0)return json({error:'INVALID_AMOUNT',message:'El importe debe ser mayor a cero.'},400);
+    const account=await env.DB.prepare(`SELECT * FROM bank_accounts WHERE id=? AND tenant_id=? AND owner_user_id=? AND status='ACTIVE'`).bind(depositMatch[1],tenantId,auth.user.id).first();if(!account)return json({error:'NOT_FOUND'},404);
+    const ts=now(),newBalance=Number(account.balance||0)+amount,movementId=id('mov'),reference=`CAJA-${Date.now()}`;
+    await env.DB.batch([env.DB.prepare(`UPDATE bank_accounts SET balance=?,updated_at=? WHERE id=?`).bind(newBalance,ts,account.id),env.DB.prepare(`INSERT INTO bank_account_movements(id,tenant_id,owner_user_id,account_id,movement_type,description,amount,balance_after,reference,created_at) VALUES(?,?,?,?,?,?,?,?,?,?)`).bind(movementId,tenantId,auth.user.id,account.id,'DEPOSITO_CAJA','Depósito por Caja',amount,newBalance,reference,ts)]);
+    await audit(env,auth.user.id,'BANK_CASH_DEPOSIT','BANK_ACCOUNT',account.id,{amount,newBalance,reference});return json({ok:true,newBalance,reference},201);
   }
   if(path==='/api/bootstrap'&&request.method==='POST'){
     if(!env.BOOTSTRAP_KEY||request.headers.get('x-bootstrap-key')!==env.BOOTSTRAP_KEY)return json({error:'FORBIDDEN'},403);
