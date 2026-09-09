@@ -2672,7 +2672,7 @@
           <div class="title">
             <span class="title-icon">🏧</span>
             <div>
-              <h1>ATM Virtual · v3.5.3.20</h1>
+              <h1>ATM Virtual · v3.5.4.50</h1>
               <p>
                 Banda, Chip y Contactless · cassettes · dispensación parcial
               </p>
@@ -2759,6 +2759,9 @@
                     <span class="card-network">AMERICAN EXPRESS</span
                     ><strong>CRÉDITO</strong
                     ><small>•••• 8431 · BIN 371449 · 1200/1210</small>
+                  </button>
+                  <button type="button" class="test-card" id="atmDomesticCard" data-atm-card="osc-domestic" style="display:none;border-color:#18c987" onclick="window.OSCSelectATMCard && window.OSCSelectATMCard('osc-domestic')">
+                    <span class="card-network" style="color:#18c987">OSC</span><strong>DÉBITO DOMÉSTICA</strong><small id="atmDomesticCardSmall">BIN 990001 · Banco Virtual</small>
                   </button>
                   <button
                     type="button"
@@ -3519,6 +3522,9 @@
             name: "Mastercard Débito",
             last4: "8210",
           },
+          "osc-domestic": {
+            brand: "domestic", type: "debit", pan: "9900010000000019", name: "OSC Débito Doméstica", last4: "0019", cardId: ""
+          },
           "amex-credit": {
             brand: "amex",
             type: "credit",
@@ -3534,6 +3540,7 @@
             last4: "0127",
           },
         };
+        window.ATM_CARDS = ATM_CARDS;
         window.OSCSelectATMCard = function (key) {
           const c = ATM_CARDS[key];
           if (!c) return;
@@ -3546,6 +3553,7 @@
           state.pan = c.pan;
           state.brand = c.brand;
           state.cardType = c.type;
+          window.OSCATMSelectedCard = c;
           $("atmSelectedCardSummary").textContent =
             `${c.name} · PAN de prueba asignado automáticamente`;
           const cp = document.querySelector(".card-pan");
@@ -5570,7 +5578,7 @@
           );
         }
 
-        function send0200() {
+        async function send0200() {
           if (state.brand === "amex" && state.operation !== "withdrawal") {
             setScreen(
               "OPERACIÓN NO HABILITADA",
@@ -5620,6 +5628,21 @@
           }
           addMessage(requestMti, labelOperation(), " ", req);
 
+          let domesticResult = null;
+          const domesticCard = window.OSCATMSelectedCard;
+          if (state.brand === "domestic" && domesticCard?.cardId) {
+            try {
+              const r = await fetch("/api/bank/atm/authorize", {method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({cardId:domesticCard.cardId,amountCents:Number(state.amount||0),operation:state.operation})});
+              domesticResult = await r.json();
+              if (!r.ok) throw new Error(domesticResult.message || "No fue posible autorizar en Banco Virtual");
+              state.domesticOriginalReference = domesticResult.reference || "";
+              state.domesticBalance = Number(domesticResult.balance || 0);
+              addTechEvent(`BIN 990001 reconocido · RUTEO DOMÉSTICO → Banco Virtual OSC → ${domesticResult.accountNumber || "cuenta vinculada"}`, "done");
+            } catch (e) {
+              domesticResult = {approved:false,responseCode:"91",message:e.message || "Banco Virtual no disponible"};
+            }
+          }
+
           setTimeout(() => {
             setFlow(5);
             let code = "00",
@@ -5639,8 +5662,11 @@
                 "done",
               );
             } else {
-              if (state.scenario === "insufficient") code = "51";
-              if (state.scenario === "issuerDown") code = "91";
+              if (state.brand === "domestic" && domesticResult) code = domesticResult.responseCode || (domesticResult.approved ? "00" : "91");
+              else {
+                if (state.scenario === "insufficient") code = "51";
+                if (state.scenario === "issuerDown") code = "91";
+              }
               state.auth = code === "00" ? random6() : "-";
               $("hostStatus").textContent =
                 `${code} - ${code === "00" ? "Aprobada" : code === "51" ? "Fondos insuficientes" : "Emisor no disponible"}`;
@@ -5665,7 +5691,7 @@
               $("deviceStatus").textContent = "Saldo mostrado";
               setScreen(
                 "SALDO DISPONIBLE",
-                "<strong>US$ 1.250,00</strong><small>Retire su tarjeta</small>",
+                state.brand === "domestic" ? `<strong>${new Intl.NumberFormat("es-AR",{style:"currency",currency:"ARS"}).format(Number(state.domesticBalance||0))}</strong><small>Saldo de la cuenta vinculada · Retire su tarjeta</small>` : "<strong>US$ 1.250,00</strong><small>Retire su tarjeta</small>",
               );
               addTechEvent(
                 "DE54 interpretado · saldo disponible mostrado",
@@ -5745,6 +5771,11 @@
           }
 
           $("reversalStatus").textContent = "0420 en proceso";
+          if (state.brand === "domestic" && window.OSCATMSelectedCard?.cardId) {
+            fetch("/api/bank/atm/reverse", {method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({cardId:window.OSCATMSelectedCard.cardId,amountCents:Number(state.amount||0),originalReference:state.domesticOriginalReference||""})})
+              .then(r=>r.json().then(j=>({ok:r.ok,j}))).then(({ok,j})=>{ if(!ok) throw new Error(j.message||"Error de reversa"); state.domesticBalance=Number(j.balance||0); addTechEvent(`Banco Virtual OSC · reversa aplicada · saldo restituido`,"done"); })
+              .catch(e=>addTechEvent(`Banco Virtual OSC · reversa pendiente: ${e.message}`,"warn"));
+          }
           const req = reversalFields();
           addMessage("0420", "Reversa total por efectivo no retirado", "", req);
           setTimeout(() => {
@@ -6029,6 +6060,16 @@ ${raw(m)}`;
             last4: "0127",
           },
         };
+        async function loadDomesticAtmCard(){
+          try {
+            const r=await fetch("/api/bank/atm/cards"); if(!r.ok)return; const j=await r.json(); const c=(j.cards||[])[0]; if(!c)return;
+            const item={brand:"domestic",type:"debit",name:"OSC Débito Doméstica",pan:String(c.card_number),last4:String(c.card_number).slice(-4),cardId:c.id,accountNumber:c.account_number,balance:c.balance};
+            cards["domestic-debit"]=item; cards["osc-domestic"]=item;
+            const b=document.getElementById("atmDomesticCard"); if(b){b.style.display=""; b.dataset.atmCard="osc-domestic";}
+            const sm=document.getElementById("atmDomesticCardSmall"); if(sm)sm.textContent=`•••• ${item.last4} · BIN 990001 · ${c.account_number}`;
+            if(window.ATM_CARDS) window.ATM_CARDS["osc-domestic"]=item;
+          } catch(e){}
+        }
         const marker = document.createElement("span");
         marker.id = "atmNetworkName";
         marker.style.cssText =
@@ -6055,9 +6096,10 @@ ${raw(m)}`;
             new CustomEvent("osc-atm-card-change", { detail: selected }),
           );
         }
-        brand.addEventListener("change", refresh);
-        type.addEventListener("change", refresh);
-        refresh();
+        loadDomesticAtmCard();
+        brand?.addEventListener("change", refresh);
+        type?.addEventListener("change", refresh);
+        if(brand && type) refresh();
       });
     </script>
     <script src="js/permissions.js"></script>
@@ -6082,10 +6124,10 @@ ${raw(m)}`;
         box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
       "
     >
-      Baseline v3.5.4.21 · Ayuda falla de dispensador
+      Entregable v3.5.4.50 · ATM DOMÉSTICO
     </div>
     <script src="js/help-catalog.js"></script>
     <script src="js/module-guide.js"></script>
-    <script src="js/navigation.js?v=3.5.4.46"></script>
+    <script src="js/navigation.js?v=4.0.0-rc1.7"></script>
   </body>
 </html>

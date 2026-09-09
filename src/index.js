@@ -227,6 +227,38 @@ async function api(request,env,path){
     const rows=(await env.DB.prepare(`SELECT k.id,k.card_number,k.expires_at,k.customer_id,k.linked_account_id,a.account_number,a.account_type,a.currency,a.balance,c.customer_number,c.first_name,c.last_name,c.legal_name FROM bank_cards k JOIN bank_accounts a ON a.id=k.linked_account_id JOIN bank_customers c ON c.id=k.customer_id WHERE k.tenant_id=? AND k.owner_user_id=? AND k.card_type='DEBITO' AND k.status='ACTIVE' AND a.status='ACTIVE' ORDER BY k.created_at DESC`).bind(tenantId,user.id).all()).results;
     return json({cards:rows.map(x=>({...x,masked_card_number:maskCard(x.card_number)}))});
   }
+  if(path==='/api/bank/atm/cards'&&request.method==='GET'){
+    const auth=await requireUser(request,env);if(auth.error)return auth.error;const user=auth.user;
+    await ensureBankCustomerSchema(env);await ensureBankPassiveSchema(env);await ensureBankCardSchema(env);const tenantId=await bankTenant(env,user);
+    const rows=(await env.DB.prepare(`SELECT k.id,k.card_number,k.expires_at,k.customer_id,k.linked_account_id,a.account_number,a.account_type,a.currency,a.balance,c.customer_number,c.first_name,c.last_name,c.legal_name FROM bank_cards k JOIN bank_accounts a ON a.id=k.linked_account_id JOIN bank_customers c ON c.id=k.customer_id WHERE k.tenant_id=? AND k.owner_user_id=? AND k.card_type='DEBITO' AND k.status='ACTIVE' AND a.status='ACTIVE' ORDER BY k.created_at DESC`).bind(tenantId,user.id).all()).results;
+    return json({cards:rows});
+  }
+  if(path==='/api/bank/atm/authorize'&&request.method==='POST'){
+    const auth=await requireUser(request,env);if(auth.error)return auth.error;const user=auth.user;
+    await ensureBankCustomerSchema(env);await ensureBankPassiveSchema(env);await ensureBankCardSchema(env);const tenantId=await bankTenant(env,user),b=await readBody(request),cardId=String(b.cardId||''),amountCents=Number(b.amountCents),operation=String(b.operation||'withdrawal');
+    if(!cardId||!Number.isFinite(amountCents)||amountCents<0)return json({error:'BAD_REQUEST',message:'Datos ATM inválidos.'},400);
+    const row=await env.DB.prepare(`SELECT k.*,a.account_number,a.currency,a.balance,a.status account_status,c.customer_number,c.first_name,c.last_name,c.legal_name FROM bank_cards k JOIN bank_accounts a ON a.id=k.linked_account_id JOIN bank_customers c ON c.id=k.customer_id WHERE k.id=? AND k.tenant_id=? AND k.owner_user_id=? AND k.status='ACTIVE'`).bind(cardId,tenantId,user.id).first();
+    if(!row)return json({error:'CARD_NOT_FOUND',message:'Tarjeta doméstica no encontrada.'},404);
+    if(operation==='balance')return json({approved:true,responseCode:'00',balance:Number(row.balance||0),accountNumber:row.account_number,cardId:row.id});
+    const amount=amountCents/100,balance=Number(row.balance||0);if(amount<=0)return json({error:'BAD_AMOUNT',message:'Importe inválido.'},400);
+    if(balance<amount)return json({approved:false,responseCode:'51',message:'Fondos insuficientes',balance,accountNumber:row.account_number});
+    const newBalance=balance-amount,ts=now(),movementId=id('mov'),reference=`ATM-${Date.now()}`;
+    await env.DB.batch([
+      env.DB.prepare(`UPDATE bank_accounts SET balance=?,updated_at=? WHERE id=? AND tenant_id=? AND owner_user_id=?`).bind(newBalance,ts,row.linked_account_id,tenantId,user.id),
+      env.DB.prepare(`INSERT INTO bank_account_movements(id,tenant_id,owner_user_id,account_id,movement_type,description,amount,balance_after,reference,created_at) VALUES(?,?,?,?,?,?,?,?,?,?)`).bind(movementId,tenantId,user.id,row.linked_account_id,'EXTRACCION_ATM','Extracción ATM doméstica',-amount,newBalance,reference,ts)
+    ]);
+    return json({approved:true,responseCode:'00',message:'Aprobada',balance:newBalance,previousBalance:balance,accountNumber:row.account_number,reference,cardId:row.id});
+  }
+  if(path==='/api/bank/atm/reverse'&&request.method==='POST'){
+    const auth=await requireUser(request,env);if(auth.error)return auth.error;const user=auth.user;
+    await ensureBankPassiveSchema(env);const tenantId=await bankTenant(env,user),b=await readBody(request),cardId=String(b.cardId||''),amountCents=Number(b.amountCents),originalReference=String(b.originalReference||'');
+    if(!cardId||!Number.isFinite(amountCents)||amountCents<=0)return json({error:'BAD_REQUEST',message:'Datos de reversa inválidos.'},400);
+    const row=await env.DB.prepare(`SELECT k.linked_account_id,a.account_number,a.balance FROM bank_cards k JOIN bank_accounts a ON a.id=k.linked_account_id WHERE k.id=? AND k.tenant_id=? AND k.owner_user_id=?`).bind(cardId,tenantId,user.id).first();if(!row)return json({error:'CARD_NOT_FOUND'},404);
+    if(originalReference){const prior=await env.DB.prepare(`SELECT id FROM bank_account_movements WHERE account_id=? AND movement_type='REVERSA_ATM' AND reference=?`).bind(row.linked_account_id,originalReference).first();if(prior)return json({approved:true,responseCode:'00',balance:Number(row.balance||0),alreadyReversed:true});}
+    const amount=amountCents/100,balance=Number(row.balance||0),newBalance=balance+amount,ts=now(),ref=originalReference||`ATM-REV-${Date.now()}`;
+    await env.DB.batch([env.DB.prepare(`UPDATE bank_accounts SET balance=?,updated_at=? WHERE id=?`).bind(newBalance,ts,row.linked_account_id),env.DB.prepare(`INSERT INTO bank_account_movements(id,tenant_id,owner_user_id,account_id,movement_type,description,amount,balance_after,reference,created_at) VALUES(?,?,?,?,?,?,?,?,?,?)`).bind(id('mov'),tenantId,user.id,row.linked_account_id,'REVERSA_ATM','Reversa ATM doméstica',amount,newBalance,ref,ts)]);
+    return json({approved:true,responseCode:'00',balance:newBalance,accountNumber:row.account_number});
+  }
   if(path==='/api/bank/pos/authorize'&&request.method==='POST'){
     const auth=await requireUser(request,env);if(auth.error)return auth.error;const user=auth.user;
     await ensureBankCustomerSchema(env);await ensureBankPassiveSchema(env);await ensureBankCardSchema(env);const tenantId=await bankTenant(env,user),b=await readBody(request),cardId=String(b.cardId||''),amountCents=Number(b.amountCents);
