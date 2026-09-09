@@ -403,7 +403,7 @@
 
     <h3>¿Qué tipos de QR existen?</h3>
     <div class="qr-type-comparison">
-      <section><strong>QR estático</strong><ul><li>Se puede reutilizar</li><li>Identifica al comercio</li><li>El cliente suele ingresar el importe</li><li>Puede permanecer impreso</li></ul></section>
+      <section><strong>QR estático</strong><ul><li>Se puede reutilizar</li><li>Identifica al comercio</li><li>Puede incluir el importe según la implementación</li><li>Puede permanecer impreso</li></ul></section>
       <section><strong>QR dinámico</strong><ul><li>Se genera para una compra</li><li>Identifica al comercio y la operación</li><li>El importe ya viene incluido</li><li>Se muestra en la pantalla del POS</li></ul></section>
     </div>
 
@@ -413,18 +413,28 @@
     </div>
 
     <div id="qrEducationFlow" class="qr-education-flow hidden">
-      <div class="qr-flow-note"><strong>Idea clave</strong><span>El PSP es el componente neurálgico del pago QR: recibe la solicitud iniciada por la wallet, la comunica al adquirente/procesador y, cuando llega la respuesta, informa el resultado a la wallet y al comercio.</span></div>
-      <div class="qr-psp-explanation"><strong>¿Qué hace el PSP?</strong><span>Orquesta el pago detrás de la aplicación: valida la solicitud, la enruta, conserva la referencia de la operación y distribuye la aprobación o el rechazo a quienes necesitan conocerlo.</span></div>
-      <h3>Ida · Solicitud de pago</h3>
-      <div class="qr-flow-path request"><span>POS genera QR</span><b>→</b><span>Wallet escanea y confirma</span><b>→</b><span class="psp-step"><small>ORQUESTADOR</small>PSP de la wallet</span><b>→</b><span>Adquirente / procesador</span><b>→</b><span>Red</span><b>→</b><span>Emisor autoriza o rechaza</span></div>
-      <p class="qr-flow-iso">La wallet no se comunica directamente con el emisor. Entrega la solicitud al PSP, que la envía al adquirente/procesador. Desde allí puede utilizarse mensajería ISO 8583 hacia la red y el emisor. El POS solamente generó el QR y espera la confirmación.</p>
-      <h3>Vuelta · Dos caminos de respuesta</h3>
-      <p class="qr-flow-return">Respuesta común: <strong>Emisor → Red → Adquirente/procesador → PSP</strong>. Desde el PSP se actualizan los dos participantes:</p>
-      <div class="qr-response-branches">
-        <section><span class="branch-number">1</span><div><strong>Confirmación al cliente</strong><p>PSP → wallet: muestra “Pago aprobado” o informa el motivo del rechazo.</p></div></section>
-        <section><span class="branch-number">2</span><div><strong>Confirmación al comercio</strong><p>PSP → backend del comercio/adquirente → POS: muestra “Venta aprobada” o “Venta rechazada”.</p></div></section>
-      </div>
-      <p class="qr-flow-delay">Los avisos viajan por canales diferentes. Por eso el cliente puede ver el resultado primero en su wallet y el POS recibirlo algunos segundos después mediante notificación, consulta o actualización de estado. La implementación exacta puede variar según la wallet, el PSP y el adquirente.</p>
+      <style>
+        .qr40-card{margin-top:14px;border:1px solid #b9d8ec;border-radius:15px;background:#f7fbff;color:#173b57;padding:18px}
+        .qr40-k{font-size:11px;font-weight:900;letter-spacing:.08em;color:#0875d1}.qr40-card h3{margin:5px 0}.qr40-lead{margin:0 0 15px;color:#587287}
+        .qr40-path{display:flex;align-items:stretch;justify-content:center;gap:7px;flex-wrap:wrap}.qr40-node{width:125px;min-height:110px;border:1px solid #b7d5e9;border-radius:12px;background:#fff;padding:11px;text-align:center}.qr40-node span{display:block;font-size:27px}.qr40-node strong{display:block;font-size:11px;margin-top:5px}.qr40-node small{display:block;color:#6e879a;font-size:9px;margin-top:4px;line-height:1.35}.qr40-arr{display:grid;place-items:center;color:#1d79bd;font-size:19px;font-weight:900}
+        .qr40-keys{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:15px}.qr40-keys div{background:#eaf6ff;border-radius:9px;padding:10px;font-size:10px;color:#31566f}.qr40-keys b{display:block;color:#0c6fb6;margin-bottom:3px}.qr40-iso{margin-top:13px;border-left:4px solid #0b8bd8;background:#eef9ff;padding:11px;border-radius:8px;font-size:10px;color:#35576e}
+        @media(max-width:720px){.qr40-node{width:46%}.qr40-arr{display:none}.qr40-keys{grid-template-columns:1fr}}
+      </style>
+      <section class="qr40-card">
+        <div class="qr40-k">QR DINÁMICO · MERCHANT PRESENTED</div>
+        <h3>El POS genera un QR específico para la operación</h3>
+        <p class="qr40-lead">El QR dinámico se crea para la compra en curso y puede incorporar el importe y referencias propias de esa transacción.</p>
+        <div class="qr40-path">
+          <div class="qr40-node"><span>▣</span><strong>POS</strong><small>Genera el QR de la operación</small></div><div class="qr40-arr">→</div>
+          <div class="qr40-node"><span>📱</span><strong>App / Wallet</strong><small>Escanea y confirma</small></div><div class="qr40-arr">→</div>
+          <div class="qr40-node"><span>⚙</span><strong>PSP</strong><small>Orquesta la solicitud</small></div><div class="qr40-arr">→</div>
+          <div class="qr40-node"><span>🏦</span><strong>Adquirente / Procesador</strong><small>Construye / mapea y enruta</small></div><div class="qr40-arr">→</div>
+          <div class="qr40-node"><span>🌐</span><strong>Marca / Red</strong><small>Procesa y enruta</small></div><div class="qr40-arr">→</div>
+          <div class="qr40-node"><span>🏛</span><strong>Emisor</strong><small>Autoriza o rechaza</small></div>
+        </div>
+        <div class="qr40-keys"><div><b>QR único</b>Se genera para una transacción concreta.</div><div><b>Datos de operación</b>Puede contener importe y referencias según la implementación.</div><div><b>Respuesta</b>El resultado vuelve por la red y el PSP actualiza al cliente y al comercio.</div></div>
+        <div class="qr40-iso"><b>Datos ISO 8583 relevantes:</b> no se asigna un DE universal a “QR”. El mapeo exacto depende de la marca, red y perfil implementado; la trama completa se analiza en el Parser.</div>
+      </section>
     </div>
 
     <div class="qr-education-actions">
@@ -441,7 +451,7 @@
 <script>document.addEventListener('DOMContentLoaded',()=>{document.querySelectorAll('.pos-scenario-mini button').forEach((b,i)=>b.onclick=()=>{document.querySelectorAll('.pos-scenario-mini button').forEach(x=>x.classList.remove('active'));b.classList.add('active');const original=document.querySelectorAll('#scenarioGrid button')[i];if(original)original.click()});const log=document.getElementById('posTechEvents');const status=document.getElementById('flowResponse');if(log&&status)new MutationObserver(()=>{const d=document.createElement('div');d.textContent=new Date().toLocaleTimeString('es-AR')+' · '+status.textContent;log.prepend(d);while(log.children.length>8)log.lastChild.remove()}).observe(status,{childList:true,subtree:true,characterData:true})});</script>
 <script src="js/permissions.js"></script>
 
-<div id="osc-version-badge" style="position:fixed;right:14px;bottom:12px;z-index:99999;background:#0d2238;border:1px solid #2f83ff;color:#9fd0ff;padding:7px 11px;border-radius:999px;font:600 12px/1.1 Inter,Segoe UI,Arial,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.28)">Baseline v3.5.4.20 · Curso Interactivo ISO 8583</div>
+<div id="osc-version-badge" style="position:fixed;right:14px;bottom:12px;z-index:99999;background:#0d2238;border:1px solid #2f83ff;color:#9fd0ff;padding:7px 11px;border-radius:999px;font:600 12px/1.1 Inter,Segoe UI,Arial,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.28)">Entregable v3.5.4.40 · Flujos didácticos</div>
 <script src="js/help-catalog.js"></script>
 <script src="js/module-guide.js"></script><script src="js/navigation.js?v=4.0.0-rc1.7"></script></body>
 </html>
