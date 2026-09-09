@@ -1,0 +1,12 @@
+OSC Payment Academy v3.5.4.26 - Wallet / E-Commerce D1
+
+Cambio estructural 1:
+- Wallet / Tokenizacion ahora registra las compras NFC en OSCSwitchStore.
+- E-Commerce / 3DS ahora registra las compras online en OSCSwitchStore.
+- Ambos modulos sincronizan el workspace compartido con /api/workspace/payment (Cloudflare D1).
+- El historial de cada modulo se restaura desde el workspace D1 al volver a abrir la pantalla.
+- Se mantiene el aislamiento existente por tenant/usuario del workspace v4.
+- No se modifica POS, ATM, Switch, Parser ni Constructor.
+
+Instalacion UPDATE:
+Copiar public/wallet.html, public/ecommerce.html y este release note sobre la instalacion actual.
