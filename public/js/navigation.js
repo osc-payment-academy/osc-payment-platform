@@ -1,4 +1,4 @@
-/* OSC Academy v3.5.4.47 - navegación + CLIENTES + habilitación progresiva por cohorte. */
+/* OSC Academy v3.5.4.48 - navegación + CLIENTES + habilitación progresiva por cohorte. */
 (async()=>{
   const modules=[
     {href:'index.html',icon:'⌂',label:'Dashboard'},
@@ -34,7 +34,7 @@
   const sidebar=document.querySelector('aside.side, aside.sidebar, aside.osc-sidebar');
   if(!sidebar)return;
   const managed=new Set(modules.map(item=>item.href));
-  const style=document.createElement('style');style.textContent=`.osc-primary-navigation{display:grid!important;gap:4px!important;margin:14px 0 16px!important}.osc-primary-navigation .nav{display:block!important;position:static!important;margin:0!important;padding:10px 12px!important;text-decoration:none!important}.osc-primary-navigation .nav.locked{opacity:.52}.future-resources{display:none!important}aside a[href="mastercard_iso.html"],aside a[href="cuenta_cliente.html"],aside a[href="ondemand_lab.html"],aside a[href="production_diagnostic.html"]{display:none!important}`;document.head.appendChild(style);
+  const style=document.createElement('style');style.textContent=`.osc-primary-navigation{display:grid!important;gap:4px!important;margin:14px 0 16px!important}.osc-primary-navigation .nav{display:block!important;position:static!important;margin:0!important;padding:10px 12px!important;text-decoration:none!important;color:#c7d2df!important}.osc-primary-navigation .nav:visited{color:#c7d2df!important}.osc-primary-navigation .nav:hover{color:#ffffff!important;background:rgba(255,255,255,.06)!important}.osc-primary-navigation .nav.active{color:#ffffff!important;background:rgba(47,131,255,.16)!important;border-radius:8px!important}.osc-primary-navigation .nav.locked{opacity:.52}.future-resources{display:none!important}aside a[href="mastercard_iso.html"],aside a[href="cuenta_cliente.html"],aside a[href="ondemand_lab.html"],aside a[href="production_diagnostic.html"]{display:none!important}`;document.head.appendChild(style);
   sidebar.querySelectorAll('a[href]').forEach(link=>{const href=(link.getAttribute('href')||'').split(/[?#]/)[0].split('/').pop();if(managed.has(href))link.remove();});
   sidebar.querySelectorAll('nav').forEach(nav=>{if(!nav.querySelector('a,button,[data-op],[data-section]'))nav.remove();});sidebar.querySelectorAll(':scope > .section:not(.instructor)').forEach(section=>section.remove());
   const nav=document.createElement('nav');nav.className='osc-primary-navigation';nav.setAttribute('aria-label','Navegación principal');

@@ -235,7 +235,7 @@ async function api(request,env,path){
     const existing=await env.DB.prepare(`SELECT id FROM bank_cards WHERE linked_account_id=? AND tenant_id=? AND owner_user_id=? AND card_type='DEBITO' AND status='ACTIVE'`).bind(accountId,tenantId,user.id).first();if(existing)return json({error:'ACTIVE_CARD_EXISTS',message:'Esta cuenta ya tiene una tarjeta de débito activa.'},409);
     const ts=now(),cardId=id('card'),count=await env.DB.prepare(`SELECT COUNT(*) total FROM bank_cards WHERE tenant_id=?`).bind(tenantId).first(),seq=String((count?.total||0)+1).padStart(9,'0');
     const base=`990001${seq}`.slice(0,15),pan=base+luhnCheckDigit(base),d=new Date(),expires=new Date(Date.UTC(d.getUTCFullYear()+5,d.getUTCMonth(),1)).toISOString().slice(0,10);
-    await env.DB.prepare(`INSERT INTO bank_cards(id,tenant_id,owner_user_id,customer_id,linked_account_id,card_number,card_type,brand,status,issued_at,expires_at,created_at,updated_at) VALUES(?,?,?,?,?,?,?,'OSC DOMESTICA','ACTIVE',?,?,?,?,?)`).bind(cardId,tenantId,user.id,customerId,accountId,pan,cardType,ts.slice(0,10),expires,ts,ts).run();
+    await env.DB.prepare(`INSERT INTO bank_cards(id,tenant_id,owner_user_id,customer_id,linked_account_id,card_number,card_type,brand,status,issued_at,expires_at,created_at,updated_at) VALUES(?,?,?,?,?,?,?,'OSC DOMESTICA','ACTIVE',?,?,?,?)`).bind(cardId,tenantId,user.id,customerId,accountId,pan,cardType,ts.slice(0,10),expires,ts,ts).run();
     await audit(env,user.id,'BANK_DEBIT_CARD_ISSUE','BANK_CARD',cardId,{customerId,accountId,maskedCard:maskCard(pan)});return json({ok:true,id:cardId,maskedCardNumber:maskCard(pan),expiresAt:expires},201);
   }
   if(path==='/api/bootstrap'&&request.method==='POST'){
