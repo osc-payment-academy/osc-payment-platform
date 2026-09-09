@@ -1,9 +1,10 @@
-/* OSC Academy v3.5.4.46 - navegación + CLIENTES + habilitación progresiva por cohorte. */
+/* OSC Academy v3.5.4.47 - navegación + CLIENTES + habilitación progresiva por cohorte. */
 (async()=>{
   const modules=[
     {href:'index.html',icon:'⌂',label:'Dashboard'},
     {href:'clientes.html',icon:'👤',label:'CLIENTES'},
     {href:'pasivas.html',icon:'🏦',label:'PASIVAS'},
+    {href:'solicitudes.html',icon:'💳',label:'SOLICITUDES'},
     {href:'curso_interactivo.html',icon:'🎓',label:'Curso Interactivo',key:'course_iso8583',day:1},
     {href:'ebook.html',icon:'📖',label:'eBook ISO 8583'},
     {href:'constructor.html',icon:'⌘',label:'Constructor ISO8583',key:'constructor',day:1},

@@ -158,6 +158,16 @@ async function ensureBankPassiveSchema(env){
   await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_bank_accounts_customer ON bank_accounts(tenant_id,owner_user_id,customer_id,created_at DESC)`).run();
   await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_bank_movements_account ON bank_account_movements(account_id,created_at DESC)`).run();
 }
+async function ensureBankCardSchema(env){
+  await env.DB.prepare(`CREATE TABLE IF NOT EXISTS bank_cards (
+    id TEXT PRIMARY KEY,tenant_id TEXT NOT NULL,owner_user_id TEXT NOT NULL,customer_id TEXT NOT NULL,linked_account_id TEXT NOT NULL,
+    card_number TEXT NOT NULL,card_type TEXT NOT NULL DEFAULT 'DEBITO',brand TEXT NOT NULL DEFAULT 'OSC DOMESTICA',status TEXT NOT NULL DEFAULT 'ACTIVE',
+    issued_at TEXT NOT NULL,expires_at TEXT NOT NULL,created_at TEXT NOT NULL,updated_at TEXT NOT NULL,
+    UNIQUE(tenant_id,card_number))`).run();
+  await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_bank_cards_customer ON bank_cards(tenant_id,owner_user_id,customer_id,created_at DESC)`).run();
+}
+const luhnCheckDigit=base=>{let sum=0,alt=true;for(let i=base.length-1;i>=0;i--){let n=Number(base[i]);if(alt){n*=2;if(n>9)n-=9}sum+=n;alt=!alt}return String((10-(sum%10))%10)};
+const maskCard=pan=>`${pan.slice(0,6)}******${pan.slice(-4)}`;
 async function api(request,env,path){
   if(path==='/api/bank/customers'&&(request.method==='GET'||request.method==='POST')){
     const auth=await requireUser(request,env); if(auth.error)return auth.error; const user=auth.user;
@@ -210,6 +220,23 @@ async function api(request,env,path){
     const ts=now(),newBalance=Number(account.balance||0)+amount,movementId=id('mov'),reference=`CAJA-${Date.now()}`;
     await env.DB.batch([env.DB.prepare(`UPDATE bank_accounts SET balance=?,updated_at=? WHERE id=?`).bind(newBalance,ts,account.id),env.DB.prepare(`INSERT INTO bank_account_movements(id,tenant_id,owner_user_id,account_id,movement_type,description,amount,balance_after,reference,created_at) VALUES(?,?,?,?,?,?,?,?,?,?)`).bind(movementId,tenantId,auth.user.id,account.id,'DEPOSITO_CAJA','Depósito por Caja',amount,newBalance,reference,ts)]);
     await audit(env,auth.user.id,'BANK_CASH_DEPOSIT','BANK_ACCOUNT',account.id,{amount,newBalance,reference});return json({ok:true,newBalance,reference},201);
+  }
+  if(path==='/api/bank/cards'&&(request.method==='GET'||request.method==='POST')){
+    const auth=await requireUser(request,env);if(auth.error)return auth.error;const user=auth.user;
+    await ensureBankCustomerSchema(env);await ensureBankPassiveSchema(env);await ensureBankCardSchema(env);const tenantId=await bankTenant(env,user);
+    if(request.method==='GET'){
+      const rows=(await env.DB.prepare(`SELECT k.*,a.account_number,a.account_type,a.currency,c.customer_number,c.person_type,c.first_name,c.last_name,c.legal_name,c.trade_name FROM bank_cards k JOIN bank_accounts a ON a.id=k.linked_account_id JOIN bank_customers c ON c.id=k.customer_id WHERE k.tenant_id=? AND k.owner_user_id=? ORDER BY k.created_at DESC`).bind(tenantId,user.id).all()).results;
+      return json({cards:rows.map(x=>({...x,masked_card_number:maskCard(x.card_number),card_number:undefined}))});
+    }
+    const b=await readBody(request),customerId=String(b.customerId||''),accountId=String(b.accountId||''),cardType=String(b.cardType||'DEBITO').toUpperCase();
+    if(!customerId||!accountId||cardType!=='DEBITO')return json({error:'INVALID_DATA',message:'Cliente, cuenta vinculada y tipo de tarjeta son obligatorios.'},400);
+    const customer=await env.DB.prepare(`SELECT * FROM bank_customers WHERE id=? AND tenant_id=? AND owner_user_id=? AND status='ACTIVE'`).bind(customerId,tenantId,user.id).first();if(!customer)return json({error:'CUSTOMER_NOT_FOUND',message:'Cliente no encontrado.'},404);
+    const account=await env.DB.prepare(`SELECT * FROM bank_accounts WHERE id=? AND customer_id=? AND tenant_id=? AND owner_user_id=? AND status='ACTIVE'`).bind(accountId,customerId,tenantId,user.id).first();if(!account)return json({error:'ACCOUNT_NOT_FOUND',message:'La cuenta seleccionada no pertenece al cliente o no está activa.'},404);
+    const existing=await env.DB.prepare(`SELECT id FROM bank_cards WHERE linked_account_id=? AND tenant_id=? AND owner_user_id=? AND card_type='DEBITO' AND status='ACTIVE'`).bind(accountId,tenantId,user.id).first();if(existing)return json({error:'ACTIVE_CARD_EXISTS',message:'Esta cuenta ya tiene una tarjeta de débito activa.'},409);
+    const ts=now(),cardId=id('card'),count=await env.DB.prepare(`SELECT COUNT(*) total FROM bank_cards WHERE tenant_id=?`).bind(tenantId).first(),seq=String((count?.total||0)+1).padStart(9,'0');
+    const base=`990001${seq}`.slice(0,15),pan=base+luhnCheckDigit(base),d=new Date(),expires=new Date(Date.UTC(d.getUTCFullYear()+5,d.getUTCMonth(),1)).toISOString().slice(0,10);
+    await env.DB.prepare(`INSERT INTO bank_cards(id,tenant_id,owner_user_id,customer_id,linked_account_id,card_number,card_type,brand,status,issued_at,expires_at,created_at,updated_at) VALUES(?,?,?,?,?,?,?,'OSC DOMESTICA','ACTIVE',?,?,?,?,?)`).bind(cardId,tenantId,user.id,customerId,accountId,pan,cardType,ts.slice(0,10),expires,ts,ts).run();
+    await audit(env,user.id,'BANK_DEBIT_CARD_ISSUE','BANK_CARD',cardId,{customerId,accountId,maskedCard:maskCard(pan)});return json({ok:true,id:cardId,maskedCardNumber:maskCard(pan),expiresAt:expires},201);
   }
   if(path==='/api/bootstrap'&&request.method==='POST'){
     if(!env.BOOTSTRAP_KEY||request.headers.get('x-bootstrap-key')!==env.BOOTSTRAP_KEY)return json({error:'FORBIDDEN'},403);
