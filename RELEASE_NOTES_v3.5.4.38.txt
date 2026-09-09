@@ -1,0 +1,9 @@
+OSC PAYMENT ACADEMY v3.5.4.38
+
+- POS y ATM en modo pantalla completa, sin menú lateral.
+- Wallet: selector Visa/Mastercard/AMEX, animación NFC celular→POS, Flujo + Popup blanco, Token Vault.
+- E-Commerce: laptop con teclado, Flujo + Popup blanco con Standard/Intermedio/Completo.
+- Corrección de render de bits Bitmap en Wallet y E-Commerce.
+- Persistencia D1 de mensajes ISO8583 Request/Response independientes mediante isoMessages.
+- Historial seleccionable: Wallet 0200/0210; E-Commerce 0100/0110.
+- Selección reconstruye MTI, Bitmap y DE en zona técnica.
