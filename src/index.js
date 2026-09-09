@@ -13,6 +13,31 @@ const cookie = request => Object.fromEntries((request.headers.get('cookie')||'')
 const sessionCookie = (token, maxAge=28800) => `osc_session=${encodeURIComponent(token)}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${maxAge}`;
 const readBody = async request => { try { return await request.json(); } catch { return {}; } };
 
+const LEARNING_MODULES=['course_iso8583','pos','parser','constructor','atm','ecommerce','wallet','switch_emisor'];
+const DAY1_MODULES=['course_iso8583','pos','parser','constructor'];
+async function ensureModuleAccessSchema(env){
+  await env.DB.prepare(`CREATE TABLE IF NOT EXISTS cohort_module_access (
+    cohort_id TEXT NOT NULL,module_key TEXT NOT NULL,enabled INTEGER NOT NULL DEFAULT 0,enabled_at TEXT,updated_by TEXT,updated_at TEXT NOT NULL,
+    PRIMARY KEY(cohort_id,module_key),FOREIGN KEY(cohort_id) REFERENCES cohorts(id),FOREIGN KEY(updated_by) REFERENCES users(id))`).run();
+}
+async function seedCohortModules(env,cohortId,actorId=null){
+  await ensureModuleAccessSchema(env); const ts=now();
+  await env.DB.batch(LEARNING_MODULES.map(k=>env.DB.prepare(`INSERT OR IGNORE INTO cohort_module_access(cohort_id,module_key,enabled,enabled_at,updated_by,updated_at) VALUES(?,?,?,?,?,?)`).bind(cohortId,k,DAY1_MODULES.includes(k)?1:0,DAY1_MODULES.includes(k)?ts:null,actorId,ts)));
+}
+async function learningAccess(env,user){
+  if(user.platform_role==='OSC_ADMIN')return {progressive:false,enabled:[...LEARNING_MODULES]};
+  const consultancy=await env.DB.prepare(`SELECT 1 ok FROM memberships m JOIN tenants t ON t.id=m.tenant_id JOIN licenses l ON l.tenant_id=t.id WHERE m.user_id=? AND m.status='ACTIVE' AND t.tenant_type='CONSULTANCY' AND l.product_id='product_payment' AND l.status='ACTIVE' AND (l.expires_at IS NULL OR l.expires_at>?) LIMIT 1`).bind(user.id,now()).first();
+  if(consultancy)return {progressive:false,enabled:[...LEARNING_MODULES]};
+  await ensureModuleAccessSchema(env);
+  const cohorts=(await env.DB.prepare(`SELECT c.id FROM cohort_enrollments e JOIN cohorts c ON c.id=e.cohort_id JOIN licenses l ON l.cohort_id=c.id WHERE e.user_id=? AND e.status='ACTIVE' AND c.status='ACTIVE' AND l.product_id='product_payment' AND l.status='ACTIVE' AND l.starts_at<=? AND (l.expires_at IS NULL OR l.expires_at>?)`).bind(user.id,now(),now()).all()).results;
+  if(!cohorts.length)return {progressive:false,enabled:[...LEARNING_MODULES]};
+  for(const c of cohorts)await seedCohortModules(env,c.id);
+  const marks=cohorts.map(()=>'?').join(',');
+  const rows=(await env.DB.prepare(`SELECT DISTINCT module_key FROM cohort_module_access WHERE cohort_id IN (${marks}) AND enabled=1`).bind(...cohorts.map(c=>c.id)).all()).results;
+  return {progressive:true,enabled:rows.map(r=>r.module_key)};
+}
+
+
 async function currentUser(request, env){
   const token=cookie(request).osc_session;
   if(!token)return null;
@@ -154,7 +179,8 @@ async function api(request,env,path){
       FROM cohort_enrollments e JOIN cohorts c ON c.id=e.cohort_id JOIN courses co ON co.id=c.course_id
       WHERE e.user_id=? AND e.status='ACTIVE' ORDER BY c.starts_at DESC`).bind(auth.user.id).all()).results;
     const analytics=await productAccess(env,auth.user,'product_authorization_analytics');
-    return json({user:auth.user,memberships,cohorts,entitlements:{authorizationAnalytics:!!analytics}});
+    const modules=await learningAccess(env,auth.user);
+    return json({user:auth.user,memberships,cohorts,entitlements:{authorizationAnalytics:!!analytics},moduleAccess:modules});
   }
 
   if(path==='/api/workspace/payment'){
@@ -285,6 +311,7 @@ async function api(request,env,path){
       env.DB.prepare('INSERT INTO cohorts(id,course_id,tenant_id,name,live_at,starts_at,expires_at,forum_status,status,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?)').bind(cohortId,courseId,tenantId,b.groupName,b.liveAt||null,starts.toISOString(),expires.toISOString(),'OPEN','ACTIVE',ts,ts),
       env.DB.prepare('INSERT INTO licenses(id,tenant_id,product_id,cohort_id,license_type,starts_at,expires_at,seat_limit,status,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?)').bind(licenseId,tenantId,b.productId||'product_payment',cohortId,'COURSE_30_DAYS',starts.toISOString(),expires.toISOString(),Number(b.seatLimit||12),'ACTIVE',ts,ts)
     ]);
+    await seedCohortModules(env,cohortId,auth.user.id);
     await audit(env,auth.user.id,'CREATE_COURSE_PACKAGE','COHORT',cohortId,{seatLimit:b.seatLimit||12});
     return json({ok:true,courseId,cohortId,expiresAt:expires.toISOString()});
   }
@@ -305,6 +332,27 @@ async function api(request,env,path){
     await env.DB.batch(statements);
     await audit(env,auth.user.id,'CONVERT_TO_CONSULTANCY','TENANT',tenantId,{userIds});
     return json({ok:true,tenantId,licenseId,migratedUsers:userIds.length});
+  }
+
+
+  const moduleMatch=path.match(/^\/api\/admin\/cohorts\/([^/]+)\/modules$/);
+  if(moduleMatch){
+    const auth=await requireUser(request,env,['OSC_ADMIN']); if(auth.error)return auth.error;
+    const cohortId=moduleMatch[1];
+    const cohort=await env.DB.prepare('SELECT id,name FROM cohorts WHERE id=?').bind(cohortId).first();
+    if(!cohort)return json({error:'COHORT_NOT_FOUND'},404);
+    await seedCohortModules(env,cohortId,auth.user.id);
+    if(request.method==='GET'){
+      const rows=(await env.DB.prepare('SELECT module_key,enabled,enabled_at,updated_at FROM cohort_module_access WHERE cohort_id=? ORDER BY rowid').bind(cohortId).all()).results;
+      return json({cohort,modules:rows});
+    }
+    if(request.method==='PUT'){
+      const b=await readBody(request),enabled=Array.isArray(b.enabled)?b.enabled.filter(k=>LEARNING_MODULES.includes(k)):[];
+      const ts=now();
+      await env.DB.batch(LEARNING_MODULES.map(k=>env.DB.prepare('UPDATE cohort_module_access SET enabled=?,enabled_at=CASE WHEN ?=1 AND enabled=0 THEN ? WHEN ?=0 THEN NULL ELSE enabled_at END,updated_by=?,updated_at=? WHERE cohort_id=? AND module_key=?').bind(enabled.includes(k)?1:0,enabled.includes(k)?1:0,ts,enabled.includes(k)?1:0,auth.user.id,ts,cohortId,k)));
+      await audit(env,auth.user.id,'UPDATE_COHORT_MODULES','COHORT',cohortId,{enabled});
+      return json({ok:true,enabled});
+    }
   }
 
   const enrollMatch=path.match(/^\/api\/admin\/cohorts\/([^/]+)\/enroll$/);

@@ -1,0 +1,15 @@
+OSC Payment Academy v3.5.4.27
+CAMBIO ESTRUCTURAL: habilitación progresiva por cohorte.
+
+Día 1: ISO8583 Interactivo + POS + Parser + Constructor
+Día 2: + ATM
+Día 3: + E-Commerce / 3DS
+Día 4: + Wallet / Tokenización
+Día 5: + Switch Emisor
+
+- Administración desde Alumnos del curso.
+- Los módulos bloqueados se muestran con candado y día de habilitación.
+- El acceso directo por URL también queda bloqueado para alumnos de cohortes progresivas.
+- OSC_ADMIN y licencias CONSULTANCY mantienen acceso completo.
+- Nuevas cohortes nacen con Día 1 habilitado.
+- La tabla D1 se crea automáticamente al usar la función y también se incluye SQL de migración.

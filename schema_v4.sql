@@ -25,3 +25,7 @@ CREATE INDEX IF NOT EXISTS idx_sessions_hash ON sessions(token_hash,expires_at);
 CREATE INDEX IF NOT EXISTS idx_authorization_analyses_tenant_date ON authorization_analyses(tenant_id,analysis_date DESC);
 
 INSERT OR IGNORE INTO products(id,name,slug,core_enabled,status,created_at,updated_at) VALUES('product_authorization_analytics','OSC Authorization Analytics','authorization-analytics',0,'ACTIVE',datetime('now'),datetime('now'));
+
+
+CREATE TABLE IF NOT EXISTS cohort_module_access (cohort_id TEXT NOT NULL,module_key TEXT NOT NULL,enabled INTEGER NOT NULL DEFAULT 0,enabled_at TEXT,updated_by TEXT,updated_at TEXT NOT NULL,PRIMARY KEY(cohort_id,module_key),FOREIGN KEY(cohort_id) REFERENCES cohorts(id),FOREIGN KEY(updated_by) REFERENCES users(id));
+CREATE INDEX IF NOT EXISTS idx_cohort_module_access ON cohort_module_access(cohort_id,enabled);

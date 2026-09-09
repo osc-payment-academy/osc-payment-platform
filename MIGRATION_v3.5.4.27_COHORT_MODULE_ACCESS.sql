@@ -1,0 +1,2 @@
+CREATE TABLE IF NOT EXISTS cohort_module_access (cohort_id TEXT NOT NULL,module_key TEXT NOT NULL,enabled INTEGER NOT NULL DEFAULT 0,enabled_at TEXT,updated_by TEXT,updated_at TEXT NOT NULL,PRIMARY KEY(cohort_id,module_key),FOREIGN KEY(cohort_id) REFERENCES cohorts(id),FOREIGN KEY(updated_by) REFERENCES users(id));
+CREATE INDEX IF NOT EXISTS idx_cohort_module_access ON cohort_module_access(cohort_id,enabled);

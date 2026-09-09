@@ -42,6 +42,13 @@
         <div id="message" class="message"></div>
       </section>
       <section class="panel">
+        <h2>Habilitación progresiva del curso</h2>
+        <p class="muted">Activá los módulos al finalizar cada clase. El cambio se aplica a todos los alumnos de la edición seleccionada.</p>
+        <div id="moduleControls" class="form-grid"></div>
+        <div class="full-row" style="margin-top:14px"><button class="btn primary" id="saveModules" type="button">Guardar módulos habilitados</button></div>
+        <div id="moduleMessage" class="message"></div>
+      </section>
+      <section class="panel">
         <h2>Reinicializar clave de un alumno</h2>
         <p class="muted">Genera una clave temporal, invalida las sesiones abiertas y no muestra la contraseña anterior.</p>
         <form id="resetPasswordForm">
@@ -63,6 +70,16 @@
     </main>
     <script src="js/saas-session.js"></script>
     <script>
+      const learningModules=[
+        ['course_iso8583','Día 1 · ISO8583 Interactivo'],['pos','Día 1 · POS Virtual'],['parser','Día 1 · Parser'],['constructor','Día 1 · Constructor'],
+        ['atm','Día 2 · ATM Virtual'],['ecommerce','Día 3 · E-Commerce / 3DS'],['wallet','Día 4 · Wallet / Tokenización'],['switch_emisor','Día 5 · Switch Emisor']
+      ];
+      async function loadModules(){
+        if(!cohortId.value)return; const r=await fetch(`/api/admin/cohorts/${cohortId.value}/modules`); if(!r.ok)return; const d=await r.json();
+        const on=new Set(d.modules.filter(x=>x.enabled).map(x=>x.module_key));
+        moduleControls.innerHTML=learningModules.map(([k,l])=>`<label class="field" style="display:flex;gap:10px;align-items:center"><input type="checkbox" data-module="${k}" ${on.has(k)?'checked':''} style="width:auto"><span>${l}</span></label>`).join('');
+      }
+      saveModules.onclick=async()=>{const enabled=[...document.querySelectorAll('[data-module]:checked')].map(x=>x.dataset.module);const r=await fetch(`/api/admin/cohorts/${cohortId.value}/modules`,{method:'PUT',headers:{'content-type':'application/json'},body:JSON.stringify({enabled})});moduleMessage.textContent=r.ok?'Módulos actualizados para toda la edición.':'No se pudo actualizar la habilitación.';moduleMessage.className='message show '+(r.ok?'ok':'error');};
       async function init() {
         const r = await fetch("/api/admin/overview");
         if (r.status === 403) return (location.href = "/");
@@ -75,6 +92,7 @@
                 `<option value="${c.id}">${c.course_name} · ${c.name} · vence ${new Date(c.expires_at).toLocaleDateString("es-AR")}</option>`,
             )
             .join("") || '<option value="">Primero creá una edición</option>';
+        cohortId.onchange=loadModules; await loadModules();
       }
       enrollForm.onsubmit = async (e) => {
         e.preventDefault();
