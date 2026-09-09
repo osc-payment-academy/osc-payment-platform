@@ -1,4 +1,4 @@
-/* OSC Academy v3.5.4.27 - navegación + habilitación progresiva por cohorte. */
+/* OSC Academy v3.5.4.45 - navegación + CLIENTES + habilitación progresiva por cohorte. */
 (async()=>{
   const modules=[
     {href:'index.html',icon:'⌂',label:'Dashboard'},
