@@ -2672,7 +2672,7 @@
           <div class="title">
             <span class="title-icon">🏧</span>
             <div>
-              <h1>ATM Virtual · v3.5.4.50</h1>
+              <h1>ATM Virtual · v3.5.4.51</h1>
               <p>
                 Banda, Chip y Contactless · cassettes · dispensación parcial
               </p>
@@ -2760,9 +2760,6 @@
                     ><strong>CRÉDITO</strong
                     ><small>•••• 8431 · BIN 371449 · 1200/1210</small>
                   </button>
-                  <button type="button" class="test-card" id="atmDomesticCard" data-atm-card="osc-domestic" style="display:none;border-color:#18c987" onclick="window.OSCSelectATMCard && window.OSCSelectATMCard('osc-domestic')">
-                    <span class="card-network" style="color:#18c987">OSC</span><strong>DÉBITO DOMÉSTICA</strong><small id="atmDomesticCardSmall">BIN 990001 · Banco Virtual</small>
-                  </button>
                   <button
                     type="button"
                     class="test-card amex"
@@ -2775,6 +2772,9 @@
                     <span class="card-network">AMERICAN EXPRESS</span
                     ><strong>DÉBITO</strong
                     ><small>•••• 0127 · BIN 341234 · 1200/1210</small>
+                  </button>
+                  <button type="button" class="test-card" id="atmDomesticCard" data-atm-card="osc-domestic" style="display:none;border-color:#18c987" onclick="window.OSCSelectATMCard && window.OSCSelectATMCard('osc-domestic')">
+                    <span class="card-network" style="color:#18c987">OSC</span><strong>DÉBITO DOMÉSTICA</strong><small id="atmDomesticCardSmall">BIN 990001 · Banco Virtual</small>
                   </button>
                 </div>
                 <div class="atm-card-footer">
@@ -3315,6 +3315,9 @@
           pin: "",
           amount: "",
           destination: "",
+          destinationAccountId: "",
+          newPin: "",
+          pinConfirm: "",
           operation: "withdrawal",
           scenario: "approved",
           stan: null,
@@ -4915,11 +4918,12 @@
         }
 
         function handleOption(value) {
-          if (
-            value === "withdrawal" ||
-            value === "balance" ||
-            value === "transfer"
-          ) {
+          if(String(value).startsWith("dest:")){
+            const parts=String(value).split(":"); state.destinationAccountId=parts[1]; state.destination=parts.slice(2).join(":");
+            addTechEvent(`Cuenta destino seleccionada: ${state.destination}`,"done"); state.step="amount";
+            setScreen("IMPORTE TRANSFERENCIA",'<strong id="amountDisplay">$ 0,00</strong><small>Digite el importe con el teclado físico</small>'); return;
+          }
+          if (["withdrawal","balance","transfer","pinchange","movements","finish"].includes(value)) {
             state.operation = value;
             addTechEvent(
               `Operación seleccionada en pantalla táctil: ${labelOperation()}`,
@@ -4927,14 +4931,22 @@
             );
             setFlow(4);
             if (value === "balance") {
-              state.amount = "0";
-              send0200();
+              state.amount = "0"; send0200();
             } else if (value === "transfer") {
-              state.step = "destination";
-              setScreen(
-                "CUENTA DESTINO",
-                '<strong id="destDisplay">—</strong><small>Digite la cuenta utilizando el teclado físico</small><div class="screen-amount-note">ACEPTAR confirma la cuenta destino</div>',
-              );
+              if(state.brand === "domestic") { showDomesticDestinationAccounts(); }
+              else {
+                state.step = "destination";
+                setScreen("CUENTA DESTINO",'<strong id="destDisplay">—</strong><small>Digite la cuenta utilizando el teclado físico</small><div class="screen-amount-note">ACEPTAR confirma la cuenta destino</div>');
+              }
+            } else if (value === "pinchange") {
+              state.newPin=""; state.pinConfirm=""; state.step="pinNew";
+              setScreen("NUEVO PIN",'<strong id="newPinDisplay">••••</strong><small>Ingrese 4 dígitos y presione ACEPTAR</small>');
+            } else if (value === "movements") {
+              showLastMovements();
+            } else if (value === "finish") {
+              setScreen("FIN DE OPERACIÓN",'<strong>Retire su tarjeta</strong><small>Gracias por utilizar OSC BANK</small>');
+              addTechEvent("Sesión ATM finalizada · tarjeta expulsada","done"); state.step="done";
+              setTimeout(reset,1800);
             } else {
               state.step = "amount";
               setScreen(
@@ -4945,7 +4957,33 @@
           }
         }
 
+        async function changeDomesticPin(){
+          if(state.brand!=="domestic" || !window.OSCATMSelectedCard?.cardId){setScreen("CAMBIO DE PIN","<strong>Operación didáctica</strong><small>Seleccione OSC Débito Doméstica para persistir el PIN.</small>");state.step="done";return;}
+          try{const r=await fetch("/api/bank/atm/pin",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({cardId:window.OSCATMSelectedCard.cardId,newPin:state.newPin})});const j=await r.json();if(!r.ok)throw new Error(j.message||"Error");setScreen("PIN ACTUALIZADO","<strong>Operación exitosa</strong><small>El nuevo PIN quedó registrado para la práctica.</small>");addTechEvent("Cambio de PIN doméstico confirmado","done");state.step="done";}catch(e){setScreen("CAMBIO DE PIN","<strong>Error</strong><small>No fue posible actualizar el PIN.</small>");state.step="done";}
+        }
+
+        async function showDomesticDestinationAccounts(){
+          state.step="destinationSelect";
+          try{
+            const r=await fetch("/api/bank/accounts"); const j=await r.json();
+            const current=window.OSCATMSelectedCard?.linkedAccountId;
+            const accounts=(j.accounts||[]).filter(a=>a.status==="ACTIVE" && a.id!==current && a.currency==="ARS");
+            if(!accounts.length){setScreen("CUENTA DESTINO","<strong>Sin cuentas disponibles</strong><small>Cree otra cuenta en PASIVAS.</small>");return;}
+            setScreen("CUENTA DESTINO","<small>Seleccione una cuenta real del Banco Virtual</small>",accounts.map(a=>({value:`dest:${a.id}:${a.account_number}`,label:`${a.account_number} · ${a.account_type==='CA'?'Caja de Ahorro':'Cuenta Corriente'} · $ ${Number(a.balance||0).toLocaleString('es-AR')}`})));
+          }catch(e){setScreen("CUENTA DESTINO","<strong>Error</strong><small>No se pudieron cargar las cuentas.</small>");}
+        }
+        async function showLastMovements(){
+          if(state.brand!=="domestic" || !window.OSCATMSelectedCard?.linkedAccountId){setScreen("ÚLTIMOS MOVIMIENTOS","<strong>Modo demostración</strong><small>Los movimientos reales están disponibles con OSC Débito Doméstica.</small>");state.step="done";return;}
+          try{
+            const r=await fetch(`/api/bank/accounts/${window.OSCATMSelectedCard.linkedAccountId}`); const j=await r.json();
+            const rows=(j.movements||[]).slice(0,6).map(m=>`<div style="display:flex;justify-content:space-between;gap:8px;font-size:12px"><span>${m.description}</span><b>${Number(m.amount)>=0?'+':''}$ ${Number(m.amount).toLocaleString('es-AR')}</b></div>`).join('');
+            setScreen("ÚLTIMOS MOVIMIENTOS",`<div style="display:grid;gap:7px;width:100%">${rows||'<small>Sin movimientos</small>'}</div><small>Saldo: $ ${Number(j.account?.balance||0).toLocaleString('es-AR')}</small>`); addTechEvent("Movimientos consultados en la cuenta vinculada","done"); state.step="done";
+          }catch(e){setScreen("ÚLTIMOS MOVIMIENTOS","<strong>Error de consulta</strong>");state.step="done";}
+        }
+
         function accept() {
+          if(state.step === "pinNew"){ if(state.newPin.length!==4)return; state.step="pinConfirm"; setScreen("CONFIRMAR PIN",'<strong id="pinConfirmDisplay">••••</strong><small>Repita el nuevo PIN y presione ACEPTAR</small>'); return; }
+          if(state.step === "pinConfirm"){ if(state.pinConfirm.length!==4)return; if(state.pinConfirm!==state.newPin){state.newPin="";state.pinConfirm="";state.step="pinNew";setScreen("PIN NO COINCIDE",'<strong>Intente nuevamente</strong><small>Ingrese el nuevo PIN</small>');setTimeout(()=>setScreen("NUEVO PIN",'<strong id="newPinDisplay">••••</strong><small>Ingrese 4 dígitos y presione ACEPTAR</small>'),900);return;} changeDomesticPin(); return; }
           if (state.step === "card") {
             insertCard();
             return;
@@ -4965,6 +5003,9 @@
                 { value: "withdrawal", label: "💵 Extracción" },
                 { value: "balance", label: "📄 Consulta de saldo" },
                 { value: "transfer", label: "↔ Transferencia" },
+                { value: "pinchange", label: "🔐 Cambio de PIN" },
+                { value: "movements", label: "☷ Últimos movimientos" },
+                { value: "finish", label: "↪ Fin de operación" },
               ],
             );
             $("softOptions").classList.add("touch-operation-grid");
@@ -5007,6 +5048,8 @@
         }
 
         function pressKey(value) {
+          if(state.step === "pinNew"){state.newPin=(state.newPin+value.slice(0,1)).slice(0,4); const e=$("newPinDisplay");if(e)e.textContent="•".repeat(state.newPin.length);return;}
+          if(state.step === "pinConfirm"){state.pinConfirm=(state.pinConfirm+value.slice(0,1)).slice(0,4); const e=$("pinConfirmDisplay");if(e)e.textContent="•".repeat(state.pinConfirm.length);return;}
           if (state.step === "pin") {
             if (state.pin.length < 6) state.pin += value.slice(0, 1);
             const el = $("pinDisplay");
@@ -5632,7 +5675,9 @@
           const domesticCard = window.OSCATMSelectedCard;
           if (state.brand === "domestic" && domesticCard?.cardId) {
             try {
-              const r = await fetch("/api/bank/atm/authorize", {method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({cardId:domesticCard.cardId,amountCents:Number(state.amount||0),operation:state.operation})});
+              const endpoint=state.operation==="transfer"?"/api/bank/atm/transfer":"/api/bank/atm/authorize";
+              const payload={cardId:domesticCard.cardId,amountCents:Number(state.amount||0),operation:state.operation}; if(state.operation==="transfer")payload.destinationAccountId=state.destinationAccountId;
+              const r = await fetch(endpoint, {method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(payload)});
               domesticResult = await r.json();
               if (!r.ok) throw new Error(domesticResult.message || "No fue posible autorizar en Banco Virtual");
               state.domesticOriginalReference = domesticResult.reference || "";
@@ -5705,7 +5750,7 @@
               $("deviceStatus").textContent = "Transferencia registrada";
               setScreen(
                 "TRANSFERENCIA APROBADA",
-                `<strong>${formatAmount(state.amount)}</strong><small>Destino ****${state.destination.slice(-4)} · Autorización ${state.auth}</small>`,
+                `<strong>${formatAmount(state.amount)}</strong><small>Destino ${state.destination} · Autorización ${state.auth}</small>`,
               );
               addTechEvent(
                 "Transferencia completada · DE102 origen / DE103 destino",
@@ -5798,6 +5843,9 @@
           if (state.operation === "withdrawal") return "Extracción";
           if (state.operation === "balance") return "Consulta de saldo";
           if (state.operation === "transfer") return "Transferencia";
+          if (state.operation === "pinchange") return "Cambio de PIN";
+          if (state.operation === "movements") return "Últimos movimientos";
+          if (state.operation === "finish") return "Fin de operación";
           return "Operación ATM";
         }
 
@@ -5866,7 +5914,7 @@ ${raw(m)}`;
           state.step = "card";
           state.pin = "";
           state.amount = "";
-          state.destination = "";
+          state.destination = ""; state.destinationAccountId=""; state.newPin=""; state.pinConfirm="";
           state.stan = null;
           state.auth = null;
           state.selectedMessageId = null;
@@ -6063,7 +6111,7 @@ ${raw(m)}`;
         async function loadDomesticAtmCard(){
           try {
             const r=await fetch("/api/bank/atm/cards"); if(!r.ok)return; const j=await r.json(); const c=(j.cards||[])[0]; if(!c)return;
-            const item={brand:"domestic",type:"debit",name:"OSC Débito Doméstica",pan:String(c.card_number),last4:String(c.card_number).slice(-4),cardId:c.id,accountNumber:c.account_number,balance:c.balance};
+            const item={brand:"domestic",type:"debit",name:"OSC Débito Doméstica",pan:String(c.card_number),last4:String(c.card_number).slice(-4),cardId:c.id,accountNumber:c.account_number,linkedAccountId:c.linked_account_id,balance:c.balance};
             cards["domestic-debit"]=item; cards["osc-domestic"]=item;
             const b=document.getElementById("atmDomesticCard"); if(b){b.style.display=""; b.dataset.atmCard="osc-domestic";}
             const sm=document.getElementById("atmDomesticCardSmall"); if(sm)sm.textContent=`•••• ${item.last4} · BIN 990001 · ${c.account_number}`;
@@ -6129,5 +6177,14 @@ ${raw(m)}`;
     <script src="js/help-catalog.js"></script>
     <script src="js/module-guide.js"></script>
     <script src="js/navigation.js?v=4.0.0-rc1.7"></script>
-  </body>
+  
+<style id="osc-atm-v51">
+.atm-history-wide{min-height:360px}.atm-history-wide .history{max-height:330px;overflow:auto}
+.osc-know-btn{width:100%;margin:12px 0 24px;padding:14px;border:1px solid #2f83ff;border-radius:10px;background:#0b2238;color:#fff;font-weight:800;font-size:16px;cursor:pointer}
+.osc-know-modal{position:fixed;inset:0;background:#000a;z-index:100000;display:none;align-items:center;justify-content:center}.osc-know-modal.open{display:flex}.osc-know-card{width:min(820px,92vw);max-height:82vh;overflow:auto;background:#091a2a;border:1px solid #2f83ff;border-radius:16px;padding:24px;color:#fff}.osc-know-card h2{margin-top:0}.osc-know-card li{margin:10px 0;color:#c9dced}.osc-know-close{float:right;background:#17324b;color:#fff;border:1px solid #456;padding:8px 12px;border-radius:8px}
+</style>
+<div id="oscKnowModal" class="osc-know-modal"><div class="osc-know-card"><button class="osc-know-close" onclick="document.getElementById('oscKnowModal').classList.remove('open')">✕ Cerrar</button><h2>▶ Conocer la pantalla</h2><ul><li><b>Pantalla táctil:</b> guía al cliente por las operaciones disponibles.</li><li><b>Lector EMV:</b> representa la lectura de la tarjeta y su credencial.</li><li><b>Teclado PIN cifrado:</b> captura PIN e importes durante la práctica.</li><li><b>Dispensador:</b> simula entrega, falla y reversa de efectivo.</li><li><b>Modo técnico:</b> muestra eventos del ATM y construcción de mensajes.</li><li><b>Mensaje ISO8583:</b> permite revisar MTI, bitmap y Data Elements.</li><li><b>Historial de Transacciones:</b> conserva las operaciones realizadas, su red, MTI, importe, respuesta y estado para analizarlas posteriormente.</li></ul></div></div>
+<script>document.addEventListener('DOMContentLoaded',()=>{const h=document.querySelector('.atm-history-wide');if(h){const b=document.createElement('button');b.className='osc-know-btn';b.textContent='▶ Conocer la pantalla';b.onclick=()=>document.getElementById('oscKnowModal').classList.add('open');h.insertAdjacentElement('afterend',b);}});</script>
+
+</body>
 </html>

@@ -249,6 +249,23 @@ async function api(request,env,path){
     ]);
     return json({approved:true,responseCode:'00',message:'Aprobada',balance:newBalance,previousBalance:balance,accountNumber:row.account_number,reference,cardId:row.id});
   }
+  if(path==='/api/bank/atm/transfer'&&request.method==='POST'){
+    const auth=await requireUser(request,env);if(auth.error)return auth.error;const user=auth.user;
+    await ensureBankCustomerSchema(env);await ensureBankPassiveSchema(env);await ensureBankCardSchema(env);const tenantId=await bankTenant(env,user),b=await readBody(request),cardId=String(b.cardId||''),destinationAccountId=String(b.destinationAccountId||''),amountCents=Number(b.amountCents);
+    if(!cardId||!destinationAccountId||!Number.isFinite(amountCents)||amountCents<=0)return json({error:'BAD_REQUEST',message:'Datos de transferencia inválidos.'},400);
+    const src=await env.DB.prepare(`SELECT k.linked_account_id,a.account_number,a.currency,a.balance FROM bank_cards k JOIN bank_accounts a ON a.id=k.linked_account_id WHERE k.id=? AND k.tenant_id=? AND k.owner_user_id=? AND k.status='ACTIVE' AND a.status='ACTIVE'`).bind(cardId,tenantId,user.id).first();
+    const dst=await env.DB.prepare(`SELECT id,account_number,currency,balance FROM bank_accounts WHERE id=? AND tenant_id=? AND owner_user_id=? AND status='ACTIVE'`).bind(destinationAccountId,tenantId,user.id).first();
+    if(!src||!dst)return json({approved:false,responseCode:'14',message:'Cuenta origen o destino no encontrada.'},404);if(src.linked_account_id===dst.id)return json({approved:false,responseCode:'57',message:'Origen y destino deben ser diferentes.'},400);if(src.currency!==dst.currency)return json({approved:false,responseCode:'57',message:'Las cuentas deben tener la misma moneda.'},400);
+    const amount=amountCents/100,srcBal=Number(src.balance||0),dstBal=Number(dst.balance||0);if(srcBal<amount)return json({approved:false,responseCode:'51',message:'Fondos insuficientes',balance:srcBal,accountNumber:src.account_number});
+    const ts=now(),newSrc=srcBal-amount,newDst=dstBal+amount,ref=`TRF-${Date.now()}`;
+    await env.DB.batch([env.DB.prepare(`UPDATE bank_accounts SET balance=?,updated_at=? WHERE id=?`).bind(newSrc,ts,src.linked_account_id),env.DB.prepare(`UPDATE bank_accounts SET balance=?,updated_at=? WHERE id=?`).bind(newDst,ts,dst.id),env.DB.prepare(`INSERT INTO bank_account_movements(id,tenant_id,owner_user_id,account_id,movement_type,description,amount,balance_after,reference,created_at) VALUES(?,?,?,?,?,?,?,?,?,?)`).bind(id('mov'),tenantId,user.id,src.linked_account_id,'TRANSFERENCIA_SALIDA',`Transferencia ATM a ${dst.account_number}`,-amount,newSrc,ref,ts),env.DB.prepare(`INSERT INTO bank_account_movements(id,tenant_id,owner_user_id,account_id,movement_type,description,amount,balance_after,reference,created_at) VALUES(?,?,?,?,?,?,?,?,?,?)`).bind(id('mov'),tenantId,user.id,dst.id,'TRANSFERENCIA_ENTRADA',`Transferencia ATM desde ${src.account_number}`,amount,newDst,ref,ts)]);
+    return json({approved:true,responseCode:'00',message:'Transferencia aprobada',balance:newSrc,accountNumber:src.account_number,destinationAccountNumber:dst.account_number,reference:ref});
+  }
+  if(path==='/api/bank/atm/pin'&&request.method==='POST'){
+    const auth=await requireUser(request,env);if(auth.error)return auth.error;const user=auth.user;await ensureBankCardSchema(env);const tenantId=await bankTenant(env,user),b=await readBody(request),cardId=String(b.cardId||''),newPin=String(b.newPin||'');
+    if(!cardId||!/^[0-9]{4}$/.test(newPin))return json({error:'BAD_PIN',message:'El PIN debe tener 4 dígitos.'},400);const card=await env.DB.prepare(`SELECT id FROM bank_cards WHERE id=? AND tenant_id=? AND owner_user_id=? AND status='ACTIVE'`).bind(cardId,tenantId,user.id).first();if(!card)return json({error:'CARD_NOT_FOUND'},404);
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS bank_card_pins(card_id TEXT PRIMARY KEY,tenant_id TEXT NOT NULL,owner_user_id TEXT NOT NULL,pin_hash TEXT NOT NULL,updated_at TEXT NOT NULL)`).run();const ts=now(),pinHash=await sha256(newPin);await env.DB.prepare(`INSERT INTO bank_card_pins(card_id,tenant_id,owner_user_id,pin_hash,updated_at) VALUES(?,?,?,?,?) ON CONFLICT(card_id) DO UPDATE SET pin_hash=excluded.pin_hash,updated_at=excluded.updated_at`).bind(cardId,tenantId,user.id,pinHash,ts).run();return json({ok:true});
+  }
   if(path==='/api/bank/atm/reverse'&&request.method==='POST'){
     const auth=await requireUser(request,env);if(auth.error)return auth.error;const user=auth.user;
     await ensureBankPassiveSchema(env);const tenantId=await bankTenant(env,user),b=await readBody(request),cardId=String(b.cardId||''),amountCents=Number(b.amountCents),originalReference=String(b.originalReference||'');
