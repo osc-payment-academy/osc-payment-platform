@@ -23,11 +23,22 @@
       if(!response.ok)throw new Error(`Workspace D1: ${response.status}`);
       const result=await response.json();
       const owner={ownerUserId:result.workspace?.userId||null,ownerTenantId:result.workspace?.tenantId||null};
+      const sameOwner=local.ownerUserId===owner.ownerUserId&&local.ownerTenantId===owner.ownerTenantId;
       if(result.data&&typeof result.data==='object'){
         const remote={...initial(),...result.data,...owner,version:3};
-        localStorage.setItem(KEY,JSON.stringify(remote));
+        const localTime=sameOwner?Date.parse(local.updatedAt||'')||0:0;
+        const remoteTime=Date.parse(remote.updatedAt||'')||0;
+        // D1 is the normal source of truth, but never overwrite a newer local copy
+        // from the same owner. A newer local copy can exist after a failed sync.
+        if(sameOwner&&localTime>remoteTime){
+          const recovered={...initial(),...local,...owner,version:3};
+          localStorage.setItem(KEY,JSON.stringify(recovered));
+          hydrated=true;pushRemote(recovered);
+          window.dispatchEvent(new CustomEvent('osc-workspace-recovery',{detail:{source:'local',localUpdatedAt:local.updatedAt,remoteUpdatedAt:remote.updatedAt}}));
+        }else{
+          localStorage.setItem(KEY,JSON.stringify(remote));
+        }
       }else{
-        const sameOwner=local.ownerUserId===owner.ownerUserId&&local.ownerTenantId===owner.ownerTenantId;
         const next=sameOwner?{...initial(),...local,...owner,version:3}:{...initial(),...owner,version:3};
         localStorage.setItem(KEY,JSON.stringify(next));
         hydrated=true;pushRemote(next);

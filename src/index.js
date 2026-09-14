@@ -88,9 +88,9 @@ async function paymentWorkspace(env,user){
 
 const validWorkspacePayload=payload=>{
   if(!payload||typeof payload!=='object'||Array.isArray(payload))return false;
-  const allowed=['version','studentId','ownerUserId','ownerTenantId','createdAt','updatedAt','retention','transactions','batches','artifacts','events','atmMessages','lastAtmReconciliation','constructorPractices'];
+  const allowed=['version','studentId','ownerUserId','ownerTenantId','createdAt','updatedAt','retention','transactions','batches','artifacts','events','atmMessages','lastAtmReconciliation','constructorPractices','isoMessages'];
   if(Object.keys(payload).some(key=>!allowed.includes(key)))return false;
-  return ['transactions','batches','artifacts','events','atmMessages','constructorPractices'].every(key=>payload[key]===undefined||Array.isArray(payload[key]));
+  return ['transactions','batches','artifacts','events','atmMessages','constructorPractices','isoMessages'].every(key=>payload[key]===undefined||Array.isArray(payload[key]));
 };
 
 const hasSensitiveAnalyticsKey=value=>{

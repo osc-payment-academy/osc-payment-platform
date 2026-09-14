@@ -1,0 +1,24 @@
+OSC PAYMENT ACADEMY - v3.5.4.46 - D1 PERSISTENCE FIX
+
+Correccion critica de persistencia del workspace POS/ATM/ISO8583.
+
+1. Backend D1
+- Se incorpora isoMessages al payload permitido de /api/workspace/payment.
+- Se valida isoMessages como array, igual que transactions, atmMessages y constructorPractices.
+- Evita HTTP 400 INVALID_WORKSPACE_PAYLOAD al guardar operaciones que contienen mensajes ISO8583.
+
+2. Proteccion de recuperacion
+- Al iniciar, D1 sigue siendo la fuente normal de verdad.
+- Si existe una copia local del MISMO usuario/tenant con updatedAt posterior a D1, no se destruye.
+- Esa copia local mas reciente se conserva y se resincroniza a D1.
+- Si cambia usuario/tenant, la copia local anterior no se reutiliza.
+
+3. Banco Virtual
+- No se modifica su modelo: clientes, domicilios, cuentas CA/CC, tarjetas, saldos y movimientos/depositos ya persisten directamente en tablas D1.
+
+PRUEBA DE ACEPTACION RECOMENDADA
+A) Crear cliente, CA/CC, deposito y tarjeta.
+B) Ejecutar una compra POS y una extraccion ATM.
+C) Cerrar sesion y navegador.
+D) Reingresar y verificar cliente, cuenta, tarjeta, saldo, movimientos e historial POS/ATM.
+E) Repetir desde otro navegador/equipo para confirmar lectura real desde D1.
