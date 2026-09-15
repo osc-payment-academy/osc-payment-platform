@@ -1,0 +1,22 @@
+OSC PAYMENT ACADEMY v4.0.0-rc.1.9
+
+UPDATE ONLY
+1. Descomprimir sobre la raíz del proyecto existente.
+2. Confirmar el reemplazo de archivos.
+3. Ejecutar npm install.
+4. Desplegar con npm run deploy.
+
+BACKUP COMPLETO
+1. Reemplazar el proyecto por el contenido del ZIP completo.
+2. Ejecutar npm install.
+3. Desplegar con npm run deploy.
+
+PRUEBAS SUGERIDAS
+- Abrir POS y confirmar que Tutor OSC aparezca abajo a la izquierda.
+- Ejecutar “¿Cómo utilizo esta pantalla?” y recorrer los 12 pasos.
+- Consultar DE1, DE40, DE55 y DE128.
+- Consultar MTI 0100, 0200, 0420 y 0800.
+- Abrir una lámina del curso y verificar preguntas específicas.
+- Abrir el flujo QR del POS y revisar el ajuste exacto del contenedor.
+
+No se eliminan clientes, cuentas, tarjetas, saldos ni historiales existentes.

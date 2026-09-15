@@ -31,7 +31,7 @@
 <style id="osc-fullscreen-simulator">
 .sidebar{display:none!important}.app{display:block!important;grid-template-columns:1fr!important}.main{margin-left:0!important;width:100%!important;max-width:none!important}.osc-back-platform{position:fixed;left:14px;top:12px;z-index:99999;background:#0b2238;color:#fff;border:1px solid #2f83ff;border-radius:8px;padding:8px 12px;text-decoration:none;font:600 12px Inter,Segoe UI,Arial,sans-serif;box-shadow:0 6px 18px #0006}.topbar{padding-left:115px!important}
 </style>
-<style id="osc-pos-qr41">.q41{background:linear-gradient(145deg,#f8fcff,#eef8ff);border:1px solid #c5deef;border-radius:16px;padding:18px;color:#17364e}.q41-head{text-align:center}.q41-head>span{font-size:10px;font-weight:900;letter-spacing:.12em;color:#0877c5}.q41-head h3{font-size:21px;margin:5px}.q41-head p{color:#5c788c;margin:0 auto 16px;max-width:720px}.q41-main{display:flex;align-items:stretch;justify-content:center;gap:6px;flex-wrap:wrap}.q41-main>strong{display:grid;place-items:center;color:#1686d4;font-size:19px}.q41-node{width:105px;min-height:118px;background:white;border:1px solid #bad8ea;border-radius:13px;padding:10px 7px;text-align:center}.q41-node.qr{border:2px solid #1586d2;background:#eaf7ff}.q41-node i{display:block;font-style:normal;font-size:27px;margin:4px}.q41-node b{display:block;font-size:10px;color:#173f5d}.q41-node small{display:block;font-size:8px;line-height:1.4;color:#6b8598;margin-top:4px}.q41-return{margin-top:14px;background:#e8f7ef;border-left:4px solid #20a96d;border-radius:8px;padding:10px;font-size:10px;color:#315f4a}.q41-points{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}.q41-points div{background:#fff;border:1px solid #c9dfef;border-radius:9px;padding:9px;font-size:9px;color:#4d6c80}.q41-points b{display:block;color:#0877c5;margin-bottom:3px}@media(max-width:800px){.q41-main>strong{display:none}.q41-points{grid-template-columns:1fr}}</style><style id="osc-qr-flow42">.qr-education-dialog{width:min(1500px,98vw)!important;max-height:96vh!important;overflow:auto}.qr42-approved{display:flex;justify-content:center;background:#eef7fd;border-radius:14px;overflow:auto;max-height:78vh}.qr42-approved img{display:block;max-height:76vh;width:auto;max-width:100%;object-fit:contain}</style></head>
+<style id="osc-pos-qr41">.q41{background:linear-gradient(145deg,#f8fcff,#eef8ff);border:1px solid #c5deef;border-radius:16px;padding:18px;color:#17364e}.q41-head{text-align:center}.q41-head>span{font-size:10px;font-weight:900;letter-spacing:.12em;color:#0877c5}.q41-head h3{font-size:21px;margin:5px}.q41-head p{color:#5c788c;margin:0 auto 16px;max-width:720px}.q41-main{display:flex;align-items:stretch;justify-content:center;gap:6px;flex-wrap:wrap}.q41-main>strong{display:grid;place-items:center;color:#1686d4;font-size:19px}.q41-node{width:105px;min-height:118px;background:white;border:1px solid #bad8ea;border-radius:13px;padding:10px 7px;text-align:center}.q41-node.qr{border:2px solid #1586d2;background:#eaf7ff}.q41-node i{display:block;font-style:normal;font-size:27px;margin:4px}.q41-node b{display:block;font-size:10px;color:#173f5d}.q41-node small{display:block;font-size:8px;line-height:1.4;color:#6b8598;margin-top:4px}.q41-return{margin-top:14px;background:#e8f7ef;border-left:4px solid #20a96d;border-radius:8px;padding:10px;font-size:10px;color:#315f4a}.q41-points{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}.q41-points div{background:#fff;border:1px solid #c9dfef;border-radius:9px;padding:9px;font-size:9px;color:#4d6c80}.q41-points b{display:block;color:#0877c5;margin-bottom:3px}@media(max-width:800px){.q41-main>strong{display:none}.q41-points{grid-template-columns:1fr}}</style><style id="osc-qr-flow42">.qr-education-dialog.qr-image-only{width:auto!important;max-width:96vw!important;max-height:96vh!important;overflow:visible!important;padding:0!important;border:0!important;border-radius:14px!important;background:transparent!important;box-shadow:none!important}.qr-image-flow{display:block!important;margin:0!important;padding:0!important;border:0!important;background:transparent!important}.qr42-approved{display:block;margin:0;padding:0;background:transparent;border-radius:14px;overflow:hidden;line-height:0}.qr42-approved img{display:block;width:auto;height:auto;max-width:96vw;max-height:94vh;object-fit:contain;margin:0}.qr-image-only .qr-education-close{right:8px;top:8px;z-index:2;width:34px;height:34px;border-radius:50%;background:#ffffffdd;color:#35536a}</style></head>
 <body><a class="osc-back-platform" href="index.html">← Plataforma</a>
 <div class="app">
   <aside class="sidebar">
@@ -280,10 +280,6 @@
           </div>
         </div>
 
-        <div class="ticket-learning-note" id="ticketLearningNote">
-          <strong>TICKET INTERACTIVO</strong>
-          <span>Hacé clic en un dato del comprobante para ubicar su Data Element.</span>
-        </div>
         <div class="receipt-printer" id="receiptPrinter">
           <div class="printer-slot"></div>
           <div class="receipt-paper" id="receiptPaper"></div>
@@ -394,10 +390,10 @@
 </div>
 
 <div id="qrEducationModal" class="qr-education-modal hidden" role="dialog" aria-modal="true" aria-label="Flujo QR Dinámico">
-  <div class="qr-education-dialog" style="width:min(1500px,96vw);max-width:none;padding:18px;background:#eef8ff;">
+  <div class="qr-education-dialog qr-image-only">
     <button id="closeQrEducationModal" class="qr-education-close" type="button" aria-label="Cerrar">✕</button>
-    <div id="qrEducationFlow" class="qr-education-flow" style="display:block!important;margin:0;padding:0;border:0;background:transparent;">
-      <div class="qr42-approved" style="margin:0;padding:0;"><img src="assets/flows/qr_dinamico_aprobado.jpg" alt="Infografía QR Dinámico OSC Payment Academy aprobada" style="display:block;width:100%;height:auto;max-height:88vh;object-fit:contain;margin:auto;"></div>
+    <div id="qrEducationFlow" class="qr-education-flow qr-image-flow">
+      <div class="qr42-approved"><img src="assets/flows/qr_dinamico_aprobado.jpg" alt="Infografía QR Dinámico OSC Payment Academy aprobada"></div>
     </div>
   </div>
 </div>
