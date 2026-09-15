@@ -6186,5 +6186,5 @@ ${raw(m)}`;
 <div id="oscKnowModal" class="osc-know-modal"><div class="osc-know-card"><button class="osc-know-close" onclick="document.getElementById('oscKnowModal').classList.remove('open')">✕ Cerrar</button><h2>▶ Conocer la pantalla</h2><ul><li><b>Pantalla táctil:</b> guía al cliente por las operaciones disponibles.</li><li><b>Lector EMV:</b> representa la lectura de la tarjeta y su credencial.</li><li><b>Teclado PIN cifrado:</b> captura PIN e importes durante la práctica.</li><li><b>Dispensador:</b> simula entrega, falla y reversa de efectivo.</li><li><b>Modo técnico:</b> muestra eventos del ATM y construcción de mensajes.</li><li><b>Mensaje ISO8583:</b> permite revisar MTI, bitmap y Data Elements.</li><li><b>Historial de Transacciones:</b> conserva las operaciones realizadas, su red, MTI, importe, respuesta y estado para analizarlas posteriormente.</li></ul></div></div>
 <script>document.addEventListener('DOMContentLoaded',()=>{const h=document.querySelector('.atm-history-wide');if(h){const b=document.createElement('button');b.className='osc-know-btn';b.textContent='▶ Conocer la pantalla';b.onclick=()=>document.getElementById('oscKnowModal').classList.add('open');h.insertAdjacentElement('afterend',b);}});</script>
 
-</body>
+<script src="js/tutor-osc.js?v=4.0.0-rc1.8" data-module="atm"></script></body>
 </html>

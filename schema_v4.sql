@@ -29,3 +29,7 @@ INSERT OR IGNORE INTO products(id,name,slug,core_enabled,status,created_at,updat
 
 CREATE TABLE IF NOT EXISTS cohort_module_access (cohort_id TEXT NOT NULL,module_key TEXT NOT NULL,enabled INTEGER NOT NULL DEFAULT 0,enabled_at TEXT,updated_by TEXT,updated_at TEXT NOT NULL,PRIMARY KEY(cohort_id,module_key),FOREIGN KEY(cohort_id) REFERENCES cohorts(id),FOREIGN KEY(updated_by) REFERENCES users(id));
 CREATE INDEX IF NOT EXISTS idx_cohort_module_access ON cohort_module_access(cohort_id,enabled);
+
+CREATE TABLE IF NOT EXISTS tutor_knowledge (id TEXT PRIMARY KEY,title TEXT NOT NULL,keywords TEXT NOT NULL,answer TEXT NOT NULL,reference TEXT,module_key TEXT NOT NULL DEFAULT 'ALL',behavior TEXT NOT NULL DEFAULT 'EXPLICAR',status TEXT NOT NULL DEFAULT 'APPROVED',approved_by TEXT,approved_at TEXT,created_at TEXT NOT NULL,updated_at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS tutor_pending (id TEXT PRIMARY KEY,tenant_id TEXT NOT NULL,user_id TEXT NOT NULL,module_key TEXT NOT NULL,question TEXT NOT NULL,status TEXT NOT NULL DEFAULT 'PENDING',review_note TEXT,answer TEXT,knowledge_id TEXT,created_at TEXT NOT NULL,updated_at TEXT NOT NULL);
+CREATE INDEX IF NOT EXISTS idx_tutor_pending_status ON tutor_pending(status,created_at DESC);

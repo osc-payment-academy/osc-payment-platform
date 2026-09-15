@@ -1,0 +1,25 @@
+OSC PAYMENT ACADEMY v4.0.0-rc.1.8
+
+ENTREGABLE COMPLETO
+1. Reemplazar el contenido del proyecto por el ZIP completo.
+2. Ejecutar npm install.
+3. Desplegar normalmente con npm run deploy.
+
+ENTREGABLE UPDATE ONLY
+1. Descomprimir el ZIP sobre la raíz del proyecto existente.
+2. Confirmar el reemplazo de los archivos.
+3. Ejecutar npm install.
+4. Desplegar con npm run deploy.
+
+BASE DE DATOS
+- Tutor OSC crea de forma segura las tablas tutor_knowledge y tutor_pending la primera vez que se utiliza.
+- schema_v4.sql también contiene las nuevas tablas para instalaciones desde cero.
+- No se borran clientes, cuentas, saldos, tarjetas ni historiales existentes.
+
+PRUEBA RÁPIDA
+1. Ingresar en Curso interactivo, POS, ATM, Constructor, Wallet o E-commerce.
+2. Presionar Tutor OSC.
+3. Consultar: ¿Qué significa el MTI 0200?
+4. Realizar una pregunta fuera de la base aprobada.
+5. Ingresar como administrador a Tutor OSC · Conocimiento y verificar la bandeja.
+6. Revisar Wallet y E-commerce: el historial debe mostrar Fecha y Hora.

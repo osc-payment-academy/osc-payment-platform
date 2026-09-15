@@ -15,6 +15,27 @@ const readBody = async request => { try { return await request.json(); } catch {
 
 const LEARNING_MODULES=['course_iso8583','pos','parser','constructor','atm','ecommerce','wallet','switch_emisor'];
 const DAY1_MODULES=['course_iso8583','pos','parser','constructor'];
+const TUTOR_MODULES=['course_iso8583','pos','atm','constructor','wallet','ecommerce'];
+const TUTOR_SEED=[
+  ['mti-0200','0200 mti mensaje financiero solicitud compra','El MTI 0200 identifica una solicitud de transacción financiera. En los laboratorios de POS y Wallet se utiliza para iniciar una compra; la respuesta asociada normalmente es 0210.','Curso interactivo · Lámina 13: MTI 0200','EXPLICAR'],
+  ['de39','de39 campo 39 response code codigo respuesta','El DE39 contiene el código de respuesta informado por el receptor. Permite saber si la operación fue aprobada o por qué fue rechazada. Por ejemplo, 00 indica aprobación y 51 fondos insuficientes en los escenarios didácticos aprobados.','Curso interactivo · Lámina 17: Respuesta 0210','EXPLICAR'],
+  ['tokenizacion','tokenizacion token dpan fpan wallet','La tokenización reemplaza el número real de la tarjeta (FPAN) por un token de pago (DPAN). La Wallet utiliza ese token para reducir la exposición del dato real durante el pago.','Wallet · Flujo aprobado: Agregar tarjeta y Pago NFC','EXPLICAR'],
+  ['bitmap','bitmap campos presentes trama','El bitmap es el mapa que indica qué Data Elements están presentes en el mensaje. Cada bit activado corresponde a un campo ISO 8583.','Curso interactivo · Láminas 10 y 11: Bitmaps','EXPLICAR'],
+  ['guia-trama','no entiendo trama analizar mensaje identificar','Vamos paso a paso: 1) identifica los cuatro dígitos del MTI; 2) localiza el bitmap; 3) determina qué bits están activos; 4) recorre los Data Elements presentes; 5) relaciona solicitud y respuesta usando MTI, STAN y código DE39. No compartas PAN completo, PIN, CVV ni documentación interna.','Curso interactivo · Lámina 12: Estructura general de una trama','GUIAR'],
+  ['mti-0210','0210 mti respuesta','El MTI 0210 es la respuesta a una solicitud financiera 0200. Su DE39 informa el resultado de la operación.','Curso interactivo · Lámina 17: Respuesta 0210','EXPLICAR'],
+  ['de55','de55 emv chip contactless','El DE55 transporta datos EMV generados durante operaciones con chip o contactless. Su contenido es compuesto y debe interpretarse según la especificación aprobada de la marca y el perfil de la operación.','Wallet/E-commerce · Material aprobado DE55; consultar manual de la marca aplicable','REFERENCIAR'],
+  ['constructor','constructor validar trama boton validar','El botón Validar del Constructor comprueba que la trama cumpla la estructura configurada. No envía la operación a una marca ni simula por sí solo una respuesta del switch.','Constructor ISO 8583 · Ayuda técnica aprobada','EXPLICAR']
+];
+async function ensureTutorSchema(env){
+  await env.DB.prepare(`CREATE TABLE IF NOT EXISTS tutor_knowledge (
+    id TEXT PRIMARY KEY,title TEXT NOT NULL,keywords TEXT NOT NULL,answer TEXT NOT NULL,reference TEXT,module_key TEXT NOT NULL DEFAULT 'ALL',behavior TEXT NOT NULL DEFAULT 'EXPLICAR',status TEXT NOT NULL DEFAULT 'APPROVED',approved_by TEXT,approved_at TEXT,created_at TEXT NOT NULL,updated_at TEXT NOT NULL)`).run();
+  await env.DB.prepare(`CREATE TABLE IF NOT EXISTS tutor_pending (
+    id TEXT PRIMARY KEY,tenant_id TEXT NOT NULL,user_id TEXT NOT NULL,module_key TEXT NOT NULL,question TEXT NOT NULL,status TEXT NOT NULL DEFAULT 'PENDING',review_note TEXT,answer TEXT,knowledge_id TEXT,created_at TEXT NOT NULL,updated_at TEXT NOT NULL)`).run();
+  const ts=now();
+  await env.DB.batch(TUTOR_SEED.map(([key,keywords,answer,reference,behavior])=>env.DB.prepare(`INSERT OR IGNORE INTO tutor_knowledge(id,title,keywords,answer,reference,module_key,behavior,status,approved_by,approved_at,created_at,updated_at) VALUES(?,?,?,?,?,'ALL',?,'APPROVED','OSC',?,?,?)`).bind(`tk_${key}`,key,keywords,answer,reference,behavior,ts,ts,ts)));
+}
+const normalizeTutorText=value=>String(value||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9 ]+/g,' ').replace(/\s+/g,' ').trim();
+const consultationQuestion=q=>/(implementar|disenar|diseñar|arquitectura|interfaz|integrar|adaptar|migrar|documentacion interna|documentación interna|produccion|producción|banco|procesador).*(propio|particular|interno|mi |nuestra |especifico|específico)|(?:mi banco|nuestro banco|mi empresa|nuestra mensajeria|nuestra mensajería)/i.test(q);
 async function ensureModuleAccessSchema(env){
   await env.DB.prepare(`CREATE TABLE IF NOT EXISTS cohort_module_access (
     cohort_id TEXT NOT NULL,module_key TEXT NOT NULL,enabled INTEGER NOT NULL DEFAULT 0,enabled_at TEXT,updated_by TEXT,updated_at TEXT NOT NULL,
@@ -169,6 +190,49 @@ async function ensureBankCardSchema(env){
 const luhnCheckDigit=base=>{let sum=0,alt=true;for(let i=base.length-1;i>=0;i--){let n=Number(base[i]);if(alt){n*=2;if(n>9)n-=9}sum+=n;alt=!alt}return String((10-(sum%10))%10)};
 const maskCard=pan=>`${pan.slice(0,6)}******${pan.slice(-4)}`;
 async function api(request,env,path){
+  if(path==='/api/tutor/query'&&request.method==='POST'){
+    const auth=await requireUser(request,env); if(auth.error)return auth.error;
+    await ensureTutorSchema(env);
+    const b=await readBody(request),moduleKey=String(b.moduleKey||''),question=String(b.question||'').trim().slice(0,1200);
+    if(!TUTOR_MODULES.includes(moduleKey)||question.length<3)return json({error:'INVALID_TUTOR_QUERY'},400);
+    const access=await learningAccess(env,auth.user);
+    if(!access.enabled.includes(moduleKey))return json({error:'MODULE_NOT_ENABLED'},403);
+    if(consultationQuestion(question))return json({kind:'CONSULTORIA',answer:'Puedo explicarte el concepto general, pero el análisis o diseño de una solución para una institución específica requiere revisar sus reglas, documentación y arquitectura. Este caso corresponde a Consultoría OSC.',reference:'Derivación a Consultoría OSC',moduleKey});
+    const normalized=normalizeTutorText(question),words=new Set(normalized.split(' ').filter(x=>x.length>2));
+    const rows=(await env.DB.prepare(`SELECT id,title,keywords,answer,reference,module_key,behavior FROM tutor_knowledge WHERE status='APPROVED' AND (module_key='ALL' OR module_key=?)`).bind(moduleKey).all()).results;
+    let best=null,bestScore=0;
+    for(const row of rows){const keys=normalizeTutorText(`${row.title} ${row.keywords}`).split(' ');let score=0;for(const key of keys)if(words.has(key))score+=key.length>4?2:1;if(score>bestScore){best=row;bestScore=score;}}
+    if(best&&bestScore>=2)return json({kind:best.behavior,answer:best.answer,reference:best.reference,knowledgeId:best.id,moduleKey});
+    const tenantId=await bankTenant(env,auth.user),ts=now(),pendingId=id('tp');
+    await env.DB.prepare(`INSERT INTO tutor_pending(id,tenant_id,user_id,module_key,question,status,created_at,updated_at) VALUES(?,?,?,?,?,'PENDING',?,?)`).bind(pendingId,tenantId,auth.user.id,moduleKey,question,ts,ts).run();
+    return json({kind:'PENDIENTE',answer:'Esta consulta todavía no cuenta con una respuesta aprobada por OSC. La guardé en la Bandeja de conocimiento pendiente para su revisión.',pendingId,moduleKey});
+  }
+
+  if(path==='/api/admin/tutor/pending'&&request.method==='GET'){
+    const auth=await requireUser(request,env,['OSC_ADMIN']); if(auth.error)return auth.error;
+    await ensureTutorSchema(env);
+    const rows=(await env.DB.prepare(`SELECT p.*,u.full_name,u.email,t.name tenant_name FROM tutor_pending p JOIN users u ON u.id=p.user_id LEFT JOIN tenants t ON t.id=p.tenant_id ORDER BY CASE p.status WHEN 'PENDING' THEN 0 WHEN 'IN_REVIEW' THEN 1 ELSE 2 END,p.created_at DESC LIMIT 500`).all()).results;
+    return json({pending:rows});
+  }
+
+  const tutorReview=path.match(/^\/api\/admin\/tutor\/pending\/([^/]+)$/);
+  if(tutorReview&&request.method==='PUT'){
+    const auth=await requireUser(request,env,['OSC_ADMIN']); if(auth.error)return auth.error;
+    await ensureTutorSchema(env); const b=await readBody(request),status=String(b.status||'IN_REVIEW');
+    if(!['PENDING','IN_REVIEW','APPROVED','CONSULTORIA','OUT_OF_SCOPE','RETIRED'].includes(status))return json({error:'INVALID_STATUS'},400);
+    const pending=await env.DB.prepare('SELECT * FROM tutor_pending WHERE id=?').bind(tutorReview[1]).first(); if(!pending)return json({error:'NOT_FOUND'},404);
+    const ts=now(); let knowledgeId=null;
+    if(status==='APPROVED'){
+      const answer=String(b.answer||'').trim(),keywords=String(b.keywords||pending.question).trim(),reference=String(b.reference||'').trim();
+      if(!answer||!reference)return json({error:'ANSWER_AND_REFERENCE_REQUIRED'},400);
+      knowledgeId=id('tk');
+      await env.DB.prepare(`INSERT INTO tutor_knowledge(id,title,keywords,answer,reference,module_key,behavior,status,approved_by,approved_at,created_at,updated_at) VALUES(?,?,?,?,?,?,?,'APPROVED',?,?,?,?)`).bind(knowledgeId,String(b.title||pending.question).slice(0,180),keywords,answer,reference,String(b.moduleKey||pending.module_key),String(b.behavior||'EXPLICAR'),auth.user.id,ts,ts,ts).run();
+    }
+    await env.DB.prepare(`UPDATE tutor_pending SET status=?,review_note=?,answer=?,knowledge_id=?,updated_at=? WHERE id=?`).bind(status,String(b.reviewNote||''),String(b.answer||''),knowledgeId,ts,pending.id).run();
+    await audit(env,auth.user.id,'REVIEW_TUTOR_QUESTION','TUTOR_PENDING',pending.id,{status,knowledgeId});
+    return json({ok:true,status,knowledgeId});
+  }
+
   if(path==='/api/bank/customers'&&(request.method==='GET'||request.method==='POST')){
     const auth=await requireUser(request,env); if(auth.error)return auth.error; const user=auth.user;
     await ensureBankCustomerSchema(env); const tenantId=await bankTenant(env,user);
