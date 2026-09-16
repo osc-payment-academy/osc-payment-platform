@@ -42,16 +42,21 @@ const tutorDEAnswer=n=>`El DE${n} se identifica de forma general como “${DE_NA
 const tutorMTIAnswer=mti=>{const d=mti.split('');return `El MTI ${mti} se interpreta por sus cuatro posiciones: 1) versión: ${MTI_DIGITS.version[d[0]]||'valor reservado o específico'}; 2) clase: ${MTI_DIGITS.class[d[1]]||'valor reservado o específico'}; 3) función: ${MTI_DIGITS.fn[d[2]]||'valor reservado o específico'}; 4) origen: ${MTI_DIGITS.origin[d[3]]||'valor reservado o específico'}. La utilización exacta debe confirmarse en el manual aprobado de la marca o interfaz.`};
 const VISA_POS_FIELD_PAGES={2:173,3:177,4:186,5:201,6:203,7:206,9:208,10:210,11:212,12:215,13:217,14:219,15:222,16:224,17:226,18:227,19:231,20:233,22:235,23:241,25:244,26:249,28:250,32:255,33:258,34:261,35:279,37:284,38:288,39:292,41:310,42:313,43:318,45:364,46:369,48:374,49:445,50:448,51:450,52:452,53:455,54:464,55:480,56:491,59:500,60:510,61:525,62:530,63:601,66:676,68:678,69:679,70:680,73:685,74:688,75:689,76:690,77:691,86:692,87:693,88:694,89:695,90:696,91:699,92:702,95:704,96:706,97:707,99:708,100:710,101:713,102:716,103:719,104:721,105:823,108:824,110:827,111:832,114:844,115:853,116:855,117:862,118:872,119:890,120:912,121:919,125:946,126:966,127:1013};
 const MASTERCARD_MDS_FIELD_PAGES={1:201,2:202,3:203,4:206,5:207,6:209,7:210,8:211,9:212,10:213,11:214,12:215,13:216,14:217,15:218,16:219,17:220,18:221,19:223,20:224,21:225,22:226,23:228,24:229,25:230,26:231,27:232,28:233,29:234,30:235,31:236,32:237,33:238,34:239,35:240,36:242,37:243,38:244,39:245,40:250,41:251,42:252,43:253,44:255,45:257,46:259,47:260,48:261,49:273,50:274,51:275,52:276,53:277,54:278,55:280,56:284,57:285,58:286,59:287,60:288,61:295,62:298,63:299,64:302,65:303,66:304,67:305,68:306,69:307,70:308,71:309,72:310,73:311,74:312,75:313,76:314,77:315,78:316,79:317,80:318,81:319,82:320,83:321,84:322,85:323,86:324,87:325,88:326,89:327,90:328,91:329,92:331,93:332,94:333,95:334,96:336,97:337,98:339,99:340,100:341,101:342,102:343,103:344,104:345,112:347,120:353,121:359,122:360,126:362,127:363,128:364};
-const tutorManualReference=(brand,de)=>{
+const tutorManualReference=(brand,de,channel='POS')=>{
+  const fieldName=DE_NAMES[de]||`Data Element ${de}`;
   if(brand==='VISA'){
+    if(String(channel).toUpperCase()==='ATM'){
+      return {fieldName,answer:`Voy a estudiar DE${de} en el contexto Visa ATM. La definición, presencia, formato y valores deben verificarse en el manual Full Service ATM Online Messages; no voy a reutilizar automáticamente la regla de Visa POS.`,reference:`Visa Full Service ATM Online Messages – Technical Specifications · consultar Field ${de} en la edición disponible`,manualUrl:`/manuals/full-service-atm-online-messages-tech-specs.pdf#page=1&zoom=page-width`,manualLabel:`Abrir manual Visa ATM · buscar Field ${de}`};
+    }
     const page=VISA_POS_FIELD_PAGES[de]||151;
-    return {answer:VISA_POS_FIELD_PAGES[de]?`Field ${de} is documented in the official Visa POS specification. Open the original English manual to review Attributes, Description, Usage, edits and valid values when applicable.`:`Field ${de} is not listed as an individual field in this Visa POS interface. Open the original English field index to verify whether it is reserved or not used.`,reference:`Visa Full Service POS Online Messages – Technical Specifications · Field ${de} · page ${page}`,manualUrl:`/manuals/full-service-pos-online-messages-tech-specs.pdf#page=${page}&zoom=page-width`,manualLabel:`Open Visa manual · Field ${de}`};
+    return {fieldName,answer:VISA_POS_FIELD_PAGES[de]?`DE${de} — ${fieldName} está documentado en la especificación Visa POS disponible. Abrí el manual oficial para revisar Attributes, Description, Usage, edits y valid values cuando correspondan.`:`No encontré DE${de} listado individualmente en el índice mapeado de esta interfaz Visa POS. Abrí el capítulo oficial de Fields para verificar su tratamiento sin trasladar otra especificación.`,reference:`Visa Full Service POS Online Messages – Technical Specifications · Field ${de} · page ${page}`,manualUrl:`/manuals/full-service-pos-online-messages-tech-specs.pdf#page=${page}&zoom=page-width`,manualLabel:`Abrir manual Visa POS · Field ${de}`};
   }
   if(brand==='MASTERCARD'){
     const page=MASTERCARD_MDS_FIELD_PAGES[de]||199;
-    return {answer:MASTERCARD_MDS_FIELD_PAGES[de]?`DE ${de} is documented in the official Mastercard MDS specification. Open the original English manual to review its attributes, description, usage and valid values.`:`DE ${de} is not listed as an individual Data Element in this Mastercard MDS interface. Open the original English Data Elements chapter to verify whether it is reserved or not used.`,reference:`Mastercard Debit Switch Online Specifications · DE ${de} · page ${page}`,manualUrl:`/manuals/mastercard-debit-switch-online-specifications-jun03.pdf#page=${page}&zoom=page-width`,manualLabel:`Open Mastercard manual · DE ${de}`};
+    return {fieldName,answer:MASTERCARD_MDS_FIELD_PAGES[de]?`DE${de} — ${fieldName} está documentado en la especificación Mastercard MDS disponible. Abrí el manual original para revisar attributes, description, usage y valid values.`:`No encontré DE${de} listado individualmente en el índice mapeado de Mastercard MDS. Abrí el capítulo Data Elements para verificar su tratamiento.`,reference:`Mastercard Debit Switch Online Specifications · June 2003 · DE ${de} · page ${page}`,manualUrl:`/manuals/mastercard-debit-switch-online-specifications-jun03.pdf#page=${page}&zoom=page-width`,manualLabel:`Abrir manual Mastercard · DE ${de}`};
   }
-  return {answer:`Bit ${de} must be verified in the American Express GNS Network Specifications – Authorization. OSC will show the original English source and will not translate or infer brand-specific rules.`,reference:`American Express GNS Network Specifications – Authorization · Bit ${de}`,manualRequired:'amex-authorization'};
+  if(brand==='AMEX')return {fieldName,answer:`Bit ${de} debe verificarse en American Express GNS Network Specifications – Authorization. OSC no va a traducir ni inferir reglas específicas de marca sin ese documento técnico.`,reference:`American Express GNS Network Specifications – Authorization · Bit ${de}`,manualRequired:'amex-authorization'};
+  return {fieldName,answer:`No encontré una especificación técnica aprobada para consultar DE${de} en el contexto ${brand||'actual'}. No voy a completar la definición utilizando automáticamente otra marca o canal.`,reference:`Contexto ${brand||'sin marca'} · ${channel||'sin canal'} · documentación insuficiente`};
 };
 async function ensureModuleAccessSchema(env){
   await env.DB.prepare(`CREATE TABLE IF NOT EXISTS cohort_module_access (
@@ -221,16 +226,22 @@ async function api(request,env,path){
   if(path==='/api/tutor/query'&&request.method==='POST'){
     const auth=await requireUser(request,env); if(auth.error)return auth.error;
     await ensureTutorSchema(env);
-    const b=await readBody(request),moduleKey=String(b.moduleKey||''),question=String(b.question||'').trim().slice(0,1200),brand=String(b.context?.brand||'').toUpperCase();
+    const b=await readBody(request),moduleKey=String(b.moduleKey||''),question=String(b.question||'').trim().slice(0,1200),brand=String(b.context?.brand||'').toUpperCase(),channel=String(b.context?.channel||'').toUpperCase();
     if(!TUTOR_MODULES.includes(moduleKey)||question.length<3)return json({error:'INVALID_TUTOR_QUERY'},400);
     const access=await learningAccess(env,auth.user);
     if(!access.enabled.includes(moduleKey))return json({error:'MODULE_NOT_ENABLED'},403);
     if(consultationQuestion(question))return json({kind:'CONSULTORIA',answer:'Puedo explicarte el concepto general, pero el análisis o diseño de una solución para una institución específica requiere revisar sus reglas, documentación y arquitectura. Este caso corresponde a Consultoría OSC.',reference:'Derivación a Consultoría OSC',moduleKey});
     const normalized=normalizeTutorText(question),words=new Set(normalized.split(' ').filter(x=>x.length>2));
+    if(normalized.startsWith('buscar data element por nombre')){
+      const term=normalized.replace('buscar data element por nombre','').trim();
+      const matches=Object.entries(DE_NAMES).filter(([n,name])=>normalizeTutorText(name).includes(term)||term.split(' ').filter(Boolean).some(w=>normalizeTutorText(name).includes(w))).slice(0,12);
+      if(!matches.length)return json({kind:'REFERENCIAR',answer:`No encontré coincidencias documentadas suficientes para “${term}” en el catálogo de nombres disponible. Ingresá el número del DE o probá otro término.`,moduleKey});
+      return json({kind:'REFERENCIAR',answer:`Coincidencias encontradas para “${term}” en el contexto ${brand||'actual'} ${channel||''}:\n\n${matches.map(([n,name])=>`DE${n} — ${name}`).join('\n')}`,matches:matches.map(([n,name])=>({deNumber:Number(n),name})),moduleKey});
+    }
     const deMatch=normalized.match(/\b(?:de|campo|data element)\s*0*(\d{1,3})\b/),deNumber=deMatch?Number(deMatch[1]):0;
-    if(deNumber>=1&&deNumber<=128&&!brand)return json({kind:'NEED_BRAND',answer:`${tutorDEAnswer(deNumber)}\n\n¿Qué marca querés consultar?`,reference:`Catálogo general ISO 8583 · DE${deNumber}`,deNumber,brands:['VISA','MASTERCARD','AMEX'],moduleKey});
+    if(deNumber>=1&&deNumber<=128&&!brand)return json({kind:'NEED_BRAND',answer:`Para estudiar DE${deNumber} necesito primero la marca. No voy a completar la definición con un catálogo ISO genérico porque puede variar según la implementación.`,deNumber,brands:['VISA','MASTERCARD','AMEX'],moduleKey});
     if(deNumber>=1&&deNumber<=128&&brand){
-      const manual=tutorManualReference(brand,deNumber);
+      const manual=tutorManualReference(brand,deNumber,channel);
       return json({kind:'REFERENCIAR',...manual,deNumber,brand,moduleKey});
     }
     const mtiMatch=normalized.match(/\bmti\s*([0-9]{4})\b/);

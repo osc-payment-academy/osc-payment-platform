@@ -1,0 +1,15 @@
+OSC Payment Academy v4.0.0-rc.1.13
+
+UPDATE ONLY:
+1. Descomprimir el ZIP.
+2. Copiar su contenido sobre la carpeta raíz del proyecto, reemplazando archivos.
+3. Ejecutar el despliegue habitual de Cloudflare Workers/Pages.
+4. No requiere migración D1.
+5. Después del despliegue, abrir POS y ATM con recarga forzada del navegador.
+
+Prueba mínima:
+- Abrir Tutor OSC en POS y verificar los 5 botones.
+- Ejecutar una compra y usar “Explícame esta transacción”.
+- Consultar un DE y verificar marca/canal.
+- Abrir ATM, ejecutar una operación y repetir análisis.
+- Verificar que “Explícame esta pantalla” aparezca separado de Tutor OSC.

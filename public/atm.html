@@ -6054,6 +6054,22 @@ ${raw(m)}`;
             $("manualCompare").hidden = b.dataset.manualTab !== "compare";
           }),
         );
+
+
+        // Tutor OSC v1.0 blueprint context provider.
+        window.OSCTutorContext = function () {
+          const selected = state.messages.find((m) => m.id === state.selectedMessageId);
+          const anchor = selected || state.messages[0] || null;
+          if (!anchor) return { module: "atm", channel: "ATM", brand: String(state.brand || "").toUpperCase(), transaction: null };
+          const stan = anchor.stan;
+          const related = state.messages.filter((m) => stan && m.stan === stan);
+          const req = related.find((m) => m.direction === "Saliente") || (anchor.direction === "Saliente" ? anchor : null);
+          const res = related.find((m) => m.direction === "Entrante") || (anchor.direction === "Entrante" ? anchor : null);
+          const code = res?.responseCode || anchor.responseCode || "";
+          const scenario = state.scenario || code || "";
+          const timeout = /TIME.?OUT|SIN RESPUESTA/i.test(String(anchor.status || "")) || String(scenario).toUpperCase() === "TO";
+          return { module: "atm", channel: "ATM", brand: String(anchor.brand || state.brand || "").toUpperCase(), transaction: { id: `ATM-${stan || anchor.id}`, operation: anchor.operation || state.operation || "ATM", cardLabel: window.OSCATMSelectedCard?.name || "", amountCents: Number(anchor.amount || 0), result: timeout ? "TIMEOUT / SIN RESPUESTA" : (res?.status || anchor.status || "—"), scenario, request: req ? { mti: req.mti, bitmap: req.bitmap, fields: req.fields || [] } : null, response: res ? { mti: res.mti, bitmap: res.bitmap, fields: res.fields || [] } : null, responseCode: code, eventType: timeout ? "TIMEOUT" : (res ? "TRANSACTION_RESPONSE" : "OTHER") } };
+        };
       })();
     </script>
     <script>
@@ -6183,5 +6199,5 @@ ${raw(m)}`;
 .osc-know-btn{width:100%;margin:12px 0 24px;padding:14px;border:1px solid #2f83ff;border-radius:10px;background:#0b2238;color:#fff;font-weight:800;font-size:16px;cursor:pointer}
 .osc-know-modal{position:fixed;inset:0;background:#000a;z-index:100000;display:none;align-items:center;justify-content:center}.osc-know-modal.open{display:flex}.osc-know-card{width:min(820px,92vw);max-height:82vh;overflow:auto;background:#091a2a;border:1px solid #2f83ff;border-radius:16px;padding:24px;color:#fff}.osc-know-card h2{margin-top:0}.osc-know-card li{margin:10px 0;color:#c9dced}.osc-know-close{float:right;background:#17324b;color:#fff;border:1px solid #456;padding:8px 12px;border-radius:8px}
 </style>
-<script src="js/tutor-osc.js?v=4.0.0-rc1.8" data-module="atm"></script></body>
+<script src="js/tutor-osc.js?v=4.0.0-rc1.13" data-module="atm"></script></body>
 </html>

@@ -1614,4 +1614,19 @@ ${rawMessage(msg)}`;
     selectTestCard(state.testCard,{resetFlow:false});
   });
 
+
+  // Tutor OSC v1.0 blueprint context provider.
+  window.OSCTutorContext = function(){
+    const selected=state.messages.find(m=>m.id===state.selectedMessageId);
+    let op=selected?state.operations.find(o=>o.id===selected.operationId):null;
+    if(!op) op=state.operations.slice().reverse().find(o=>o.type!=='batch')||null;
+    if(!op) return {module:'pos',channel:'POS',brand:(profile()?.id||state.network||'').toUpperCase(),transaction:null};
+    const req=state.messages.find(m=>m.operationId===op.id&&String(m.direction).toUpperCase()==='SALIENTE')||state.messages.find(m=>m.operationId===op.id&&/00$/.test(m.mti));
+    const res=state.messages.find(m=>m.operationId===op.id&&String(m.direction).toUpperCase()==='ENTRANTE')||state.messages.find(m=>m.operationId===op.id&&/10$/.test(m.mti));
+    const card=TEST_CARDS[op.cardId||state.testCard]||selectedCard();
+    const scenario=op.responseCode||state.responseCode||res?.responseCode||'';
+    const timeout=String(scenario).toUpperCase()==='TO'||/TIME.?OUT|SIN RESPUESTA/i.test(op.status||'');
+    return {module:'pos',channel:'POS',brand:String(op.network||card?.network||profile()?.id||'').toUpperCase(),transaction:{id:op.id,operation:String(op.type||'operación').replace(/_/g,' '),cardLabel:card?.label||'',amountCents:op.amountCents,result:timeout?'TIMEOUT / SIN RESPUESTA':(op.status||'—'),scenario,request:req?{mti:req.mti,bitmap:req.bitmap,fields:req.fields||[]}:null,response:res?{mti:res.mti,bitmap:res.bitmap,fields:res.fields||[]}:null,responseCode:res?.responseCode||op.responseCode||'',eventType:timeout?'TIMEOUT':(res?'TRANSACTION_RESPONSE':'OTHER')}};
+  };
+
 })();
