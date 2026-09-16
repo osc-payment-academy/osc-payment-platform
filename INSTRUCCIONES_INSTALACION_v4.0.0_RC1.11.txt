@@ -1,0 +1,27 @@
+OSC PAYMENT ACADEMY v4.0.0-rc.1.11
+
+ACTUALIZACION SOBRE RC1.10
+1. Realizar una copia de seguridad del proyecto y de la base D1.
+2. Descomprimir OSC_PAYMENT_ACADEMY_v4.0.0_RC1.11_UPDATE_ONLY.zip sobre la raiz del proyecto.
+3. Ejecutar: npm install
+4. Aplicar el esquema en el ambiente correspondiente:
+   npx wrangler d1 execute osc-academy --local --file=schema_v4.sql
+   Para produccion, usar --remote luego de verificar el binding de D1.
+5. Publicar mediante el procedimiento habitual.
+6. Ingresar con un usuario de licencia vigente y verificar:
+   - Descarga del eBook.
+   - Fecha y hora en Wallet y E-commerce.
+   - Popup Flujo en E-commerce.
+   - Ausencia del aviso solicitado en Switch Adquiriente.
+
+ARCHIVOS PRINCIPALES MODIFICADOS
+- src/index.js
+- public/ebook.html
+- public/wallet.html
+- public/ecommerce.html
+- public/switch.html
+
+IMPORTANTE
+- La ruta del EPUB esta protegida por sesion y licencia de product_payment.
+- No publicar una copia alternativa del EPUB fuera de la ruta protegida.
+- El manual tecnico de AMEX Authorization aun debe incorporarse para habilitar referencias completas campo por campo sin inventar contenido.

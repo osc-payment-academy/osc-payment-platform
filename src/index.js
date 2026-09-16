@@ -83,6 +83,17 @@ async function hasActiveLicense(env,user){
   return !!row;
 }
 
+async function hasPaymentAcademyLicense(env,user){
+  if(user.platform_role==='OSC_ADMIN')return true;
+  const ts=now();
+  const row=await env.DB.prepare(`SELECT 1 ok FROM licenses l
+    JOIN memberships m ON m.tenant_id=l.tenant_id AND m.user_id=? AND m.status='ACTIVE'
+    WHERE l.product_id='product_payment' AND l.status='ACTIVE' AND l.starts_at<=? AND (l.expires_at IS NULL OR l.expires_at>?)
+    UNION SELECT 1 ok FROM licenses l JOIN cohort_enrollments e ON e.cohort_id=l.cohort_id AND e.user_id=? AND e.status='ACTIVE'
+    WHERE l.product_id='product_payment' AND l.status='ACTIVE' AND l.starts_at<=? AND (l.expires_at IS NULL OR l.expires_at>?) LIMIT 1`).bind(user.id,ts,ts,user.id,ts,ts).first();
+  return !!row;
+}
+
 async function productAccess(env,user,productId){
   if(user.platform_role==='OSC_ADMIN')return {tenantId:'tenant_osc',role:'OSC_ADMIN'};
   const ts=now();
@@ -701,6 +712,16 @@ export default {async fetch(request,env){
     return Response.redirect(url.toString(),308);
   }
   if(path.startsWith('/api/'))return api(request,env,path);
+  if(path==='/ebooks/ISO_8583_Desde_Cero_Oscar_Sanchez_Castro.epub'){
+    const user=await currentUser(request,env);
+    if(!user)return Response.redirect(`${url.origin}/login?next=${encodeURIComponent(path)}`,302);
+    if(!(await hasPaymentAcademyLicense(env,user)))return Response.redirect(`${url.origin}/expired?product=payment-academy`,302);
+    const response=await env.ASSETS.fetch(request);
+    const headers=new Headers(response.headers);
+    headers.set('content-disposition','attachment; filename="ISO_8583_Desde_Cero_Oscar_Sanchez_Castro.epub"');
+    headers.set('cache-control','private, no-store');
+    return new Response(response.body,{status:response.status,statusText:response.statusText,headers});
+  }
   const publicPaths=new Set(['/login','/login.html','/reset','/reset.html','/styles.css','/favicon.ico','/favicon.svg']);
   const assetLike=/\.(css|js|png|jpg|jpeg|svg|webp|ico|woff2)$/i.test(path);
   if(!publicPaths.has(path)&&!assetLike){
