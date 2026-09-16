@@ -1470,7 +1470,7 @@ ${annotatedMessage(msg)}
 TRAMA COMO VIAJA EN EL MENSAJE
 (SIN PIPE, SIN NÚMERO DE CAMPO Y SIN SIGNO IGUAL)
 ${rawMessage(msg)}`;
-    navigator.clipboard?.writeText(payload);$('copyBtn').textContent='✓ Copiado';setTimeout(()=>$('copyBtn').textContent='▣ Copiar',1200);
+    navigator.clipboard?.writeText(payload);$('copyBtn').textContent='✓ Copiado';setTimeout(()=>$('copyBtn').textContent='Copiar trama',1200);
   }
   function openSelectedInParser(){
     const msg=state.messages.find(m=>m.id===state.selectedMessageId);if(!msg){alert('Seleccione un mensaje del historial.');return}

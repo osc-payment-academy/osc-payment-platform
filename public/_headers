@@ -1,6 +1,10 @@
 /*.html
   Cache-Control: no-cache, no-store, must-revalidate
 
+/ebook.html
+  Cache-Control: private, no-cache, no-store, must-revalidate, max-age=0
+  Vary: Cookie
+
 /*.js
   Cache-Control: no-cache
 

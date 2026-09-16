@@ -6,7 +6,7 @@
     {href:'pasivas.html',icon:'🏦',label:'PASIVAS'},
     {href:'solicitudes.html',icon:'💳',label:'SOLICITUDES'},
     {href:'curso_interactivo.html',icon:'🎓',label:'Curso Interactivo',key:'course_iso8583',day:1},
-    {href:'ebook.html',icon:'📖',label:'eBook ISO 8583'},
+    {href:'ebook.html',icon:'📖',label:'eBook ISO 8583',version:'4.0.0-rc1.12'},
     {href:'constructor.html',icon:'⌘',label:'Constructor ISO8583',key:'constructor',day:1},
     {href:'pos.html',icon:'▣',label:'POS Virtual',key:'pos',day:1},
     {href:'atm.html',icon:'🏧',label:'ATM Virtual',key:'atm',day:2},
@@ -38,6 +38,6 @@
   sidebar.querySelectorAll('a[href]').forEach(link=>{const href=(link.getAttribute('href')||'').split(/[?#]/)[0].split('/').pop();if(managed.has(href))link.remove();});
   sidebar.querySelectorAll('nav').forEach(nav=>{if(!nav.querySelector('a,button,[data-op],[data-section]'))nav.remove();});sidebar.querySelectorAll(':scope > .section:not(.instructor)').forEach(section=>section.remove());
   const nav=document.createElement('nav');nav.className='osc-primary-navigation';nav.setAttribute('aria-label','Navegación principal');
-  modules.filter(item=>item.visible!==false).forEach(item=>{const locked=access.progressive&&item.key&&!enabled.has(item.key),link=document.createElement('a');link.className='nav'+(current===item.href.toLowerCase()?' active':'')+(locked?' locked':'');link.href=new URL(item.href,location.origin+'/').href;link.textContent=`${locked?'🔒':item.icon} ${item.label}${locked?` · Día ${item.day}`:''}`;nav.appendChild(link);});
+  modules.filter(item=>item.visible!==false).forEach(item=>{const locked=access.progressive&&item.key&&!enabled.has(item.key),link=document.createElement('a'),target=new URL(item.href,location.origin+'/');if(item.version)target.searchParams.set('v',item.version);link.className='nav'+(current===item.href.toLowerCase()?' active':'')+(locked?' locked':'');link.href=target.href;link.textContent=`${locked?'🔒':item.icon} ${item.label}${locked?` · Día ${item.day}`:''}`;nav.appendChild(link);});
   const brand=sidebar.querySelector('.brand,.osc-brand');if(brand)brand.insertAdjacentElement('afterend',nav);else sidebar.prepend(nav);
 })();

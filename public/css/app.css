@@ -193,6 +193,14 @@ button{font:inherit;color:inherit}
   content:"✓";position:absolute;inset:0;display:grid;place-items:center;color:#062315;font-size:.65rem;font-weight:800
 }
 
+.pos-output-actions{
+  display:flex;gap:10px;margin-top:10px
+}
+.pos-output-actions button{
+  border:1px solid #285a87;background:#12375a;color:#eef7ff;border-radius:8px;
+  padding:10px 14px;font:600 .72rem/1 Inter,Segoe UI,Arial,sans-serif;cursor:pointer
+}
+.pos-output-actions button:hover{background:#184872;border-color:#3a83bd}
 #analyzeBtn{
   border-color:#2b8cda!important;
   color:#6bc0ff!important;

@@ -1,0 +1,31 @@
+OSC PAYMENT ACADEMY v4.0.0-rc.1.12
+
+ACTUALIZACION SOBRE RC1.11
+1. Realizar una copia de seguridad del proyecto y de D1.
+2. Descomprimir OSC_PAYMENT_ACADEMY_v4.0.0_RC1.12_UPDATE_ONLY.zip sobre la raiz del proyecto, reemplazando los archivos existentes.
+3. Ejecutar: npm install
+4. Aplicar el esquema en el ambiente correspondiente:
+   npx wrangler d1 execute osc-academy --local --file=schema_v4.sql
+   Para produccion, utilizar --remote después de verificar el binding de D1.
+5. Publicar mediante el procedimiento habitual.
+6. Cerrar la sesion anterior del navegador, volver a ingresar y abrir el eBook desde el menu.
+
+PRUEBAS RECOMENDADAS
+- POS: seleccionar un mensaje del historial y probar Copiar trama y Analizar en Parser.
+- Tutor POS: consultar DE3, elegir Visa y abrir el manual en Field 3.
+- Tutor POS: consultar DE22, elegir Mastercard y abrir el manual en DE22.
+- Tutor ATM: probar Cómo utilizo esta pantalla, Cómo hago una extracción y Cómo hago una conciliación.
+- eBook: confirmar que aparece Incluido en tu licencia y Descargar eBook.
+
+ARCHIVOS PRINCIPALES MODIFICADOS
+- src/index.js
+- public/js/tutor-osc.js
+- public/js/module-guide.js
+- public/js/app.js
+- public/js/navigation.js
+- public/css/app.css
+- public/pos.html
+- public/_headers
+
+IMPORTANTE
+- AMEX requiere el PDF GNS Network Specifications – Authorization para navegar a cada Bit en el manual técnico exacto.
