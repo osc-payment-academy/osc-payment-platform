@@ -1,0 +1,22 @@
+OSC PAYMENT ACADEMY v4.0.0-rc.1.10
+
+ACTUALIZACION SOBRE UNA VERSION ANTERIOR
+1. Realizar una copia de seguridad del proyecto y de la base D1 antes de actualizar.
+2. Descomprimir OSC_PAYMENT_ACADEMY_v4.0.0_RC1.10_UPDATE_ONLY.zip sobre la raiz del proyecto.
+3. Ejecutar: npm install
+4. Aplicar el esquema en el ambiente que corresponda:
+   npx wrangler d1 execute osc-academy --local --file=schema_v4.sql
+   Para produccion, utilizar el mismo comando con --remote y confirmar previamente el binding de D1.
+5. Probar Curso interactivo, Tutor OSC y los recorridos de POS antes de publicar.
+
+INSTALACION COMPLETA
+1. Descomprimir OSC_PAYMENT_ACADEMY_v4.0.0_RC1.10_BACKUP_COMPLETO.zip.
+2. Ejecutar: npm install
+3. Configurar los bindings y variables del ambiente.
+4. Inicializar o actualizar D1 con schema_v4.sql.
+5. Ejecutar las pruebas locales y luego publicar mediante el procedimiento habitual.
+
+IMPORTANTE
+- No compartir PAN completo, PIN, CVV ni documentacion interna con el Tutor.
+- Las respuestas especificas de marca solo deben provenir de contenido aprobado.
+- Las consultas sin respaldo suficiente se guardan en la Bandeja de conocimiento pendiente.

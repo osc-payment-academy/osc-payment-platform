@@ -1147,13 +1147,12 @@
 
   function eligibleOperations(mode){
     return state.operations.filter(op=>{
-      if(op.batch!==state.batchNumber)return false;
       if(mode==='refund'){
         if(!(op.status==='APROBADA'&&op.type==='purchase')) return false;
         const refunded=state.operations.filter(r=>r.type==='refund'&&r.sourceOperationId===op.id&&r.status==='APROBADA').reduce((a,r)=>a+(r.amountCents||0),0);
         return refunded < (op.amountCents||0);
       }
-      if(mode==='void')return op.status==='APROBADA'&&op.type==='purchase';
+      if(mode==='void')return op.batch===state.batchNumber&&op.status==='APROBADA'&&op.type==='purchase';
       return false;
     });
   }

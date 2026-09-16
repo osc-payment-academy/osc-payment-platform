@@ -197,14 +197,21 @@ async function api(request,env,path){
   if(path==='/api/tutor/query'&&request.method==='POST'){
     const auth=await requireUser(request,env); if(auth.error)return auth.error;
     await ensureTutorSchema(env);
-    const b=await readBody(request),moduleKey=String(b.moduleKey||''),question=String(b.question||'').trim().slice(0,1200);
+    const b=await readBody(request),moduleKey=String(b.moduleKey||''),question=String(b.question||'').trim().slice(0,1200),brand=String(b.context?.brand||'').toUpperCase();
     if(!TUTOR_MODULES.includes(moduleKey)||question.length<3)return json({error:'INVALID_TUTOR_QUERY'},400);
     const access=await learningAccess(env,auth.user);
     if(!access.enabled.includes(moduleKey))return json({error:'MODULE_NOT_ENABLED'},403);
     if(consultationQuestion(question))return json({kind:'CONSULTORIA',answer:'Puedo explicarte el concepto general, pero el análisis o diseño de una solución para una institución específica requiere revisar sus reglas, documentación y arquitectura. Este caso corresponde a Consultoría OSC.',reference:'Derivación a Consultoría OSC',moduleKey});
     const normalized=normalizeTutorText(question),words=new Set(normalized.split(' ').filter(x=>x.length>2));
     const deMatch=normalized.match(/\b(?:de|campo|data element)\s*0*(\d{1,3})\b/),deNumber=deMatch?Number(deMatch[1]):0;
-    if(deNumber>=1&&deNumber<=128&&![39,55].includes(deNumber))return json({kind:'REFERENCIAR',answer:tutorDEAnswer(deNumber),reference:`Catálogo general ISO 8583 · DE${deNumber}; confirmar manual aprobado de la marca`,moduleKey});
+    if(deNumber>=1&&deNumber<=128&&![39,55].includes(deNumber)&&!brand)return json({kind:'NEED_BRAND',answer:`${tutorDEAnswer(deNumber)}\n\n¿Qué marca querés consultar?`,reference:`Catálogo general ISO 8583 · DE${deNumber}`,deNumber,brands:['VISA','MASTERCARD','AMEX'],moduleKey});
+    if(deNumber===22&&brand==='VISA')return json({kind:'REFERENCIAR',answer:'En VisaNet, Field 22 es un campo fijo de 4 dígitos, codificado en BCD y de 2 bytes. Las posiciones 1–2 identifican cómo se ingresaron el PAN y la fecha; la posición 3 informa la capacidad del terminal para capturar PIN online; la posición 4 se completa con cero. El manual también relaciona valores específicos con chip, contactless, banda y operaciones card-not-present.',reference:'Visa Full Service POS Online Messages – Technical Specifications, 14 abril 2025 · Field 22, páginas 235–239',moduleKey});
+    if(deNumber===22&&brand==='MASTERCARD')return json({kind:'REFERENCIAR',answer:'En Mastercard MDS, DE22 tiene atributo n-3. Las posiciones 1–2 indican el método utilizado para ingresar el PAN y la posición 3 describe la capacidad de ingreso de PIN del terminal. Entre los valores documentados se encuentran ingreso manual, banda magnética, chip y comercio electrónico.',reference:'Mastercard Debit Switch Online Specifications, junio 2003 · DE22, sección 4-40 a 4-41',moduleKey});
+    if(deNumber>=1&&deNumber<=128&&brand){
+      const tenantId=await bankTenant(env,auth.user),ts=now(),pendingId=id('tp');
+      await env.DB.prepare(`INSERT INTO tutor_pending(id,tenant_id,user_id,module_key,question,status,created_at,updated_at) VALUES(?,?,?,?,?,'PENDING',?,?)`).bind(pendingId,tenantId,auth.user.id,moduleKey,`DE${deNumber} · ${brand} · ${question}`,ts,ts).run();
+      return json({kind:'PENDIENTE',answer:`Todavía no existe una respuesta de ${brand} aprobada por OSC para el DE${deNumber}. La consulta quedó registrada para revisión documental.`,pendingId,moduleKey});
+    }
     const mtiMatch=normalized.match(/\bmti\s*([0-9]{4})\b/);
     if(mtiMatch&&!['0200','0210'].includes(mtiMatch[1]))return json({kind:'REFERENCIAR',answer:tutorMTIAnswer(mtiMatch[1]),reference:'Estructura general del MTI ISO 8583; confirmar manual aprobado de la marca',moduleKey});
     const rows=(await env.DB.prepare(`SELECT id,title,keywords,answer,reference,module_key,behavior FROM tutor_knowledge WHERE status='APPROVED' AND (module_key='ALL' OR module_key=?)`).bind(moduleKey).all()).results;
