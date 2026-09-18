@@ -1,0 +1,23 @@
+OSC Payment Academy v4.0.0-rc.1.18 — Visa DE22/DE55/DE63, Parser y clearing Amex 1240
+
+UPDATE ONLY (paquete INCREMENTAL, se instala sobre la rc.1.16; incluye todo lo de la rc.1.17):
+1. Descomprimir el ZIP incremental.
+2. Copiar su contenido sobre la raíz del proyecto, reemplazando archivos.
+3. Ejecutar el despliegue habitual de Cloudflare Workers.
+4. No requiere migración D1.
+5. Recarga forzada del navegador (Ctrl+F5) en POS, ATM, Parser, Constructor y Switch.
+
+RESPALDO (paquete COMPLETO): contiene todo el proyecto; se conserva sin instalar.
+
+Pruebas mínimas:
+1. Parser Guiado, nivel 3: completar una trama; el DE55 debe empezar con 01 (Dataset ID). "Analizar en Parser" muestra el DE55 con sus tags.
+2. POS: elegir Visa Crédito, hacer una compra con chip y "Analizar en Parser": sin avisos de desalineación; DE22 = 0510 (4 dígitos), DE42 de 15 caracteres.
+3. POS con Mastercard: DE22 = 051 (3 dígitos), sin avisos.
+4. ATM: elegir Visa / Mastercard / Amex y cambiar el modo de lectura; el texto "DE22 ..." cambia según la marca.
+5. Constructor con Visa, preset "Compra": DE55 empieza con 01; cambiar a un TLV sin dataset y ver la advertencia.
+6. Switch adquirente: con operaciones Amex POS aprobadas, cerrar lote, generar clearing y "Ver AMEX POS 1240": 4 líneas de 1400 posiciones (9824, 1240, 1240, 9825 por dos operaciones).
+7. POS con Visa Crédito: compra con chip, anular la compra y cerrar el lote. Abrir cada mensaje con "Analizar en Parser":
+   la reversa 0400 muestra DE22 = 0510 y DE63 = 014 con "Subcampos 63.x" (Network ID 0002, motivo 2501); el 0500 y el 0510
+   se leen sin avisos.
+8. Repetir el punto 7 con Mastercard y con American Express: todos los mensajes sin avisos de desalineación.
+9. Constructor con Visa, preset "Reversa": aparece el DE63 (A0000000022501); reemplazarlo por 2501 y ver la advertencia.

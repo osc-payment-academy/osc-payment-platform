@@ -3973,6 +3973,10 @@
           const base = captureProfile().de22;
           return state.brand === "visa" ? base + "0" : base;
         }
+        // Visa Field 63: bitmap 63.0 (3 bytes: bits 1 y 3) + 63.1 Network ID (0002 = Visa) + 63.3 Message Reason Code.
+        function visa63(reasonCode) {
+          return "A00000" + "0002" + reasonCode;
+        }
         function refreshCaptureHint() {
           const el = $("captureModeHint");
           if (el) el.textContent = `DE22 ${de22Value()} · ${captureProfile().label}`;
@@ -4598,15 +4602,20 @@
               "Relación con 0200 original",
             ),
           ];
+          // Visa Field 22: obligatorio en 0400/0420 con el valor del mensaje original.
+          if (state.brand === "visa")
+            fields.push(
+              field(22, "POS Entry Mode", de22Value(), "N4", captureProfile().label),
+            );
           // Visa 15-Oct-2025: ATM full reversals carry Field 63.3 = 2501/2502/2503.
           if (state.brand === "visa")
             fields.push(
               field(
                 63,
-                "V.I.P. Private-Use · SF3 Message Reason Code",
-                "2503",
-                "N4",
-                "No confirmation from point of service",
+                "V.I.P. Private-Use Fields · 63.1 Network ID + 63.3 Message Reason Code",
+                visa63("2503"),
+                "LLLVAR",
+                "2503 · No confirmation from point of service",
               ),
             );
           // Mastercard profile retained for zero dispense/POI failure.
@@ -4631,10 +4640,10 @@
           fields.push(
             field(
               63,
-              "V.I.P. Private-Use · SF3 Message Reason Code",
-              "2504",
-              "N4",
-              "Partial dispense by ATM (misdispense)",
+              "V.I.P. Private-Use Fields · 63.1 Network ID + 63.3 Message Reason Code",
+              visa63("2504"),
+              "LLLVAR",
+              "2504 · Partial dispense by ATM (misdispense)",
             ),
           );
           fields.push(
@@ -4867,7 +4876,7 @@
             "warn",
           );
           setTimeout(() => {
-            const res = req.filter((r) => Number(r[0]) !== 63);
+            const res = req.filter((r) => ![63, 22].includes(Number(r[0])));
             res.push(field(39, "Response Code", "00", "AN2", "Host"));
             res.sort((a, b) => Number(a[0]) - Number(b[0]));
             addMessage("0430", "Respuesta reversa parcial Visa", "00", res);
@@ -5841,7 +5850,7 @@
           const req = reversalFields();
           addMessage("0420", "Reversa total por efectivo no retirado", "", req);
           setTimeout(() => {
-            const res = req.filter((r) => r[0] !== "90");
+            const res = req.filter((r) => !["90", "63", "22"].includes(r[0]));
             res.push(field(39, "Response Code", "00", "AN2", "Host"));
             res.sort((a, b) => Number(a[0]) - Number(b[0]));
             addMessage("0430", "Respuesta reversa total", "00", res);

@@ -2502,6 +2502,26 @@
                 text: "DE55 (Visa Field 55, Usage 1): debe iniciar con Dataset ID 01, seguido de la longitud del dataset (2 bytes) y los datos TLV.",
               });
           }
+          if (brandNet === "visa" && state.selected.has(63) && state.values[63]) {
+            const m = /^([0-9A-F]{2})([0-9A-F]{2})([0-9A-F]{2})([0-9A-F]*)$/.exec(
+              String(state.values[63]).toUpperCase(),
+            );
+            let problem = !m;
+            if (m) {
+              const b1 = parseInt(m[1], 16);
+              const soloSubcampos1a4 =
+                (b1 & 0x0f) === 0 && m[2] === "00" && m[3] === "00";
+              if (soloSubcampos1a4) {
+                const present = [0x80, 0x40, 0x20, 0x10].filter((bit) => b1 & bit).length;
+                if (m[4].length !== present * 4) problem = true;
+              }
+            }
+            if (problem)
+              messages.push({
+                type: "warn",
+                text: "DE63 (Visa Field 63): debe comenzar con el bitmap 63.0 de 3 bytes y traer los subcampos indicados; por ejemplo A00000 + 0002 (Network ID) + 2501 (Message Reason Code).",
+              });
+          }
           if (brandNet === "visa")
             VISA_NOT_DEFINED.filter((de) => state.selected.has(de)).forEach(
               (de) =>
@@ -2541,7 +2561,7 @@
           50: { name: "Currency Code, Settlement" },
           56: { name: "Customer Related Data", fmt: "LLLVAR ANS", max: 255, desc: "Visa Field 56: datasets en formato TLV con datos del cliente." },
           62: { max: 510 },
-          63: { max: 510 },
+          63: { name: "V.I.P. Private-Use Fields", fmt: "LLLVAR B", max: 510, desc: "Visa Field 63: bitmap 63.0 (3 bytes) + subcampos presentes. 63.1 Network ID (2 bytes BCD; 0002 = Visa), 63.3 Message Reason Code (2 bytes BCD; 2501 anulada por el cliente, 2502 no completada, 2503 sin confirmación del POS, 2504 reversa parcial). Ejemplo con 63.1 y 63.3: A00000 + 0002 + 2501." },
         };
         const VISA_NOT_DEFINED = [24, 30, 31];
         const MC_AUTH_OVERRIDES = {
@@ -3023,6 +3043,9 @@
             state.values[22] = "0510"; // Visa Field 22 = 4 N (relleno en cero)
           if (effectiveNetwork() === "visa" && state.values[55])
             state.values[55] = visaDataset01(state.values[55]);
+          // Visa Field 63 en reversas: bitmap A00000 (63.1 y 63.3) + Network ID 0002 + motivo 2501.
+          if (effectiveNetwork() === "visa" && name === "reversal")
+            state.values[63] = "A00000" + "0002" + "2501";
           if (effectiveNetwork() === "mastercard")
             delete state.values[25]; // Mastercard no usa DE25 en autorización
           state.selected = new Set(Object.keys(state.values).map(Number));
@@ -3578,6 +3601,17 @@ ${raw()}`,
         const AMEX_22 = "51010150034C";
         const BRAND_DETAILS = {
           visa: {
+            63: {
+              origin: "Adquirente",
+              messages: "Reversas 0400 / 0420",
+              example: "A0000000022501",
+              parts: [
+                ["LONGITUD", "014", "Prefijo LLLVAR", "length"],
+                ["BITMAP 63.0", "A00000", "Bits 1 y 3: hay 63.1 y 63.3", "id"],
+                ["63.1 NETWORK ID", "0002", "Visa", "part"],
+                ["63.3 REASON CODE", "2501", "Transacción anulada por el cliente", "value"],
+              ],
+            },
             55: {
               origin: "Tarjeta EMV + POS / ATM",
               messages: "Mensajes EMV",

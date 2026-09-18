@@ -1,0 +1,53 @@
+{
+  "product": "OSC-ACADEMY",
+  "version": "4.0.0-rc.1.18",
+  "title": "Visa DE22/DE55/DE63, Parser y clearing Amex 1240 (acumulativa)",
+  "parent_baseline": "OSC-ACADEMY v4.0.0-rc.1.16",
+  "parent_source_file": "OSC-ACADEMY_v4.0.0-rc.1.16_BACKUP_COMPLETO.zip",
+  "supersedes_unreleased": "4.0.0-rc.1.17 (entregada pero no instalada; su contenido está incluido)",
+  "policy": {
+    "build_from_last_approved_zip": true,
+    "no_silent_file_deletion": true,
+    "sha256_inventory": true,
+    "incremental_install_package": true,
+    "complete_backup_package": true
+  },
+  "parent_file_count": 268,
+  "final_file_count": 272,
+  "removed_files": [],
+  "changed_parent_files": [
+    "public/atm.html",
+    "public/constructor.html",
+    "public/js/app.js",
+    "public/js/guided-parser-core.js",
+    "public/js/modern-payment-messages.js",
+    "public/parser.html",
+    "public/switch.html"
+  ],
+  "added_files": [
+    "INSTRUCCIONES_INSTALACION_v4.0.0_RC1.18.txt",
+    "MANUAL_MAPPING_v4.0.0-rc.1.18_VISA_PARSER_AMEX_1240.txt",
+    "RELEASE_NOTES_v4.0.0-rc.1.18.md"
+  ],
+  "sha256": {
+    "public/atm.html": "926987c77b4db40bf7740fbb9abc4da38513bc2c2d0ced8341489c3aa6462764",
+    "public/constructor.html": "d036f99e07dc556572bab9514f13d4984b24b8bd4948cc8ad78765d6b63f173f",
+    "public/js/app.js": "6659334113e8653de0c82308816bd4a37d55756709b721fe3f4a50ac6ca1dc18",
+    "public/js/guided-parser-core.js": "5dbe925a7fb550de17252a2c530e8b273b222ab0514c1741063df3c8035d6bd8",
+    "public/js/modern-payment-messages.js": "e7e75ecc7298c873456eaab5c23e46ff15fa7bb4d2263395d49925df8752cdfd",
+    "public/parser.html": "2ef96638c0c6c2597de538a207af5ce8f960985a50d2ce37c4982340911ce9b7",
+    "public/switch.html": "eb0143c70121bf213dc7c429e286d9b63a4e9ac07996f49bf3ed43faef561f3a",
+    "INSTRUCCIONES_INSTALACION_v4.0.0_RC1.18.txt": "34db039986374c01cff5f331c4f368d5f4dc78ffaa7c5bbade6dd6a270cc2610",
+    "MANUAL_MAPPING_v4.0.0-rc.1.18_VISA_PARSER_AMEX_1240.txt": "31b3824e8d6cc475ce381dbedbcb54b9cf5738752352ee2367c81ce8874dcd15",
+    "RELEASE_NOTES_v4.0.0-rc.1.18.md": "ad6ac5495be7c69d8788a84a58fd3de98e9d85f941cb4b948889992c8d8af6ae"
+  },
+  "d1_migration_required": false,
+  "backend_changes": false,
+  "manuals_used": [
+    "Visa Full Service POS Online Messages – Technical Specifications (15 October 2025 y 14 April 2025)",
+    "Mastercard Customer Interface Specification (25 February 2025)",
+    "American Express Network Specifications – Financial/Non-Financial (October 2023)",
+    "American Express Network Specifications – Authorization (October 2023)",
+    "American Express Codes Reference Guide (October 2023)"
+  ]
+}

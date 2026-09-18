@@ -1910,6 +1910,74 @@
                 );
               }
 
+              const VISA_63_SUBFIELDS = [
+                "63.1 Network ID",
+                "63.2 Time (Preauth Time Limit)",
+                "63.3 Message Reason Code",
+                "63.4 STIP/Switch Reason Code",
+              ];
+              const VISA_NETWORK_IDS = {
+                "0000": "Priority routing",
+                "0002": "Visa / Visa Electron",
+                "0003": "Interlink",
+                "0004": "Plus",
+              };
+              const VISA_REASON_CODES = {
+                "2001": "Transaction voided by cardholder (ajuste)",
+                "2501": "Transaction voided by customer",
+                "2502": "Transaction has not completed (timeout o falla del POS)",
+                "2503": "No confirmation from point of service",
+                "2504": "POS 0100 authorization partial reversal",
+                "2505": "BASE II acquirer reversal advice",
+              };
+              // Desglose del Field 63 de Visa: bitmap 63.0 (3 bytes) + subcampos 63.1 a 63.4 (2 bytes BCD c/u).
+              function visa63BreakdownHtml(hexValue) {
+                if (!hexValue || !/^[0-9A-Fa-f]{6}/.test(hexValue)) return "";
+                const b1 = parseInt(hexValue.substr(0, 2), 16);
+                const others =
+                  (b1 & 0x0f) !== 0 || hexValue.substr(2, 4) !== "0000";
+                const rows = [];
+                let pos = 6;
+                [0x80, 0x40, 0x20, 0x10].forEach((bit, i) => {
+                  if (!(b1 & bit)) return;
+                  const v = hexValue.substr(pos, 4);
+                  pos += 4;
+                  const meaning =
+                    i === 0
+                      ? VISA_NETWORK_IDS[v]
+                      : i === 2
+                        ? VISA_REASON_CODES[v]
+                        : "";
+                  rows.push(
+                    "<div><strong>" +
+                      VISA_63_SUBFIELDS[i] +
+                      ':</strong> <span class="mono">' +
+                      v +
+                      "</span>" +
+                      (meaning ? " · " + meaning : "") +
+                      (v.length < 4
+                        ? ' <span style="color:#ff8a9a">(subcampo incompleto)</span>'
+                        : "") +
+                      "</div>",
+                  );
+                });
+                if (others || (!others && pos < hexValue.length))
+                  rows.push(
+                    '<div style="color:#f0d68a">' +
+                      (others
+                        ? "Hay otros subcampos 63.x indicados en el bitmap; no se desglosan."
+                        : "Sobran " + (hexValue.length - pos) + " caracteres después de los subcampos indicados.") +
+                      "</div>",
+                  );
+                return (
+                  '<details style="margin-top:6px;font-size:.72rem"><summary style="cursor:pointer;color:#75bcff">Subcampos 63.x</summary><div><strong>Bitmap 63.0:</strong> <span class="mono">' +
+                  hexValue.substr(0, 6) +
+                  "</span></div>" +
+                  rows.join("") +
+                  "</details>"
+                );
+              }
+
               function visaDescription(fnum, value, def) {
                 if (fnum === 3 && value && value.length >= 6) {
                   const tx = value.slice(0, 2);
@@ -2770,10 +2838,13 @@
                 let clean = raw.replace(/[\r\n\t]+/g, "");
                 clean = clean.replace(/[\x00-\x1F]+$/g, "");
                 const compactHex = clean.replace(/\s+/g, "");
+                // Una trama ASCII solo numérica se confunde con HEX BCD; un bloque de 4 o más espacios (relleno de un
+                // campo alfanumérico, por ejemplo el Card Acceptor ID de 10 dígitos + 5 espacios) indica texto, no un volcado HEX.
                 if (
                   /^[0-9A-Fa-f]+$/.test(compactHex) &&
                   compactHex.length >= 20 &&
-                  compactHex.length % 2 === 0
+                  compactHex.length % 2 === 0 &&
+                  !/ {4,}/.test(clean.trim())
                 ) {
                   return parseWireHex(compactHex);
                 }
@@ -3248,7 +3319,15 @@
                     ? maskTrack1(f.value)
                     : f.num === 55
                       ? maskEMVData(f.value) + emvBreakdownHtml(f.value)
-                      : f.value
+                      : f.num === 63 &&
+                          ["", "visa"].includes(
+                            (
+                              (document.getElementById("parserNetworkSelect") ||
+                                {}).value || ""
+                            ).toLowerCase(),
+                          )
+                        ? f.value + visa63BreakdownHtml(f.value)
+                        : f.value
             }</td>
             <td class="fdesc">${manualEnabled ? `<button type="button" class="study-manual-btn" data-manual-de="${f.num}" title="Abrir ${heading}" aria-label="Abrir ${heading}">☝</button>` : ""}</td>
           </tr>

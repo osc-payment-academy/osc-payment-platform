@@ -103,6 +103,10 @@
   const de22Len=net=>net==='visa'?'4':'3';
   // Visa Field 55, Usage 1 (VSDC): Dataset ID 01 + longitud del dataset (2 bytes) + TLV.
   const visaDataset01=tlv=>'01'+(tlv.length/2).toString(16).padStart(4,'0').toUpperCase()+tlv;
+  // Visa Field 63 (V.I.P. Private-Use): bitmap 63.0 (3 bytes; bits 1 y 3 = Network ID y Message Reason Code)
+  // + 63.1 Network ID (2 bytes BCD, 0002 = Visa) + 63.3 Message Reason Code (2 bytes BCD).
+  const visaField63=(reasonCode,networkId='0002')=>'A00000'+networkId+reasonCode;
+  const field63Row=(reasonCode,origin)=>field(63,'V.I.P. Private-Use Fields · 63.1 Network ID + 63.3 Message Reason Code',visaField63(reasonCode),'7 bytes','LLLVAR',origin);
 
 
   // American Express Bit 22 = Point of Service Data Code (12 positions).
@@ -452,7 +456,7 @@
   }
 
   function reversalRequestFields(source){
-    return [
+    const rows=[
       field(2,'Primary Account Number (PAN)',state.pan,'16','LLVAR','Operación original'),
       field(3,'Processing Code','000000','6','FIXED','Operación original'),
       amountField(source.amountDigits),
@@ -464,10 +468,19 @@
       field(49,'Transaction Currency Code','032','3','FIXED','Operación original'),
       field(90,'Original Data Elements',originalDataElements(source),'42','FIXED','Relación con 0200 original')
     ];
+    return withVisaEntryMode(rows,source);
+  }
+
+  // Visa Field 22: obligatorio en las reversas 0400/0420 con el mismo valor del mensaje original; no se devuelve en respuestas.
+  function withVisaEntryMode(rows,source){
+    if((source.network||profile().id)!=='visa') return rows;
+    const mode=entryModes[source.entryMode]||entryModes[state.entryMode]||entryModes.chip;
+    rows.push(field(22,'Point of Service Entry Mode',de22For(mode.de22,'visa'),de22Len('visa'),'FIXED','Eco de la operación original'));
+    return rows.sort((a,b)=>Number(a[0])-Number(b[0]));
   }
 
   function reversalResponseFields(source, code){
-    const rows=reversalRequestFields(source).filter(r=>!['90'].includes(r[0]));
+    const rows=reversalRequestFields(source).filter(r=>!['90','22'].includes(r[0]));
     rows.push(field(39,'Response Code',code,'2','FIXED','Host'));
     return rows.sort((a,b)=>Number(a[0])-Number(b[0]));
   }
@@ -659,8 +672,8 @@
       field(11,'System Trace Audit Number (STAN)',state.currentStan,'6','FIXED','Generado por el POS'),
       field(41,'Terminal ID','TERMID01','8','FIXED','Configuración terminal'),
       field(42,'Merchant ID','MERCHANT01     ','15','FIXED','Configuración comercio'),
-      field(48,'Additional Data - Private',`BATCH=${state.batchNumber};COUNT=${summary.approvedCount};TOTAL=${summary.netCents}`,'LLLVAR','ANS','Totales de lote'),
-      field(60,'Reserved Private',String(state.batchNumber).padStart(6,'0'),'6','FIXED','Número de lote')
+      field(48,'Additional Data - Private',`BATCH=${state.batchNumber};COUNT=${summary.approvedCount};TOTAL=${summary.netCents}`,'Variable','LLLVAR','Totales de lote'),
+      field(60,'Additional POS Information (didáctico: número de lote)',String(state.batchNumber).padStart(6,'0'),'Variable','LLLVAR','Número de lote')
     ];
   }
 
@@ -669,10 +682,10 @@
       field(3,'Processing Code','920000','6','FIXED','Eco de solicitud'),
       field(7,'Transmission Date & Time',de7Now(),'10','FIXED','Host'),
       field(11,'System Trace Audit Number (STAN)',state.currentStan,'6','FIXED','Eco de solicitud'),
-      field(39,'Response Code',code,'2','FIXED','Host'),
+      profile().id==='amex'?field(39,'Action Code','000','3','FIXED','Host · AMEX Action Code (3 dígitos)'):field(39,'Response Code',code,'2','FIXED','Host'),
       field(41,'Terminal ID','TERMID01','8','FIXED','Eco de solicitud'),
-      field(48,'Additional Data - Private',`BATCH=${state.batchNumber};STATUS=CLOSED;NET=${summary.netCents}`,'LLLVAR','ANS','Confirmación de cierre'),
-      field(60,'Reserved Private',String(state.batchNumber).padStart(6,'0'),'6','FIXED','Número de lote')
+      field(48,'Additional Data - Private',`BATCH=${state.batchNumber};STATUS=CLOSED;NET=${summary.netCents}`,'Variable','LLLVAR','Confirmación de cierre'),
+      field(60,'Additional POS Information (didáctico: número de lote)',String(state.batchNumber).padStart(6,'0'),'Variable','LLLVAR','Número de lote')
     ];
   }
 
@@ -1216,8 +1229,9 @@
       field(49,'Transaction Currency Code','032','3','FIXED','ARS'),
       field(90,'Original Data Elements',originalDataElements(source),'42','FIXED','Mensaje original')
     ];
+    withVisaEntryMode(rows,source);
     if((source.network||profile().id)==='visa'){
-      rows.push(field(63,'V.I.P. Private-Use · SF3 Message Reason Code','2502','4','FIXED','Transaction not completed / timeout'));
+      rows.push(field63Row('2502','2502 · Transaction has not completed (timeout o falla del POS)'));
     }
     return rows.sort((a,b)=>Number(a[0])-Number(b[0]));
   }
@@ -1228,7 +1242,7 @@
     const revOp=createOperation('reversal',source);
     revOp.status='APROBADA';revOp.network=source.network;revOp.requestMti=p.reversal;revOp.responseMti=p.reversalResponse;
     addMessage({id:`MSG-${Date.now()}-${p.reversal}`,operationId:revOp.id,mti:p.reversal,operation:'REVERSA AUTOMÁTICA - TIMEOUT',direction:'SALIENTE',dateTime:dateTimeNow(),responseCode:'',fields:req,bitmap:bitmapHex(req),amountCents:source.amountCents,stan:req.find(r=>r[0]==='11')?.[2]||revOp.stan,batch:source.batch});
-    const res=req.filter(r=>![90,63].includes(Number(r[0])));
+    const res=req.filter(r=>![90,63,22].includes(Number(r[0])));
     res.push(field(39,'Response Code','00','2','FIXED','Reversa aceptada'));
     res.sort((a,b)=>Number(a[0])-Number(b[0]));
     setTimeout(()=>{
@@ -1320,7 +1334,7 @@
     screen('ANULACIÓN',`<small>Enviando ${p.reversal}</small><strong>...</strong><span>Reversa de la operación aprobada</span>`);
     const op=createOperation('void',source);op.rrn=source.rrn;op.auth=source.auth;op.requestMti=p.reversal;op.responseMti=p.reversalResponse;
     const req=reversalRequestFields(source);
-    if((source.network||profile().id)==='visa') req.push(field(63,'V.I.P. Private-Use · SF3 Message Reason Code','2501','4','FIXED','Transaction voided by customer'));
+    if((source.network||profile().id)==='visa') req.push(field63Row('2501','2501 · Transaction voided by customer'));
     req.sort((a,b)=>Number(a[0])-Number(b[0]));
     addMessage({
       id:`MSG-${Date.now()}-${p.reversal}`,operationId:op.id,mti:p.reversal,operation:'ANULACIÓN',
@@ -1329,7 +1343,7 @@
     });
     setTimeout(()=>{
       const code='00';op.status='APROBADA';source.status='ANULADA';
-      const res=req.filter(r=>![90,63].includes(Number(r[0])));
+      const res=req.filter(r=>![90,63,22].includes(Number(r[0])));
       res.push(field(39,'Response Code',code,'2','FIXED','Reversa/anulación aceptada'));
       res.sort((a,b)=>Number(a[0])-Number(b[0]));
       addMessage({
