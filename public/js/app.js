@@ -98,6 +98,11 @@
     magstripe:{label:'Banda magnética',de22:'021',hasPin:true,hasDE55:false,hasDE35:true,de35Origin:'Track 2 leído de la banda'},
     manual:{label:'Ingreso manual',de22:'011',hasPin:false,hasDE55:false,hasDE35:false,de35Origin:'No aplica'}
   };
+  // Visa Field 22 = 4 N: modo de ingreso (2) + capacidad de PIN (1) + relleno en cero (1). Mastercard DE 22 = n-3.
+  const de22For=(base,net)=>net==='visa'?base+'0':base;
+  const de22Len=net=>net==='visa'?'4':'3';
+  // Visa Field 55, Usage 1 (VSDC): Dataset ID 01 + longitud del dataset (2 bytes) + TLV.
+  const visaDataset01=tlv=>'01'+(tlv.length/2).toString(16).padStart(4,'0').toUpperCase()+tlv;
 
 
   // American Express Bit 22 = Point of Service Data Code (12 positions).
@@ -379,7 +384,8 @@
       ['84',String(cardAid.length/2).padStart(2,'0'),cardAid],
       ['9F33','03','E0F8C8'],['9F35','01','22']
     ];
-    return tags.map(([t,l,v])=>t+l+v).join('');
+    const tlv=tags.map(([t,l,v])=>t+l+v).join('');
+    return net==='visa'?visaDataset01(tlv):tlv;
   }
   function posMessageProfile(card=selectedCard()){
     if(profile().id==='amex') return {request:'1100',response:'1110',family:'AMEX'};
@@ -397,10 +403,10 @@
       field(3,'Processing Code','000000','6','FIXED',state.paymentMethod==='qr'?'Wallet / procesador adquirente':'Aplicación POS'),
       amountField(),
       field(14,'Expiration Date',selectedCard().expiry,'4','FIXED',state.paymentMethod==='qr'?'Credencial asociada':'Tarjeta'),
-      field(22,'Point of Service Entry Mode',state.paymentMethod==='qr'?'010':mode.de22,'3','FIXED',state.paymentMethod==='qr'?'QR educativo / wallet':mode.label),
+      field(22,'Point of Service Entry Mode',de22For(state.paymentMethod==='qr'?'010':mode.de22,profile().id),de22Len(profile().id),'FIXED',state.paymentMethod==='qr'?'QR educativo / wallet':mode.label),
       field(25,'Point of Service Condition Code','00','2','FIXED',state.paymentMethod==='qr'?'Procesador adquirente':'Aplicación POS'),
       field(41,'Terminal ID','TERMID01','8','FIXED','Configuración terminal'),
-      field(42,'Merchant ID','MERCHANT01','10','FIXED','Configuración comercio'),
+      field(42,'Merchant ID','MERCHANT01     ','15','FIXED','Configuración comercio'),
       field(49,'Transaction Currency Code','032','3','FIXED','Configuración comercio')
     ];
     if(state.paymentMethod!=='qr' && mode.hasDE35) rows.push(field(35,'Track 2 Data',selectedCard().track2,String(selectedCard().track2.length),'LLVAR',mode.de35Origin));
@@ -433,7 +439,7 @@
       field(37,'Retrieval Reference Number',operation.rrn,'12','FIXED','Host'),
       field(39,'Response Code',code,'2','FIXED','Host emisor'),
       field(41,'Terminal ID','TERMID01','8','FIXED','Eco de solicitud'),
-      field(42,'Merchant ID','MERCHANT01','10','FIXED','Eco de solicitud'),
+      field(42,'Merchant ID','MERCHANT01     ','15','FIXED','Eco de solicitud'),
       field(49,'Transaction Currency Code','032','3','FIXED','Eco de solicitud')
     ];
     if(code==='00') rows.splice(6,0,field(38,'Authorization Identification Response',operation.auth,'6','FIXED','Host emisor'));
@@ -454,7 +460,7 @@
       field(11,'System Trace Audit Number (STAN)',state.currentStan,'6','FIXED','Nueva reversa'),
       field(37,'Retrieval Reference Number',source.rrn,'12','FIXED','Operación original'),
       field(41,'Terminal ID','TERMID01','8','FIXED','Configuración terminal'),
-      field(42,'Merchant ID','MERCHANT01','10','FIXED','Configuración comercio'),
+      field(42,'Merchant ID','MERCHANT01     ','15','FIXED','Configuración comercio'),
       field(49,'Transaction Currency Code','032','3','FIXED','Operación original'),
       field(90,'Original Data Elements',originalDataElements(source),'42','FIXED','Relación con 0200 original')
     ];
@@ -540,10 +546,10 @@
       field(4,'Transaction Amount',digits,'12','FIXED','Importe de devolución'),
       field(7,'Transmission Date & Time',de7Now(),'10','FIXED','Reloj del sistema'),
       field(11,'System Trace Audit Number (STAN)',state.currentStan,'6','FIXED','Nueva devolución'),
-      field(22,'Point of Service Entry Mode',mode.de22,'3','FIXED','Entorno de devolución'),
+      field(22,'Point of Service Entry Mode',de22For(mode.de22,(source.network||profile().id)),de22Len(source.network||profile().id),'FIXED','Entorno de devolución'),
       field(37,'Retrieval Reference Number',source.rrn,'12','FIXED','Referencia compra original'),
       field(41,'Terminal ID','TERMID01','8','FIXED','Configuración terminal'),
-      field(42,'Merchant ID','MERCHANT01','10','FIXED','Configuración comercio'),
+      field(42,'Merchant ID','MERCHANT01     ','15','FIXED','Configuración comercio'),
       field(49,'Transaction Currency Code','032','3','FIXED','Moneda')
     ];
     if(mode.hasDE55){const v=networkEmvDe55({amountDigits:digits,modeKey:source.entryMode||state.entryMode,networkId:(source.network||profile().id),aid:(TEST_CARDS[source.cardId]?.aid||selectedCard().aid),txnType:'20'});rows.push(field(55,'ICC Data (EMV)',v,String(v.length/2)+' bytes','LLLVAR','Refund · BER-TLV'));}
@@ -634,7 +640,7 @@
       field(37,'Retrieval Reference Number',source.rrn,'12','FIXED','Operación original'),
       field(38,'Authorization Identification Response',source.auth,'6','FIXED','Autorización original'),
       field(41,'Terminal ID','TERMID01','8','FIXED','Configuración terminal'),
-      field(42,'Merchant ID','MERCHANT01','10','FIXED','Configuración comercio'),
+      field(42,'Merchant ID','MERCHANT01     ','15','FIXED','Configuración comercio'),
       field(49,'Transaction Currency Code','032','3','FIXED','Operación original'),
       field(90,'Original Data Elements',originalDataElements(source),'42','FIXED','Relación con 0200 original')
     ];
@@ -652,7 +658,7 @@
       field(7,'Transmission Date & Time',de7Now(),'10','FIXED','Reloj del sistema'),
       field(11,'System Trace Audit Number (STAN)',state.currentStan,'6','FIXED','Generado por el POS'),
       field(41,'Terminal ID','TERMID01','8','FIXED','Configuración terminal'),
-      field(42,'Merchant ID','MERCHANT01','10','FIXED','Configuración comercio'),
+      field(42,'Merchant ID','MERCHANT01     ','15','FIXED','Configuración comercio'),
       field(48,'Additional Data - Private',`BATCH=${state.batchNumber};COUNT=${summary.approvedCount};TOTAL=${summary.netCents}`,'LLLVAR','ANS','Totales de lote'),
       field(60,'Reserved Private',String(state.batchNumber).padStart(6,'0'),'6','FIXED','Número de lote')
     ];
@@ -1206,7 +1212,7 @@
       field(32,'Acquiring Institution Identification Code',source.acquirerId||'12345678901','11','LLVAR','Adquirente'),
       field(37,'Retrieval Reference Number',source.rrn||'','12','FIXED','Correlación'),
       field(41,'Terminal ID','TERMID01','8','FIXED','Terminal'),
-      field(42,'Merchant ID','MERCHANT01','10','FIXED','Comercio'),
+      field(42,'Merchant ID','MERCHANT01     ','15','FIXED','Comercio'),
       field(49,'Transaction Currency Code','032','3','FIXED','ARS'),
       field(90,'Original Data Elements',originalDataElements(source),'42','FIXED','Mensaje original')
     ];

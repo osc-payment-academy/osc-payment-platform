@@ -1185,6 +1185,8 @@
                 55: {
                   name: "Integrated Circuit Card (ICC)-Related Data",
                   fmt: "VAR B",
+                  prefix: 3,
+                  flexibleVisaLength: true,
                   wireLengthUnit: "bytes",
                   desc: "TLV EMV: se enmascara el valor de los tags sensibles (PAN, Track2 equivalente, nombre, vencimiento, PAN Sequence Number y datos discrecionales); tag y longitud quedan visibles.",
                 },
@@ -1730,6 +1732,12 @@
 
               function maskEMVData(hexValue) {
                 if (!hexValue) return hexValue;
+                // Visa Field 55, Usage 1: Dataset ID 01 + longitud del dataset (2 bytes) antes de los tags TLV.
+                const dsHead = /^01([0-9A-Fa-f]{4})/.exec(hexValue);
+                if (dsHead) {
+                  const rest = maskEMVData(hexValue.slice(6));
+                  return hexValue.slice(0, 6) + rest;
+                }
                 const isHexByte = (s) => /^[0-9A-Fa-f]{2}$/.test(s);
                 let pos = 0,
                   out = "";
@@ -1790,6 +1798,116 @@
                 } catch (e) {
                   return "*".repeat(hexValue.length);
                 }
+              }
+
+              const EMV_TAG_NAMES = {
+                "82": "Application Interchange Profile",
+                "84": "Dedicated File Name (AID)",
+                "95": "Terminal Verification Results",
+                "9A": "Transaction Date",
+                "9C": "Transaction Type",
+                "9F02": "Amount, Authorised",
+                "9F03": "Amount, Other",
+                "9F09": "Application Version Number (terminal)",
+                "9F10": "Issuer Application Data",
+                "9F1A": "Terminal Country Code",
+                "9F1E": "Interface Device Serial Number",
+                "9F26": "Application Cryptogram",
+                "9F27": "Cryptogram Information Data",
+                "9F33": "Terminal Capabilities",
+                "9F34": "Cardholder Verification Method Results",
+                "9F35": "Terminal Type",
+                "9F36": "Application Transaction Counter",
+                "9F37": "Unpredictable Number",
+                "5F2A": "Transaction Currency Code",
+                "5F34": "PAN Sequence Number",
+                "5A": "Application PAN",
+                "57": "Track 2 Equivalent Data",
+                "5F20": "Cardholder Name",
+                "5F24": "Application Expiration Date",
+                "9F1F": "Track 1 Discretionary Data",
+              };
+              // Desglose de los tags TLV del DE55 (los valores sensibles se muestran enmascarados).
+              function emvBreakdownHtml(hexValue) {
+                if (
+                  !hexValue ||
+                  hexValue.length % 2 ||
+                  !/^[0-9A-Fa-f]+$/.test(hexValue)
+                )
+                  return "";
+                let hex = hexValue,
+                  head = "";
+                const ds = /^01([0-9A-Fa-f]{4})/.exec(hex);
+                if (ds) {
+                  const declared = parseInt(ds[1], 16),
+                    real = (hex.length - 6) / 2;
+                  head =
+                    '<div><strong>Dataset ID:</strong> 01 · <strong>Longitud del dataset:</strong> ' +
+                    declared +
+                    " B" +
+                    (declared === real
+                      ? ""
+                      : ' <span style="color:#ff8a9a">(el dataset trae ' +
+                        real +
+                        " B)</span>") +
+                    "</div>";
+                  hex = hex.slice(6);
+                }
+                const bytes = bytesFromHex(hex);
+                const rows = [];
+                let p = 0;
+                while (p < bytes.length) {
+                  let tag = bytes[p++].toString(16).toUpperCase().padStart(2, "0");
+                  if ((parseInt(tag, 16) & 0x1f) === 0x1f) {
+                    while (p < bytes.length) {
+                      const nb = bytes[p++];
+                      tag += nb.toString(16).toUpperCase().padStart(2, "0");
+                      if (!(nb & 0x80)) break;
+                    }
+                  }
+                  if (p >= bytes.length) {
+                    rows.push('<div style="color:#ff8a9a">TLV incompleto.</div>');
+                    break;
+                  }
+                  let len = bytes[p++];
+                  if (len & 0x80) {
+                    const n = len & 0x7f;
+                    len = 0;
+                    for (let i = 0; i < n && p < bytes.length; i++)
+                      len = (len << 8) | bytes[p++];
+                  }
+                  if (p + len > bytes.length) {
+                    rows.push(
+                      '<div style="color:#ff8a9a"><strong>' +
+                        tag +
+                        "</strong>: la longitud declarada (" +
+                        len +
+                        " B) excede lo disponible.</div>",
+                    );
+                    break;
+                  }
+                  const val = hexFromBytes(bytes.slice(p, p + len));
+                  p += len;
+                  rows.push(
+                    "<div><strong>" +
+                      tag +
+                      "</strong> " +
+                      (EMV_TAG_NAMES[tag] || "Tag no catalogado") +
+                      " · " +
+                      len +
+                      ' B · <span class="mono">' +
+                      (EMV_SENSITIVE_TAGS.has(tag) ? "*".repeat(val.length) : val) +
+                      "</span></div>",
+                  );
+                }
+                return (
+                  '<details style="margin-top:6px;font-size:.72rem"><summary style="cursor:pointer;color:#75bcff">Tags TLV (' +
+                  rows.length +
+                  ")</summary>" +
+                  head +
+                  rows.join("") +
+                  "</details>"
+                );
               }
 
               function visaDescription(fnum, value, def) {
@@ -3129,7 +3247,7 @@
                   : f.num === 45
                     ? maskTrack1(f.value)
                     : f.num === 55
-                      ? maskEMVData(f.value)
+                      ? maskEMVData(f.value) + emvBreakdownHtml(f.value)
                       : f.value
             }</td>
             <td class="fdesc">${manualEnabled ? `<button type="button" class="study-manual-btn" data-manual-de="${f.num}" title="Abrir ${heading}" aria-label="Abrir ${heading}">☝</button>` : ""}</td>

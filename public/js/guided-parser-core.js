@@ -30,7 +30,7 @@
     43: { name: "Card Acceptor Name/Location", kind: "FIX", type: "ANS", len: 40, note: "Nombre (25), ciudad (13) y país (2)." },
     49: { name: "Currency Code, Transaction", kind: "FIX", type: "N", len: 3, note: "Moneda ISO 4217 numérica." },
     54: { name: "Additional Amounts", kind: "LLLVAR", type: "ANS", max: 120, note: "Importes adicionales: 20 caracteres por importe (tipo de cuenta, tipo de importe, moneda, signo, monto); el manual admite 20, 40, 60, 80, 100 ó 120." },
-    55: { name: "Integrated Circuit Card (ICC)-Related Data", kind: "LLLVAR", type: "B", max: 510, note: "Datos EMV (TLV) en hexadecimal." },
+    55: { name: "Integrated Circuit Card (ICC)-Related Data", kind: "LLLVAR", type: "B", max: 510, note: "Datos EMV en hexadecimal: Dataset ID 01 (1 byte), longitud del dataset (2 bytes) y los tags TLV (Visa Field 55, Usage 1)." },
     60: { name: "Additional POS Information", kind: "LLLVAR", type: "N", max: 12, note: "Pos. 1 tipo de terminal, pos. 2 capacidad de lectura, pos. 3 condición de chip, pos. 4 condición especial." },
     90: { name: "Original Data Elements", kind: "FIX", type: "N", len: 42, note: "Datos del mensaje original (MTI, STAN, fecha, adquirente, forwarding)." },
     100: { name: "Receiving Institution Identification Code", kind: "LLVAR", type: "N", max: 11, note: "Identificador de la institución receptora." },
@@ -99,10 +99,12 @@
 
   // ---------- Banco de tramas de práctica ----------
   const tlv = (tag, val) => tag + (val.length / 2).toString(16).toUpperCase().padStart(2, "0") + val;
-  const emv = (o) =>
+  // Visa Field 55, Usage 1 (VSDC): Dataset ID 01 + longitud del dataset (2 bytes) + TLV.
+  const dataset01 = (t) => "01" + (t.length / 2).toString(16).toUpperCase().padStart(4, "0") + t;
+  const emv = (o) => dataset01(
     [tlv("9F26", o.arqc), tlv("9F27", "80"), tlv("9F10", o.iad), tlv("9F37", o.un), tlv("9F36", o.atc),
      tlv("95", "0000008001"), tlv("9A", o.date), tlv("9C", "00"), tlv("9F02", o.amt), tlv("5F2A", "0032"),
-     tlv("82", "1980"), tlv("9F1A", "0032"), tlv("9F33", "E0F8C8"), tlv("9F34", "1E0300"), tlv("9F35", "22")].join("");
+     tlv("82", "1980"), tlv("9F1A", "0032"), tlv("9F33", "E0F8C8"), tlv("9F34", "1E0300"), tlv("9F35", "22")].join(""));
   const loc = (name, city) => name.padEnd(25) + city.padEnd(13) + "AR";
   const orig = (mti, stan, dt, acq) => mti + stan + dt + acq.padStart(11, "0") + "".padStart(11, "0");
 

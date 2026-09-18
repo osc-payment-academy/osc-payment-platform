@@ -1,0 +1,33 @@
+MANUAL MAPPING v4.0.0-rc.1.17
+
+VISA — Full Service POS Online Messages – Technical Specifications (edición 15 oct 2025; los atributos coinciden con la del 14 abr 2025)
+  Field 22  POS Entry Mode Code ............ 4 N: pos. 1-2 modo (01, 02, 05, 07, 10, 90, 91, 95), pos. 3 capacidad de PIN (0, 1, 2, 8), pos. 4 relleno 0.
+            No se devuelve en respuestas. "Visa Transactions: si el Field 52 está presente, el Field 22 no puede ser 01 ni 10".
+            Valores usados: POS chip 0510, contactless 0710, banda 0210, manual 0110, QR 0100; Wallet 0710; E-Commerce 0120
+            (01 = ingreso manual, 2 = terminal que no puede enviar PIN online; el manual no define un código específico de e-commerce).
+  Field 42  Card Acceptor Identification Code .. 15 ANS fijo. Mastercard DE 42 = ans-15.
+  Field 55  ICC-Related Data, Usage 1 ......... 1 byte de longitud + Dataset ID 01 (1 byte) + longitud del dataset (2 bytes) + TLV.
+            Mastercard DE 55 (Customer Interface Specification) = TLV sin dataset.
+
+AMERICAN EXPRESS — Network Specifications – Financial/Non-Financial (oct 2023), capítulo 3
+  POS First and Second Presentment (1240) ... 1400 bytes; campos 1 a 135 con sus posiciones. Reglas: numéricos reservados = ceros,
+  alfanuméricos reservados = espacios. Campos obligatorios completados: 1, 2, 3, 4, 5, 13, 18, 20, 21, 23, 28, 29, 30, 31, 35, 36, 37,
+  39, 41, 62, 63, 64, 65, 66, 68, 106, 109, 113, 114, 116.
+  Function Code 200 (Codes Reference Guide: "Original financial request/advice (First Presentment)").
+  Format Code 20 = General Format (Codes Reference Guide).
+  File Header (9824) y File Trailer (9825) ... 1400 bytes. Header: 1-4, 112-119, 120-125, 212-222, 252-254, 1000-1005, 1032-1039
+  (valor requerido 00000001), 1040-1050 (90000000002 = Global Network Services). Trailer: además 939-944 (cantidad de créditos),
+  945-950 (débitos), 951-966 (total créditos), 967-982 (total débitos), 983-999 (hash total) y 1032-1039 = total de registros
+  del archivo con header y trailer.
+  ATM Reconciliation (Authorization spec): header, detalle y trailer de 500 bytes; header verificado (posiciones 1, 11-16, 18-27, 29-36).
+
+CAMBIOS DE CÓDIGO
+  parser.html ......... DE55 Visa con prefijo decimal; desglose TLV con nombres de tags; enmascarado de tags sensibles.
+  js/app.js (POS) ..... DE22 por marca, DE42 de 15, DE55 con dataset en Visa.
+  atm.html ............ DE22 por marca (incluye Amex de 12), DE55 con dataset en Visa.
+  js/modern-payment-messages.js (Wallet y E-Commerce) ... DE22 de 4 dígitos, DE42 de 15.
+  constructor.html .... DE55 Visa con dataset (presets, validación y modo estudio); TLV de ejemplo corregidos.
+  js/guided-parser-core.js .... banco de tramas con DE55 Visa con dataset.
+  switch.html ......... registros Amex 1240, header 9824 y trailer 9825 según el manual.
+
+PENDIENTE DE VERIFICAR: POS DE63 (reversas Visa) y DE60 (cierre de lote); addenda Amex (9240); Visa Field 55 Usage 2 (Chip Card Data).

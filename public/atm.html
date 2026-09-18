@@ -3555,6 +3555,7 @@
           state.cardKey = key;
           state.pan = c.pan;
           state.brand = c.brand;
+          if (typeof refreshCaptureHint === "function") refreshCaptureHint();
           state.cardType = c.type;
           window.OSCATMSelectedCard = c;
           $("atmSelectedCardSummary").textContent =
@@ -3585,6 +3586,7 @@
           state.cardKey = `${c.brand}-${c.type}`;
           state.pan = c.pan;
           state.brand = c.brand;
+          if (typeof refreshCaptureHint === "function") refreshCaptureHint();
           state.cardType = c.type;
           const physicalCard = $("atmCard");
           if (physicalCard) {
@@ -3964,6 +3966,17 @@
         function captureProfile() {
           return captureProfiles[state.captureMode] || captureProfiles.chip;
         }
+        // Visa Field 22 = 4 N (modo 2 + capacidad PIN 1 + relleno 0); Mastercard DE 22 = n-3.
+        function de22Value() {
+          if (state.brand === "amex" && typeof amexAtmPosDataCode === "function")
+            return amexAtmPosDataCode(); // Bit 22 de 12 posiciones
+          const base = captureProfile().de22;
+          return state.brand === "visa" ? base + "0" : base;
+        }
+        function refreshCaptureHint() {
+          const el = $("captureModeHint");
+          if (el) el.textContent = `DE22 ${de22Value()} · ${captureProfile().label}`;
+        }
         function cashInventoryCents() {
           return state.cassettes.reduce(
             (sum, c) => sum + c.denom * c.count * 100,
@@ -4006,9 +4019,9 @@
               b.classList.toggle("active", b.dataset.atmEntry === mode),
             );
           const p = captureProfile();
-          $("captureModeHint").textContent = `DE22 ${p.de22} · ${p.label}`;
+          refreshCaptureHint();
           addTechEvent(
-            `Forma de lectura seleccionada: ${p.label} · DE22=${p.de22}`,
+            `Forma de lectura seleccionada: ${p.label} · DE22=${de22Value()}`,
             "done",
           );
         }
@@ -4051,7 +4064,11 @@
             ["9F33", "03", "E0F8C8"],
             ["9F35", "01", "14"],
           ];
-          return tags.map(([t, l, v]) => t + l + v).join("");
+          const tlv = tags.map(([t, l, v]) => t + l + v).join("");
+          // Visa Field 55, Usage 1 (VSDC): Dataset ID 01 + longitud del dataset (2 bytes) + TLV.
+          return net === "visa"
+            ? "01" + (tlv.length / 2).toString(16).padStart(4, "0").toUpperCase() + tlv
+            : tlv;
         }
 
         function requestFields() {
@@ -4076,8 +4093,8 @@
             field(
               22,
               "POS Entry Mode",
-              captureProfile().de22,
-              "N3",
+              de22Value(),
+              state.brand === "visa" ? "N4" : "N3",
               captureProfile().label,
             ),
             field(25, "POS Condition Code", "00", "N2", "ATM"),
@@ -4899,7 +4916,7 @@
 
         function insertCard() {
           addTechEvent(
-            "Tarjeta insertada · lectura chip EMV · DE22=051",
+            `Tarjeta insertada · lectura chip EMV · DE22=${de22Value()}`,
             "done",
           );
           $("atmCard").classList.remove("insert");

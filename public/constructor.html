@@ -2094,7 +2094,7 @@
               49: "032",
               52: "A1B2C3D4E5F60718",
               53: "2000000000000000",
-              55: "9F2608A1B2C3D4E5F6079F2701809F0206000000001250",
+              55: "9F2608A1B2C3D4E5F607089F2701809F0206000000001250",
             },
           },
           withdrawal: {
@@ -2157,7 +2157,7 @@
               42: "OSCACADEMY00001",
               43: "OSC ACADEMY POS                         ",
               49: "032",
-              55: "9F2608A1B2C3D4E5F6079F2701809F0206000000001250",
+              55: "9F2608A1B2C3D4E5F607089F2701809F0206000000001250",
             },
           },
           withdrawal: {
@@ -2179,7 +2179,7 @@
               43: "OSC ACADEMY ATM                         ",
               49: "032",
               52: "1122334455667788",
-              55: "9F2608A1B2C3D4E5F6079F2701809F0206000000010000",
+              55: "9F2608A1B2C3D4E5F607089F2701809F0206000000010000",
             },
           },
           reversal: {
@@ -2492,6 +2492,16 @@
                       : `DE${de} no está definido en American Express para autorización (Network Specifications – Authorization, oct 2023).`,
                 }),
             );
+          if (brandNet === "visa" && state.selected.has(55) && state.values[55]) {
+            const m = /^01([0-9A-F]{4})([0-9A-F]*)$/.exec(
+              String(state.values[55]).toUpperCase(),
+            );
+            if (!m || parseInt(m[1], 16) * 2 !== m[2].length)
+              messages.push({
+                type: "warn",
+                text: "DE55 (Visa Field 55, Usage 1): debe iniciar con Dataset ID 01, seguido de la longitud del dataset (2 bytes) y los datos TLV.",
+              });
+          }
           if (brandNet === "visa")
             VISA_NOT_DEFINED.filter((de) => state.selected.has(de)).forEach(
               (de) =>
@@ -2594,6 +2604,9 @@
           63: { name: "Transaction Life Cycle ID", fmt: "LLLVAR ANS", len: 16, max: 16, desc: "Mastercard IPM DE 63 (ans-16, LLLVAR con valor 016)." },
           100: { max: 11 },
         };
+        // Visa Field 55, Usage 1 (VSDC): Dataset ID 01 + longitud del dataset (2 bytes) + TLV.
+        const visaDataset01 = (tlv) =>
+          "01" + (tlv.length / 2).toString(16).padStart(4, "0").toUpperCase() + tlv;
         function effectiveNetwork() {
           const sel = currentConstructorNetwork();
           const n = sel === "auto" ? window.OSCConstructorResolvedNetwork || "" : sel;
@@ -3008,6 +3021,8 @@
           state.values = { ...preset.fields };
           if (state.values[22] === "051" && effectiveNetwork() === "visa")
             state.values[22] = "0510"; // Visa Field 22 = 4 N (relleno en cero)
+          if (effectiveNetwork() === "visa" && state.values[55])
+            state.values[55] = visaDataset01(state.values[55]);
           if (effectiveNetwork() === "mastercard")
             delete state.values[25]; // Mastercard no usa DE25 en autorización
           state.selected = new Set(Object.keys(state.values).map(Number));
@@ -3477,13 +3492,13 @@ ${raw()}`,
           55: {
             origin: "Tarjeta EMV + POS / ATM",
             messages: "Mensajes EMV",
-            example: "9F2608A1B2C3D4E5F6079F270180",
+            example: "9F2608A1B2C3D4E5F607089F270180",
             security: "Enmascarar tags sensibles.",
             parts: [
-              ["LONGITUD", "027", "Prefijo LLLVAR", "length"],
+              ["LONGITUD", "030", "Prefijo LLLVAR", "length"],
               ["TAG", "9F26", "Application Cryptogram", "id"],
               ["LONGITUD TAG", "08", "8 bytes", "length"],
-              ["VALOR", "A1B2C3D4E5F607", "Criptograma", "value"],
+              ["VALOR", "A1B2C3D4E5F60708", "Criptograma", "value"],
               ["TAG", "9F27", "Cryptogram Information Data", "part"],
               ["LONGITUD TAG", "01", "1 byte", "length"],
               ["VALOR", "80", "Tipo de criptograma", "value"],
@@ -3563,6 +3578,23 @@ ${raw()}`,
         const AMEX_22 = "51010150034C";
         const BRAND_DETAILS = {
           visa: {
+            55: {
+              origin: "Tarjeta EMV + POS / ATM",
+              messages: "Mensajes EMV",
+              example: "01000F9F2608A1B2C3D4E5F607089F270180",
+              security: "Enmascarar tags sensibles.",
+              parts: [
+                ["LONGITUD", "036", "Prefijo LLLVAR", "length"],
+                ["DATASET ID", "01", "Visa Field 55, Usage 1 (VSDC)", "id"],
+                ["LONG. DATASET", "000F", "15 bytes de TLV", "length"],
+                ["TAG", "9F26", "Application Cryptogram", "part"],
+                ["LONGITUD TAG", "08", "8 bytes", "length"],
+                ["VALOR", "A1B2C3D4E5F60708", "Criptograma", "value"],
+                ["TAG", "9F27", "Cryptogram Information Data", "part"],
+                ["LONGITUD TAG", "01", "1 byte", "length"],
+                ["VALOR", "80", "Tipo de criptograma", "value"],
+              ],
+            },
             22: {
               origin: "POS / ATM",
               messages: "Operaciones originadas en terminal",

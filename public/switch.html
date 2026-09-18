@@ -770,44 +770,116 @@
             : raw.slice(0, len).padEnd(len, fill);
         for (let i = 0; i < len; i++) buf[start1 - 1 + i] = val[i];
       }
+      // Amex Network Specifications – Financial/Non-Financial (oct 2023): registros de 1400 bytes.
+      // Regla del manual: los campos numéricos reservados/filler llevan ceros y los alfanuméricos, espacios.
+      const AMEX_1240_NUMERIC = [[5,6],[32,46],[47,61],[62,76],[89,103],[112,119],[120,125],[126,129],[130,133],[134,141],[174,174],[175,182],[186,200],[434,448],[449,463],[464,478],[479,493],[494,508],[549,563],[567,567],[568,568],[569,583],[584,598],[602,602],[606,606],[607,621],[622,636],[640,640],[653,667],[672,686],[691,705],[710,724],[729,743],[747,748],[766,773],[774,779],[787,794],[795,800],[801,801],[897,902],[903,908],[909,916],[917,922],[938,940],[1006,1020],[1021,1022],[1032,1039]];
+      const ymd = (d) =>
+        `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}`;
+      const hms = (d) =>
+        [d.getHours(), d.getMinutes(), d.getSeconds()]
+          .map((x) => String(x).padStart(2, "0"))
+          .join("");
+      // Point of Service Data Code de 12 posiciones (mismo criterio que el 1100 del POS).
+      function amexPosDataFor(t) {
+        if (t.posDataCode) return t.posDataCode;
+        const byMode = {
+          chip: "561101500340",
+          contactless: "56110X500140",
+          magstripe: "261101200120",
+        };
+        return byMode[t.entryMode] || byMode.chip;
+      }
       function amexPos1240Record(t, index) {
-        // 1400-byte educational serialization using positions explicitly documented
-        // in the AMEX Financial/Non-Financial specification. Reserved/unused bytes stay spaces.
+        // Posiciones del layout "POS First Presentment and Second Presentment (1240)".
         const b = Array(1400).fill(" ");
-        const panMasked = String(t.panLast4 || "").padStart(19, "*");
+        AMEX_1240_NUMERIC.forEach(([from, to]) => {
+          for (let i = from; i <= to; i++) b[i - 1] = "0";
+        });
+        const when = new Date(t.createdAt || Date.now());
+        const last4 = String(t.panLast4 || "").slice(-4);
+        const panMasked = "*".repeat(11) + last4; // PAN de 15 dígitos enmascarado
         const proc = t.type === "refund" ? "200000" : "000000";
         const amount = String(t.amountCents || 0).padStart(15, "0");
         const arn = String(t.rrn || "").padEnd(23, " ");
+        const ccy = t.currency === "USD" ? "840" : "032";
         const tid = (
-          String(t.amexTid || t.transactionId || t.rrn || t.stan || "").replace(
-            /\D/g,
-            "",
-          ) + "000000000000000"
+          String(t.amexTid || t.transactionId || t.rrn || t.stan || "").replace(/\D/g, "") +
+          "000000000000000"
         ).slice(0, 15);
-        setPos(b, 1, 4, "1240");
-        setPos(b, 5, 2, "15", "right", "0");
-        setPos(b, 7, 19, panMasked);
-        setPos(b, 26, 6, proc);
-        setPos(b, 32, 15, amount, "right", "0");
-        setPos(b, 142, 4, t.mcc || "5812");
-        setPos(b, 201, 11, t.acquirerId || "12345678901");
-        setPos(b, 212, 11, "OSCACADEMY1");
-        setPos(b, 223, 23, arn);
-        setPos(b, 255, 8, "TERMID01");
-        setPos(b, 263, 15, "1234567890");
-        setPos(b, 642, 3, t.currency === "USD" ? "840" : "032");
-        setPos(b, 1006, 15, tid);
-        setPos(b, 1032, 8, String(index + 1).padStart(8, "0"));
+        setPos(b, 1, 4, "1240"); // Message Type Identifier
+        setPos(b, 5, 2, String(panMasked.length), "right", "0"); // PAN Length (15-19)
+        setPos(b, 7, 19, panMasked); // PAN
+        setPos(b, 26, 6, proc); // Processing Code
+        setPos(b, 32, 15, amount, "right", "0"); // Transaction Amount
+        setPos(b, 112, 8, ymd(when)); // Transaction Date CCYYMMDD
+        setPos(b, 120, 6, hms(when)); // Transaction Time
+        setPos(b, 142, 4, t.mcc || "5812"); // Merchant Category Code
+        setPos(b, 155, 12, amexPosDataFor(t)); // Point of Service Data Code
+        setPos(b, 167, 3, "200"); // Function Code: original financial request (First Presentment)
+        setPos(b, 174, 1, "6"); // Approval Code Length
+        setPos(b, 201, 11, t.acquirerId || "12345678901"); // AIN
+        setPos(b, 212, 11, "OSCACADEMY1"); // APN
+        setPos(b, 223, 23, arn); // Acquirer Reference Number
+        setPos(b, 246, 6, String(t.auth || "").padStart(6, "0")); // Approval Code
+        setPos(b, 255, 8, "TERMID01"); // Terminal ID
+        setPos(b, 263, 15, "1234567890"); // Card Acceptor Identification Code
+        setPos(b, 278, 38, "OSC ACADEMY POS"); // Card Acceptor Name
+        setPos(b, 316, 38, "AV CORRIENTES 1234"); // Address Line 1
+        setPos(b, 392, 21, "BUENOS AIRES"); // City
+        setPos(b, 428, 3, "032"); // Card Acceptor Country Code
+        setPos(b, 606, 1, "2"); // Transaction Decimalization
+        setPos(b, 607, 15, amount, "right", "0"); // Presentment Amount
+        setPos(b, 622, 15, "000000100000000"); // Conversion rate 1.0 (sin conversión)
+        setPos(b, 637, 3, ccy); // Presentment Currency Code
+        setPos(b, 640, 1, "2"); // Presentment Decimalization
+        setPos(b, 642, 3, ccy); // Transaction Currency Code
+        setPos(b, 923, 2, "20"); // Format Code: General Format
+        setPos(b, 938, 3, "001"); // Message Transaction Sequence Number
+        setPos(b, 1006, 15, tid); // TID
+        setPos(b, 1021, 2, "01"); // Extended Payment Data (por defecto 01)
+        setPos(b, 1032, 8, String(index + 2).padStart(8, "0"), "right", "0"); // Message Number (1 = File Header)
+        return b.join("");
+      }
+      // File Header (9824) y File Trailer (9825): 1400 bytes.
+      function amexControlRecord(type, a, txs) {
+        const b = Array(1400).fill(" ");
+        const numeric =
+          type === "9824"
+            ? [[112, 119], [120, 125], [1000, 1005], [1032, 1039]]
+            : [[112, 119], [120, 125], [890, 938], [939, 944], [945, 950], [951, 966], [967, 982], [983, 999], [1000, 1005], [1032, 1039]];
+        numeric.forEach(([from, to]) => {
+          for (let i = from; i <= to; i++) b[i - 1] = "0";
+        });
+        const d = new Date(a.createdAt || Date.now());
+        setPos(b, 1, 4, type);
+        setPos(b, 112, 8, ymd(d)); // Transmittal Date
+        setPos(b, 120, 6, hms(d)); // Transmittal Time
+        setPos(b, 212, 11, "OSCACADEMY1"); // Forwarding Institution Identification Code
+        setPos(b, 252, 3, "000"); // Action Code (numérico)
+        setPos(b, 1000, 6, "000001", "right", "0"); // File Sequence Number
+        setPos(b, 1040, 11, "90000000002"); // Receiving Institution (Global Network Services)
+        if (type === "9824") {
+          setPos(b, 1032, 8, "00000001", "right", "0"); // Message Number (valor requerido)
+        } else {
+          const credits = txs.filter((t) => t.type === "refund");
+          const debits = txs.filter((t) => t.type !== "refund");
+          const sum = (arr) => arr.reduce((s, t) => s + Number(t.amountCents || 0), 0);
+          setPos(b, 939, 6, String(credits.length).slice(-6), "right", "0"); // Credit Count
+          setPos(b, 945, 6, String(debits.length).slice(-6), "right", "0"); // Debit Count
+          setPos(b, 951, 16, String(sum(credits)), "right", "0"); // Credits Total Amount
+          setPos(b, 967, 16, String(sum(debits)), "right", "0"); // Debits Total Amount
+          setPos(b, 983, 17, String(sum(txs)), "right", "0"); // Hash Total Amount
+          setPos(b, 1032, 8, String(txs.length + 2), "right", "0"); // = registros del archivo con header y trailer
+        }
         return b.join("");
       }
       function buildAmexProduction(a) {
         const txs = artifactTransactions(a);
-        const lines = [
-          `9824|FILE HEADER|AMEX GNS|${dateCompact(a.createdAt)}|REGISTROS=${txs.length}`,
+        return [
+          amexControlRecord("9824", a, txs),
           ...txs.map((t, i) => amexPos1240Record(t, i)),
-          `9825|FILE TRAILER|REGISTROS=${txs.length}|NETO=${a.netCents ?? a.totalCents}`,
-        ];
-        return lines.join("\n");
+          amexControlRecord("9825", a, txs),
+        ].join("\n");
       }
       function buildAmexDidactic(a) {
         const txs = artifactTransactions(a);
