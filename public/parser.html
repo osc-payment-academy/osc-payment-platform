@@ -1441,7 +1441,7 @@
                 },
                 24: {
                   name: "Function Code",
-                  fmt: "N",
+                  fmt: "AN",
                   len: 3,
                   desc: "Función del mensaje. Ej.: 100 autorización original, 200 ATM financial request, 400 full reversal, 401 partial reversal.",
                 },
@@ -1465,7 +1465,7 @@
                 },
                 31: {
                   name: "Acquirer Reference Data / Transaction Identifier (TID)",
-                  fmt: "LLVAR AN",
+                  fmt: "LLVAR N",
                   prefix: 2,
                   desc: "TID generado por American Express Network y reutilizado para correlación cuando aplica.",
                 },
@@ -1519,10 +1519,25 @@
                 },
                 43: {
                   name: "Card Acceptor Name/Location",
-                  fmt: "ANS",
-                  len: 40,
+                  fmt: "LLVAR ANS",
+                  prefix: 2,
                   desc: "Nombre y ubicación del comercio/ATM.",
                 },
+                5: { name: "Amount, Reconciliation", fmt: "N", len: 12, desc: "Importe de conciliación (Network to Issuer)." },
+                7: { name: "Date and Time, Transmission", fmt: "N", len: 10, desc: "MMDDhhmmss." },
+                13: { name: "Card Effective Date", fmt: "N", len: 4, desc: "Fecha de inicio de vigencia de la tarjeta (YYMM)." },
+                14: { name: "Card Expiration Date", fmt: "N", len: 4, desc: "Vencimiento de la tarjeta (YYMM)." },
+                23: { name: "PAN Sequence Number", fmt: "N", len: 3, desc: "Número de secuencia del PAN del chip." },
+                34: { name: "Primary Account Number, Extended", fmt: "LLVAR ANS", prefix: 2, desc: "PAN extendido o datos asociados (tokens)." },
+                44: { name: "Additional Response Data", fmt: "LLVAR AN", prefix: 2, desc: "Datos adicionales de respuesta." },
+                45: { name: "Track 1 Data", fmt: "LLVAR ANS", prefix: 2, desc: "Datos de Track 1." },
+                48: { name: "Deferred Payment Plan (DPP)", fmt: "LLLVAR AN", prefix: 3, desc: "Plan de pago diferido / parámetros de Stand-In." },
+                53: { name: "Security Related Control Information", fmt: "LLVAR AN", prefix: 2, desc: "Card Security Code u OTP (AN(8) max LLVAR)." },
+                54: { name: "Amount, Additional", fmt: "LLLVAR ANS", prefix: 3, desc: "Importes adicionales (ANS(123) max LLLVAR)." },
+                60: { name: "Market Specific Data", fmt: "LLLVAR AN", prefix: 3, desc: "Datos específicos de mercado (AN(210) max LLLVAR)." },
+                61: { name: "National Use Data", fmt: "LLLVAR ANS", prefix: 3, desc: "Datos de uso nacional (hasta 103 bytes)." },
+                62: { name: "Fraud Indicators", fmt: "LLLVAR AN", prefix: 3, desc: "Indicadores de fraude (AN(5) a AN(60))." },
+                63: { name: "Automated Address Verification", fmt: "LLLVAR AN", prefix: 3, desc: "Datos AAV (AN(4) a AN(103))." },
                 49: {
                   name: "Transaction Currency Code",
                   fmt: "N",
@@ -1554,6 +1569,24 @@
                   desc: "Datos de la transacción original utilizados en reversas para correlación.",
                 },
               };
+              // Mastercard · autorización (MTI 0xxx). Fuente: Customer Interface Specification, 25 feb 2025.
+              const MC_FIELD_DEFS = (() => {
+                const d = JSON.parse(JSON.stringify(BASE_FIELD_DEFS));
+                Object.assign(d, {
+                  22: { name: "Point-of-Service (POS) Entry Mode", fmt: "N", len: 3, desc: "Mastercard DE 22 (n-3): pos. 1-2 modo de ingreso del PAN; pos. 3 capacidad de PIN." },
+                  26: { name: "Point-of-Service (POS) PIN Capture Code", fmt: "N", len: 2, desc: "Mastercard DE 26 (n-2): máximo de caracteres de PIN que acepta el terminal." },
+                  32: { name: "Acquiring Institution ID Code", fmt: "LLVAR N", prefix: 2, desc: "Mastercard DE 32 (n…6, LLVAR)." },
+                  33: { name: "Forwarding Institution ID Code", fmt: "LLVAR N", prefix: 2, desc: "Mastercard DE 33 (n…6, LLVAR)." },
+                  38: { name: "Authorization ID Response", fmt: "ANS", len: 6, desc: "Mastercard DE 38 (ans-6)." },
+                  54: { name: "Additional Amounts", fmt: "LLLVAR AN", prefix: 3, desc: "Mastercard DE 54 (an…240, LLLVAR)." },
+                  55: { name: "Integrated Circuit Card (ICC) System-Related Data", fmt: "LLLVAR B", prefix: 3, desc: "Mastercard DE 55 (b…255, LLLVAR): datos EMV en TLV." },
+                  56: { name: "Payment Account Data", fmt: "LLLVAR AN", prefix: 3, desc: "Mastercard DE 56 (an…37, LLLVAR)." },
+                  60: { name: "Advice Reason Code", fmt: "LLLVAR ANS", prefix: 3, desc: "Mastercard DE 60 (ans…060, LLLVAR)." },
+                  62: { name: "Intermediate Network Facility (INF) Data", fmt: "LLLVAR ANS", prefix: 3, desc: "Mastercard DE 62 (ans…100, LLLVAR)." },
+                  63: { name: "Network Data", fmt: "LLLVAR AN", prefix: 3, desc: "Mastercard DE 63 (an…050, LLLVAR)." },
+                });
+                return d;
+              })();
 
               function selectedParserNetwork() {
                 return (
@@ -1563,7 +1596,12 @@
               function applyParserFieldProfile() {
                 const net = selectedParserNetwork();
                 Object.keys(FIELD_DEFS).forEach((k) => delete FIELD_DEFS[k]);
-                const src = net === "amex" ? AMEX_FIELD_DEFS : BASE_FIELD_DEFS;
+                const src =
+                  net === "amex"
+                    ? AMEX_FIELD_DEFS
+                    : net === "mastercard"
+                      ? MC_FIELD_DEFS
+                      : BASE_FIELD_DEFS;
                 Object.keys(src).forEach(
                   (k) => (FIELD_DEFS[k] = JSON.parse(JSON.stringify(src[k]))),
                 );
@@ -2816,7 +2854,7 @@
                     } else {
                       length = def.len;
                       if (mode === "ascii" && fnum === 52) {
-                        const candidates = [32, 16];
+                        const candidates = [16, 32]; // PIN Data = 64 bits / 8 bytes = 16 hex (Visa, Mastercard y Amex); 32 solo como respaldo
                         const chosen = candidates.find(
                           (c) =>
                             working.length >= pos + c &&

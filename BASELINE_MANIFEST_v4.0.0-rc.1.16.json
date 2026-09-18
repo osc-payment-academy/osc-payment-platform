@@ -1,0 +1,57 @@
+{
+  "product": "OSC-ACADEMY",
+  "version": "4.0.0-rc.1.16",
+  "title": "Parser Guiado + definiciones por marca (Constructor)",
+  "parent_baseline": "OSC-ACADEMY v4.0.0-rc.1.15",
+  "parent_source_file": "osc-payment-platform-main__6_.zip",
+  "policy": {
+    "build_from_last_approved_zip": true,
+    "no_silent_file_deletion": true,
+    "sha256_inventory": true,
+    "incremental_install_package": true,
+    "complete_backup_package": true
+  },
+  "parent_file_count": 262,
+  "final_file_count": 268,
+  "removed_files": [],
+  "changed_parent_files": [
+    "public/constructor.html",
+    "public/index.html",
+    "public/js/help-catalog.js",
+    "public/js/navigation.js",
+    "public/js/switch-store.js",
+    "public/parser.html"
+  ],
+  "added_files": [
+    "INSTRUCCIONES_INSTALACION_v4.0.0_RC1.16.txt",
+    "MANUAL_MAPPING_CONSTRUCTOR_DEFINICIONES_v4.0.0-rc.1.16.txt",
+    "RELEASE_NOTES_v4.0.0-rc.1.16.md",
+    "public/js/guided-parser-core.js",
+    "public/parser_guiado.html"
+  ],
+  "sha256": {
+    "public/constructor.html": "51519b6b50214ee6989b372cd9a845a7bd6f38a9b4d018ba56d234e2d473552c",
+    "public/index.html": "c1c17c9b6bf895c3796bbaae0a65710abf99ecfd144fc1db453b191653f76d1b",
+    "public/js/help-catalog.js": "42d0b88e13a98e86a565f5c7181db603b16ce7549fc556c34c2819180ea8d88e",
+    "public/js/navigation.js": "812640f01235cfbf94baefa865e4f2bf9298a188df84e67e398a6e89e1242abd",
+    "public/js/switch-store.js": "c50f9d7cff50ff9458de68c7acf79c3f4ad922564f2f7d97c204b4fce7bd895f",
+    "public/parser.html": "e97c1e59622215515ce07a2f64528efddd11eac12c7e4ea63e381b6e5f7627a2",
+    "INSTRUCCIONES_INSTALACION_v4.0.0_RC1.16.txt": "ba10145395e7d270adb60c845bebceb458f01ed2a199c67b57542a2f102ea3d8",
+    "MANUAL_MAPPING_CONSTRUCTOR_DEFINICIONES_v4.0.0-rc.1.16.txt": "d8aff229adc89177099cfa909c1a73ec04f05b4ff121ef499149b34eb1c583df",
+    "RELEASE_NOTES_v4.0.0-rc.1.16.md": "2502e99e8d02ad8bef7d51c1e6cfdc3a65f6156ec3cf4834f9483313b97b1f9c",
+    "public/js/guided-parser-core.js": "8020b565f7586c7659b2a54c9fc1da76dc74a932f3904b9e783a5366335cc69e",
+    "public/parser_guiado.html": "879005bc0814879442483332c2d667dc90ba0bcdeca9ed2c4eb7f26017b42fa0"
+  },
+  "d1_migration_required": false,
+  "backend_changes": false,
+  "manuals_used": [
+    "Visa Full Service POS Online Messages – Technical Specifications (14 April 2025 y 15 October 2025)",
+    "Visa VisaNet Authorization-Only Online Messages – Technical Specifications (15 October 2025)",
+    "Visa Full Service ATM Online Messages – Technical Specifications",
+    "Mastercard Customer Interface Specification (25 February 2025)",
+    "Mastercard IPM Clearing Formats (7 November 2023)",
+    "Mastercard M/Chip Requirements (29 April 2025) y Test Cases (consulta)",
+    "American Express Network Specifications – Authorization (October 2023)",
+    "American Express Codes Reference Guide (October 2023)"
+  ]
+}

@@ -1864,11 +1864,25 @@
             desc: "Código de categoría del comercio.",
           },
           {
+            de: 19,
+            name: "Acquiring Institution Country Code",
+            fmt: "N3",
+            len: 3,
+            desc: "Código de país de la institución adquirente (ISO 3166 numérico).",
+          },
+          {
             de: 22,
             name: "Point-of-Service Entry Mode",
             fmt: "N3",
             len: 3,
             desc: "Forma de captura: manual, banda, chip o contactless.",
+          },
+          {
+            de: 23,
+            name: "Card Sequence Number",
+            fmt: "N3",
+            len: 3,
+            desc: "Número de secuencia de la tarjeta (PAN Sequence Number del chip).",
           },
           {
             de: 24,
@@ -2134,7 +2148,7 @@
               11: "123456",
               12: "260809162800",
               19: "032",
-              22: "C10101010110",
+              22: "51010150034C",
               24: "100",
               32: "12345678901",
               35: "371449******8431=2912201********",
@@ -2155,7 +2169,7 @@
               11: "223344",
               12: "260809162800",
               19: "032",
-              22: "C10101010110",
+              22: "51020151314C",
               24: "200",
               26: "6011",
               32: "12345678901",
@@ -2176,7 +2190,7 @@
               4: "000000001250",
               11: "123456",
               12: "260809162800",
-              22: "C10101010110",
+              22: "51010150034C",
               24: "400",
               25: "4000",
               31: "A1B2C3D4E5F607182930",
@@ -2196,7 +2210,7 @@
               4: "000000000100",
               11: "900001",
               12: "260809162800",
-              22: "C10101010110",
+              22: "51010150034C",
               24: "100",
               41: "TERM0001",
               49: "032",
@@ -2348,9 +2362,9 @@
         }
 
         function orderedDefs() {
-          return FIELD_DEFS.filter((def) => state.selected.has(def.de)).sort(
-            (a, b) => a.de - b.de,
-          );
+          return FIELD_DEFS.filter((def) => state.selected.has(def.de))
+            .sort((a, b) => a.de - b.de)
+            .map(activeConstructorDef);
         }
 
         function annotated() {
@@ -2401,7 +2415,11 @@
                   text: `DE${def.de}: supera la longitud máxima ${def.max}.`,
                 });
             });
-          if (state.selected.has(52) && !state.selected.has(53))
+          if (
+            currentConstructorNetwork() !== "amex" &&
+            state.selected.has(52) &&
+            !state.selected.has(53)
+          )
             messages.push({
               type: "warn",
               text: "DE52 está presente sin DE53.",
@@ -2462,6 +2480,34 @@
               type: "warn",
               text: "Visa 15-Oct-2025: partial reversal requiere Field 63.3; ATM misdispense usa 2504.",
             });
+          const brandNet = effectiveNetwork();
+          if (brandNet === "amex")
+            AMEX_NOT_DEFINED.filter((de) => state.selected.has(de)).forEach(
+              (de) =>
+                messages.push({
+                  type: "warn",
+                  text:
+                    de === 18
+                      ? "DE18: el Bit 18 está reservado en American Express (Network Specifications – Authorization, oct 2023)."
+                      : `DE${de} no está definido en American Express para autorización (Network Specifications – Authorization, oct 2023).`,
+                }),
+            );
+          if (brandNet === "visa")
+            VISA_NOT_DEFINED.filter((de) => state.selected.has(de)).forEach(
+              (de) =>
+                messages.push({
+                  type: "warn",
+                  text: `DE${de} no está definido en Visa Full Service POS Online Messages (14 abr 2025); pertenece a otro perfil, por ejemplo American Express.`,
+                }),
+            );
+          if (brandNet === "mastercard" && !String(state.mti).startsWith("1"))
+            MC_AUTH_NOT_USED.filter((de) => state.selected.has(de)).forEach(
+              (de) =>
+                messages.push({
+                  type: "warn",
+                  text: `DE${de}: Mastercard no usa este Data Element y no debe incluirse en mensajes de autorización (Customer Interface Specification, 25 feb 2025).`,
+                }),
+            );
           if (!messages.length)
             messages.push({
               type: "ok",
@@ -2470,9 +2516,103 @@
           return messages;
         }
 
-        function activeConstructorDef(def) {
-          if (currentConstructorNetwork() !== "amex") return def;
+        /* Definiciones por marca. Fuente: manuales oficiales incluidos en /public/manuals.
+           VISA: Full Service POS Online Messages – Technical Specifications (ediciones 14 abr 2025 y 15 oct 2025,
+           con atributos idénticos para los campos del Constructor), Data Field Descriptions.
+           MASTERCARD (mensajes 0xxx): Customer Interface Specification (25 feb 2025).
+           MASTERCARD (mensajes 1xxx, clearing IPM): IPM Clearing Formats (7 nov 2023).
+           AMEX: Network Specifications – Authorization (oct 2023) y Codes Reference Guide (oct 2023). */
+        const VISA_DEF_OVERRIDES = {
+          22: { name: "Point-of-Service Entry Mode Code", fmt: "N4", len: 4, max: 4, desc: "Visa Field 22 (4 N). Pos. 1-2: modo de ingreso del PAN y vencimiento (01 manual, 02 banda, 05 chip, 07 contactless, 90 banda completa). Pos. 3: capacidad de PIN (1 puede capturar PIN). Pos. 4: relleno, siempre 0." },
+          25: { name: "Point-of-Service Condition Code", fmt: "N2", len: 2, max: 2, desc: "Visa Field 25 (2 N): condición de la transacción en el punto de servicio. 00 = normal." },
+          26: { name: "Point-of-Service PIN Capture Code", fmt: "N2", len: 2, max: 2, desc: "Visa Field 26 (2 N): cantidad máxima de caracteres de PIN que acepta el terminal. Solo se usa si viaja el Field 52." },
+          32: { max: 11 },
+          33: { max: 11 },
+          50: { name: "Currency Code, Settlement" },
+          56: { name: "Customer Related Data", fmt: "LLLVAR ANS", max: 255, desc: "Visa Field 56: datasets en formato TLV con datos del cliente." },
+          62: { max: 510 },
+          63: { max: 510 },
+        };
+        const VISA_NOT_DEFINED = [24, 30, 31];
+        const MC_AUTH_OVERRIDES = {
+          22: { name: "Point-of-Service (POS) Entry Mode", fmt: "N3", len: 3, max: 3, desc: "Mastercard DE 22 (n-3). Pos. 1-2, modo de ingreso del PAN: 00 desconocido, 01 manual, 02 banda, 03 código de barras, 04 OCR, 05 chip, 07 contactless M/Chip, 09 e-commerce con DSRP, 10 credencial almacenada, 79/80 fallback de chip, 81 e-commerce, 82 e-commerce vía servidor, 90 banda completa, 91 contactless banda. Pos. 3, capacidad de PIN: 0 desconocida, 1 con PIN, 2 sin PIN, 3 PIN por software (mPOS), 8 PIN pad fuera de servicio." },
+          24: { name: "Network International ID (no usado por Mastercard)", fmt: "N3", len: 3, max: 3, desc: "Mastercard no usa este DE en autorización y no debe incluirse." },
+          25: { name: "Point-of-Service (POS) Condition Code (no usado por Mastercard)", fmt: "N2", len: 2, max: 2, desc: "Mastercard no usa este DE en autorización y no debe incluirse." },
+          26: { name: "Point-of-Service (POS) PIN Capture Code", fmt: "N2", len: 2, max: 2, desc: "Mastercard DE 26 (n-2): cantidad máxima de caracteres de PIN que acepta el terminal." },
+          30: { name: "Amount, Transaction Processing Fee (no usado por Mastercard)", fmt: "AN9", len: 9, max: 9, desc: "Mastercard no usa este DE en autorización y no debe incluirse." },
+          31: { name: "Amount, Settlement Processing Fee (no usado por Mastercard)", fmt: "AN9", len: 9, max: 9, desc: "Mastercard no usa este DE en autorización y no debe incluirse." },
+          32: { max: 6 },
+          33: { max: 6 },
+          38: { name: "Authorization ID Response", fmt: "ANS6" },
+          50: { name: "Currency Code, Settlement" },
+          54: { fmt: "LLLVAR AN", max: 240, desc: "Mastercard DE 54 (an…240, LLLVAR): importes adicionales de a 20 posiciones." },
+          56: { name: "Payment Account Data", fmt: "LLLVAR AN", max: 37, desc: "Mastercard DE 56 (an…37, LLLVAR): datos de la cuenta de pago." },
+          60: { name: "Advice Reason Code", fmt: "LLLVAR ANS", max: 60, desc: "Mastercard DE 60 (ans…060, LLLVAR): motivo del advice." },
+          62: { name: "Intermediate Network Facility (INF) Data", fmt: "LLLVAR ANS", max: 100, desc: "Mastercard DE 62 (ans…100, LLLVAR)." },
+          63: { name: "Network Data", fmt: "LLLVAR AN", max: 50, desc: "Mastercard DE 63 (an…050, LLLVAR): datos de red." },
+        };
+        const MC_AUTH_NOT_USED = [19, 24, 25, 30, 31];
+        /* AMEX: Network Specifications – Authorization (oct 2023). "N(x) max LLVAR": x = máximo de caracteres del dato,
+           sin contar el indicador de longitud (ver Notes de los Bits 2 y 32). */
+        const AMEX_DEF_OVERRIDES = {
+          2: { max: 21, desc: "AMEX Bit 2 (N(21) max LLVAR). PAN o token. PAN de prueba o enmascarado." },
+          13: { name: "Card Effective Date", fmt: "N4", len: 4, max: 4, desc: "AMEX Bit 13 (N4, YYMM): fecha de inicio de vigencia de la tarjeta." },
+          14: { name: "Card Expiration Date", fmt: "N4", len: 4, max: 4, desc: "AMEX Bit 14 (N4, YYMM): vencimiento de la tarjeta." },
+          19: { name: "Country Code, Acquiring Institution" },
+          23: { name: "PAN Sequence Number" },
+          24: { name: "Function Code", fmt: "AN3", len: 3, max: 3, desc: "AMEX Bit 24 (AN3): motivo del mensaje; por ejemplo 101 autorización estimada, 106 suplementaria, 400 reversa." },
+          30: { name: "Amount, Original" },
+          31: { name: "Acquirer Reference Data, Transaction Identifier (TID)", fmt: "LLVAR N", len: undefined, max: 40, desc: "AMEX Bit 31 (N(40) max LLVAR): TID asignado por la red; lo envía la red al emisor." },
+          32: { name: "Acquiring Institution Identification (AIN) Code", max: 13 },
+          33: { name: "Forwarding Institution Identification Code", max: 13 },
+          35: { fmt: "LLVAR ANS", max: 39 },
+          37: { name: "Acquirer Reference Number (ARN)" },
+          42: { fmt: "AN15" },
+          43: { fmt: "LLVAR ANS", len: undefined, max: 101, desc: "AMEX Bit 43 (ANS(101) max LLVAR): nombre y ubicación del aceptador." },
+          53: { name: "Security Related Control Information", fmt: "LLVAR AN", len: undefined, max: 8, desc: "AMEX Bit 53 (AN(8) max LLVAR): Card Security Code u OTP." },
+          54: { name: "Amount, Additional", fmt: "LLLVAR ANS", max: 123 },
+          56: { name: "Original Data Elements", fmt: "LLVAR ANS", max: 37, desc: "AMEX Bit 56 (ANS(37) max LLVAR): datos del mensaje original en reversas." },
+          60: { name: "Market Specific Data", fmt: "LLLVAR AN", max: 210, desc: "AMEX Bit 60 (AN(210) max LLLVAR): datos específicos de mercado." },
+          62: { name: "Fraud Indicators", fmt: "LLLVAR AN", max: 60 },
+          63: { name: "Automated Address Verification", fmt: "LLLVAR AN", max: 103 },
+        };
+        const AMEX_NOT_DEFINED = [18, 70, 90, 100];
+        const MC_IPM_OVERRIDES = {
+          12: { name: "Date and Time, Local Transaction", fmt: "N12", len: 12, max: 12, desc: "Mastercard IPM DE 12 (n-12): YYMMDDhhmmss." },
+          22: { name: "Point of Service Data Code", fmt: "AN12", len: 12, max: 12, desc: "Mastercard IPM DE 22 (an-12, 12 subfields): capacidad de la terminal, entorno, presencia del tarjetahabiente y de la tarjeta, modo de ingreso (s7), autenticación, salida y captura de PIN." },
+          24: { name: "Function Code", fmt: "N3", len: 3, max: 3, desc: "Mastercard IPM DE 24 (n-3): función del mensaje (por ejemplo 200 First Presentment)." },
+          25: { name: "Message Reason Code", fmt: "N4", len: 4, max: 4, desc: "Mastercard IPM DE 25 (n-4): motivo del mensaje." },
+          26: { name: "Acceptor Business Code (MCC)", fmt: "N4", len: 4, max: 4, desc: "Mastercard IPM DE 26 (n-4): MCC del aceptador." },
+          31: { name: "Acquirer Reference Data", fmt: "LLVAR N", len: 23, max: 23, desc: "Mastercard IPM DE 31 (n-23, LLVAR con valor 23): referencia del adquirente." },
+          32: { max: 11 },
+          33: { max: 11 },
+          38: { name: "Approval Code", fmt: "ANS6" },
+          43: { name: "Acceptor Name and Location", fmt: "LLVAR ANS", len: undefined, max: 99, desc: "Mastercard IPM DE 43 (ans…99, LLVAR, 20 a 99 posiciones)." },
+          50: { name: "Currency Code, Reconciliation" },
+          54: { max: 240 },
+          62: { name: "Additional Data 2", fmt: "LLLVAR ANS", max: 999 },
+          63: { name: "Transaction Life Cycle ID", fmt: "LLLVAR ANS", len: 16, max: 16, desc: "Mastercard IPM DE 63 (ans-16, LLLVAR con valor 016)." },
+          100: { max: 11 },
+        };
+        function effectiveNetwork() {
+          const sel = currentConstructorNetwork();
+          const n = sel === "auto" ? window.OSCConstructorResolvedNetwork || "" : sel;
+          return ["visa", "mastercard", "amex"].includes(n) ? n : "visa";
+        }
+        function defForNetwork(def, net, mti) {
+          net = ["visa", "mastercard", "amex"].includes(net) ? net : "visa";
+          if (mti === undefined) mti = state.mti;
           const d = { ...def };
+          if (net === "visa" && VISA_DEF_OVERRIDES[d.de])
+            Object.assign(d, VISA_DEF_OVERRIDES[d.de]);
+          if (net === "mastercard") {
+            const table = String(mti || "").startsWith("1")
+              ? MC_IPM_OVERRIDES
+              : MC_AUTH_OVERRIDES;
+            if (table[d.de]) Object.assign(d, table[d.de]);
+          }
+          if (net !== "amex") return d;
+          if (AMEX_DEF_OVERRIDES[d.de]) Object.assign(d, AMEX_DEF_OVERRIDES[d.de]);
           if (d.de === 12) {
             d.name = "Date and Time, Local Transaction";
             d.fmt = "N12";
@@ -2484,7 +2624,7 @@
             d.fmt = "AN12";
             d.len = 12;
             d.desc =
-              "AMEX Bit 22: 12 posiciones de capacidad/presencia/captura/autenticación.";
+              "AMEX Bit 22 (12 posiciones): capacidad de ingreso, autenticación y captura, entorno, presencia del tarjetahabiente y de la tarjeta, modo de ingreso, autenticación, salida y capacidad de PIN. Codes Reference Guide, Point of Service Data Codes.";
           }
           if (d.de === 25) {
             d.name = "Message Reason Code";
@@ -2502,6 +2642,11 @@
           }
           return d;
         }
+        function activeConstructorDef(def) {
+          return defForNetwork(def, effectiveNetwork());
+        }
+        window.OSCConstructorDefFor = (def, net, mti) =>
+          defForNetwork(def, net || effectiveNetwork(), mti);
 
         function renderFields() {
           const q = state.filter.toLowerCase();
@@ -2598,7 +2743,7 @@
             name: "Data Element",
             fmt: "ANS",
           };
-          return network === "amex" ? activeConstructorDef(base) : base;
+          return defForNetwork(base, network);
         }
 
         function serializeIsoPayload(mti, fields, network) {
@@ -2695,7 +2840,7 @@
           const network = resolvedRejectNetwork();
           const field = Number(state.rejectField) || 4;
           const fieldDef = FIELD_DEFS.find((d) => d.de === field);
-          const fieldName = fieldDef?.name || "Data Element";
+          const fieldName = fieldDef ? defForNetwork(fieldDef, network).name : "Data Element";
           const labels = {
             visa: "VISA",
             mastercard: "MASTERCARD",
@@ -2710,7 +2855,7 @@
           select.innerHTML = candidates
             .map(
               (de) =>
-                `<option value="${de}" ${de === field ? "selected" : ""}>DE${de} · ${FIELD_DEFS.find((d) => d.de === de)?.name || "Data Element"}</option>`,
+                `<option value="${de}" ${de === field ? "selected" : ""}>DE${de} · ${(() => { const b = FIELD_DEFS.find((d) => d.de === de); return b ? defForNetwork(b, network).name : "Data Element"; })()}</option>`,
             )
             .join("");
           document.getElementById("rejectModeSelect").value = state.rejectMode;
@@ -2861,7 +3006,11 @@
           )[name];
           state.mti = preset.mti;
           state.values = { ...preset.fields };
-          state.selected = new Set(Object.keys(preset.fields).map(Number));
+          if (state.values[22] === "051" && effectiveNetwork() === "visa")
+            state.values[22] = "0510"; // Visa Field 22 = 4 N (relleno en cero)
+          if (effectiveNetwork() === "mastercard")
+            delete state.values[25]; // Mastercard no usa DE25 en autorización
+          state.selected = new Set(Object.keys(state.values).map(Number));
           state.rejectActive = false;
           state.rejectBaseValues = null;
           document
@@ -2895,6 +3044,11 @@
         document.getElementById("mtiInput").addEventListener("input", (e) => {
           state.mti = e.target.value.replace(/\D/g, "").slice(0, 4);
           e.target.value = state.mti;
+          const family = state.mti.startsWith("1");
+          if (effectiveNetwork() === "mastercard" && family !== state.mcFamily) {
+            state.mcFamily = family; // clearing (1xxx) o autorización (0xxx)
+            renderFields();
+          }
           updateOutputs();
         });
         document
@@ -3393,14 +3547,92 @@ ${raw()}`,
             : window.OSCConstructorResolvedNetwork || "";
         }
         function def(de) {
-          return (
-            fieldMap.get(de) || {
-              de,
-              name: fieldNames[de] || "Data Element definido por perfil",
-              fmt: "Según perfil",
-              desc: "Interpretar según el perfil de mensajería aplicable.",
-            }
-          );
+          const base = fieldMap.get(de);
+          if (base)
+            return window.OSCConstructorDefFor
+              ? window.OSCConstructorDefFor(base, studyManualNetwork() || undefined, state.mti)
+              : base;
+          return {
+            de,
+            name: fieldNames[de] || "Data Element definido por perfil",
+            fmt: "Según perfil",
+            desc: "Interpretar según el perfil de mensajería aplicable.",
+          };
+        }
+        /* Detalle didáctico por marca (DE22): Visa = 4 N; Amex = 12 posiciones. */
+        const AMEX_22 = "51010150034C";
+        const BRAND_DETAILS = {
+          visa: {
+            22: {
+              origin: "POS / ATM",
+              messages: "Operaciones originadas en terminal",
+              example: "0510",
+              parts: [
+                ["MODO DE ENTRADA PAN", "05", "Posiciones 1–2", "id", [["01", "Manual"], ["02", "Banda magnética"], ["05", "Chip EMV"], ["07", "Contactless EMV"], ["90", "Banda completa"]]],
+                ["CAPACIDAD PIN", "1", "Posición 3", "part", [["0", "Desconocida"], ["1", "Puede capturar PIN"], ["2", "No puede capturar PIN"], ["8", "PIN pad no operativo"]]],
+                ["RELLENO", "0", "Posición 4 · siempre cero", "part"],
+              ],
+            },
+          },
+          mastercard: {
+            22: {
+              origin: "POS / ATM",
+              messages: "0100, 0120, 0400, 0420",
+              example: "051",
+              parts: [
+                ["MODO DE ENTRADA PAN", "05", "Posiciones 1–2", "id", [["00", "Desconocido"], ["01", "Manual"], ["02", "Banda magnética"], ["03", "Código de barras"], ["04", "OCR"], ["05", "Chip"], ["07", "Contactless M/Chip"], ["09", "E-commerce con DSRP"], ["10", "Credencial almacenada"], ["79", "Fallback de chip"], ["80", "Fallback de chip: banda"], ["81", "E-commerce"], ["82", "E-commerce vía servidor"], ["90", "Banda completa"], ["91", "Contactless banda"]]],
+                ["CAPACIDAD PIN", "1", "Posición 3", "part", [["0", "Desconocida"], ["1", "Con capacidad de PIN"], ["2", "Sin capacidad de PIN"], ["3", "PIN por software (mPOS)"], ["8", "PIN pad fuera de servicio"]]],
+              ],
+            },
+          },
+          mastercard_ipm: {
+            22: {
+              origin: "Adquirente (clearing IPM)",
+              messages: "1240, 1442, 1644",
+              example: "510101C1334C",
+              parts: [
+                ["ENTRADA DE TARJETA", "5", "s1 · Solo chip EMV por contacto", "id"],
+                ["AUTENTICACIÓN (CAP.)", "1", "s2 · Con capacidad de PIN", "part"],
+                ["CAPTURA DE TARJETA", "0", "s3 · Sin captura", "part"],
+                ["ENTORNO", "1", "s4 · En el local, atendido", "part"],
+                ["TARJETAHABIENTE", "0", "s5 · Presente", "part"],
+                ["TARJETA", "1", "s6 · Presente", "part"],
+                ["MODO DE ENTRADA", "C", "s7 · Chip, autorización online", "part"],
+                ["MÉTODO AUTENTICACIÓN", "1", "s8 · PIN", "part"],
+                ["ENTIDAD AUTENTICADORA", "3", "s9 · Agente autorizador, PIN online", "part"],
+                ["SALIDA DE TARJETA", "3", "s10 · Escritura a nivel chip", "part"],
+                ["SALIDA DE TERMINAL", "4", "s11 · Impresión y visualización", "part"],
+                ["CAPTURA DE PIN", "C", "s12 · 12 caracteres máximo", "part"],
+              ],
+            },
+          },
+          amex: {
+            22: {
+              origin: "POS / ATM",
+              messages: "1100, 1120, 1200, 1210, 1220",
+              example: AMEX_22,
+              parts: [
+                ["CAPACIDAD ENTRADA TARJETA", "5", "Pos. 1 · ICC", "id"],
+                ["CAPACIDAD AUTENTICACIÓN", "1", "Pos. 2 · PIN", "part"],
+                ["CAPACIDAD CAPTURA TARJETA", "0", "Pos. 3 · Ninguna", "part"],
+                ["ENTORNO OPERATIVO", "1", "Pos. 4 · En el local, atendido", "part"],
+                ["TARJETAHABIENTE", "0", "Pos. 5 · Presente", "part"],
+                ["TARJETA", "1", "Pos. 6 · Presente", "part"],
+                ["MODO DE ENTRADA", "5", "Pos. 7 · ICC", "part"],
+                ["AUTENTICACIÓN", "0", "Pos. 8 · No autenticado", "part"],
+                ["ENTIDAD AUTENTICADORA", "0", "Pos. 9 · No autenticado", "part"],
+                ["SALIDA DE TARJETA", "3", "Pos. 10 · ICC", "part"],
+                ["SALIDA DE TERMINAL", "4", "Pos. 11 · Impresión y visualización", "part"],
+                ["CAPTURA DE PIN", "C", "Pos. 12 · Doce caracteres", "part"],
+              ],
+            },
+          },
+        };
+        function dt(de) {
+          let n = studyManualNetwork() || "visa";
+          if (n === "mastercard" && String(state.mti).startsWith("1"))
+            n = "mastercard_ipm";
+          return (BRAND_DETAILS[n] && BRAND_DETAILS[n][de]) || details[de];
         }
         function meta(de) {
           const d = def(de),
@@ -3421,7 +3653,7 @@ ${raw()}`,
             messages: "Depende del MTI y del perfil",
             example: state.values[de] || "VALOR DEMO",
             parts,
-            ...(details[de] || {}),
+            ...(dt(de) || {}),
           };
         }
         function prefix(d, v) {
@@ -3524,7 +3756,7 @@ ${raw()}`,
             showField(de);
           } else {
             state.selected.add(de);
-            state.values[de] = details[de]?.example || defaultValue(def(de));
+            state.values[de] = dt(de)?.example || defaultValue(def(de));
             state.focused = de;
             renderAll();
             showField(de);

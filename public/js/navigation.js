@@ -15,6 +15,7 @@
     {href:'switch.html',icon:'🏦',label:'Switch del Adquirente'},
     {href:'switch_emisor.html',icon:'🌎',label:'Switch Emisor',key:'switch_emisor',day:5},
     {href:'parser.html',icon:'◉',label:'Parser ISO8583',key:'parser',day:1},
+    {href:'parser_guiado.html',icon:'🧩',label:'Parser Guiado',key:'parser',day:1},
     {href:'documentacion.html',icon:'📚',label:'Documentación Técnica'},
     {href:'research.html',icon:'🧪',label:'Investigación'},
     {href:'account.html',icon:'🔐',label:'Mi cuenta'},

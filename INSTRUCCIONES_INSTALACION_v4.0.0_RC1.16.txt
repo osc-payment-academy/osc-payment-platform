@@ -1,0 +1,20 @@
+OSC Payment Academy v4.0.0-rc.1.16 — Parser Guiado + definiciones por marca
+
+UPDATE ONLY (paquete INCREMENTAL):
+1. Descomprimir el ZIP incremental.
+2. Copiar su contenido sobre la raíz del proyecto, reemplazando archivos.
+3. Ejecutar el despliegue habitual de Cloudflare Workers.
+4. No requiere migración D1.
+
+RESPALDO (paquete COMPLETO): contiene todo el proyecto; se conserva sin instalar.
+Si ya instalaste una versión anterior de rc.1.16, este paquete incremental la reemplaza.
+
+Prueba mínima:
+- Constructor: elegir Visa, cargar "Compra": DE22 = 0510 (N4).
+- Constructor: elegir Mastercard, cargar "Compra": DE22 = 051 y sin DE25. Escribir el MTI 1240: la lista pasa a definiciones IPM (DE22 AN12).
+- Constructor: elegir American Express, cargar "Compra": DE22 de 12 posiciones, incluye DE19, sin advertencias.
+- Constructor → "Analizar en Parser" con Visa, Mastercard y Amex (compra, extracción y reversa): el Parser debe leer todos los campos sin avisos de desalineación.
+- Constructor → "Sin plantilla": marcar DE22 con Visa y con Amex y comparar la estructura.
+- Parser Guiado: elegir Nivel 1 y completar los 6 pasos; "Analizar en Parser" solo aparece en el paso 5.
+- Repetir con Nivel 2 y Nivel 3 (bitmap secundario y LLLVAR).
+- Recargar y confirmar que el intento quedó en el workspace del alumno.

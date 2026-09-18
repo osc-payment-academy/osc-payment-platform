@@ -1,0 +1,340 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OSC Academy · Parser Guiado ISO 8583</title>
+    <style>
+      :root{--bg:#06111d;--panel:#0b1827;--panel2:#0e1f31;--line:#173149;--text:#f5f8fc;--muted:#9dafc2;--blue:#2f83ff;--green:#18d17e;--purple:#9d68ff;--amber:#f7b51c;--orange:#ff9f43;--red:#ff5267}
+      *{box-sizing:border-box}.hidden{display:none!important}
+      html,body{margin:0;min-height:100%;font-family:Inter,Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--text)}
+      button,input{font:inherit;color:inherit}a{text-decoration:none;color:inherit}
+      .app{display:grid;grid-template-columns:225px minmax(0,1fr);min-height:100vh}
+      .sidebar{position:sticky;top:0;height:100vh;padding:19px 14px;background:linear-gradient(180deg,#071522,#06131f);border-right:1px solid var(--line);overflow-y:auto}
+      .brand{padding:2px 7px 21px}.brand-main{font-size:1.2rem;font-weight:800}.brand-main span{color:#38a7ff}.brand-sub{margin-top:4px;color:#b5c4d2;font-size:.7rem}
+      .nav{display:block;padding:10px;border-radius:8px;color:#dce7f1;font-size:.8rem}.nav:hover{background:#10263b}.nav.active{background:linear-gradient(135deg,#153b68,#19579b)}
+      .main{min-width:0;padding:22px 26px 60px;max-width:1180px}
+      h1{margin:0 0 4px;font-size:1.35rem}.sub{color:var(--muted);font-size:.82rem;margin:0 0 18px;line-height:1.5}
+      .kicker{color:#75bcff;font-size:.62rem;font-weight:800;letter-spacing:.08em}
+      .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:14px}
+      .card h3{margin:0 0 8px;font-size:.9rem}.card p{margin:6px 0;color:#b9c8d8;font-size:.8rem;line-height:1.5}
+      .levels{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+      .lvl{background:var(--panel2);border:1px solid #1f425f;border-radius:12px;padding:14px;cursor:pointer;text-align:left}
+      .lvl:hover{border-color:#4ba6ff}.lvl b{display:block;margin-bottom:6px}.lvl small{color:var(--muted);line-height:1.5;display:block;font-size:.72rem}
+      .stepper{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+      .st{flex:1;min-width:112px;padding:8px 10px;border:1px solid #1f425f;border-radius:9px;background:#0a1927;font-size:.7rem;color:#8ba1b6}
+      .st.done{border-color:#1c7d55;color:#7be3b2}.st.cur{border-color:var(--amber);color:#ffe29a;background:#211b0d}
+      .btn{border:1px solid #2a5a86;background:#0f3253;border-radius:8px;padding:9px 14px;font-weight:700;font-size:.78rem;cursor:pointer}
+      .btn:hover:not(:disabled){background:#15487a}.btn:disabled{opacity:.4;cursor:not-allowed}
+      .btn.primary{background:linear-gradient(135deg,#1b6fd8,#1258b3);border-color:#3b8cff}.btn.ok{background:#0e6b43;border-color:#1c9d68}.btn.ghost{background:transparent;border-color:#33506a;color:#a8bccf}
+      .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:12px}
+      .trama{font-family:Consolas,Menlo,monospace;font-size:.86rem;line-height:1.35;word-break:break-all;background:#050d15;border:1px solid #1a3a55;border-radius:9px;padding:12px;user-select:text}
+      .blk{display:inline-block;margin:0 6px 8px 0;vertical-align:top}.blk i{display:block;font-style:normal;font-size:.5rem;color:#5d7386;text-align:left;user-select:none}
+      .ch{display:inline-block;min-width:.72em;text-align:center;cursor:default}
+      .pick .ch{cursor:pointer}.pick .ch:hover{background:#1c4a75}
+      .cut{border-right:2px solid var(--amber);margin-right:1px}.cut.m{border-color:var(--purple)}.cut.b{border-color:var(--green)}
+      .seg-mti{color:#c7a9ff}.seg-bm{color:#7be3b2}.seg-done{color:#64798c}.seg-cur{background:#3a2a05;color:#ffe29a}
+      .msg{margin-top:10px;font-size:.78rem;padding:9px 11px;border-radius:8px;line-height:1.5}
+      .msg.err{background:#2a1119;border:1px solid #7a2a3c;color:#ffb3bf}.msg.ok{background:#0b2a1e;border:1px solid #1c7d55;color:#8fe8bd}.msg.hint{background:#211b0d;border:1px solid #735b28;color:#f0d68a}
+      .hexrow{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px}
+      .hx{background:#0a1927;border:1px solid #1f425f;border-radius:9px;padding:8px;text-align:center}.hx .h{font-family:Consolas,monospace;font-size:1.25rem;color:#7be3b2;font-weight:800}.hx small{color:#6f8598;font-size:.55rem}
+      .hx input{width:100%;margin-top:5px;text-align:center;background:#061522;border:1px solid #31516d;border-radius:6px;padding:6px;font-family:Consolas,monospace;letter-spacing:.2em}
+      .hx.good input{border-color:#1ec37e;background:#0b2a1e;color:#8fe8bd}.hx.bad input{border-color:var(--red);background:#2a1119;color:#ffb3bf}
+      .bmgrid{display:grid;grid-template-columns:repeat(16,minmax(20px,1fr));gap:4px}
+      .bit{aspect-ratio:1;border:1px solid #294359;background:#0c1b29;color:#71869a;border-radius:4px;font-size:.5rem;cursor:pointer;padding:0}
+      .bit:hover{border-color:#4ba6ff;color:#d9ecff}.bit.on{border-color:#2ee794;background:linear-gradient(180deg,#20d47f,#0f7f4b);color:#02170d;font-weight:900}.bit.on.sec{background:linear-gradient(180deg,#9d68ff,#5d31a8);border-color:#c19cff;color:#fff}
+      .bit.flag{outline:2px solid var(--red);outline-offset:1px}
+      table{width:100%;border-collapse:collapse;font-size:.74rem}th,td{padding:7px 8px;border-bottom:1px solid #16324a;text-align:left;vertical-align:top}th{color:#75bcff;font-size:.62rem;text-transform:uppercase}
+      td.mono,.mono{font-family:Consolas,monospace;word-break:break-all}.good{color:#7be3b2}.bad{color:#ff8a9a}
+      input.t{width:100%;background:#061522;border:1px solid #31516d;border-radius:8px;padding:9px;font-family:Consolas,monospace;font-size:.86rem}
+      input.t.good{border-color:#1ec37e}input.t.bad{border-color:var(--red)}
+      .chips{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px}.chip{padding:3px 8px;border-radius:999px;font-size:.62rem;border:1px solid #294359;color:#7f95a9}.chip.done{border-color:#1c7d55;color:#7be3b2}.chip.cur{border-color:var(--orange);color:var(--orange);font-weight:800}
+      .ficha{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:8px 0}.ficha div{background:#0a1927;border:1px solid #1f425f;border-radius:8px;padding:8px}.ficha small{display:block;color:#6f8598;font-size:.55rem;text-transform:uppercase}.ficha b{font-size:.78rem;color:#ffbf7a}
+      .kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.kpi div{background:#0a1927;border:1px solid #1f425f;border-radius:10px;padding:12px}.kpi small{color:#6f8598;font-size:.6rem;text-transform:uppercase}.kpi b{display:block;font-size:1.4rem;margin-top:4px}
+      details summary{cursor:pointer;color:#75bcff;font-size:.78rem}
+      .ref td{font-family:Consolas,monospace}
+      @media(max-width:900px){.app{grid-template-columns:1fr}.sidebar{position:static;height:auto}.levels,.kpi,.ficha{grid-template-columns:1fr 1fr}.bmgrid{grid-template-columns:repeat(8,1fr)}}
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <aside class="sidebar">
+        <div class="brand"><div class="brand-main"><span>OSC</span> ACADEMY</div><div class="brand-sub">Laboratorio de Medios de Pago</div></div>
+        <nav><a class="nav" href="index.html">⌂ Dashboard</a><a class="nav active" href="parser_guiado.html">🧩 Parser Guiado</a></nav>
+      </aside>
+      <main class="main">
+        <div class="kicker">LABORATORIO INTERACTIVO ISO 8583</div>
+        <h1>Parser Guiado · Decodificar una trama a mano</h1>
+        <p class="sub">El Constructor te enseña a codificar; acá practicás lo inverso: partir de una trama real y decodificarla dígito por dígito. El Parser automático queda para el final, como corrección.</p>
+        <div id="root"></div>
+      </main>
+    </div>
+
+    <script src="js/switch-store.js?v=4.0.0-rc1.6"></script>
+    <script src="js/guided-parser-core.js"></script>
+    <script>
+      (() => {
+        const G = window.OSCGuidedParser;
+        const $ = (s, el = document) => el.querySelector(s);
+        const root = $("#root");
+        const STEPS = ["0 · Trama", "1 · Aislar bitmap", "2 · Hex → binario", "3 · Campos activos", "4 · Extraer valores", "5 · Autocorrección"];
+        const LEVELS = {
+          1: ["Nivel 1 · Bitmap primario", "Solo bitmap primario (bit 1 apagado) y campos de longitud fija.", "Primera práctica guiada"],
+          2: ["Nivel 2 · Primario + secundario", "Bit 1 activo: mezcla de campos fijos y LLVAR.", "Cierre de la Sesión 1 / repaso"],
+          3: ["Nivel 3 · Trama completa", "Incluye LLLVAR (ICC/EMV, importes adicionales).", "Práctica final"],
+        };
+        let S = null;
+        const nowMs = () => Date.now();
+
+        // ---------- utilidades ----------
+        function pickFrame(level) {
+          const q = new URLSearchParams(location.search).get("trama");
+          const forced = q && G.BANK.find((b) => b.id === q.toUpperCase());
+          if (forced && forced.level === level) return forced;
+          const pool = G.BANK.filter((b) => b.level === level);
+          let last = []; try { last = JSON.parse(localStorage.getItem("oscGuidedLast") || "[]"); } catch (_) {}
+          const fresh = pool.filter((b) => !last.includes(b.id));
+          const src = fresh.length ? fresh : pool;
+          const f = src[Math.floor(Math.random() * src.length)];
+          try { localStorage.setItem("oscGuidedLast", JSON.stringify([f.id, ...last].slice(0, Math.max(0, pool.length - 1)))); } catch (_) {}
+          return f;
+        }
+        function start(level, frame) {
+          const f = frame || pickFrame(level);
+          const dec = G.decode(f.raw);
+          S = {
+            id: `guided-${Date.now()}-${Math.random().toString(16).slice(2, 7)}`, createdAt: new Date().toISOString(), completedAt: null,
+            level, frame: f, dec, step: 0, mtiRevealed: false,
+            hints: { total: 0, byStep: [0, 0, 0, 0, 0, 0], detail: [] }, usedHint: {},
+            ms: [0, 0, 0, 0, 0, 0], enter: nowMs(),
+            mode: "mti", cuts: { m: null, b: null }, cutAttempts: 0, cutMsg: null,
+            digits: Array.from({ length: dec.bitmapHex.length }, (_, i) => ({ idx: i, attempts: [], ok: false, value: "" })), showRef: false,
+            marked: new Set(), bitChecks: [], bitMsg: null,
+            fields: dec.fields.map((f) => ({ de: f.de, prefixAttempts: [], prefixOk: !f.prefix, prefixFirstTry: null, valueAttempts: [], value: null, ok: false })), fi: 0, fMsg: null, fHint: null,
+            result: null,
+          };
+          render();
+        }
+        function tick() { if (!S) return; const t = nowMs(); if (!document.hidden) S.ms[S.step] += Math.min(t - S.enter, 60000); S.enter = t; }
+        function go(step) { tick(); S.step = step; S.enter = nowMs(); save(); render(); window.scrollTo({ top: 0, behavior: "smooth" }); }
+        function hint(key, text) {
+          if (!S.usedHint[key]) { S.usedHint[key] = true; S.hints.total++; S.hints.byStep[S.step]++; S.hints.detail.push({ step: S.step, key }); }
+          return text;
+        }
+        const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+        // ---------- score / persistencia ----------
+        function firstTryStats() {
+          let ok = 0, tot = 0;
+          S.digits.forEach((d) => { tot++; if (d.firstOk) ok++; });
+          tot++; if (S.cutAttempts <= 1) ok++;
+          tot++; if (S.bitChecks.length <= 1) ok++;
+          S.fields.forEach((f) => { if (f.prefixFirstTry !== null) { tot++; if (f.prefixFirstTry) ok++; } tot++; if (f.valueAttempts.length <= 1) ok++; });
+          return tot ? Math.round((ok / tot) * 100) : 0;
+        }
+        const score = () => Math.max(0, 100 - 5 * S.hints.total);
+        function record() {
+          tick();
+          return {
+            id: S.id, mode: "guided-parser", createdAt: S.createdAt, completedAt: S.completedAt, network: "visa",
+            mti: S.dec.mti, bitmap: S.dec.bitmapHex, annotated: "", raw: "", valid: !!S.completedAt, missing: [],
+            guided: {
+              trama_id: S.frame.id, nivel: S.level, paso_actual: S.step,
+              intentos_por_digito: S.digits.map((d) => ({ idx: d.idx, hex: S.dec.bitmapHex[d.idx], intentos: d.attempts.length, escritos: d.attempts, ok: d.ok })),
+              bits_marcados: { marcados: [...S.marked].sort((a, b) => a - b), reales: S.dec.bits.split("").map((b, i) => (b === "1" ? i + 1 : 0)).filter(Boolean), verificaciones: S.bitChecks.length },
+              campos_extraidos: S.fields.map((f) => ({ de: f.de, prefijo_ok_primer_intento: f.prefixFirstTry, intentos_prefijo: f.prefixAttempts.length, intentos_valor: f.valueAttempts.length, extraido: f.value, real: S.dec.fields.find((x) => x.de === f.de).value, ok: f.ok })),
+              hints_usados: { total: S.hints.total, por_paso: S.hints.byStep, detalle: S.hints.detail },
+              tiempo_por_paso_ms: S.ms.slice(), score: S.completedAt ? score() : null, precision_primer_intento: S.completedAt ? firstTryStats() : null,
+            },
+          };
+        }
+        function save() { try { window.OSCSwitchStore?.addGuidedParserAttempt?.(record()); } catch (e) { console.warn("Parser Guiado: no se pudo guardar el intento", e); } }
+
+        // ---------- render ----------
+        function stepper() {
+          return `<div class="stepper">${STEPS.map((t, i) => `<div class="st ${i < S.step ? "done" : i === S.step ? "cur" : ""}">${i < S.step ? "✓ " : ""}${t}</div>`).join("")}</div>`;
+        }
+        function tramaBlocks(opts = {}) {
+          const raw = S.frame.raw; let html = "";
+          for (let i = 0; i < raw.length; i += 10) {
+            html += `<span class="blk"><i>${i}</i>`;
+            for (let j = i; j < Math.min(i + 10, raw.length); j++) {
+              let cls = "ch";
+              if (opts.cuts) { if (S.cuts.m === j) cls += " cut m"; if (S.cuts.b === j) cls += " cut b"; }
+              if (opts.segs) cls += j <= 3 ? " seg-mti" : j <= S.dec.bitmapEnd ? " seg-bm" : "";
+              if (opts.cursor != null) cls += j < opts.cursor ? " seg-done" : "";
+              html += `<span class="${cls}" data-i="${j}">${esc(raw[j])}</span>`;
+            }
+            html += "</span>";
+          }
+          return html;
+        }
+        function render() {
+          if (!S) return renderHome();
+          const fn = [r0, r1, r2, r3, r4, r5][S.step];
+          root.innerHTML = stepper() + fn();
+          bind();
+        }
+        function renderHome() {
+          root.innerHTML = `<div class="card"><h3>Elegí un nivel</h3><p>Vas a recibir una trama cruda y tendrás que decodificarla paso a paso. Ningún paso avanza solo ni te muestra el resultado antes de que hagas tu propia conversión.</p>
+            <div class="levels">${[1, 2, 3].map((n) => `<button class="lvl" data-lvl="${n}"><b>${LEVELS[n][0]}</b><small>${LEVELS[n][1]}</small><small style="margin-top:6px;color:#75bcff">${LEVELS[n][2]}</small></button>`).join("")}</div></div>
+            <div class="card"><h3>Reglas del ejercicio</h3><p>• Las pistas están disponibles pero cada una resta 5 puntos; equivocarte y reintentar no resta.<br>• El Parser automático se habilita recién al terminar el paso 4 y sirve para corregir, no para resolver.<br>• Las tramas del banco son de práctica, con tarjetas y comercios ficticios.</p></div>`;
+          root.querySelectorAll("[data-lvl]").forEach((b) => (b.onclick = () => start(Number(b.dataset.lvl))));
+        }
+        const foot = (extra = "") => `<div class="row"><button class="btn ghost" id="hintBtn">💡 Pedir pista <small>(−5)</small></button>${extra}<span style="flex:1"></span><button class="btn ghost" id="quit">Cambiar de trama</button></div>`;
+
+        function r0() {
+          return `<div class="card"><h3>Paso 0 · Tu trama</h3><p>Esta es la trama cruda, en texto plano. Podés seleccionarla y copiarla.</p>
+            <div class="trama">${tramaBlocks()}</div>
+            <div class="row"><button class="btn primary" id="next">Empezar →</button><button class="btn ghost" id="revealMti">${S.mtiRevealed ? `MTI: ${esc(S.dec.mti)}` : "Revelar MTI (opcional)"}</button><span style="flex:1"></span><button class="btn ghost" id="quit">Cambiar de trama</button></div>
+            <p style="font-size:.7rem;color:#8ba1b6">Revelar el MTI no bloquea el ejercicio, pero cuenta como una pista.</p></div>`;
+        }
+        function r1() {
+          const status = S.cutMsg ? `<div class="msg ${S.cutMsg.ok ? "ok" : "err"}">${S.cutMsg.text}</div>` : "";
+          const done = S.cutMsg?.ok;
+          return `<div class="card"><h3>Paso 1 · Aislar el bitmap</h3><p>Marcá dónde <b class="seg-mti">termina el MTI</b> y dónde <b class="seg-bm">termina el bitmap</b>. Elegí qué marcar y hacé clic sobre el último carácter de cada parte.</p>
+            <div class="row" style="margin:0 0 10px"><button class="btn ${S.mode === "mti" ? "primary" : ""}" data-mode="mti">Fin del MTI ${S.cuts.m != null ? "✓" : ""}</button><button class="btn ${S.mode === "bm" ? "primary" : ""}" data-mode="bm">Fin del bitmap ${S.cuts.b != null ? "✓" : ""}</button></div>
+            <div class="trama pick" id="tr">${tramaBlocks({ cuts: true })}</div>${status}${S.fHint ? `<div class="msg hint">${S.fHint}</div>` : ""}
+            ${foot(`<button class="btn ok" id="check" ${done ? "disabled" : ""}>Verificar cortes</button><button class="btn primary" id="next" ${done ? "" : "disabled"}>Continuar →</button>`)}</div>`;
+        }
+        function r2() {
+          const bm = S.dec.bitmapHex;
+          const cells = S.digits.map((d, i) => `<div class="hx ${d.ok ? "good" : d.attempts.length && !d.ok ? "bad" : ""}"><small>dígito ${i + 1}</small><div class="h">${bm[i]}</div><input inputmode="numeric" maxlength="4" placeholder="0000" data-d="${i}" value="${esc(d.value)}" ${d.ok ? "readonly" : ""} /></div>`).join("");
+          const all = S.digits.every((d) => d.ok);
+          return `<div class="card"><h3>Paso 2 · Hex → binario</h3><p>Escribí los 4 bits de cada dígito hexadecimal del bitmap. El sistema valida cada dígito (verde/rojo) sin mostrarte el valor correcto.</p>
+            <div class="trama" style="margin-bottom:10px"><span class="seg-mti">${esc(S.dec.mti)}</span> <span class="seg-bm">${esc(bm)}</span></div>
+            <div class="hexrow">${cells}</div>
+            <details style="margin-top:12px" ${S.showRef ? "open" : ""} id="refDet"><summary>Tabla de conversión hex ↔ binario (cuenta como pista)</summary>${S.showRef ? refTable() : ""}</details>
+            ${foot(`<button class="btn primary" id="next" ${all ? "" : "disabled"}>Continuar →</button>`)}</div>`;
+        }
+        function refTable() {
+          const rows = "0123456789ABCDEF".split("").map((h) => `<td>${h} = ${parseInt(h, 16).toString(2).padStart(4, "0")}</td>`);
+          let t = '<table class="ref"><tr>'; rows.forEach((r, i) => { t += r; if (i % 4 === 3 && i < 15) t += "</tr><tr>"; }); return t + "</tr></table>";
+        }
+        function r3() {
+          const sec = S.marked.has(1);
+          const grid = (from) => Array.from({ length: 64 }, (_, k) => { const n = from + k; return `<button class="bit ${S.marked.has(n) ? "on" : ""} ${n === 1 && S.marked.has(1) ? "sec" : ""} ${S.flag?.has(n) ? "flag" : ""}" data-b="${n}">${n}</button>`; }).join("");
+          return `<div class="card"><h3>Paso 3 · Detectar campos activos</h3><p>Con el binario que armaste, hacé clic en las posiciones que valen <b>1</b>. Los números son las posiciones de bit (= número de Data Element).</p>
+            <div class="kicker" style="margin:8px 0 6px">BITMAP PRIMARIO · 1–64</div><div class="bmgrid">${grid(1)}</div>
+            ${sec ? `<div class="kicker" style="margin:12px 0 6px">BITMAP SECUNDARIO · 65–128</div><div class="bmgrid">${grid(65)}</div>` : ""}
+            <p style="font-size:.7rem;color:#8ba1b6;margin-top:10px">Marcadas: ${S.marked.size}</p>
+            ${S.bitMsg ? `<div class="msg ${S.bitMsg.ok ? "ok" : "err"}">${S.bitMsg.text}</div>` : ""}
+            <div class="row"><button class="btn ok" id="check" ${S.bitMsg?.ok ? "disabled" : ""}>Verificar selección</button><button class="btn primary" id="next" ${S.bitMsg?.ok ? "" : "disabled"}>Continuar →</button><span style="flex:1"></span><button class="btn ghost" id="quit">Cambiar de trama</button></div>
+            <p style="font-size:.68rem;color:#6f8598">En este paso no hay pistas: si algo no coincide, el error está en tu propia conversión del paso 2.</p></div>`;
+        }
+        function r4() {
+          const f = S.fields[S.fi], real = S.dec.fields[S.fi];
+          const finished = S.fields.every((x) => x.ok);
+          const cursor = finished ? S.frame.raw.length : real.start;
+          const chips = S.fields.map((x, i) => `<span class="chip ${x.ok ? "done" : i === S.fi ? "cur" : ""}">DE${x.de}</span>`).join("");
+          const rest = `<div class="trama">${tramaBlocks({ cursor })}</div>`;
+          if (finished) return `<div class="card"><h3>Paso 4 · Extraer valores</h3><div class="chips">${chips}</div>${rest}<div class="msg ok">Extrajiste los ${S.fields.length} campos. Ya podés pasar a la autocorrección.</div><div class="row"><button class="btn primary" id="next">Continuar →</button></div></div>`;
+          const d = real.def, isVar = d.kind !== "FIX", pl = G.prefixLen(d);
+          const ficha = `<div class="ficha"><div><small>Campo</small><b>DE${real.de}</b></div><div><small>Nombre</small><b>${esc(d.name)}</b></div><div><small>Formato</small><b>${G.kindLabel(d)}</b></div><div><small>${isVar ? "Prefijo / máximo" : "Longitud"}</small><b>${isVar ? pl + " díg. / " + d.max : d.len + " car."}</b></div></div>`;
+          const prefBlock = isVar ? `<label class="kicker">1) PREFIJO DE LONGITUD (${pl} dígitos)</label><input class="t ${f.prefixOk ? "good" : f.prefixAttempts.length ? "bad" : ""}" id="pref" maxlength="${pl}" inputmode="numeric" ${f.prefixOk ? "readonly" : ""} value="${f.prefixOk ? esc(real.prefix) : esc(f.prefixAttempts.slice(-1)[0] || "")}" />
+            ${f.prefixOk ? `<p class="good" style="font-size:.74rem">Longitud leída: ${parseInt(real.prefix, 10)} caracteres a tomar.</p>` : `<div class="row"><button class="btn ok" id="checkPref">Verificar prefijo</button></div>`}` : "";
+          const valBlock = !isVar || f.prefixOk ? `<label class="kicker" style="display:block;margin-top:10px">${isVar ? "2) VALOR" : "VALOR"} (${isVar ? parseInt(real.prefix, 10) : d.len} caracteres)</label><input class="t ${f.valueAttempts.length ? "bad" : ""}" id="val" autocomplete="off" spellcheck="false" value="${esc(f.valueAttempts.slice(-1)[0] || "")}" /><div class="row"><button class="btn ok" id="checkVal">Verificar campo</button></div>` : "";
+          return `<div class="card"><h3>Paso 4 · Extraer valores</h3><div class="chips">${chips}</div>
+            <p>Lo ya consumido aparece atenuado. Tu cursor está donde empieza el DE${real.de}:</p>${rest}${ficha}${prefBlock}${valBlock}
+            ${S.fMsg ? `<div class="msg ${S.fMsg.ok ? "ok" : "err"}">${S.fMsg.text}</div>` : ""}${S.fHint ? `<div class="msg hint">${S.fHint}</div>` : ""}${foot()}</div>`;
+        }
+        function r5() {
+          const done = !!S.result;
+          if (!done) return `<div class="card"><h3>Paso 5 · Autocorrección</h3><p>Completaste la decodificación manual. Ahora el Parser corre sobre la misma trama y compara campo a campo contra lo que extrajiste.</p>
+            <div class="row"><button class="btn primary" id="analyze">Analizar en Parser</button></div></div>`;
+          const R = S.result, hasDE55 = S.dec.fields.some((f) => f.de === 55);
+          const rows = S.dec.fields.map((r) => { const f = S.fields.find((x) => x.de === r.de), same = f.value === r.value;
+            return `<tr><td>DE${r.de}</td><td>${esc(r.def.name)}</td><td class="mono">${r.prefix ? esc(r.prefix) : "—"}</td><td class="mono">${esc(r.value.length > 60 ? r.value.slice(0, 60) + "…" : r.value)}</td><td class="${same ? "good" : "bad"}">${same ? "✓ coincide" : "✗ difiere"}</td><td>${f.prefixFirstTry === null ? "—" : f.prefixFirstTry ? "✓" : "✗"}</td><td>${f.valueAttempts.length}</td></tr>`; }).join("");
+          const stepRows = STEPS.map((t, i) => `<tr><td>${t}</td><td>${(S.ms[i] / 1000).toFixed(0)} s</td><td>${S.hints.byStep[i]}</td></tr>`).join("");
+          return `<div class="card"><h3>Paso 5 · Resultado</h3><div class="kpi"><div><small>Score</small><b>${R.score}</b></div><div><small>Pistas usadas</small><b>${S.hints.total}</b></div><div><small>Precisión al 1.er intento</small><b>${R.fp}%</b></div><div><small>Campos correctos</small><b>${S.dec.fields.filter((r) => S.fields.find((x) => x.de === r.de).value === r.value).length}/${S.dec.fields.length}</b></div></div>
+            <p style="font-size:.7rem;color:#8ba1b6">Score = 100 − 5 por pista. Los errores y reintentos no restan; la precisión al primer intento es solo informativa.</p>
+            <p><b>Trama:</b> ${esc(S.frame.title)} · MTI ${esc(S.dec.mti)} · bitmap <span class="mono">${esc(S.dec.bitmapHex)}</span></p>
+            <table><tr><th>DE</th><th>Nombre</th><th>Prefijo</th><th>Valor real</th><th>Tu extracción</th><th>Prefijo 1.er int.</th><th>Intentos</th></tr>${rows}</table></div>
+            <div class="card"><h3>Por paso</h3><table><tr><th>Paso</th><th>Tiempo</th><th>Pistas</th></tr>${stepRows}</table>
+            <div class="row"><button class="btn primary" id="again">Otra trama del nivel ${S.level}</button><button class="btn ghost" id="home">Cambiar de nivel</button>${hasDE55 ? "" : `<button class="btn ghost" id="openParser">Abrir en Parser ISO8583</button>`}</div>
+            ${hasDE55 ? `<p style="font-size:.68rem;color:#6f8598">Esta trama incluye DE55 y el Parser ISO8583 (perfil Visa) no interpreta DE55 en tramas de texto con prefijo decimal; por eso la corrección se hizo con el decodificador del módulo.</p>` : ""}</div>`;
+        }
+
+        // ---------- eventos ----------
+        function bind() {
+          const on = (id, fn) => { const el = $("#" + id); if (el) el.onclick = fn; };
+          on("quit", () => { if (confirm("Vas a abandonar esta trama. ¿Continuar?")) { tick(); save(); S = null; render(); } });
+          on("next", () => go(S.step + 1));
+          on("revealMti", () => { S.mtiRevealed = true; hint("mti"); render(); });
+          on("hintBtn", onHint);
+          if (S.step === 1) {
+            root.querySelectorAll("[data-mode]").forEach((b) => (b.onclick = () => { S.mode = b.dataset.mode; render(); }));
+            const tr = $("#tr"); tr.onclick = (e) => { const c = e.target.closest("[data-i]"); if (!c) return; const i = Number(c.dataset.i); S.cuts[S.mode === "mti" ? "m" : "b"] = i; S.cutMsg = null; render(); };
+            on("check", () => {
+              if (S.cuts.m == null || S.cuts.b == null) { S.cutMsg = { ok: false, text: "Marcá primero los dos cortes (fin del MTI y fin del bitmap)." }; return render(); }
+              S.cutAttempts++;
+              const okM = S.cuts.m === 3, okB = S.cuts.b === S.dec.bitmapEnd;
+              S.cutMsg = okM && okB ? { ok: true, text: "Cortes correctos: ya aislaste el MTI y el bitmap." } : { ok: false, text: `${okM ? "El corte del MTI es correcto." : "El corte del <b>MTI</b> no coincide."} ${okB ? "El corte del bitmap es correcto." : "El corte del <b>bitmap</b> no coincide."}` };
+              render();
+            });
+          }
+          if (S.step === 2) {
+            root.querySelectorAll("input[data-d]").forEach((inp) => {
+              inp.oninput = () => {
+                inp.value = inp.value.replace(/[^01]/g, "");
+                const i = Number(inp.dataset.d), d = S.digits[i]; d.value = inp.value;
+                if (inp.value.length === 4) {
+                  const ok = inp.value === parseInt(S.dec.bitmapHex[i], 16).toString(2).padStart(4, "0");
+                  d.attempts.push(inp.value); if (d.attempts.length === 1) d.firstOk = ok; d.ok = ok; render();
+                  const nx = root.querySelector(`input[data-d="${i + 1}"]`); if (ok && nx) nx.focus();
+                  if (!ok) { const cur = root.querySelector(`input[data-d="${i}"]`); cur.focus(); cur.select(); }
+                } else if (d.attempts.length) { inp.parentElement.classList.remove("bad"); }
+              };
+            });
+            const det = $("#refDet"); if (det) det.addEventListener("toggle", () => { if (det.open && !S.showRef) { S.showRef = true; hint("tabla"); render(); } });
+          }
+          if (S.step === 3) {
+            root.querySelectorAll("[data-b]").forEach((b) => (b.onclick = () => { const n = Number(b.dataset.b); S.marked.has(n) ? S.marked.delete(n) : S.marked.add(n); if (n === 1 && !S.marked.has(1)) [...S.marked].filter((x) => x > 64).forEach((x) => S.marked.delete(x)); S.bitMsg = null; S.flag = null; render(); }));
+            on("check", () => {
+              S.bitChecks.push([...S.marked].sort((a, b) => a - b));
+              const real = new Set(S.dec.bits.split("").map((b, i) => (b === "1" ? i + 1 : 0)).filter(Boolean));
+              const all = [...new Set([...real, ...S.marked])].sort((a, b) => a - b), bad = [];
+              all.forEach((n) => { const m = S.marked.has(n), r = real.has(n); if (m !== r) bad.push(`Posición ${n} (dígito hex #${Math.ceil(n / 4)}, bit ${((n - 1) % 4) + 1}): ${m ? "la marcaste pero tu binario no tiene un 1 ahí" : "tu binario tiene un 1 y falta marcarla"}.`); });
+              if (!bad.length) S.bitMsg = { ok: true, text: `Correcto: ${real.size} campos activos detectados.` };
+              else { S.flag = new Set(all.filter((n) => S.marked.has(n) !== real.has(n))); S.bitMsg = { ok: false, text: bad.slice(0, 8).join("<br>") + (bad.length > 8 ? `<br>…y ${bad.length - 8} más.` : "") + "<br><small>Releé tu conversión del paso 2 en esas posiciones.</small>" }; }
+              render();
+            });
+          }
+          if (S.step === 4) {
+            const f = S.fields[S.fi], real = S.dec.fields[S.fi];
+            const pref = $("#pref"), val = $("#val");
+            const checkPref = () => { const v = pref.value.trim(); f.prefixAttempts.push(v); const ok = v === real.prefix; if (f.prefixFirstTry === null) f.prefixFirstTry = ok; f.prefixOk = ok; S.fHint = null; S.fMsg = ok ? { ok: true, text: "Prefijo correcto. Ahora tomá esa cantidad de caracteres." } : { ok: false, text: "El prefijo no coincide con la trama. Revisá dónde empieza el campo." }; render(); };
+            const checkVal = () => { const v = val.value; f.valueAttempts.push(v); const ok = v === real.value; S.fHint = null;
+              if (ok) { f.value = v; f.ok = true; S.fMsg = { ok: true, text: `DE${real.de} extraído correctamente.` }; S.fi = Math.min(S.fi + 1, S.fields.length - 1); if (S.fields.every((x) => x.ok)) S.fi = S.fields.length - 1; save(); }
+              else S.fMsg = { ok: false, text: `El valor no coincide${v.length !== (real.def.kind === "FIX" ? real.def.len : real.len) ? ` (escribiste ${v.length} caracteres y el campo tiene ${real.def.kind === "FIX" ? real.def.len : real.len})` : ""}. Contá de nuevo desde el cursor.` };
+              render(); };
+            on("checkPref", checkPref); on("checkVal", checkVal);
+            [[pref, checkPref], [val, checkVal]].forEach(([el, fn]) => el && el.addEventListener("keydown", (e) => { if (e.key === "Enter" && !el.readOnly) fn(); }));
+            (val || pref)?.focus();
+          }
+          if (S.step === 5) {
+            on("analyze", () => { S.completedAt = new Date().toISOString(); S.result = { score: score(), fp: firstTryStats() }; tick(); save(); render(); });
+            on("again", () => start(S.level)); on("home", () => { S = null; render(); });
+            on("openParser", () => { localStorage.setItem("oscAcademyParserPayload", JSON.stringify({ raw: S.frame.raw, network: "visa", mti: S.dec.mti, source: "Parser Guiado", createdAt: new Date().toISOString() })); location.href = "parser.html"; });
+          }
+        }
+        function onHint() {
+          if (S.step === 1) S.fHint = hint("cut" + (S.cuts.m === 3 ? "b" : "m"), S.cuts.m === 3 ? "El bitmap primario tiene 16 caracteres hex. Si el primer dígito hex es 8 o mayor, el bit 1 está activo y hay otros 16 de bitmap secundario." : "El MTI son 4 dígitos, contá de nuevo.");
+          else if (S.step === 2) S.showRef = true, hint("tabla");
+          else if (S.step === 4) {
+            const f = S.fields[S.fi], real = S.dec.fields[S.fi];
+            if (!f.prefixOk) S.fHint = hint(`p${real.de}`, `El prefijo de este campo son ${G.prefixLen(real.def)} dígitos y va inmediatamente antes del valor.`);
+            else S.fHint = hint(`v${real.de}`, `El valor empieza con “${esc(real.value.slice(0, 3))}” y tiene ${real.len} caracteres.`);
+          }
+          render();
+        }
+        document.addEventListener("visibilitychange", () => { if (S) S.enter = nowMs(); });
+        window.addEventListener("beforeunload", () => { if (S) { tick(); save(); } });
+        render();
+        window.OSCGuidedParserUI = { start }; // para pruebas
+      })();
+    </script>
+    <script src="js/permissions.js"></script>
+    <script src="js/navigation.js?v=4.0.0-rc1.16"></script>
+  </body>
+</html>

@@ -1,0 +1,104 @@
+MANUAL MAPPING v4.0.0-rc.1.16 — DEFINICIONES DE CAMPOS POR MARCA (Constructor ISO8583)
+
+Criterio: cada definición sale del manual oficial de la marca cargado en /public/manuals.
+Donde el manual no alcanza, se indica y NO se inventa.
+
+VISA — Full Service POS Online Messages – Technical Specifications, Data Field Descriptions.
+Se contrastaron las dos ediciones (14 abr 2025 y 15 oct 2025) y el VisaNet Authorization-Only Online Messages Tech Specs:
+los atributos de todos los campos del Constructor son idénticos. (El Full Service ATM Tech Specs también coincide.)
+  Field 22  Point-of-Service Entry Mode Code ........ 4 N (pos. 1-2 modo de ingreso, pos. 3 capacidad PIN, pos. 4 relleno 0) [p. 235]
+            ANTES en el Constructor: N3 ("051").  AHORA: N4 ("0510").
+  Field 25  Point-of-Service Condition Code ......... 2 N.   ANTES: N4 (semántica AMEX).
+  Field 26  Point-of-Service PIN Capture Code ....... 2 N.   ANTES: "MCC" N4 (semántica AMEX).
+  Field 32  Acquiring Institution ID Code ........... LLVAR, máx. 11 N.   ANTES: máx. 14.
+  Field 33  Forwarding Institution ID Code .......... LLVAR, máx. 11 N.   ANTES: máx. 14.
+  Field 50  Currency Code, Settlement ............... 3 N (se corrige el nombre).
+  Field 56  Customer Related Data ................... hasta 255 ANS (TLV).  ANTES: "Original Data Elements" LLVAR 42 (semántica AMEX).
+  Field 62 / 63 ..................................... máx. 255 bytes (510 caracteres hex).  ANTES: 999.
+  Field 24, 30, 31 .................................. no están definidos en Visa POS: el Constructor advierte si se usan con Visa.
+  Verificados sin cambios: 2, 3, 4, 7, 11, 12, 13, 14, 18, 35, 37, 38, 39, 41, 42, 43, 49, 52, 53, 54 (20/40/60/80/100/120 ANS), 55, 60, 70, 90, 100.
+  Convención de prefijo: el manual usa 1 byte binario en la trama de red; el laboratorio conserva su convención didáctica
+  (prefijo decimal de 2 ó 3 dígitos), igual que Parser.
+
+MASTERCARD — Customer Interface Specification (25 February 2025), "List of data elements" y definiciones. MENSAJES 0xxx.
+  DE 22  Point-of-Service (POS) Entry Mode ........ n-3. Pos. 1-2: 00,01,02,03,04,05,07,09,10,79,80,81,82,90,91. Pos. 3: 0,1,2,3,8.
+  DE 26  POS PIN Capture Code ..................... n-2.   ANTES: "MCC" N4.
+  DE 32 / DE 33 ................................... n...6 LLVAR.   ANTES: máx. 14.
+  DE 38  Authorization ID Response ................ ans-6.
+  DE 54  Additional Amounts ....................... an...240 LLLVAR.   ANTES: máx. 120.
+  DE 56  Payment Account Data ..................... an...37 LLLVAR.   ANTES: "Original Data Elements".
+  DE 60  Advice Reason Code ....................... ans...060 LLLVAR.  ANTES: "Additional POS Information".
+  DE 62  INF Data ................................. ans...100 LLLVAR.  ANTES: máx. 999.
+  DE 63  Network Data ............................. an...050 LLLVAR.   ANTES: máx. 999.
+  DE 24, 25, 30, 31 .............................. Mastercard NO los usa y no deben incluirse en autorización: el Constructor advierte,
+                                                   los rotula "no usado por Mastercard" y el preset Mastercard ya no incluye DE25.
+  Verificados sin cambios: 2, 3, 4, 7, 11, 12 (n-6), 13, 14, 18, 35, 37, 39, 41, 42, 43 (ans-40), 49, 50, 52, 53, 55, 70, 90, 100.
+  Nota: el Debit Switch Online Specifications (jun 2003) indicaba DE32/33 n...11; la especificación vigente dice n...6.
+
+MASTERCARD — IPM Clearing Formats (7 November 2023). MENSAJES 1xxx (First Presentment 1240, Chargeback 1442, etc.).
+  Al escribir un MTI que empieza con 1, el Constructor cambia a estas definiciones:
+  DE 12 Date and Time, Local Transaction .......... n-12 (YYMMDDhhmmss).
+  DE 22 Point of Service Data Code ................ an-12, 12 subfields.
+  DE 24 Function Code n-3 | DE 25 Message Reason Code n-4 | DE 26 Acceptor Business Code (MCC) n-4 | DE 30 Amounts, Original n-24.
+  DE 31 Acquirer Reference Data ................... n-23 LLVAR (valor 23).
+  DE 32 n...11 LLVAR | DE 33 n...11 LLVAR | DE 38 Approval Code ans-6 | DE 50 Currency Code, Reconciliation n-3.
+  DE 43 Acceptor Name and Location ................ ans...99 LLVAR (20 a 99).   ANTES: fijo de 40.
+  DE 54 ans-20 LLLVAR hasta 240 | DE 62 Additional Data 2 ans...999 | DE 63 Transaction Life Cycle ID ans-16 LLLVAR | DE 100 n...11 LLVAR.
+  Esto explica por qué la tabla original del Constructor mezclaba semánticas: DE24/25/26/30/31 son de clearing IPM (y de AMEX),
+  no de autorización Mastercard.
+
+AMERICAN EXPRESS — Network Specifications – Authorization (October 2023), layouts de 1100/1110/1120/1200/1210/1420/1430.
+  Convención Amex: "N(x) max LLVAR" = hasta x caracteres de dato; el indicador de longitud no se cuenta (Notes de los Bits 2 y 32).
+  Bit 2   PAN ..................................... N(21) max LLVAR.  ANTES: máx. 19.
+  Bit 13  Card Effective Date ..................... N(4) YYMM.       ANTES: "Date, Local Transaction".
+  Bit 14  Card Expiration Date .................... N(4) YYMM.
+  Bit 19  Country Code, Acquiring Institution ..... N(3), OBLIGATORIO en 1100.  ANTES: el Constructor no tenía el campo (se perdía del preset).
+  Bit 22  Point of Service Data Code .............. AN(12). Se ratifica: NO existe una variante de 4 dígitos.
+  Bit 23  PAN Sequence Number ..................... N(3).             ANTES: el Constructor no tenía el campo.
+  Bit 24  Function Code ........................... AN(3).            ANTES: N3.
+  Bit 25  Message Reason Code N(4) | Bit 26 Card Acceptor Business Code N(4) | Bit 30 Amount, Original N(24) | Bit 39 Action Code N(3).
+  Bit 31  Acquirer Reference Data (TID) ........... N(40) max LLVAR.  ANTES: "LLVAR AN" máx. 32.
+  Bit 32  AIN Code ................................ N(13) max LLVAR.  ANTES: máx. 14.
+  Bit 33  Forwarding Institution ID ............... N(13) max LLVAR.  ANTES: máx. 14.
+  Bit 35  Track 2 Data ............................ ANS(39) max LLVAR. ANTES: LLVAR Z máx. 37.
+  Bit 37  Acquirer Reference Number (ARN) AN(12) | Bit 42 AN(15) | Bit 41 ANS(8)/AN(8).
+  Bit 43  Card Acceptor Name and Location ......... ANS(101) max LLVAR. ANTES: fijo de 40.
+  Bit 53  Security Related Control Information .... AN(8) max LLVAR (CSC / OTP).  ANTES: N16 (semántica Visa).
+  Bit 54  Amount, Additional ...................... ANS(123) LLLVAR.  ANTES: máx. 120.
+  Bit 56  Original Data Elements .................. ANS(37) max LLVAR. ANTES: máx. 42.
+  Bit 60  Market Specific Data .................... AN(210) LLLVAR.    ANTES: "Additional POS Information" N máx. 12.
+  Bit 62  Fraud Indicators AN(5)–AN(60) | Bit 63 Automated Address Verification AN(4)–AN(103).
+  Bit 18 reservado. Bits 70, 90 y 100 no están definidos para autorización: el Constructor advierte si se usan con Amex.
+  La advertencia "DE52 sin DE53" ya no aplica a Amex (su Bit 53 es CSC/OTP, no control de PIN).
+  Codes Reference Guide (oct 2023): tablas de Bit 22, Bit 25, Bit 39 (ya verificadas). Presets de Bit 22: "51010150034C" (POS) y
+  "51020151314C" (ATM).
+  NO cubierto por estos PDFs: Network Specifications Financial/Non-Financial (clearing 1240 por posiciones), que no se usa en el Constructor.
+
+AJUSTES DE CÓDIGO
+  - Constructor (modo constructor y "Sin plantilla"): la definición del campo depende de la marca elegida (o detectada por PAN;
+    sin PAN se usa Visa, igual que el escenario REJECT). En Mastercard depende además del MTI (0xxx autorización / 1xxx clearing IPM).
+  - Constructor: se agregan DE19 y DE23 a la lista de campos.
+  - Presets: DE22 = 0510 con Visa; 051 con Mastercard (sin DE25); valores válidos de DE22 en AMEX.
+  - Parser ISO8583: perfil Amex alineado con el Authorization Spec (Bit 43 LLVAR, Bit 31 numérico, Bit 24 alfanumérico y los Bits
+    5, 7, 13, 14, 23, 34, 44, 45, 48, 53, 54, 60, 61, 62, 63); nuevo perfil Mastercard de autorización (Customer Interface
+    Specification); PIN Data en texto = 16 hex (8 bytes en Visa, Mastercard y Amex) en lugar de probar 32 primero.
+  - Ayuda contextual Visa DE22: N3 -> N4.
+  - Parser Guiado: DE54 admite hasta 120 caracteres (20 por importe).
+
+VERIFICACIÓN: las 9 combinaciones marca x operación (compra, extracción, reversa) del Constructor se leen campo por campo en el
+Parser sin desalineaciones. Antes fallaban 5 de las 9 (extracción y reversa en Visa y en Mastercard, y la compra en Amex); en la compra Mastercard el DE22 se leía mal.
+
+FUENTES USADAS PARA VERIFICAR (no se incluyen en el paquete)
+  Visa: Full Service POS Online Messages Tech Specs y Processing Specs (15 oct 2025), VisaNet Authorization-Only Tech Specs.
+  Mastercard: Customer Interface Specification (25 feb 2025); IPM Clearing Formats (7 nov 2023, ya en /manuals);
+  M/Chip Requirements (29 abr 2025); Test Cases; Mastercard Rules (dic 2019, reglas de negocio, sin layouts);
+  Debit Switch Online Specifications (jun 2003, referencia histórica).
+  Amex: Network Specifications Authorization y Financial/NonFinancial (oct 2023), Codes Reference Guide, Merchant Operating Guide
+  (los dos últimos idénticos a los de /manuals), Business and Operational Policies Manual, Merchant Regulations, GNS Capability Guide.
+
+FUERA DE ALCANCE (detectado, sin modificar)
+  - POS, ATM, Wallet y E-Commerce generan DE22 de 3 dígitos para Visa; el manual exige 4 (0510, 0710, 0210).
+    Para Mastercard (n-3) y Amex (POS ya usa 12 posiciones) es correcto.
+  - Parser, perfil Visa: no interpreta DE55 en tramas de texto con prefijo decimal.
+  - Los PDFs de /manuals son la edición Visa 14 abr 2025; la plataforma cita la del 15 oct 2025. Los números de página de la ayuda
+    contextual corresponden a la edición cargada: no reemplazar el PDF sin actualizar el catálogo de páginas.
