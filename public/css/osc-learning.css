@@ -1,0 +1,107 @@
+/* OSC Learning layout · v4.0.0-rc.1.19
+   Layout de 4 columnas (dispositivo · flujo · Data Elements · Tutor anclado) para POS, ATM, Wallet y E-Commerce. */
+:root{--osc-dock-w:340px;--osc-teal:#12a6a0;--osc-teal-d:#0c6f6c;--osc-line:#1d405c}
+
+/* ---- barra superior: selector de módulo y menú ---- */
+.osc-modswitch{display:inline-flex;gap:2px;background:#0a1927;border:1px solid var(--osc-line);border-radius:11px;padding:3px;vertical-align:middle;margin-left:12px}
+.osc-modswitch a{padding:6px 14px;border-radius:8px;color:#9cb2c6;text-decoration:none;font-weight:800;font-size:.76rem}
+.osc-modswitch a:hover{color:#fff}
+.osc-modswitch a.active{background:#e9f2f2;color:#0b2a2a}
+.osc-menu-toggle{display:none;border:1px solid var(--osc-line);background:#0a1927;color:#dce9f5;border-radius:9px;padding:7px 11px;font-weight:800;font-size:.74rem;cursor:pointer;margin-right:10px}
+body.osc-learning-on .osc-menu-toggle{display:inline-block}
+
+/* ---- enfoque: el menú lateral se pliega para dar lugar a las 4 columnas ---- */
+body.osc-learning-on .app{grid-template-columns:minmax(0,1fr)!important}
+body.osc-learning-on:not(.osc-sidebar-open) .sidebar{display:none!important}
+body.osc-learning-on.osc-sidebar-open .sidebar{position:fixed!important;left:0;top:0;bottom:0;width:225px;z-index:96000;box-shadow:14px 0 44px #000a}
+
+/* ---- rejilla de 4 columnas ---- */
+body.osc-learning-on .workspace.osc-grid-4{grid-template-columns:minmax(300px,380px) minmax(210px,250px) minmax(0,1fr) var(--osc-dock-w)!important;align-items:start}
+body.osc-learning-on .atm-grid.osc-grid-4{grid-template-columns:minmax(360px,440px) minmax(230px,270px) minmax(0,1fr) var(--osc-dock-w)!important;align-items:start}
+body.osc-learning-on.osc-dock-collapsed{--osc-dock-w:54px}
+body.osc-learning-on .osc-grid-4>.osc-de-panel{container-type:inline-size;container-name:oscde}
+
+/* ---- dock del Tutor ---- */
+.osc-tutor-dock{display:none}
+body.osc-learning-on .osc-tutor-dock{display:flex;flex-direction:column;grid-column:4;grid-row:1;position:sticky;top:12px;align-self:start;height:calc(100vh - 24px);min-height:520px;background:#0b1827;border:1px solid var(--osc-line);border-radius:14px;overflow:hidden;z-index:5}
+.osc-dock-tab{display:none;flex:1;border:0;background:transparent;color:#7be3d8;cursor:pointer;writing-mode:vertical-rl;text-orientation:mixed;font-weight:800;letter-spacing:.06em;padding:14px 0}
+body.osc-learning-on .osc-tutor-dock.is-collapsed .osc-dock-tab{display:block}
+body.osc-learning-on .osc-tutor-dock.is-collapsed .tutor-osc-panel{display:none!important}
+
+.osc-tutor-dock .tutor-osc-panel.docked{position:static!important;display:flex!important;flex-direction:column;width:auto!important;height:100%!important;max-height:none!important;border:0!important;border-radius:0!important;box-shadow:none!important;background:transparent!important;transform:none!important;left:auto!important;top:auto!important;right:auto!important;bottom:auto!important;min-height:0}
+.tutor-osc-panel.docked .tutor-osc-head{cursor:default!important;display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid #16324a;background:transparent}
+.tutor-osc-panel.docked .tutor-osc-head b{font-size:1rem}
+.tutor-osc-panel.docked .tutor-osc-head small{display:none}
+.tutor-osc-headbtns{display:flex;gap:6px}
+.tutor-osc-headbtns button{border:1px solid var(--osc-line);background:#0a1927;color:#cfe0ee;border-radius:9px;width:32px;height:32px;cursor:pointer;font-weight:900}
+.tutor-osc-headbtns button:hover{border-color:#2f8a86;color:#7be3d8}
+.tutor-osc-panel.docked .tutor-osc-context{margin:10px 12px 4px;display:flex;align-items:center;gap:8px;background:#0d3a3d;border:1px solid #1d6f6b;color:#a8f0e6;border-radius:10px;padding:8px 11px;font-size:.74rem;font-weight:800}
+.tutor-osc-panel.docked .tutor-osc-context:before{content:"";width:9px;height:9px;border-radius:50%;background:#2ee7c8;box-shadow:0 0 0 3px #2ee7c855;flex:none}
+.tutor-osc-memory{margin:0 14px 8px;color:#9db3c6;font-size:.7rem;line-height:1.45;border-bottom:1px solid #16324a;padding-bottom:9px}
+.tutor-osc-journey{margin:0 12px 6px;padding:9px 11px;border:1px solid #16324a;border-radius:11px;background:#0a1927}
+.tutor-osc-journey .jhead{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:7px}
+.tutor-osc-journey .jhead b{font-size:.62rem;letter-spacing:.08em;color:#7be3d8}
+.tutor-osc-journey .jhead button{border:1px solid #2f8a86;background:transparent;color:#7be3d8;border-radius:8px;padding:5px 9px;font-weight:800;font-size:.66rem;cursor:pointer}
+.tutor-osc-journey .jflow{display:flex;gap:5px;align-items:center;overflow-x:auto;padding-bottom:4px}
+.tutor-osc-journey .jflow span{white-space:nowrap;border:1px solid #294359;background:#0e2033;border-radius:8px;padding:5px 8px;font-size:.66rem;font-weight:700}
+.tutor-osc-journey .jflow i{color:#6f8598;font-style:normal;font-size:.7rem}
+.tutor-osc-journey .jnote{margin:7px 0 0;color:#8ba1b6;font-size:.62rem;line-height:1.4;font-style:italic}
+.tutor-osc-panel.docked .tutor-osc-chat{flex:1;min-height:0;overflow-y:auto;padding:8px 12px 12px;display:flex;flex-direction:column;gap:9px}
+.tutor-osc-panel.docked .tutor-osc-msg{max-width:100%;border:0;background:transparent;padding:2px 1px;font-size:.8rem;line-height:1.55;color:#dbe7f2;box-shadow:none}
+.tutor-osc-panel.docked .tutor-osc-msg.user{align-self:flex-end;max-width:88%;background:#0f8f88;color:#fff;border-radius:14px 14px 4px 14px;padding:9px 13px;font-weight:600}
+.tutor-osc-panel.docked .tutor-osc-msg.warning{background:#2a2110;border:1px solid #735b28;color:#f0d68a;border-radius:10px;padding:9px 11px}
+.tutor-osc-panel.docked .tutor-section-title{font-weight:800;color:#fff;margin-bottom:2px}
+.tutor-cite{display:inline-flex;align-items:center;gap:7px;background:#2a2110;border:1px solid #735b28;color:#f0d68a;border-radius:8px;padding:6px 9px;font-size:.7rem;line-height:1.35;margin:0 0 8px}
+.tutor-cite b{font-weight:800;color:#ffe29a}
+.tutor-osc-panel.docked .tutor-osc-suggestions{display:flex;flex-wrap:wrap;gap:6px}
+.tutor-osc-panel.docked .tutor-osc-suggestions button{min-height:0;padding:7px 10px;border-radius:999px;font-size:.7rem;background:#0d2236;border:1px solid #2b5678;color:#cfe6f7;box-shadow:none;transform:none;text-align:left}
+.tutor-osc-panel.docked .tutor-osc-suggestions button:hover{background:#12314b;border-color:#55a7dd}
+.tutor-osc-panel.docked .tutor-osc-form{border-top:1px solid #16324a;padding:10px 12px;display:flex;gap:8px;align-items:flex-end;background:#0a1624}
+.tutor-osc-panel.docked .tutor-osc-form textarea{flex:1;min-height:40px;max-height:96px;resize:none;border-radius:11px;padding:10px 12px;background:#07111c;border:1px solid #2b5678;color:#fff;font:inherit;font-size:.8rem}
+.tutor-osc-panel.docked .tutor-osc-actions{display:block;margin:0}
+.tutor-osc-panel.docked .tutor-osc-actions small{display:none}
+.tutor-osc-panel.docked .tutor-osc-send{width:40px;height:40px;border-radius:11px;padding:0;background:var(--osc-teal-d);border:1px solid #2f8a86;color:#fff;font-size:0;cursor:pointer;position:relative}
+.tutor-osc-panel.docked .tutor-osc-send:after{content:"➤";font-size:.95rem;position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
+.tutor-osc-panel.docked .tutor-osc-send:disabled{opacity:.5}
+
+/* ---- Data Elements: filas interactivas ---- */
+tr[data-osc-de]{cursor:pointer}
+tr[data-osc-de]:hover>td{background:#0f2a3f}
+tr[data-osc-de].osc-de-selected>td{background:#12414a!important}
+.osc-de-help{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;margin-left:7px;border-radius:50%;border:1.5px solid #2f8a86;background:transparent;color:#7be3d8;font-weight:900;font-size:.68rem;cursor:pointer;vertical-align:middle;padding:0}
+.osc-de-help:hover{background:#12414a}
+.osc-de-fmt{display:none;color:#7f95a9;font-size:.62rem;font-family:Consolas,monospace}
+@container oscde (max-width:600px){
+  .osc-de-panel table th:nth-child(n+4),.osc-de-panel table td:nth-child(n+4){display:none}
+  .osc-de-fmt{display:block}
+}
+@media(max-width:1360px){
+  body.osc-learning-on .workspace.osc-grid-4{grid-template-columns:minmax(280px,330px) minmax(190px,225px) minmax(0,1fr) var(--osc-dock-w)!important}
+  body.osc-learning-on .atm-grid.osc-grid-4{grid-template-columns:minmax(330px,390px) minmax(210px,240px) minmax(0,1fr) var(--osc-dock-w)!important}
+  :root{--osc-dock-w:320px}
+}
+.osc-de-tools{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;margin:4px 0 8px}
+.osc-tool-btn{border:1px solid #2f8a86;background:transparent;color:#7be3d8;border-radius:10px;padding:8px 12px;font-weight:800;font-size:.72rem;cursor:pointer}
+.osc-tool-btn:hover{background:#12414a}
+.osc-de-hint{color:#8ba1b6;font-size:.68rem;margin:6px 0}
+
+body.osc-learning-on .osc-screen-guide-launch{display:none!important}
+.osc-de-table td:first-child{white-space:nowrap;vertical-align:top}
+.osc-de-table td{vertical-align:top}
+.osc-de-fmt{margin-top:1px}
+
+body.osc-learning-on .osc-de-panel .bitmap,body.osc-learning-on .osc-de-panel .bitmap-64{grid-template-columns:repeat(16,minmax(0,1fr))!important;gap:2px!important}
+body.osc-learning-on .osc-de-panel .bit{min-width:0;font-size:.44rem!important;overflow:hidden}
+body.osc-learning-on .osc-de-panel .bitmap-64 i::after{font-size:.36rem}
+
+/* ---- eventos del modo técnico ---- */
+.osc-event.tutor{color:#7be3b2}
+.osc-events-box{margin-top:10px;background:#07111c;border:1px solid #16324a;border-radius:11px;padding:10px 12px;font-family:Consolas,monospace;font-size:.68rem;color:#b9d0e2;max-height:190px;overflow:auto}
+.osc-events-box h3{margin:0 0 6px;font-family:Inter,Segoe UI,Arial,sans-serif;font-size:.6rem;letter-spacing:.08em;color:#75bcff}
+.osc-events-box div{padding:1px 0}
+
+/* ---- pantallas estrechas: vuelve el Tutor flotante ---- */
+@media(max-width:1179px){
+  .osc-tutor-dock{display:none!important}
+  .osc-menu-toggle{display:none!important}
+}

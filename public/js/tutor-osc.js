@@ -8,12 +8,21 @@
   const study={brand:'',channel:moduleKey==='atm'?'ATM':moduleKey==='pos'?'POS':'',field:null,previousField:null,lastSection:'menu',referenceTxn:null};
   const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const mask=(de,v)=>String(de)==='2'?String(v||'').replace(/.(?=.{4})/g,'•'):String(v??'');
-  const link=document.createElement('link');link.rel='stylesheet';link.href='/css/tutor-osc.css?v=4.0.0-rc1.13';document.head.appendChild(link);
+  const link=document.createElement('link');link.rel='stylesheet';link.href='/css/tutor-osc.css?v=4.0.0-rc1.19';document.head.appendChild(link);
   const launch=document.createElement('button');launch.className='tutor-osc-launch';launch.innerHTML='🎓 <span>Tutor OSC</span>';
   const panel=document.createElement('section');panel.className='tutor-osc-panel';panel.setAttribute('aria-label','Tutor OSC');
-  panel.innerHTML=`<header class="tutor-osc-head"><div><b>🎓 Tutor OSC</b><small>${esc(labels[moduleKey])} · Del manual a la práctica</small></div><button class="tutor-osc-close" aria-label="Cerrar">✕</button></header><div class="tutor-osc-context"></div><div class="tutor-osc-chat"></div><form class="tutor-osc-form"><textarea maxlength="1200" placeholder="Escribí tu pregunta…"></textarea><div class="tutor-osc-actions"><small>Contexto + documentación aprobada</small><button class="tutor-osc-send">Enviar</button></div></form>`;
+  panel.innerHTML=`<header class="tutor-osc-head"><div><b>🎓 Tutor OSC</b><small>${esc(labels[moduleKey])} · Del manual a la práctica</small></div><div class="tutor-osc-headbtns"><button type="button" class="tutor-osc-new" title="Nueva conversación" aria-label="Nueva conversación">↺</button><button type="button" class="tutor-osc-close" aria-label="Cerrar o contraer">✕</button></div></header><div class="tutor-osc-context"></div><div class="tutor-osc-memory"></div><div class="tutor-osc-journey" hidden></div><div class="tutor-osc-chat"></div><form class="tutor-osc-form"><textarea maxlength="1200" placeholder="Pregunta lo que quieras sobre tu intento"></textarea><div class="tutor-osc-actions"><small>Contexto + documentación aprobada</small><button class="tutor-osc-send">Enviar</button></div></form>`;
   document.body.append(launch,panel);
   const chat=panel.querySelector('.tutor-osc-chat'),contextBar=panel.querySelector('.tutor-osc-context'),form=panel.querySelector('form'),input=form.querySelector('textarea'),send=form.querySelector('.tutor-osc-send');
+  const memoryEl=panel.querySelector('.tutor-osc-memory'),journeyEl=panel.querySelector('.tutor-osc-journey');
+  const isDocked=()=>panel.classList.contains('docked');
+  function place(){
+    const dockEl=document.getElementById('oscTutorDock'),wide=!!(dockEl&&window.OSCLearning&&window.OSCLearning.isDocked());
+    if(wide){dockEl.appendChild(panel);panel.classList.add('open','docked');launch.style.display='none'}
+    else{if(panel.parentNode!==document.body)document.body.appendChild(panel);if(isDocked())panel.classList.remove('open');panel.classList.remove('docked');launch.style.display=''}
+    renderJourney();refreshContext();
+  }
+  window.OSCLearning?.onChange?.(place);
 
   function ctx(){
     let c={module:moduleKey,channel:study.channel,brand:study.brand,transaction:null};
@@ -29,12 +38,22 @@
     if(study.brand||c.brand)parts.push(study.brand||c.brand);
     if(study.channel||c.channel)parts.push(study.channel||c.channel);
     if(study.field)parts.push(`DE${study.field}`);
-    if(!study.field&&c.transaction?.operation)parts.push(c.transaction.operation);
-    contextBar.textContent=(parts.length?`Contexto actual: ${parts.join(' · ')}`:'Tutor de aprendizaje')+(extra?` · ${extra}`:'');
+    if(!study.field&&c.transaction?.operation)parts.push(opLabel(c.transaction.operation));
+    refreshMemory();contextBar.textContent=(parts.length?`Contexto actual: ${parts.join(' · ')}`:'Tutor de aprendizaje')+(extra?` · ${extra}`:'');
   }
-  function clear(){chat.innerHTML='';refreshContext();}
+  const OPS={purchase:'Compra',refund:'Devolución',void:'Anulación',reversal:'Reversa',withdrawal:'Extracción',cash_withdrawal:'Extracción',balance:'Consulta de saldo',balance_inquiry:'Consulta de saldo',query:'Consulta',batch:'Cierre de lote'};
+  const opLabel=o=>OPS[String(o||'').toLowerCase()]||o;
+  function refreshMemory(){
+    if(!memoryEl)return;
+    const c=ctx(),t=c.transaction;
+    if(!t){memoryEl.textContent='Todavía no hay un intento en esta sesión. Hacé una operación y lo recuerdo.';return}
+    const parts=[c.brand,opLabel(t.operation),t.result].filter(Boolean),code=t.responseCode&&!String(t.result||'').includes(String(t.responseCode))?` (${t.responseCode})`:'';
+    memoryEl.textContent=`Recuerdo tu intento: ${parts.join(' · ')}${code}`;
+  }
+  function clear(){if(isDocked()){chat.querySelectorAll('.tutor-osc-suggestions').forEach(x=>x.remove());refreshContext();return}chat.innerHTML='';refreshContext();}
+  function resetChat(){chat.innerHTML='';study.field=null;refreshContext();menu();}
   function msg(html,kind='bot'){const d=document.createElement('div');d.className=`tutor-osc-msg ${kind}`;d.innerHTML=html;chat.appendChild(d);chat.scrollTop=chat.scrollHeight;return d;}
-  function actions(items){const d=document.createElement('div');d.className='tutor-osc-suggestions';items.filter(x=>x&&x[0]).forEach(([label,fn,cls=''])=>{const b=document.createElement('button');b.type='button';b.className=cls;b.innerHTML=label;b.onclick=fn;d.appendChild(b)});chat.appendChild(d);chat.scrollTop=chat.scrollHeight;return d;}
+  function actions(items){if(isDocked())chat.querySelectorAll('.tutor-osc-suggestions').forEach(x=>x.remove());const d=document.createElement('div');d.className='tutor-osc-suggestions';items.filter(x=>x&&x[0]).forEach(([label,fn,cls=''])=>{const b=document.createElement('button');b.type='button';b.className=cls;b.innerHTML=label;b.onclick=fn;d.appendChild(b)});chat.appendChild(d);chat.scrollTop=chat.scrollHeight;return d;}
   function title(t,sub=''){msg(`<div class="tutor-section-title">${t}</div>${sub?`<div class="tutor-muted">${sub}</div>`:''}`)}
   const fieldRows=m=>Array.isArray(m?.fields)?m.fields:[];
   const fieldMap=m=>new Map(fieldRows(m).map(r=>[String(r[0]).replace(/^DE/i,''),r]));
@@ -48,7 +67,8 @@
     return fetch('/api/tutor/query',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({moduleKey,question,context:{path:location.pathname,brand:extra.brand||currentBrand(),channel:study.channel||ctx().channel,field:study.field,...extra}})}).then(async r=>{const j=await r.json();if(!r.ok)throw new Error(j.error||'No disponible');return j}).finally(()=>{send.disabled=false;send.textContent='Enviar'});
   }
   function showApi(j){
-    const d=msg(`<div>${esc(j.answer||'No fue posible responder.')}</div>${j.reference?`<span class="ref">Fuente: ${esc(j.reference)}</span>`:''}`,j.kind==='CONSULTORIA'?'consultoria':'bot');
+    const cite=j.reference?`<div class="tutor-cite"><span>📖</span><span>Según: <b>${esc(j.reference)}</b></span></div>`:'';
+    const d=msg(`${cite}<div>${esc(j.answer||'No fue posible responder.')}</div>`,j.kind==='CONSULTORIA'?'consultoria':'bot');
     if(j.manualUrl){const a=document.createElement('a');a.className='tutor-osc-manual';a.href=j.manualUrl;a.target='_blank';a.rel='noopener';a.textContent=`📖 ${j.manualLabel||'Abrir manual oficial'}`;d.appendChild(a)}
     if(j.brand==='MASTERCARD'||/junio de 2003|jun03/i.test(j.reference||''))msg('⚠️ <b>Documento antiguo.</b> Esta explicación corresponde a la especificación disponible de junio de 2003 y no debe asumirse como comportamiento vigente sin documentación actual que lo confirme.','warning');
   }
@@ -137,8 +157,52 @@
   async function submitFree(question){msg(esc(question),'user');const c=ctx();try{const j=await apiAsk(question,{brand:c.brand,channel:c.channel,transaction:c.transaction?{operation:c.transaction.operation,requestMti:c.transaction.request?.mti,responseMti:c.transaction.response?.mti,result:c.transaction.result}:null});showApi(j);actions([['💡 Otra pregunta',()=>input.focus()],['↩ Menú principal',menu]])}catch(e){msg('Tutor OSC no está disponible en este momento. Intentá nuevamente.','warning')}}
 
   launch.onclick=()=>{panel.classList.toggle('open');if(panel.classList.contains('open')){if(study.waiting&&txn()){study.waiting=false;clear();msg('Tu transacción finalizó. ¿Querés que analicemos qué ocurrió?');actions([['🔍 Explícame esta transacción',explainTxn],['↩ Menú principal',menu]])}else if(!chat.children.length)menu();refreshContext();input.focus()}};
-  panel.querySelector('.tutor-osc-close').onclick=()=>panel.classList.remove('open');
-  {const h=panel.querySelector('.tutor-osc-head');let drag=null;h.style.cursor='move';h.addEventListener('pointerdown',e=>{if(e.target.closest('button'))return;const r=panel.getBoundingClientRect();drag={dx:e.clientX-r.left,dy:e.clientY-r.top};h.setPointerCapture?.(e.pointerId)});h.addEventListener('pointermove',e=>{if(!drag)return;const x=Math.max(4,Math.min(innerWidth-panel.offsetWidth-4,e.clientX-drag.dx)),y=Math.max(4,Math.min(innerHeight-panel.offsetHeight-4,e.clientY-drag.dy));panel.style.left=x+'px';panel.style.top=y+'px';panel.style.right='auto';panel.style.bottom='auto'});h.addEventListener('pointerup',()=>drag=null);h.addEventListener('pointercancel',()=>drag=null)}
+  panel.querySelector('.tutor-osc-close').onclick=()=>{if(isDocked())window.OSCLearning.toggleCollapsed();else panel.classList.remove('open')};
+  panel.querySelector('.tutor-osc-new').onclick=resetChat;
+  {const h=panel.querySelector('.tutor-osc-head');let drag=null;h.style.cursor='move';h.addEventListener('pointerdown',e=>{if(isDocked()||e.target.closest('button'))return;const r=panel.getBoundingClientRect();drag={dx:e.clientX-r.left,dy:e.clientY-r.top};h.setPointerCapture?.(e.pointerId)});h.addEventListener('pointermove',e=>{if(!drag)return;const x=Math.max(4,Math.min(innerWidth-panel.offsetWidth-4,e.clientX-drag.dx)),y=Math.max(4,Math.min(innerHeight-panel.offsetHeight-4,e.clientY-drag.dy));panel.style.left=x+'px';panel.style.top=y+'px';panel.style.right='auto';panel.style.bottom='auto'});h.addEventListener('pointerup',()=>drag=null);h.addEventListener('pointercancel',()=>drag=null)}
   form.onsubmit=e=>{e.preventDefault();const q=input.value.trim();if(!q)return;input.value='';submitFree(q)};
+  input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();form.requestSubmit?form.requestSubmit():form.dispatchEvent(new Event('submit',{cancelable:true}))}});
+  /* ---------- Tutor anclado: recorrido, campos y pantalla ---------- */
+  const journeys={wallet:{title:'RECORRIDO DEL TOKEN',steps:['Comercio','Wallet / Token Requestor','TSP','Red','Emisor']},ecommerce:{title:'RECORRIDO DEL PAGO',steps:['Comercio online','3D Secure','Adquirente','Red','Emisor']}};
+  function renderJourney(){
+    if(!journeyEl)return;
+    const j=journeys[moduleKey];
+    if(!j||!isDocked()){journeyEl.hidden=true;return}
+    journeyEl.hidden=false;
+    journeyEl.innerHTML=`<div class="jhead"><b>${j.title}</b><button type="button">Hacer una prueba</button></div><div class="jflow">${j.steps.map(x=>`<span>${esc(x)}</span>`).join('<i>→</i>')}</div><p class="jnote">Nota: este flujo representa el recorrido pedagógico del escenario simulado. No implica que cada etapa sea necesariamente un sistema, participante o salto físico independiente en una implementación real.</p>`;
+    journeyEl.querySelector('button').onclick=digitalTest;
+  }
+  function openTutor(){if(isDocked()){if(window.OSCLearning.isCollapsed())window.OSCLearning.setCollapsed(false)}else{panel.classList.add('open')}}
+  const fieldTxnValue=n=>{const t=txn(),r=t?fieldMap(t.request).get(String(n)):null;return r?r[2]:null};
+  async function selectField(n,info={}){
+    n=String(n).replace(/^DE/i,'');
+    openTutor();
+    if(n.toUpperCase()==='MTI'){msg('¿Qué representa el MTI en esta transacción?','user');window.OSCLearning?.log('tutor:field_selected · MTI');return mtiMenu()}
+    if(!/^\d+$/.test(n))return;
+    study.field=n;refreshContext();
+    const val=info.value!=null&&info.value!==''?info.value:fieldTxnValue(n);
+    window.OSCLearning?.log(`tutor:field_selected · DE ${n}${val?` = ${mask(n,val)}`:''}`);
+    msg(esc(`¿Qué representa el DE${n} en esta transacción?`),'user');
+    const wait=msg('<span class="tutor-muted">Consultando la documentación aprobada…</span>');
+    let j=null;
+    try{j=await apiAsk(`DE${n}`,{brand:currentBrand()});wait.remove();showApi(j);if(val)msg(`En tu operación vale <code>${esc(mask(n,val))}</code>.`)}
+    catch(e){wait.remove();msg(`No encontré información suficiente para completar la consulta de DE${n} en el contexto actual. No voy a trasladar automáticamente una definición de otra marca o canal.`,'warning')}
+    const jj=j||{};
+    actions([['🎓 Explícamelo más fácil',()=>easyField(n,jj)],['🔎 Quiero entender sus valores',()=>fieldValues(n,jj)],['🔬 Ver detalle técnico',()=>technicalField(n,jj)],txn()?['📍 ¿Aparece en mi transacción?',()=>fieldInTxn(n,jj)]:null,['🗺️ Ver en el Bitmap',()=>bitmapPosition(n)]]);
+  }
+  function explainScreen(){
+    openTutor();msg('Explícame esta pantalla','user');
+    const t=txn(),mti=t?.request?.mti||'';
+    const what={pos:`el mensaje ${mti||'ISO 8583'} que armó tu terminal`,atm:`el mensaje ${mti||'ISO 8583'} que armó tu cajero`,wallet:`el mensaje ${mti||'0200'} de tu pago con Wallet`,ecommerce:`el mensaje ${mti||'0200'} de tu pago en el comercio online`}[moduleKey]||'el mensaje ISO 8583 de tu intento';
+    msg(`<div class="tutor-cite"><span>📍</span><span>Pantalla: <b>Mensaje ISO 8583 · Data Elements</b></span></div><div>Esta pantalla muestra ${what}, campo por campo. Cada fila es un Data Element${t?' con el valor real de tu intento':''}.</div><div style="margin-top:8px">Hacé clic en cualquier fila, o en el <b>?</b>, y te explico ese campo aquí mismo.</div>`);
+    window.OSCLearning?.log('tutor:screen_explained');
+    actions([window.OSCModuleGuide?.startScreen?['🧭 Recorrido guiado de la pantalla',()=>window.OSCModuleGuide.startScreen()]:null,txn()?['🔍 Explícame esta transacción',explainTxn]:null,['🗺️ Explícame el Bitmap',bitmapMenu],['🧩 Quiero entender un campo',studyField]]);
+  }
+  function searchByName(){openTutor();msg('Buscar un campo por nombre','user');searchFieldByName()}
+  window.OSCTutor={selectField,explainScreen,searchByName,open:openTutor,isDocked};
+  setInterval(()=>{if(isDocked())refreshContext()},1500);
+  const pendingSel=window.OSCLearning?.takePending?.();
+  place();
   menu();
+  if(pendingSel)selectField(pendingSel[0],pendingSel[1]);
 })();

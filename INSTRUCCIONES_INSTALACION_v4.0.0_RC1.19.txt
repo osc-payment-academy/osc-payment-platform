@@ -1,0 +1,20 @@
+OSC Payment Academy v4.0.0-rc.1.19 — Tutor OSC anclado y layout de 4 columnas
+
+UPDATE ONLY (paquete INCREMENTAL, se instala sobre la rc.1.17 o la rc.1.18):
+1. Descomprimir el ZIP incremental.
+2. Copiar su contenido sobre la raíz del proyecto, reemplazando archivos (incluye archivos nuevos en public/css y public/js).
+3. Ejecutar el despliegue habitual de Cloudflare Workers.
+4. No requiere migración D1.
+5. Recarga forzada del navegador (Ctrl+F5) en POS, ATM, Wallet y E-Commerce.
+
+RESPALDO (paquete COMPLETO): contiene todo el proyecto; se conserva sin instalar.
+
+Pruebas mínimas (pantalla de 1280 px o más):
+1. POS: el Tutor OSC aparece a la derecha como cuarta columna, con "Contexto actual" y "Recuerdo tu intento". Arriba, el selector POS | ATM y el botón "☰ Menú".
+2. POS: hacer una compra con Visa Crédito. En Data Elements, hacer clic en la fila DE3 o en su "?": el Tutor responde con una cita "Según: …" y el valor real del intento. En "Modo técnico" aparece "tutor:field_selected · DE 3 = 000000".
+3. Botones "Explícame esta pantalla" y "Buscar por nombre" sobre la tabla de Data Elements.
+4. Botón ✕ del Tutor: se contrae a una barra lateral; hacer clic en la barra lo reabre. Botón ↺: conversación nueva.
+5. ATM: elegir tarjeta y forma de lectura, hacer una extracción y hacer clic en un Data Element.
+6. Wallet y E-Commerce: pagar; el Tutor muestra el recorrido con "Hacer una prueba"; hacer clic en un campo (DE2 aparece enmascarado). El panel "Modo técnico · eventos" registra las etapas y las consultas del Tutor.
+7. Reducir la ventana por debajo de 1180 px: vuelve el Tutor flotante con el botón "🎓 Tutor OSC".
+8. Regresión: POS (compra, anulación, cierre de lote) con "Analizar en Parser" sigue sin avisos de desalineación.
