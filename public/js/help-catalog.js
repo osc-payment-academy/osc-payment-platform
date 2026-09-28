@@ -246,7 +246,7 @@
     show(`☝️ ${h.title}`,`<p>${h.summary}</p><ul>${h.bullets.map(x=>`<li>${x}</li>`).join('')}</ul>
       ${h.glossary?`<div class="osc-help-note"><b>Significado de las siglas</b><ul>${h.glossary.map(x=>`<li>${x}</li>`).join('')}</ul></div>`:''}
       <div class="osc-help-note"><b>Campos ISO relacionados</b><br>${h.iso}</div>
-      <div class="osc-help-note"><b>Qué observar en OSC Academy</b><br>${h.lab}</div>`);
+      <div class="osc-help-note"><b>Qué observar en OSC Payment Academy</b><br>${h.lab}</div>`);
   }
   function selectedNetwork(fallback='visa'){
     for(const id of ['parserNetworkSelect','constructorNetworkSelect']){

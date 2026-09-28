@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OSC Payment Academy · Aprendé ISO 8583 practicando</title>
+<meta name="description" content="Curso interactivo de ISO 8583 con práctica de tramas y simuladores de POS, ATM, Wallet y E-commerce. 1 mes de acceso y soporte directo.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#060d1f; --bg2:#0b1630; --card:#0f1d3d; --line:#1d2f5c;
+    --txt:#e8eefc; --muted:#9fb0d4; --accent:#4fb8ff; --accent2:#7c5cff; --ok:#3ddc97;  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{font-family:"Plus Jakarta Sans",system-ui,sans-serif;background:var(--bg);color:var(--txt);line-height:1.6}
+  a{color:inherit;text-decoration:none}
+  .wrap{max-width:1120px;margin:0 auto;padding:0 20px}
+  .mono{font-family:"JetBrains Mono",monospace}
+
+  /* NAV */
+  nav{position:sticky;top:0;z-index:10;background:rgba(6,13,31,.85);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+  nav .wrap{display:flex;align-items:center;justify-content:space-between;height:64px}
+  .logo{font-weight:800;letter-spacing:.5px}
+  .logo span{color:var(--accent)}
+  .nav-r{display:flex;gap:10px;align-items:center}
+  .btn{display:inline-flex;align-items:center;gap:8px;padding:12px 22px;border-radius:12px;font-weight:700;font-size:15px;transition:.2s}
+  .btn-p{background:linear-gradient(135deg,#3a8dff,var(--accent2));color:#fff;box-shadow:0 8px 30px rgba(79,120,255,.35)}
+  .btn-p:hover{transform:translateY(-2px)}
+  .btn-g{border:1px solid var(--line);color:var(--muted)}
+  .btn-g:hover{border-color:var(--accent);color:var(--txt)}
+  .btn-sm{padding:8px 16px;font-size:14px}
+
+  /* HERO */
+  .hero{padding:80px 0 60px;background:radial-gradient(900px 500px at 85% 10%,rgba(124,92,255,.25),transparent),radial-gradient(700px 400px at 10% 90%,rgba(79,184,255,.15),transparent)}
+  .hero .wrap{display:grid;grid-template-columns:1.1fr .9fr;gap:48px;align-items:center}
+  .eyebrow{color:var(--accent);font-weight:700;letter-spacing:2px;font-size:13px;text-transform:uppercase}
+  h1{font-size:clamp(38px,6vw,64px);line-height:1.05;font-weight:800;margin:14px 0 20px}
+  h1 em{font-style:normal;background:linear-gradient(90deg,var(--accent),#8fd3ff);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .lead{color:var(--muted);font-size:18px;max-width:540px}
+  .cta{display:flex;gap:12px;flex-wrap:wrap;margin-top:32px}
+  .chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:28px}
+  .chip{font-size:13px;padding:6px 12px;border-radius:99px;background:var(--card);border:1px solid var(--line);color:var(--muted)}
+
+  /* trama card */
+  .trama{background:linear-gradient(180deg,#0e1b3a,#0a142c);border:1px solid var(--line);border-radius:18px;padding:22px;box-shadow:0 30px 80px rgba(0,0,0,.5)}
+  .trama-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+  .dots{display:flex;gap:6px}.dots i{width:10px;height:10px;border-radius:50%;background:#2a3b66}
+  .tag{font-size:12px;padding:4px 10px;border-radius:99px;background:rgba(61,220,151,.12);color:var(--ok);font-weight:700}
+  .row{display:grid;grid-template-columns:58px 1fr auto;gap:10px;padding:9px 0;border-bottom:1px dashed #1f3160;font-size:13px}
+  .row:last-child{border:0}
+  .row b{color:var(--accent)}
+  .row span{color:var(--muted)}
+  .row code{color:#cfe1ff}
+
+  /* SECTIONS */
+  section{padding:80px 0}
+  .sec-h{text-align:center;max-width:680px;margin:0 auto 48px}
+  h2{font-size:clamp(28px,4vw,40px);line-height:1.15;margin:10px 0 14px}
+  .sec-h p{color:var(--muted)}
+  .grid{display:grid;gap:18px}
+  .g4{grid-template-columns:repeat(4,1fr)}
+  .g3{grid-template-columns:repeat(3,1fr)}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:26px;transition:.2s}
+  .card:hover{border-color:#34508f;transform:translateY(-3px)}
+  .card h3{font-size:19px;margin:12px 0 8px}
+  .card p{color:var(--muted);font-size:15px}
+  .num{font-family:"JetBrains Mono",monospace;color:var(--accent);font-weight:600;font-size:14px}
+  .ico{width:46px;height:46px;border-radius:12px;display:grid;place-items:center;font-size:22px;background:linear-gradient(135deg,rgba(79,184,255,.18),rgba(124,92,255,.18));border:1px solid var(--line)}
+
+  .alt{background:var(--bg2);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+
+  /* INCLUDES */
+  .inc{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center}
+  .list{list-style:none;display:grid;gap:14px}
+  .list li{display:flex;gap:12px;align-items:flex-start;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px}
+  .list li::before{content:"✓";color:var(--ok);font-weight:800}
+  .price{background:linear-gradient(160deg,#13265a,#1a1650);border:1px solid #34508f;border-radius:20px;padding:34px;text-align:center}
+  .price .big{font-size:44px;font-weight:800;margin:10px 0}
+  .price p{color:var(--muted);margin-bottom:22px}
+
+  /* VIDEO */
+  .video{aspect-ratio:16/9;border-radius:18px;border:1px solid var(--line);background:var(--card);display:grid;place-items:center;color:var(--muted);overflow:hidden}
+  .video iframe{width:100%;height:100%;border:0}
+
+  /* FINAL CTA */
+  .final{text-align:center;background:radial-gradient(600px 300px at 50% 0,rgba(79,184,255,.2),transparent)}
+  .final .cta{justify-content:center}
+
+  footer{border-top:1px solid var(--line);padding:30px 0;color:var(--muted);font-size:14px}
+  footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px}
+
+  .wa-float{position:fixed;right:18px;bottom:18px;width:56px;height:56px;border-radius:50%;background:#25d366;display:grid;place-items:center;box-shadow:0 10px 30px rgba(0,0,0,.4);z-index:20}
+
+  @media(max-width:900px){
+    .hero .wrap,.inc{grid-template-columns:1fr}
+    .g4{grid-template-columns:1fr 1fr}
+    .g3{grid-template-columns:1fr}
+  }
+  @media(max-width:520px){
+    .g4{grid-template-columns:1fr}
+    .nav-r .btn-g{display:none}
+    section{padding:60px 0}
+    .hero{padding:50px 0 40px}
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap">
+    <a href="#" class="logo"><span>OSC</span> PAYMENT ACADEMY</a>
+    <div class="nav-r">
+      <a href="https://oscpaymentacademy.com/login" class="btn btn-g btn-sm">Ingresar</a>
+      <a href="#inscripcion" class="btn btn-p btn-sm">Inscribirme</a>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<header class="hero">
+  <div class="wrap">
+    <div>
+      <div class="eyebrow">Formación práctica en ISO 8583</div>
+      <h1>Del manual <em>a la práctica.</em></h1>
+      <p class="lead">Construí, enviá, interpretá y analizá mensajes ISO 8583 con laboratorios interactivos de POS, ATM, Wallet y E-commerce. Aprendé cómo viaja realmente una transacción.</p>
+      <div class="cta">
+        <a href="#inscripcion" class="btn btn-p">Quiero inscribirme →</a>
+        <a href="#como-funciona" class="btn btn-g">Ver cómo funciona</a>
+      </div>
+      <div class="chips">
+        <span class="chip">📘 Curso interactivo</span>
+        <span class="chip">🧩 Práctica de tramas</span>
+        <span class="chip">💳 4 simuladores</span>
+        <span class="chip">🤝 Soporte directo</span>
+      </div>
+    </div>
+
+    <div class="trama mono" aria-label="Ejemplo de mensaje ISO 8583">
+      <div class="trama-h"><div class="dots"><i></i><i></i><i></i></div><span class="tag">0210 · APROBADA</span></div>
+      <div class="row"><b>MTI</b><span>Tipo de mensaje</span><code>0200</code></div>
+      <div class="row"><b>DE 2</b><span>PAN</span><code>4111••••1111</code></div>
+      <div class="row"><b>DE 3</b><span>Código de proceso</span><code>000000</code></div>
+      <div class="row"><b>DE 4</b><span>Importe</span><code>000000015000</code></div>
+      <div class="row"><b>DE 11</b><span>STAN</span><code>004821</code></div>
+      <div class="row"><b>DE 22</b><span>Modo de entrada</span><code>071</code></div>
+      <div class="row"><b>DE 39</b><span>Código de respuesta</span><code>00</code></div>
+    </div>
+  </div>
+</header>
+
+<!-- COMO FUNCIONA -->
+<section id="como-funciona">
+  <div class="wrap">
+    <div class="sec-h">
+      <div class="eyebrow">Cómo funciona</div>
+      <h2>Un recorrido de la teoría a la operación real</h2>
+      <p>Cada etapa se apoya en la anterior. Primero entendés, después practicás, y al final operás como en producción.</p>
+    </div>
+    <div class="grid g3">
+      <div class="card"><div class="num">01</div><h3>Curso interactivo</h3><p>Los conceptos de ISO 8583 explicados paso a paso dentro de la plataforma: MTI, bitmap, data elements y flujos.</p></div>
+      <div class="card"><div class="num">02</div><h3>Práctica de tramas</h3><p>Armá e interpretá mensajes de dificultad creciente: tramas sencillas, medianas y complejas.</p></div>
+      <div class="card"><div class="num">03</div><h3>Simuladores</h3><p>Aplicá todo en escenarios reales de POS, ATM, Wallet y E-commerce, viendo request y response.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- SIMULADORES -->
+<section class="alt">
+  <div class="wrap">
+    <div class="sec-h">
+      <div class="eyebrow">Laboratorios</div>
+      <h2>4 simuladores de medios de pago</h2>
+      <p>Practicá los canales con los que trabajan bancos, procesadoras y fintech todos los días.</p>
+    </div>
+    <div class="grid g4">
+      <div class="card"><div class="ico">💳</div><h3>POS</h3><p>Compras, anulaciones y devoluciones desde terminal presencial.</p></div>
+      <div class="card"><div class="ico">🏧</div><h3>ATM</h3><p>Extracciones, consultas de saldo y operaciones de cajero.</p></div>
+      <div class="card"><div class="ico">📱</div><h3>Wallet</h3><p>Pagos con billetera digital y tokenización.</p></div>
+      <div class="card"><div class="ico">🛒</div><h3>E-commerce</h3><p>Transacciones online y autenticación 3DS.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- VIDEO -->
+<section>
+  <div class="wrap">
+    <div class="sec-h">
+      <div class="eyebrow">Mirala en acción</div>
+      <h2>Conocé la plataforma en 1 minuto</h2>
+    </div>
+    <div class="video">
+      <!-- Reemplazá este párrafo por el iframe de YouTube, por ejemplo:
+      <iframe src="https://www.youtube.com/embed/TU_ID_DE_VIDEO" allowfullscreen></iframe> -->
+      <p>▶ Video de demostración próximamente</p>
+    </div>
+  </div>
+</section>
+
+<!-- PARA QUIEN -->
+<section class="alt">
+  <div class="wrap">
+    <div class="sec-h">
+      <div class="eyebrow">Para quién es</div>
+      <h2>Pensada para quienes trabajan con pagos</h2>
+    </div>
+    <div class="grid g4">
+      <div class="card"><h3>Desarrolladores</h3><p>Que integran autorizadores, switches o terminales.</p></div>
+      <div class="card"><h3>Analistas</h3><p>Que diagnostican rechazos y leen logs de transacciones.</p></div>
+      <div class="card"><h3>Testers / QA</h3><p>Que validan flujos y casos de prueba de pagos.</p></div>
+      <div class="card"><h3>Equipos</h3><p>De bancos, procesadoras y fintech que capacitan a su gente.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- INCLUYE -->
+<section id="inscripcion">
+  <div class="wrap inc">
+    <div>
+      <div class="eyebrow">Qué incluye</div>
+      <h2>Todo lo que necesitás para dominar ISO 8583</h2>
+      <ul class="list" style="margin-top:24px">
+        <li>Curso interactivo completo de ISO 8583</li>
+        <li>Ejercicios de tramas en 3 niveles de dificultad</li>
+        <li>Acceso a los 4 simuladores: POS, ATM, Wallet y E-commerce</li>
+        <li>eBook ISO 8583</li>
+        <li>1 mes de acceso a la plataforma para practicar</li>
+        <li>Soporte directo con el instructor durante ese mes</li>
+      </ul>
+    </div>
+    <div class="price">
+      <div class="eyebrow">Inscripción</div>
+      <div class="big">Consultar</div>
+      <p>Precios para personas y opciones para equipos de empresas.</p>
+      <a href="https://wa.me/5491132318122?text=Hola%20Oscar%2C%20quiero%20info%20del%20curso%20ISO%208583" target="_blank" class="btn btn-p" style="width:100%;justify-content:center">Consultar por WhatsApp</a>
+      <a href="mailto:osanchez.castro.67@gmail.com?subject=Consulta%20curso%20ISO%208583" class="btn btn-g" style="width:100%;justify-content:center;margin-top:10px">Escribir por email</a>
+    </div>
+  </div>
+</section>
+
+<!-- CTA FINAL -->
+<section class="final alt">
+  <div class="wrap">
+    <h2>Dejá de leer manuales.<br>Empezá a entender transacciones.</h2>
+    <div class="cta">
+      <a href="#inscripcion" class="btn btn-p">Quiero inscribirme →</a>
+      <a href="https://oscpaymentacademy.com/login" class="btn btn-g">Ya soy alumno · Ingresar</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span>© 2026 OSC Payment Academy · Del manual a la práctica</span>
+    <span>Oscar Sanchez · Buenos Aires, Argentina</span>
+  </div>
+</footer>
+
+<a class="wa-float" href="https://wa.me/5491132318122?text=Hola%20Oscar%2C%20quiero%20info%20del%20curso%20ISO%208583" target="_blank" aria-label="WhatsApp">
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="#fff"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm5.6 14.2c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .1-3.3-.8-2.8-1.1-4.5-3.9-4.7-4.1-.1-.2-1.1-1.5-1.1-2.8s.7-2 1-2.3c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.2.1.3 0 .5l-.4.6-.3.3c-.1.1-.3.3-.1.5.1.3.6 1.1 1.4 1.8 1 .9 1.8 1.1 2 1.3.3.1.4.1.6-.1l.8-1c.2-.2.4-.2.6-.1l1.9.9c.3.1.4.2.5.3.1.2.1.7-.1 1.5z"/></svg>
+</a>
+
+</body>
+</html>

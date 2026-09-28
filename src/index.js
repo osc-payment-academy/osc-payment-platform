@@ -743,7 +743,15 @@ export default {async fetch(request,env){
     headers.set('cache-control','private, no-store');
     return new Response(response.body,{status:response.status,statusText:response.statusText,headers});
   }
-  const publicPaths=new Set(['/login','/login.html','/reset','/reset.html','/styles.css','/favicon.ico','/favicon.svg']);
+  if(path==='/'||path==='/index.html'){
+    const visitor=await currentUser(request,env);
+    if(!visitor){
+      const r=await env.ASSETS.fetch(new Request(new URL('/landing',url.origin),request));
+      const h=new Headers(r.headers);h.set('cache-control','no-store');
+      return new Response(r.body,{status:r.status,statusText:r.statusText,headers:h});
+    }
+  }
+  const publicPaths=new Set(['/landing','/landing.html','/login','/login.html','/reset','/reset.html','/styles.css','/favicon.ico','/favicon.svg']);
   const assetLike=/\.(css|js|png|jpg|jpeg|svg|webp|ico|woff2)$/i.test(path);
   if(!publicPaths.has(path)&&!assetLike){
     const user=await currentUser(request,env);
