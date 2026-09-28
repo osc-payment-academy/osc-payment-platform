@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OSC Payment Academy · POS Virtual · v3.5.3.20</title>
+  <link rel="stylesheet" href="css/app.css">
+  <link rel="stylesheet" href="css/brand-logos.css">
+  <link rel="stylesheet" href="css/module-guide.css">
+<style>.de-learning-row{cursor:pointer}.de-learning-row:hover td{background:#12304a!important}.concept-discovery{position:fixed;inset:0;z-index:120000;background:#020913df;display:grid;place-items:center;padding:20px}.concept-discovery.hidden{display:none}.concept-dialog{position:relative;width:min(570px,100%);padding:25px;border:1px solid #2f83ff;border-radius:16px;background:linear-gradient(180deg,#102740,#071522);box-shadow:0 30px 100px #000c}.concept-close{position:absolute;right:14px;top:14px;border:0;background:transparent;color:#bcd0e2;font-size:18px;cursor:pointer}.concept-kicker{font-size:11px;color:#67bbff;font-weight:800;letter-spacing:.08em}.concept-dialog h2{margin:12px 0 8px}.concept-dialog p{color:#afc0d0;line-height:1.6}.concept-lab{padding:14px;border:1px solid #2e5e83;border-radius:10px;background:#0a1d2f;display:grid;gap:4px}.concept-lab span,.concept-lab small{color:#8fa7bb;font-size:11px}.concept-actions{display:flex;justify-content:space-between;align-items:center;margin-top:16px}.concept-actions button,.concept-actions a{padding:10px 13px;border:1px solid #2d699b;border-radius:8px;background:#123d62;color:white;text-decoration:none;font-size:12px}.concept-actions button{cursor:pointer}
+.refund-controls{margin-top:12px;padding:12px;border:1px solid #31516d;border-radius:10px;background:#0b1d2c;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.refund-controls.hidden{display:none}.refund-controls label{font-size:11px;color:#9fb7ca}
+.refund-controls select,.refund-controls input{width:100%;margin-top:5px;background:#071522;border:1px solid #31516d;border-radius:7px;color:#e9f4fb;padding:9px}
+.refund-controls small{grid-column:1/-1;color:#8fa9bc}.refund-controls #refundAmountWrap.hidden{display:none}
+@media(max-width:700px){.refund-controls{grid-template-columns:1fr}}
+
+
+.test-card.amex .card-network{color:#70b7ff}
+.test-card.amex.active{border-color:#2f9bff;box-shadow:0 0 0 3px rgba(47,155,255,.16);background:linear-gradient(180deg,#0b2a43,#0c2133)}
+
+
+.transaction-choice{grid-template-columns:28px 74px 1fr auto!important;align-items:center}
+.tx-brand-large{display:flex;align-items:center;justify-content:center;min-width:64px;height:34px;font-weight:900;font-style:italic;font-size:1.05rem;letter-spacing:-.04em}
+.tx-brand-large.visa{color:#5da6ff}.tx-brand-large.amex{color:#70b7ff;font-size:.88rem;letter-spacing:-.02em}
+.tx-brand-large.mc{position:relative;gap:0}.tx-brand-large.mc i{width:25px;height:25px;border-radius:50%;display:block;background:#ff5f00}.tx-brand-large.mc i+ i{margin-left:-9px;background:#f79e1b}
+.tx-pan{display:block;margin-top:4px;color:#b8ccdc;font-size:.78rem;font-weight:800;letter-spacing:.06em}
+
+.test-card.domestic .card-network{color:#55e6ae}.test-card.domestic.active{border-color:#18b981;box-shadow:0 0 0 3px rgba(24,185,129,.16)}
+</style>
+
+<style id="osc-fullscreen-simulator">
+.sidebar{display:none!important}.app{display:block!important;grid-template-columns:1fr!important}.main{margin-left:0!important;width:100%!important;max-width:none!important}.osc-back-platform{position:fixed;left:14px;top:12px;z-index:99999;background:#0b2238;color:#fff;border:1px solid #2f83ff;border-radius:8px;padding:8px 12px;text-decoration:none;font:600 12px Inter,Segoe UI,Arial,sans-serif;box-shadow:0 6px 18px #0006}.topbar{padding-left:115px!important}
+</style>
+<style id="osc-pos-qr41">.q41{background:linear-gradient(145deg,#f8fcff,#eef8ff);border:1px solid #c5deef;border-radius:16px;padding:18px;color:#17364e}.q41-head{text-align:center}.q41-head>span{font-size:10px;font-weight:900;letter-spacing:.12em;color:#0877c5}.q41-head h3{font-size:21px;margin:5px}.q41-head p{color:#5c788c;margin:0 auto 16px;max-width:720px}.q41-main{display:flex;align-items:stretch;justify-content:center;gap:6px;flex-wrap:wrap}.q41-main>strong{display:grid;place-items:center;color:#1686d4;font-size:19px}.q41-node{width:105px;min-height:118px;background:white;border:1px solid #bad8ea;border-radius:13px;padding:10px 7px;text-align:center}.q41-node.qr{border:2px solid #1586d2;background:#eaf7ff}.q41-node i{display:block;font-style:normal;font-size:27px;margin:4px}.q41-node b{display:block;font-size:10px;color:#173f5d}.q41-node small{display:block;font-size:8px;line-height:1.4;color:#6b8598;margin-top:4px}.q41-return{margin-top:14px;background:#e8f7ef;border-left:4px solid #20a96d;border-radius:8px;padding:10px;font-size:10px;color:#315f4a}.q41-points{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}.q41-points div{background:#fff;border:1px solid #c9dfef;border-radius:9px;padding:9px;font-size:9px;color:#4d6c80}.q41-points b{display:block;color:#0877c5;margin-bottom:3px}@media(max-width:800px){.q41-main>strong{display:none}.q41-points{grid-template-columns:1fr}}</style><style id="osc-qr-flow42">.qr-education-dialog.qr-image-only{width:auto!important;max-width:96vw!important;max-height:96vh!important;overflow:visible!important;padding:0!important;border:0!important;border-radius:14px!important;background:transparent!important;box-shadow:none!important}.qr-image-flow{display:block!important;margin:0!important;padding:0!important;border:0!important;background:transparent!important}.qr42-approved{display:block;margin:0;padding:0;background:transparent;border-radius:14px;overflow:hidden;line-height:0}.qr42-approved img{display:block;width:auto;height:auto;max-width:96vw;max-height:94vh;object-fit:contain;margin:0}.qr-image-only .qr-education-close{right:8px;top:8px;z-index:2;width:34px;height:34px;border-radius:50%;background:#ffffffdd;color:#35536a}</style></head>
+<body><a class="osc-back-platform" href="index.html">← Plataforma</a>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-main"><span>OSC</span> PAYMENT ACADEMY</div>
+      <div class="brand-sub">Laboratorio de Medios de Pago</div>
+    </div>
+
+    <div class="section">Módulos</div>
+    <nav>
+      <a class="nav" href="curso_interactivo.html">🎓 Curso Interactivo</a>
+      <a href="index.html">⌂ <span>Dashboard</span></a>
+      <a href="constructor.html">⌘ <span>Constructor ISO8583</span></a>
+      <a class="active" href="pos.html">▣ <span>POS Virtual</span></a>
+      <a href="atm.html">🏧 <span>ATM Virtual</span></a>
+      <a href="parser.html">◉ <span>Parser ISO8583</span></a>
+      <a href="switch.html">🏦 <span>Switch del Adquirente</span></a>
+      <a href="research.html">🧪 <span>Laboratorio de Investigación</span></a>
+    <a class="nav" href="mastercard_iso.html">◉ Mastercard ISO</a>
+</nav>
+
+    <div class="section future-resources" hidden>Recursos</div>
+    <nav class="future-resources" hidden aria-hidden="true">
+      <a href="#">▥ <span>Biblioteca Técnica</span></a>
+      <a href="#">▱ <span>Mis Cursos</span></a>
+      <a href="#">☑ <span>Ejercicios</span></a>
+      <a href="#">◷ <span>Historial de Transacciones</span></a>
+      <a href="#">◇ <span>Certificaciones</span></a>
+    </nav>
+
+    <div class="sidebar-bottom">
+      <div class="user-card">
+        <span class="avatar">OS</span>
+        <div><strong>Oscar Sanchez</strong><small>Instructor</small><em>● Online</em></div>
+      </div>
+      <div class="session-card">
+        <strong>Info de sesión</strong>
+        <p><span>Alumnos conectados</span><b>28</b></p>
+        <p><span>Transacciones hoy</span><b id="sessionTx">0</b></p>
+        <p><span>Tiempo de sesión</span><b id="sessionTime">00:00:00</b></p>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <div class="title-block">
+        <span class="title-icon">▣</span>
+        <div><h1>POS VIRTUAL</h1><p>Simulador de Terminal de Pago</p></div>
+      </div>
+      <div class="top-actions">
+        <button type="button" id="operationMenuButton">▤ Operaciones</button>
+      </div>
+    </header>
+
+    
+    <section id="operationDrawer" class="operation-drawer hidden">
+      <div class="operation-drawer-head">
+        <div>
+          <h2>OPERACIONES DEL POS</h2>
+          <p>Seleccioná la operación que querés simular.</p>
+        </div>
+        <button id="closeOperationDrawer" type="button">✕</button>
+      </div>
+
+      <div class="operation-cards">
+        <button class="operation-card" data-operation="refund">
+          <span>↩</span><div><strong>Devolución</strong><small>Crédito total o parcial</small></div>
+        </button>
+        <button class="operation-card" data-operation="void">
+          <span>⊘</span><div><strong>Anulación</strong><small>Sobre compra aprobada</small></div>
+        </button>
+        <button class="operation-card" data-operation="query">
+          <span>⌕</span><div><strong>Consulta</strong><small>Estado del lote y terminal</small></div>
+        </button>
+        <button class="operation-card" data-operation="batch">
+          <span>▤</span><div><strong>Cierre de lote</strong><small>0500 → 0510</small></div>
+        </button>
+        <button class="operation-card" data-operation="reprint">
+          <span>▧</span><div><strong>Reimpresión</strong><small>Elegir ticket del historial</small></div>
+        </button>
+        <button class="operation-card" data-operation="lastTicket">
+          <span>▤</span><div><strong>Último ticket</strong><small>Abrir último comprobante</small></div>
+        </button>
+        <a class="operation-card" href="switch.html" style="text-decoration:none;color:inherit">
+          <span>🏦</span><div><strong>Switch del Adquirente</strong><small>Lotes, clearing y settlement</small></div>
+        </a>
+      </div>
+    </section>
+
+    <section class="workspace">
+      <div class="terminal-column">
+        <div class="terminal">
+          <div class="network-profile-box payment-lab-box" id="posNetworkBox">
+  <div class="network-profile-title"><span>MEDIO DE PAGO</span><span id="posNetworkValidation" class="network-validation">Tarjeta de prueba seleccionada</span></div>
+  <div class="payment-method-tabs" role="group" aria-label="Medio de pago">
+    <button type="button" class="payment-method active" data-payment-method="card">💳 Tarjeta</button>
+    <span class="qr-method-wrap"><button type="button" class="payment-method" data-payment-method="qr">▦ QR</button><button id="qrEducationHelp" class="qr-education-help" type="button" aria-label="Abrir explicación sobre pagos QR">☝️</button></span>
+  </div>
+  <div id="cardPaymentConfig" class="payment-config">
+    <div class="test-card-heading">SELECCIONE LA TARJETA DE PRUEBA</div>
+    <div class="test-card-grid" id="testCardGrid">
+      <button type="button" class="test-card active visa" data-test-card="visa-credit" onclick="window.OSCSelectTestCard && window.OSCSelectTestCard('visa-credit')">
+        <span class="card-network">VISA</span><strong>CRÉDITO</strong><small>•••• 1111 · BIN 411111</small>
+      </button>
+      <button type="button" class="test-card visa" data-test-card="visa-debit" onclick="window.OSCSelectTestCard && window.OSCSelectTestCard('visa-debit')">
+        <span class="card-network">VISA</span><strong>DÉBITO</strong><small>•••• 0002 · BIN 400000</small>
+      </button>
+      <button type="button" class="test-card mastercard" data-test-card="mc-credit" onclick="window.OSCSelectTestCard && window.OSCSelectTestCard('mc-credit')">
+        <span class="card-network">MASTERCARD</span><strong>CRÉDITO</strong><small>•••• 4444 · BIN 555555</small>
+      </button>
+      <button type="button" class="test-card mastercard" data-test-card="mc-debit" onclick="window.OSCSelectTestCard && window.OSCSelectTestCard('mc-debit')">
+        <span class="card-network">MASTERCARD</span><strong>DÉBITO</strong><small>•••• 8210 · BIN 222300</small>
+      </button>
+      <button type="button" class="test-card amex" data-test-card="amex-credit" onclick="window.OSCSelectTestCard && window.OSCSelectTestCard('amex-credit')">
+        <span class="card-network">AMERICAN EXPRESS</span><strong>CRÉDITO</strong><small>•••• 8431 · BIN 371449 · 1100 / 1110</small>
+      </button>
+      <button type="button" class="test-card amex" data-test-card="amex-debit" onclick="window.OSCSelectTestCard && window.OSCSelectTestCard('amex-debit')">
+        <span class="card-network">AMERICAN EXPRESS</span><strong>DÉBITO</strong><small>•••• 0127 · BIN 341234 · 1100 / 1110 + PIN online</small>
+      </button>
+    </div>
+    <div class="selected-test-card" id="selectedTestCardSummary">Visa Crédito · PAN de prueba asignado automáticamente</div>
+  </div>
+  <div id="qrPaymentConfig" class="payment-config hidden">
+    <label for="qrTypeSelect">Tipo de QR</label>
+    <select id="qrTypeSelect">
+      <option value="mastercard-qr">Mastercard QR · Merchant Presented</option>
+      <option value="visa-qr">Visa QR · Merchant Presented</option>
+      <option value="account-qr" disabled>Cuenta a cuenta · Próximamente</option>
+      <option value="wallet-qr" disabled>Wallet propietaria · Próximamente</option>
+    </select>
+  </div>
+  <div id="posNetworkBadge" class="network-profile-badge"></div>
+</div><div class="terminal-model-select"><label for="terminalModel">Modelo</label><select id="terminalModel"><option value="ingenico">Ingenico ICT250</option><option value="verifone">Verifone VX520</option><option value="pax">PAX A920</option><option value="android">POS Android</option></select></div><div class="terminal-brand" id="terminalBrand">ingenico</div>
+          <div class="terminal-screen">
+            <div class="status-icons">▂▃▅ ◉ ⌁ <span id="posClock">--:--:--</span></div>
+            <div class="screen-title" id="screenTitle">COMPRA</div>
+            <div class="screen-content" id="screenContent">
+              <small>Ingrese Importe</small>
+              <strong id="screenAmount">$ 0,00</strong>
+              <span>Presione VERDE para continuar</span>
+            </div>
+            <div class="screen-footer"><span>MENÚ</span><span>SALIR</span></div>
+          </div>
+
+          <div class="model">ICT250</div>
+
+          <div id="entryModePanel" class="entry-mode-panel hidden">
+            <strong>Seleccione forma de captura</strong>
+            <div class="entry-mode-grid">
+              <button type="button" data-entry="chip"><span class="capture-icon chip"></span><span>Chip EMV</span></button>
+              <button type="button" data-entry="contactless"><span class="capture-icon nfc"></span><span>Contactless</span></button>
+              <button type="button" data-entry="magstripe"><span class="capture-icon mag"></span><span>Banda magnética</span></button>
+              <button type="button" data-entry="manual"><span class="capture-icon manual"></span><span>Manual</span></button>
+            </div>
+          </div>
+
+          <div id="qrStage" class="qr-stage hidden" aria-live="polite">
+            <div class="qr-stage-head"><strong>QR DE PAGO</strong><span id="qrStageNetwork">Mastercard QR</span></div>
+            <div class="qr-demo-code" aria-label="Código QR educativo"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+            <small id="qrStageStatus">Esperando escaneo desde la wallet…</small>
+          </div>
+
+          <div class="softkeys">
+            <button>F1</button><button>F2</button><button>F3</button><button>F4</button>
+          </div>
+
+          <div class="keypad" id="keypad">
+            <button data-key="1">1 <small>QZ</small></button>
+            <button data-key="2">2 <small>ABC</small></button>
+            <button data-key="3">3 <small>DEF</small></button>
+            <button data-key="4">4 <small>GHI</small></button>
+            <button data-key="5">5 <small>JKL</small></button>
+            <button data-key="6">6 <small>MNO</small></button>
+            <button data-key="7">7 <small>PRS</small></button>
+            <button data-key="8">8 <small>TUV</small></button>
+            <button data-key="9">9 <small>WXY</small></button>
+            <button data-key="f">F</button>
+            <button data-key="0">0 <small>—</small></button>
+            <button data-key="hash">.#*</button>
+          </div>
+
+          <div class="action-keys">
+            <button class="cancel" data-action="cancel">CANCEL<br>✕</button>
+            <button class="clear" data-action="clear">BORRAR<br>⌫</button>
+            <button class="accept" data-action="accept">ACEPTAR<br>○</button>
+          </div>
+        </div>
+
+
+        <div id="captureStage" class="capture-stage hidden" aria-live="polite">
+          <div class="capture-stage-title" id="captureStageTitle">Lectura de tarjeta</div>
+
+          <div id="captureChip" class="capture-scene hidden">
+            <div class="capture-terminal">
+              <div class="capture-screen"></div>
+              <div class="capture-slot"></div>
+            </div>
+            <div class="capture-card chip-card">
+              <span class="card-chip"></span>
+              <strong>VISA</strong>
+            </div>
+            <div class="capture-caption">Insertando tarjeta con chip…</div>
+          </div>
+
+          <div id="captureContactless" class="capture-scene hidden">
+            <div class="capture-terminal">
+              <div class="capture-screen"></div>
+              <div class="nfc-symbol">)))</div>
+            </div>
+            <div class="capture-card nfc-card">
+              <span class="card-chip"></span>
+              <strong>VISA</strong>
+            </div>
+            <div class="nfc-wave wave-1"></div>
+            <div class="nfc-wave wave-2"></div>
+            <div class="nfc-wave wave-3"></div>
+            <div class="capture-caption">Acercando tarjeta contactless…</div>
+          </div>
+
+          <div id="captureMagstripe" class="capture-scene hidden">
+            <div class="capture-terminal">
+              <div class="capture-screen"></div>
+              <div class="magstripe-slot"></div>
+            </div>
+            <div class="capture-card swipe-card">
+              <span class="stripe"></span>
+              <strong>VISA</strong>
+            </div>
+            <div class="swipe-guide"></div>
+            <div class="capture-caption">Deslizando la banda magnética…</div>
+          </div>
+
+          <div id="captureManual" class="capture-scene hidden">
+            <div class="manual-entry-card">
+              <div><span>PAN</span><strong>4556 1234 1234 1234</strong></div>
+              <div><span>Vencimiento</span><strong>25/12</strong></div>
+              <div><span>CVV</span><strong>•••</strong></div>
+            </div>
+            <div class="capture-caption">Ingresando los datos manualmente…</div>
+          </div>
+
+          <div class="capture-status">
+            <span class="capture-loader"></span>
+            <strong id="captureStatusText">Leyendo datos…</strong>
+          </div>
+        </div>
+
+        <div class="receipt-printer" id="receiptPrinter">
+          <div class="printer-slot"></div>
+          <div class="receipt-paper" id="receiptPaper"></div>
+        </div>
+
+        <div class="terminal-tools">
+          <button type="button" id="printAgain">▣ Reimprimir ticket</button>
+          <button type="button" id="downloadTicket">⇩ Descargar ticket</button>
+          <label class="iso-ticket-toggle"><input type="checkbox" id="showIsoTicket" checked> Mostrar información ISO8583</label>
+        </div>
+      </div>
+
+      <section class="flow-panel">
+        <h2>FLUJO DE TRANSACCIÓN</h2>
+        <div class="flow-list">
+          <article id="step1" class="active"><span>1</span><div><strong>Ingreso de Importe</strong><small id="flowAmount">$ 0,00</small><time id="time1">—</time></div><b>✓</b></article>
+          <article id="step2"><span>2</span><div><strong>Lectura de Tarjeta</strong><small>VISA Débito</small><time id="time2">—</time></div><b>✓</b></article>
+          <article id="step3"><span>3</span><div><strong>Ingreso de PIN</strong><small id="flowPin">••••</small><time id="time3">—</time></div><b>✓</b></article>
+          <article id="step4"><span>4</span><div><strong>Procesando...</strong><small>Enviando 0200</small><time id="time4">—</time></div><b>✓</b></article>
+          <article id="step5" class="host"><span>5</span><div><strong>Respuesta del Host</strong><small id="flowResponse">Pendiente</small><time id="time5">—</time></div><b>✓</b></article>
+          <article id="step6"><span>6</span><div><strong>Impresión</strong><small>Comprobante</small><time id="time6">—</time></div><b>✓</b></article>
+        </div>
+
+
+        <section class="pos-middle-section pos-scenario-full"><h3>ESCENARIOS DE RESPUESTA</h3><div class="scenario-grid" id="scenarioGrid"><button class="selected success" data-code="00">✓ 00 - APROBADA</button><button class="danger" data-code="51">◉ 51 - FONDOS INSUFICIENTES</button><button class="purple" data-code="54">◉ 54 - TARJETA VENCIDA</button><button class="warning" data-code="05">◉ 05 - NO APROBAR</button><button class="blue" data-code="91">◉ 91 - EMISOR NO DISPONIBLE</button><button class="neutral" data-code="TO">◉ TIME OUT - SIN RESPUESTA</button></div><div class="scenario-actions"><label class="auto-response-control" for="autoResponse">Respuesta Automática <input id="autoResponse" type="checkbox" role="switch"><span class="switch"></span></label><button id="sendResponse" type="button">Enviar Respuesta ▷</button></div></section>
+        <section class="pos-middle-section"><h3>MODO TÉCNICO · EVENTOS EN TIEMPO REAL</h3><div class="pos-tech-events" id="posTechEvents"><div>Esperando inicio de operación.</div><div>El POS construirá 0100 o 0200 según marca/producto.</div></div></section>
+        <div class="result-box" id="resultBox">
+          <h3>RESULTADO</h3>
+          <div class="result-content"><span>✓</span><div><strong id="resultText">EN ESPERA</strong><b id="resultCode">--</b></div></div>
+          <p id="resultDetail">Ingrese una compra para comenzar.</p>
+          <small>Código de Autorización: <b id="authCode">------</b></small>
+          <button id="newTest" class="new-test" type="button">＋ Nueva prueba</button>
+        </div>
+      </section>
+
+      <section class="iso-panel">
+        <div class="atm-like-message-head"><h2>MENSAJE ISO8583</h2><p id="messageSubtitle">Esperando operación</p></div>
+        <div class="atm-like-summary"><div><span>MTI</span><strong id="mti">----</strong></div><div><span>BITMAP</span><strong id="bitmap">0000000000000000</strong></div><div><span>CAMPOS</span><strong id="fieldCount">0</strong></div></div>
+        <section class="atm-like-bitmaps"><div class="atm-like-section-title"><h3>BITMAPS ISO8583</h3><p>Las posiciones presentes se resaltan en verde.</p></div><div class="bitmap-title"><span>BITMAP PRIMARIO (1–64)</span><span id="selectedBitmapPrimaryHex">0000000000000000</span></div><div class="bitmap-64 atm-grid" id="selectedBitmapPrimaryBits"></div><div class="bitmap-title"><span>BITMAP SECUNDARIO (65–128)</span><span id="selectedBitmapSecondaryHex">0000000000000000</span></div><div class="bitmap-64 atm-grid" id="selectedBitmapSecondaryBits"></div><span id="selectedBitmapFields" class="hidden"></span><div id="selectedBitmapSecondaryWrap" class="hidden"></div></section>
+        <div class="atm-like-section-title data-title"><h3>DATA ELEMENTS</h3><p>Detalle completo de cada dato que compone el mensaje seleccionado.</p></div>
+        <div class="tabs">
+          <button class="active">DATA ELEMENTS</button><button>VISTA TLV</button><button>EXPLICACIÓN</button><button>VALIDACIONES</button>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>DE</th><th>NOMBRE</th><th>VALOR</th><th>LONG.</th><th>FORMATO</th><th>ORIGEN</th></tr></thead>
+            <tbody id="deTable"></tbody>
+          </table>
+        </div>
+
+        <div class="table-footer"><span>Total Data Elements: <b id="deCount">12</b></span><span>Longitud Total: <b id="totalLength">123 bytes</b></span></div>
+        <div class="pos-output-actions">
+          <button id="copyBtn" type="button">Copiar trama</button>
+          <button id="analyzeBtn" type="button">Analizar en Parser</button>
+        </div>
+      </section>
+    </section>
+
+    <section class="bottom-grid">
+      <div class="history-panel">
+        <div class="history-title"><h2>HISTORIAL DE TRANSACCIONES</h2><button type="button">Ver Todas</button></div>
+        <table>
+          <thead><tr><th>FECHA/HORA</th><th>RED</th><th>DIRECCIÓN</th><th>MTI</th><th>OPERACIÓN</th><th>IMPORTE</th><th>RESP.</th><th>STAN</th><th>LOTE</th><th>ESTADO</th></tr></thead>
+          <tbody id="historyBody"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+</div>
+
+
+<div id="transactionModal" class="transaction-modal hidden">
+  <div class="transaction-dialog">
+    <div class="transaction-dialog-head">
+      <div><h2 id="transactionModalTitle">Seleccionar operación</h2><p id="transactionModalSubtitle"></p></div>
+      <button id="closeTransactionModal" type="button">✕</button>
+    </div>
+    <div id="transactionSelectionList" class="transaction-selection-list"></div>
+    <div id="refundControls" class="refund-controls hidden">
+      <label>Tipo de devolución
+        <select id="refundMode">
+          <option value="full">Total</option>
+          <option value="partial">Parcial</option>
+        </select>
+      </label>
+      <label id="refundAmountWrap" class="hidden">Importe a devolver
+        <input id="refundAmount" type="number" min="0.01" step="0.01" placeholder="0,00">
+      </label>
+      <small>La devolución genera una nueva operación de crédito y conserva la referencia de la compra original.</small>
+    </div>
+    <div class="transaction-dialog-actions">
+      <button id="cancelTransactionSelection" type="button">Cancelar</button>
+      <button id="confirmTransactionSelection" type="button">Continuar</button>
+    </div>
+  </div>
+</div>
+
+<div id="batchModal" class="transaction-modal hidden">
+  <div class="batch-ticket-modal">
+    <button id="closeBatchModal" class="batch-modal-close" type="button" aria-label="Cerrar">✕</button>
+    <div id="batchSummary" class="batch-paper"></div>
+    <details class="batch-detail">
+      <summary>Ver detalle por transacción</summary>
+      <div id="batchTxDetail"></div>
+    </details>
+    <div class="batch-ticket-actions">
+      <button id="cancelBatchClose" type="button">Cancelar</button>
+      <button id="confirmBatchClose" type="button">Confirmar cierre de lote</button>
+    </div>
+  </div>
+</div>
+
+<div id="qrEducationModal" class="qr-education-modal hidden" role="dialog" aria-modal="true" aria-label="Flujo QR Dinámico">
+  <div class="qr-education-dialog qr-image-only">
+    <button id="closeQrEducationModal" class="qr-education-close" type="button" aria-label="Cerrar">✕</button>
+    <div id="qrEducationFlow" class="qr-education-flow qr-image-flow">
+      <div class="qr42-approved"><img src="assets/flows/qr_dinamico_aprobado.jpg" alt="Infografía QR Dinámico OSC Payment Academy aprobada"></div>
+    </div>
+  </div>
+</div>
+
+<script src="js/network-profiles.js?v=3.5.4.49"></script>
+<script src="js/switch-store.js?v=4.0.0-rc1.6"></script>
+<script src="js/app.js?v=3.5.4.49"></script>
+<script>document.addEventListener('DOMContentLoaded',()=>{document.querySelectorAll('.pos-scenario-mini button').forEach((b,i)=>b.onclick=()=>{document.querySelectorAll('.pos-scenario-mini button').forEach(x=>x.classList.remove('active'));b.classList.add('active');const original=document.querySelectorAll('#scenarioGrid button')[i];if(original)original.click()});const log=document.getElementById('posTechEvents');const status=document.getElementById('flowResponse');if(log&&status)new MutationObserver(()=>{const d=document.createElement('div');d.textContent=new Date().toLocaleTimeString('es-AR')+' · '+status.textContent;log.prepend(d);while(log.children.length>8)log.lastChild.remove()}).observe(status,{childList:true,subtree:true,characterData:true})});</script>
+<script src="js/permissions.js"></script>
+
+
+<script src="js/help-catalog.js"></script>
+<script src="js/module-guide.js"></script><script src="js/navigation.js?v=4.0.0-rc1.7"></script><script src="js/osc-learning.js?v=4.0.0-rc1.19" data-module="pos"></script><script src="js/tutor-osc.js?v=4.0.0-rc1.19" data-module="pos"></script></body>
+</html>
