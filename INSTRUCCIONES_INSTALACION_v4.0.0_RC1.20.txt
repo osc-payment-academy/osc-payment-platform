@@ -1,0 +1,23 @@
+OSC Payment Academy v4.0.0-rc.1.20 — Curso interactivo: láminas nuevas y reordenamiento
+
+UPDATE ONLY (paquete INCREMENTAL, se instala sobre la rc.1.19):
+1. Descomprimir el ZIP incremental.
+2. Copiar su contenido sobre la raíz del proyecto, reemplazando archivos (incluye slide-22 y slide-23 nuevos).
+3. BORRAR estos dos archivos, que ya no se usan:
+     public/curso/slide-05b.html
+     public/curso/assets/slide-05b.svg
+4. Ejecutar el despliegue habitual de Cloudflare Workers.
+5. No requiere migración D1.
+6. Recarga forzada del navegador (Ctrl+F5) en el Curso interactivo.
+
+RESPALDO (paquete COMPLETO): contiene todo el proyecto; se conserva sin instalar.
+
+Pruebas mínimas:
+1. Curso interactivo (índice): 22 tarjetas, de la Lámina 2 a la 23, ya sin la tarjeta "NUEVA LÁMINA".
+2. Lámina 3: gráfico nuevo de 8 pasos; el popup muestra los puntos 1 a 8.
+3. Lámina 6 "Cuatro capas": el MTI dice "(4 dígitos)" en las capas 1 y 3; el popup explica las 4 capas.
+4. Lámina 7 "El mismo dato, diferentes representaciones": gráfico ASCII / EBCDIC / BCD / Hexadecimal y su popup.
+5. Lámina 12 "ISO 8583 – Bitmaps": gráfico y popup nuevos.
+6. Láminas 19 y 20: títulos "Flujo de una autorización" y "Flujo de una reversa".
+7. Láminas 21, 22 y 23: 0800/0810, Manejo de Rejects y Cierre, en ese orden.
+8. Recorrer con "Siguiente" de la 2 a la 23: numeración "Lámina N de 23" correcta y sin saltos.

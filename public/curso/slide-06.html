@@ -1,43 +1,31 @@
-<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Curso ISO 8583 · Anatomía de una trama ISO 8583</title><link rel="stylesheet" href="/curso/curso.css"></head><body><main class="course"><header class="top"><div><small>CURSO INTERACTIVO ISO 8583</small><h1>Anatomía de una trama ISO 8583</h1></div><div class="progress">Lámina 6 de 21</div></header><section class="stage" aria-label="Copia fiel de la diapositiva 6"><img src="/curso/assets/slide-06.png" alt="Anatomía de una trama ISO 8583"><div class="hotspot" id="hotspot"><button class="hand" id="hand" type="button" aria-label="Abrir explicación completa">☝️</button></div></section><div class="below"><a class="navbtn" href="slide-05.html">← Anterior</a><span class="hint">Posicioná el mouse unos segundos en cualquier lugar del dibujo.</span><a class="navbtn" href="slide-07.html">Siguiente →</a></div></main><dialog id="explanation"><div class="modal-head"><h2>Anatomía de una trama ISO 8583</h2><button class="close" type="button" aria-label="Cerrar">×</button></div><div class="modal-body">Una trama ISO 8583 siempre está formada por tres grandes componentes.
-El primero es el MTI, el segundo es el Bitmap y el tercero son los Data Elements.
-Vamos a ver qué representa cada uno.
-Comenzamos por el MTI, o Message Type Indicator.
-El MTI responde una pregunta muy sencilla:
-¿Qué tipo de mensaje estoy recibiendo?
-En este ejemplo vemos un 0200, que representa una solicitud de autorización financiera.
-Si en lugar de un 0200 llegara un 0210, sabríamos que se trata de una respuesta.
-Si fuera un 0400, hablaríamos de una reversa.
-Y si fuera un 0800, sería un mensaje de administración de red.
-Es decir, el MTI nos dice cuál es el propósito del mensaje antes de analizar cualquier otro dato.
-Después aparece el Bitmap.
-El Bitmap es probablemente el concepto más importante de ISO 8583.
-Su función no es transportar información de la transacción.
-Su función es indicar qué campos vienen presentes dentro del mensaje.
-Podemos imaginarlo como un índice o una tabla de contenido.
-Cada bit representa un Data Element o campo
-Si el bit está encendido (es igual a 1), significa que ese campo viene incluido.
-Si está apagado (es igual a 0),  ese campo simplemente no existe dentro de esa trama.
-Gracias al Bitmap, el parser sabe exactamente qué información debe leer y en qué orden.
-Finalmente encontramos los Data Elements.
-Aquí es donde realmente viaja la información de la transacción.
-Los Data Elements contienen todos los datos necesarios para autorizar una operación.
-Por ejemplo:
-el número de tarjeta;
-el código de procesamiento;
-el monto;
-la fecha y hora;
-el STAN;
-el identificador del terminal;
-el comercio;
-la moneda;
-y todos los demás datos necesarios para que el emisor pueda tomar una decisión.
-Es importante entender que los Data Elements no siempre son los mismos.
-Una autorización puede contener un conjunto de campos.
-Una reversa puede contener otro.
-Y un mensaje de administración de red puede contener un conjunto completamente distinto.
-Precisamente por eso existe el Bitmap.
-El Bitmap le indica al receptor cuáles de todos esos Data Elements vienen presentes en cada mensaje.
-Si tuviera que resumir ISO 8583 en una sola frase sería la siguiente:
-El MTI dice qué tipo de mensaje es. El Bitmap dice qué campos vienen. Los Data Elements contienen la información de la transacción.
-Esa es la base sobre la cual funciona absolutamente todo el estándar.
-A partir de las próximas láminas vamos a profundizar en cada uno de estos tres componentes por separado, comenzando por el MTI y luego por el Bitmap y los Data Elements.</div><div class="actions"><button type="button" class="understood">Entendido</button></div></dialog><script src="/curso/curso.js"></script><script src="/js/tutor-osc.js?v=4.0.0-rc1.8" data-module="course_iso8583"></script></body></html>
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Curso ISO 8583 · Cuatro capas: de la trama cruda al stored procedure</title><link rel="stylesheet" href="/curso/curso.css"></head><body><main class="course"><header class="top"><div><small>CURSO INTERACTIVO ISO 8583</small><h1>Cuatro capas: de la trama cruda al stored procedure</h1></div><div class="progress">Lámina 6 de 23</div></header><section class="stage" aria-label="Copia fiel de la diapositiva 6"><img src="/curso/assets/slide-06.png?v=3" alt="Cuatro capas: de la trama cruda al stored procedure"><div class="hotspot" id="hotspot"><button class="hand" id="hand" type="button" aria-label="Abrir explicación completa">☝️</button></div></section><div class="below"><a class="navbtn" href="slide-05.html">← Anterior</a><span class="hint">Posicioná el mouse unos segundos en cualquier lugar del dibujo.</span><a class="navbtn" href="slide-07.html">Siguiente →</a></div></main><dialog id="explanation"><div class="modal-head"><h2>Cuatro capas: de la trama cruda al stored procedure</h2><button class="close" type="button" aria-label="Cerrar">×</button></div><div class="modal-body">En las láminas anteriores vimos por dónde viaja una transacción. Ahora vamos a mirar el mensaje en sí: cómo se pasa de una norma genérica a los bytes que viajan por la red y, finalmente, a la lógica del banco.
+Para entenderlo, lo separamos en cuatro capas.
+
+CAPA 1 · El estándar ISO 8583
+Es la estructura común, válida para cualquier implementación:
+• El MTI, que indica el tipo de mensaje.
+• El bitmap primario (y, si hace falta, el secundario), que indica qué campos vienen en la trama.
+• Los Data Elements, del DE1 al DE128, definidos de forma genérica.
+Pero el estándar no define el formato exacto: no dice en qué codificación viaja cada campo, cómo se expresa la longitud ni qué header de transporte se usa.
+El estándar da la gramática, pero todavía no el diccionario.
+
+CAPA 2 · El manual de la marca o del switch
+Visa, Mastercard, Amex, la procesadora o el host publican su propio manual, y es ahí donde se define el formato real:
+• Codificación: ASCII, BCD, EBCDIC o binario.
+• Unidad de longitud de los campos variables (LLVAR): si la longitud cuenta caracteres o bytes empaquetados.
+• Header de transporte: TPDU, length-prefix o un header propietario.
+
+CAPA 3 · La trama real que viaja
+Es lo que efectivamente se transmite: header de transporte + MTI + bitmap + Data Elements, con los bytes exactos que exige esa marca o switch.
+Una regla que conviene recordar: ante cualquier duda de formato, la fuente de verdad es el manual de la marca, no el estándar genérico.
+
+CAPA 4 · El switch o conector
+Es el componente que conoce las tres capas anteriores y hace de puente hacia el negocio:
+1. Quita el header de transporte según el canal o la conexión.
+2. Parsea el MTI, el bitmap y los campos aplicando las reglas del manual (codificación y longitud real).
+3. Mapea cada campo decodificado a un parámetro de negocio: DE2 → @pan, DE4 → @monto, DE11 → @stan.
+4. Invoca el stored procedure correspondiente (por ejemplo sp_compra o sp_transferencia) pasando esos parámetros.
+5. El stored procedure ejecuta la lógica real: valida la cuenta, mueve el saldo y genera el movimiento, ya en el mundo del core bancario.
+
+En resumen: el estándar da la gramática, la marca describe el diccionario y el switch traduce todo a lógica de negocio.
+Esto es justamente lo que muestra el simulador: ATM + clientes + pasivas.</div><div class="actions"><button type="button" class="understood">Entendido</button></div></dialog><script src="/curso/curso.js"></script><script src="/js/tutor-osc.js?v=4.0.0-rc1.8" data-module="course_iso8583"></script></body></html>
