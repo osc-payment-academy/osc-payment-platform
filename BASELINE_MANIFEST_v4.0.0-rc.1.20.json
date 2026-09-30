@@ -69,7 +69,7 @@
  ],
  "sha256": {
   "INSTRUCCIONES_INSTALACION_v4.0.0_RC1.20.txt": "087c204a42054e6dbbf52354f2251e94dd84ff6fa62e8b31cfa0057f739ff776",
-  "RELEASE_NOTES_v4.0.0-rc.1.20.md": "b304162684ff84d1773f7c95721d3527d2345d019b62a504917128cb4edc8270",
+  "RELEASE_NOTES_v4.0.0-rc.1.20.md": "5681ea4261dc45587a43d8070d35403fcd1046cf27dbf18dda8e8522c40c3cb6",
   "public/curso/assets/slide-03.png": "7d00ff0763303b5f2d9c5de88bb3647fcd3e60594695c1e069d784fd30b0c006",
   "public/curso/assets/slide-06.png": "1f5458e864dbec3026a9612b4b58251df01a9b08c64df17e97db4fbfc5df29b5",
   "public/curso/assets/slide-07.png": "203184905fd3eb73be4e1e66b7269e0805efd4a852eb4e6173f4e490be15fe52",
@@ -84,8 +84,8 @@
   "public/curso/assets/slide-16.png": "92f06f034305058a630024f480e1ce6d5b781cc591e82633e38f289670bd43ec",
   "public/curso/assets/slide-17.png": "d61f09c48f56e73a3703b2a62b47b4f49f052cf6827c787cd392418dac4fa552",
   "public/curso/assets/slide-18.png": "0d2d80887e33842490c8529f28a90e57e51101f3d19a184c02d86cfb80b8e4a9",
-  "public/curso/assets/slide-19.png": "a6320a8739d56717005483ca8f52c3b00c3899b8146cc68e69696b948d5bc662",
-  "public/curso/assets/slide-20.png": "950dfb322ec33819a401b06791e846c55c7c7af550a6280a89b0f1b709403b93",
+  "public/curso/assets/slide-19.png": "fb5bb1a8650c895e0baace0db5f14bc9dedad94703452a6aa8d57cb4e4f6319e",
+  "public/curso/assets/slide-20.png": "2c63c00a4bfc24a49518966f177cb65acd9c787efee916058b431fe61e7cf772",
   "public/curso/assets/slide-21.png": "529a63957cb48fd072074c32aa97cde87e9c40911c75e4db18c85b2589f16244",
   "public/curso/assets/slide-22.png": "893d7d78fb0a90c34876ec1170f3e5ec2c122065b1d5165d5e59ef4c3e43d6b6",
   "public/curso/assets/slide-23.png": "4aac2e333bfe820e8045bc68c0d9f70f69f8cf306a0cbc6fc7dd02e55caa401a",
@@ -106,12 +106,12 @@
   "public/curso/slide-16.html": "d3faf0f4c291d256c74a93d30ada06de555cebf60d7094a9ce664d4481f333d0",
   "public/curso/slide-17.html": "54b077d90e18d24af3a607775ca1dad4728d394286acac90d8dd3be39a43eb31",
   "public/curso/slide-18.html": "2b3efe9d377c92c5d9127bce213e9e29b5aa384052efd9aa9923e0523b787b7e",
-  "public/curso/slide-19.html": "8b5d52cf0c9ff54885f66601641b803cab03398e517943a2e7f23a3f24c284c3",
-  "public/curso/slide-20.html": "c9236830081c96be3380ae82d00746d994d28257364fd95ebfd83c2d7560bdd9",
+  "public/curso/slide-19.html": "64b7c60468057e90c5f9a33702da7c468739b6f705cb48f633c172f5034b43c8",
+  "public/curso/slide-20.html": "a6b91fdfb9c09eaa72052d741813f7c766e8bcbfb93a37d869fe72f334e904d9",
   "public/curso/slide-21.html": "67f477e987932a8e532f862d18f073bbb04e5806bfe9f29eb6bb45d1127b8bfc",
   "public/curso/slide-22.html": "27b7054caf6569df38038bd4353a3b0b27f36670cba4c8b69d8e49dbbb071f64",
   "public/curso/slide-23.html": "8d7524168bad0c0dd041019c151ed1652ee4a3f9a4f35b7825f6e22615e7d368",
-  "public/curso_interactivo.html": "a320628e75fc3a71a5a0d7fe4ee36fa86de6fa4bae4a706cb42af4287287d360"
+  "public/curso_interactivo.html": "660a1726899d31931fd13ac0c47487e00440d29bb027287fd1aa4f88e64b9b8f"
  },
  "d1_migration_required": false,
  "backend_changes": false
