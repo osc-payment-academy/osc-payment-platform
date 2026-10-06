@@ -1,0 +1,35 @@
+> **CONFIDENCIAL — Red LINK.** Uso interno exclusivo. NO publicar en la sección Documentación Técnica ni compartir con terceros.
+
+# LINK — C-X-8_Conex_HtoH_ISO8583_Códigos de Reversos
+
+
+
+Los valores posibles de los códigos de indicativos de reversos son:
+
+CÓDIGO
+DESCRIPCIÓN
+
+00
+NO REVERSADA.
+
+17
+REVERSADA POR TRANSACCIÓN CANCELADA
+
+20
+REVERSADA POR COMANDO RECHAZADO
+
+21
+REVERSADA POR ERROR DE HARDWARE
+
+22
+REVERSADA POR TRANSACCIÓN SOSPECHOSA.
+
+32
+REVERSADA POR PAGO PARCIAL
+
+68
+REVERSADA POR TIMEOUT.
+
+82
+REVERSADA POR DESTINO NO DISPONIBLE.
+

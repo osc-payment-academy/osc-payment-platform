@@ -10,3 +10,7 @@
 
 /*.css
   Cache-Control: no-cache
+
+/manuals/link/*
+  Cache-Control: private, no-store
+  X-Robots-Tag: noindex, nofollow

@@ -1,0 +1,159 @@
+{
+ "red": "LINK",
+ "confidencial": true,
+ "visible_en_documentacion_tecnica": false,
+ "acceso": "Solo OSC_ADMIN (control en src/index.js)",
+ "aviso": "Información CONFIDENCIAL de la red LINK. No ceder a terceros.",
+ "documentos": [
+  {
+   "titulo": "C-X-1-2-3_Conex_HtoH_ISO8583_Tipo de Msje_Fto de Msje",
+   "grupo": "hth",
+   "original": "/manuals/link/original/c-x-1-2-3-conex-htoh-iso8583-tipo-de-msje-fto-de-msje.doc",
+   "texto": "/manuals/link/texto/c-x-1-2-3-conex-htoh-iso8583-tipo-de-msje-fto-de-msje.md"
+  },
+  {
+   "titulo": "C-X-4-00_Msje 0200 Input_Conex_HtoH_ISO8583_Fto de Rtro",
+   "grupo": "hth",
+   "original": "/manuals/link/original/c-x-4-00-msje-0200-input-conex-htoh-iso8583-fto-de-rtro.doc",
+   "texto": "/manuals/link/texto/c-x-4-00-msje-0200-input-conex-htoh-iso8583-fto-de-rtro.md"
+  },
+  {
+   "titulo": "C-X-4-01_Msje 0200 Output_Conex_HtoH_ISO8583_Fto de Rtro",
+   "grupo": "hth",
+   "original": "/manuals/link/original/c-x-4-01-msje-0200-output-conex-htoh-iso8583-fto-de-rtro.doc",
+   "texto": "/manuals/link/texto/c-x-4-01-msje-0200-output-conex-htoh-iso8583-fto-de-rtro.md"
+  },
+  {
+   "titulo": "C-X-4-02_Msje 0205 Output_Conex_HtoH _ISO8583_Fto de Rtro",
+   "grupo": "hth",
+   "original": "/manuals/link/original/c-x-4-02-msje-0205-output-conex-htoh-iso8583-fto-de-rtro.doc",
+   "texto": "/manuals/link/texto/c-x-4-02-msje-0205-output-conex-htoh-iso8583-fto-de-rtro.md"
+  },
+  {
+   "titulo": "C-X-4-03_Msje 0210 Input_Conex_HtoH_ISO8583_Fto de Rtro",
+   "grupo": "hth",
+   "original": "/manuals/link/original/c-x-4-03-msje-0210-input-conex-htoh-iso8583-fto-de-rtro.doc",
+   "texto": "/manuals/link/texto/c-x-4-03-msje-0210-input-conex-htoh-iso8583-fto-de-rtro.md"
+  },
+  {
+   "titulo": "C-X-4-04_Msje 0210 Output_Conex_HtoH_ISO8583_Fto de Rtro",
+   "grupo": "hth",
+   "original": "/manuals/link/original/c-x-4-04-msje-0210-output-conex-htoh-iso8583-fto-de-rtro.doc",
+   "texto": "/manuals/link/texto/c-x-4-04-msje-0210-output-conex-htoh-iso8583-fto-de-rtro.md"
+  },
+  {
+   "titulo": "C-X-4-05_Msje 0215 Input_Conex_HtoH_ISO8583_Fto de Rtro",
+   "grupo": "hth",
+   "original": "/manuals/link/original/c-x-4-05-msje-0215-input-conex-htoh-iso8583-fto-de-rtro.doc",
+   "texto": "/manuals/link/texto/c-x-4-05-msje-0215-input-conex-htoh-iso8583-fto-de-rtro.md"
+  },
+  {
+   "titulo": "C-X-4-06_Msje 0215 Output_Conex_HtoH_ISO8583_Fto de Rtro",
+   "grupo": "hth",
+   "original": "/manuals/link/original/c-x-4-06-msje-0215-output-conex-htoh-iso8583-fto-de-rtro.doc",
+   "texto": "/manuals/link/texto/c-x-4-06-msje-0215-output-conex-htoh-iso8583-fto-de-rtro.md"
+  },
+  {
+   "titulo": "C-X-4-07_Msje 0220 Input_Conex_HtoH_ISO8583_Fto de Rtro",
+   "grupo": "hth",
+   "original": "/manuals/link/original/c-x-4-07-msje-0220-input-conex-htoh-iso8583-fto-de-rtro.doc",
+   "texto": "/manuals/link/texto/c-x-4-07-msje-0220-input-conex-htoh-iso8583-fto-de-rtro.md"
+  },
+  {
+   "titulo": "C-X-4-08_Msje 0220 Output_Conex_HtoH_ISO8583_Fto de Rtro",
+   "grupo": "hth",
+   "original": "/manuals/link/original/c-x-4-08-msje-0220-output-conex-htoh-iso8583-fto-de-rtro.doc",
+   "texto": "/manuals/link/texto/c-x-4-08-msje-0220-output-conex-htoh-iso8583-fto-de-rtro.md"
+  },
+  {
+   "titulo": "C-X-4-09_Msje 0230 InOut_Conex_HtoH_ISO8583_Fto de Rtro",
+   "grupo": "hth",
+   "original": "/manuals/link/original/c-x-4-09-msje-0230-inout-conex-htoh-iso8583-fto-de-rtro.doc",
+   "texto": "/manuals/link/texto/c-x-4-09-msje-0230-inout-conex-htoh-iso8583-fto-de-rtro.md"
+  },
+  {
+   "titulo": "C-X-4-10_Msje 0420 Input_Conex_HtoH_ISO8583_Fto de Rtro",
+   "grupo": "hth",
+   "original": "/manuals/link/original/c-x-4-10-msje-0420-input-conex-htoh-iso8583-fto-de-rtro.doc",
+   "texto": "/manuals/link/texto/c-x-4-10-msje-0420-input-conex-htoh-iso8583-fto-de-rtro.md"
+  },
+  {
+   "titulo": "C-X-4-11_Msje 0420 Output_Conex_HtoH_ISO8583_Fto de Rtro",
+   "grupo": "hth",
+   "original": "/manuals/link/original/c-x-4-11-msje-0420-output-conex-htoh-iso8583-fto-de-rtro.doc",
+   "texto": "/manuals/link/texto/c-x-4-11-msje-0420-output-conex-htoh-iso8583-fto-de-rtro.md"
+  },
+  {
+   "titulo": "C-X-4-12_Msje 0430 Input_Conex_HtoH_ISO8583_Fto de Rtro",
+   "grupo": "hth",
+   "original": "/manuals/link/original/c-x-4-12-msje-0430-input-conex-htoh-iso8583-fto-de-rtro.doc",
+   "texto": "/manuals/link/texto/c-x-4-12-msje-0430-input-conex-htoh-iso8583-fto-de-rtro.md"
+  },
+  {
+   "titulo": "C-X-4-13_Msje 0430 Output_Conex_HtoH_ISO8583_Fto de Rtro",
+   "grupo": "hth",
+   "original": "/manuals/link/original/c-x-4-13-msje-0430-output-conex-htoh-iso8583-fto-de-rtro.doc",
+   "texto": "/manuals/link/texto/c-x-4-13-msje-0430-output-conex-htoh-iso8583-fto-de-rtro.md"
+  },
+  {
+   "titulo": "C-X-4-14_Msje 0800 B_Conex_HtoH_ISO8583_Fto de Rtro",
+   "grupo": "hth",
+   "original": "/manuals/link/original/c-x-4-14-msje-0800-b-conex-htoh-iso8583-fto-de-rtro.doc",
+   "texto": "/manuals/link/texto/c-x-4-14-msje-0800-b-conex-htoh-iso8583-fto-de-rtro.md"
+  },
+  {
+   "titulo": "C-X-4-15_Msje 0810 B_Conex_HtoH_ISO8583_Fto de Rtro",
+   "grupo": "hth",
+   "original": "/manuals/link/original/c-x-4-15-msje-0810-b-conex-htoh-iso8583-fto-de-rtro.doc",
+   "texto": "/manuals/link/texto/c-x-4-15-msje-0810-b-conex-htoh-iso8583-fto-de-rtro.md"
+  },
+  {
+   "titulo": "C-X-5_Conex_HtoH_ISO8583_Códigos de Transacciones",
+   "grupo": "hth",
+   "original": "/manuals/link/original/c-x-5-conex-htoh-iso8583-codigos-de-transacciones.doc",
+   "texto": "/manuals/link/texto/c-x-5-conex-htoh-iso8583-codigos-de-transacciones.md"
+  },
+  {
+   "titulo": "C-X-6_Conex_HtoH_ISO8583_Códigos de_Resultados",
+   "grupo": "hth",
+   "original": "/manuals/link/original/c-x-6-conex-htoh-iso8583-codigos-de-resultados.doc",
+   "texto": "/manuals/link/texto/c-x-6-conex-htoh-iso8583-codigos-de-resultados.md"
+  },
+  {
+   "titulo": "C-X-7_Conex_HtoH_ISO8583_Códigos de Tipos de Cuenta",
+   "grupo": "hth",
+   "original": "/manuals/link/original/c-x-7-conex-htoh-iso8583-codigos-de-tipos-de-cuenta.doc",
+   "texto": "/manuals/link/texto/c-x-7-conex-htoh-iso8583-codigos-de-tipos-de-cuenta.md"
+  },
+  {
+   "titulo": "C-X-8_Conex_HtoH_ISO8583_Códigos de Reversos",
+   "grupo": "hth",
+   "original": "/manuals/link/original/c-x-8-conex-htoh-iso8583-codigos-de-reversos.doc",
+   "texto": "/manuals/link/texto/c-x-8-conex-htoh-iso8583-codigos-de-reversos.md"
+  },
+  {
+   "titulo": "Anexo-Nuevo Esquema de Transferencias - A 7153 (003)",
+   "grupo": "anexo",
+   "original": "/manuals/link/original/anexo-nuevo-esquema-de-transferencias-a-7153-003.pdf",
+   "texto": "/manuals/link/texto/anexo-nuevo-esquema-de-transferencias-a-7153-003.md"
+  },
+  {
+   "titulo": "doc link",
+   "grupo": "anexo",
+   "original": "/manuals/link/original/doc-link.pdf",
+   "texto": "/manuals/link/texto/doc-link.md"
+  },
+  {
+   "titulo": "Nuevo Anexo Técnico I 1",
+   "grupo": "anexo",
+   "original": "/manuals/link/original/nuevo-anexo-tecnico-i-1.pdf",
+   "texto": "/manuals/link/texto/nuevo-anexo-tecnico-i-1.md"
+  },
+  {
+   "titulo": "Nuevo Anexo Técnico II 2",
+   "grupo": "anexo",
+   "original": "/manuals/link/original/nuevo-anexo-tecnico-ii-2.pdf",
+   "texto": "/manuals/link/texto/nuevo-anexo-tecnico-ii-2.md"
+  }
+ ]
+}

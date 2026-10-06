@@ -733,6 +733,18 @@ export default {async fetch(request,env){
     return Response.redirect(url.toString(),308);
   }
   if(path.startsWith('/api/'))return api(request,env,path);
+  // rc.1.21 · Manuales LINK: CONFIDENCIALES. Solo OSC_ADMIN; nunca listados en Documentación Técnica.
+  let linkProbe=path;try{linkProbe=decodeURIComponent(path);}catch(e){}
+  if(/^\/+manuals\/+link(\/|$)/i.test(linkProbe.replace(/\\/g,'/'))){
+    const user=await currentUser(request,env);
+    if(!user||user.platform_role!=='OSC_ADMIN')return new Response('Not found',{status:404,headers:{'cache-control':'no-store','x-robots-tag':'noindex, nofollow'}});
+    const response=await env.ASSETS.fetch(request);
+    const headers=new Headers(response.headers);
+    headers.set('cache-control','private, no-store');
+    headers.set('x-robots-tag','noindex, nofollow');
+    headers.set('content-disposition','inline');
+    return new Response(response.body,{status:response.status,statusText:response.statusText,headers});
+  }
   if(path==='/ebooks/ISO_8583_Desde_Cero_Oscar_Sanchez_Castro.epub'){
     const user=await currentUser(request,env);
     if(!user)return Response.redirect(`${url.origin}/login?next=${encodeURIComponent(path)}`,302);

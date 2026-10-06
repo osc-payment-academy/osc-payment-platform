@@ -1,0 +1,17 @@
+OSC Payment Academy v4.0.0-rc.1.21 — Red LINK: manuales confidenciales
+
+UPDATE ONLY (paquete INCREMENTAL, se instala sobre la rc.1.20):
+1. Descomprimir el ZIP incremental.
+2. Copiar su contenido sobre la raíz del proyecto, reemplazando archivos (src/index.js y public/_headers).
+3. Ejecutar el despliegue habitual de Cloudflare Workers.
+4. No requiere migración D1.
+
+RESPALDO (paquete COMPLETO): contiene todo el proyecto; se conserva sin instalar.
+
+Pruebas mínimas:
+1. Como OSC_ADMIN, abrir /manuals/link/index.json: muestra el catálogo de 25 documentos.
+2. Como OSC_ADMIN, abrir /manuals/link/original/doc-link.pdf: abre el PDF.
+3. Como estudiante (u otra cuenta no admin), abrir esas mismas URLs: "Not found" (404).
+4. Sin sesión, abrir /manuals/link/index.json: "Not found" (404).
+5. Documentación Técnica: siguen solo Visa, Mastercard y Amex, sin rastro de LINK.
+6. Abrir un manual Visa desde Documentación Técnica: funciona como antes.
