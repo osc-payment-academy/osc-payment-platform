@@ -113,7 +113,7 @@ tbody tr{border-bottom:1px solid #12293d}tbody tr.curso{background:#0f2238}
 <div class="modal" id="modal"><div class="box">
   <span class="x" onclick="cerrarModal()">✕</span>
   <h2 id="modalTit">Sin respuesta</h2>
-  <table><thead><tr><th>Hora</th><th>Canal</th><th>Terminal</th><th>Comercio</th><th>MTI</th><th>STAN</th><th>RRN</th><th>Monto</th><th>Reversa</th></tr></thead>
+  <table><thead><tr><th>Hora</th><th>Canal</th><th>Terminal</th><th>Comercio</th><th>MTI</th><th>Transacción (DE3)</th><th>STAN</th><th>RRN</th><th>Monto</th><th>Reversa</th></tr></thead>
   <tbody id="modalBody"></tbody></table>
   <div class="foot">Seguimiento operativo: Terminal + STAN + RRN + hora.</div>
 </div></div>
@@ -185,7 +185,7 @@ async function abrirSinResp(){
   try{
    const r=await fetch(BASE+'/api/sin_respuesta',{cache:'no-store'});const d=await r.json();
    $('modalTit').textContent='Sin respuesta ('+(d?d.length:0)+') — ventana actual';
-   $('modalBody').innerHTML=(d&&d.length)?d.map(x=>'<tr><td>'+esc(x.hora)+'</td><td>'+esc(x.canal)+'</td><td>'+esc(x.terminal)+'</td><td>'+esc(x.comercio)+'</td><td>'+esc(x.mti)+'</td><td>'+esc(x.stan)+'</td><td>'+esc(x.rrn)+'</td><td>'+esc(x.monto)+'</td><td>'+(x.tiene_reversa?('SÍ '+esc(x.hora_reversa)):'—')+'</td></tr>').join(''):'<tr><td colspan="9" style="text-align:center;color:var(--muted)">Sin registros</td></tr>';
+   $('modalBody').innerHTML=(d&&d.length)?d.map(x=>'<tr><td>'+esc(x.hora)+'</td><td>'+esc(x.canal)+'</td><td>'+esc(x.terminal)+'</td><td>'+esc(x.comercio)+'</td><td>'+esc(x.mti)+'</td><td><b>'+esc(x.proc_code)+'</b>'+(x.transaccion?(' · '+esc(x.transaccion)):'')+'</td><td>'+esc(x.stan)+'</td><td>'+esc(x.rrn)+'</td><td>'+esc(x.monto)+'</td><td>'+(x.tiene_reversa?('SÍ '+esc(x.hora_reversa)):'—')+'</td></tr>').join(''):'<tr><td colspan="10" style="text-align:center;color:var(--muted)">Sin registros</td></tr>';
    $('modal').classList.add('open');
   }catch(e){}
 }
