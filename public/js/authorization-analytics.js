@@ -57,7 +57,7 @@ function render(d){
   const total=Number(r.rechazadas||1),codes=(d.codigos||[]).slice().sort((a,b)=>b.cantidad-a.cantidad);
   // nombre del DE39: primero la descripción del JSON (según la red), luego el catálogo local.
   const nombreDe=x=>x.descripcion||codeMeta(x.de39).name;
-  $('codes').innerHTML=codes.map((x,i)=>{const m=codeMeta(x.de39);return `<tr><td class="rank">${i+1}</td><td><b>${safe(x.de39)}</b></td><td>${safe(nombreDe(x))}</td><td>${number(x.cantidad)}</td><td>${pct(x.cantidad/total*100)}</td><td>${safe(m.category)}</td><td>${safe(m.action)}</td></tr>`}).join('');
+  $('codes').innerHTML=codes.map((x,i)=>{const m=codeMeta(x.de39),esAprob=String(x.de39)==='00';return `<tr${esAprob?' style="color:var(--green)"':''}><td class="rank">${i+1}</td><td><b>${safe(x.de39)}</b></td><td>${safe(nombreDe(x))}</td><td>${number(x.cantidad)}</td><td>${esAprob?'—':pct(x.cantidad/total*100)}</td><td>${esAprob?'—':safe(m.category)}</td><td>${esAprob?'Transacciones aprobadas (contexto).':safe(m.action)}</td></tr>`}).join('');
   $('codeSelect').innerHTML=codes.map(x=>`<option value="${safe(x.de39)}">DE39 ${safe(x.de39)} · ${safe(nombreDe(x))}</option>`).join('');$('codeSelect').value=String(r.codigo_rechazo_principal||codes[0]?.de39||'');renderCodeDetail($('codeSelect').value);
   renderCruce(d);
 }
@@ -66,6 +66,8 @@ function render(d){
 let cruceData=null,cruceTot={sin:0,lentas:0},descCod={},sortSin={k:'hora_in',dir:1},sortLen={k:'demora_seg',dir:-1};
 const descDe=c=>descCod[String(c)]||codeMeta(c).name;
 const revCell=x=>x.tiene_reversa?`<span class="d3-rev-si">SÍ ${safe(x.hora_reversa||'')}</span>`:'<span class="d3-rev-no">—</span>';
+// Formatea segundos como 45s / 1m25s / 2h05m
+function fmtDemora(s){s=Number(s||0);if(s<60)return (s<10?s.toFixed(1):Math.round(s))+'s';const m=Math.floor(s/60),r=Math.round(s%60);if(m<60)return m+'m'+(r?String(r).padStart(2,'0')+'s':'');const h=Math.floor(m/60),mm=m%60;return h+'h'+String(mm).padStart(2,'0')+'m';}
 const filtrarD3=(arr,q)=>{q=q.trim().toLowerCase();return q?arr.filter(x=>[x.canal,x.terminal,x.comercio,x.stan,x.rrn,x.mti,x.proc_code,x.transaccion].some(v=>String(v||'').toLowerCase().includes(q))):arr;};
 const ordenarD3=(arr,s)=>arr.slice().sort((p,q)=>{let u=p[s.k],v=q[s.k];if(s.k==='demora_seg'){u=+u;v=+v;}else{u=String(u||'');v=String(v||'');}return(u>v?1:u<v?-1:0)*s.dir;});
 function contarD3(mostradas, cargadas, total){
@@ -80,7 +82,7 @@ function renderSinResp(){
 }
 function renderLentasD3(){
   const src=(cruceData&&cruceData.lentas)||[],arr=ordenarD3(filtrarD3(src,$('d3qLentas').value),sortLen);
-  $('d3tLentas').tBodies[0].innerHTML=arr.map(x=>`<tr><td>${safe(x.hora_in)}</td><td>${safe(x.hora_out)}</td><td class="warn">${Number(x.demora_seg||0).toFixed(1)}</td><td>${safe(x.canal)}</td><td>${safe(x.terminal)}</td><td>${safe(x.comercio)}</td><td><b>${safe(x.proc_code)}</b>${x.transaccion?' · '+safe(x.transaccion):''}</td><td>${safe(x.stan)}</td><td>${safe(x.rrn)}</td><td>${safe(x.monto)}</td><td title="${safe(descDe(x.de39))}">${safe(x.de39)}</td><td>${revCell(x)}</td></tr>`).join('')||'<tr><td colspan="12" class="d3-empty">Sin registros</td></tr>';
+  $('d3tLentas').tBodies[0].innerHTML=arr.map(x=>`<tr><td>${safe(x.hora_in)}</td><td>${safe(x.hora_out)}</td><td class="warn">${fmtDemora(x.demora_seg)}</td><td>${safe(x.canal)}</td><td>${safe(x.terminal)}</td><td>${safe(x.comercio)}</td><td><b>${safe(x.proc_code)}</b>${x.transaccion?' · '+safe(x.transaccion):''}</td><td>${safe(x.stan)}</td><td>${safe(x.rrn)}</td><td>${safe(x.monto)}</td><td title="${safe(descDe(x.de39))}">${safe(x.de39)}</td><td>${revCell(x)}</td></tr>`).join('')||'<tr><td colspan="12" class="d3-empty">Sin registros</td></tr>';
   $('d3cLentas').textContent=contarD3(arr.length,src.length,cruceTot.lentas);
 }
 function renderCruce(d){
