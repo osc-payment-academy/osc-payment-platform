@@ -63,26 +63,32 @@ function render(d){
 }
 
 /* ===== D3 · Cruce TRNin↔TRNout (sin respuesta / lentas / reversa) ===== */
-let cruceData=null,descCod={},sortSin={k:'hora_in',dir:1},sortLen={k:'demora_seg',dir:-1};
+let cruceData=null,cruceTot={sin:0,lentas:0},descCod={},sortSin={k:'hora_in',dir:1},sortLen={k:'demora_seg',dir:-1};
 const descDe=c=>descCod[String(c)]||codeMeta(c).name;
 const revCell=x=>x.tiene_reversa?`<span class="d3-rev-si">SÍ ${safe(x.hora_reversa||'')}</span>`:'<span class="d3-rev-no">—</span>';
 const filtrarD3=(arr,q)=>{q=q.trim().toLowerCase();return q?arr.filter(x=>[x.canal,x.terminal,x.comercio,x.stan,x.rrn,x.mti,x.proc_code,x.transaccion].some(v=>String(v||'').toLowerCase().includes(q))):arr;};
 const ordenarD3=(arr,s)=>arr.slice().sort((p,q)=>{let u=p[s.k],v=q[s.k];if(s.k==='demora_seg'){u=+u;v=+v;}else{u=String(u||'');v=String(v||'');}return(u>v?1:u<v?-1:0)*s.dir;});
+function contarD3(mostradas, cargadas, total){
+  let t=`${number(mostradas)} de ${number(cargadas)} cargadas`;
+  if(total>cargadas)t+=` · total ${number(total)} (detalle acotado; completo en el CSV del agente)`;
+  return t;
+}
 function renderSinResp(){
   const src=(cruceData&&cruceData.sin_respuesta)||[],arr=ordenarD3(filtrarD3(src,$('d3qSin').value),sortSin);
   $('d3tSin').tBodies[0].innerHTML=arr.map(x=>`<tr><td>${safe(x.hora_in)}</td><td>${safe(x.canal)}</td><td>${safe(x.terminal)}</td><td>${safe(x.comercio)}</td><td>${safe(x.mti)}</td><td><b>${safe(x.proc_code)}</b>${x.transaccion?' · '+safe(x.transaccion):''}</td><td>${safe(x.stan)}</td><td>${safe(x.rrn)}</td><td>${safe(x.monto)}</td><td>${revCell(x)}</td></tr>`).join('')||'<tr><td colspan="10" class="d3-empty">Sin registros</td></tr>';
-  $('d3cSin').textContent=`${number(arr.length)} de ${number(src.length)} transacciones`;
+  $('d3cSin').textContent=contarD3(arr.length,src.length,cruceTot.sin);
 }
 function renderLentasD3(){
   const src=(cruceData&&cruceData.lentas)||[],arr=ordenarD3(filtrarD3(src,$('d3qLentas').value),sortLen);
   $('d3tLentas').tBodies[0].innerHTML=arr.map(x=>`<tr><td>${safe(x.hora_in)}</td><td>${safe(x.hora_out)}</td><td class="warn">${Number(x.demora_seg||0).toFixed(1)}</td><td>${safe(x.canal)}</td><td>${safe(x.terminal)}</td><td>${safe(x.comercio)}</td><td><b>${safe(x.proc_code)}</b>${x.transaccion?' · '+safe(x.transaccion):''}</td><td>${safe(x.stan)}</td><td>${safe(x.rrn)}</td><td>${safe(x.monto)}</td><td title="${safe(descDe(x.de39))}">${safe(x.de39)}</td><td>${revCell(x)}</td></tr>`).join('')||'<tr><td colspan="12" class="d3-empty">Sin registros</td></tr>';
-  $('d3cLentas').textContent=`${number(arr.length)} de ${number(src.length)} transacciones`;
+  $('d3cLentas').textContent=contarD3(arr.length,src.length,cruceTot.lentas);
 }
 function renderCruce(d){
   const c=d.cruce;const sec=$('cruce');
   if(!c){sec.hidden=true;return}
   descCod={};(d.codigos||[]).forEach(x=>{if(x.descripcion)descCod[String(x.de39)]=x.descripcion;});
   sec.hidden=false;cruceData=c;const r=c.resumen||{};
+  cruceTot={sin:Number(r.sin_respuesta||0),lentas:Number(r.lentas_sobre_umbral||0)};
   $('d3Apar').textContent=number(r.apareadas);
   $('d3Sin').textContent=number(r.sin_respuesta)+(r.sin_respuesta_con_reversa?` · ${number(r.sin_respuesta_con_reversa)} c/rev`:'');
   $('d3Lentas').textContent=number(r.lentas_sobre_umbral);
