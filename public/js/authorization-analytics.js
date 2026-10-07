@@ -51,14 +51,20 @@ function render(d){
   $('hourChart').innerHTML=hours.map(x=>`<div class="bar-wrap" title="${safe(x.Hora)}: ${pct(x.TasaRechazoPct)} · ${number(x.Rechazadas)} rechazadas"><div class="bar" style="height:${Math.max(1,Number(x.TasaRechazoPct||0)/max*100)}%"></div></div>`).join('');
   const peak=(d.intervalos_15_minutos||[]).slice().sort((a,b)=>b.TasaRechazoPct-a.TasaRechazoPct)[0];
   $('findings').innerHTML=`<div class="callout"><strong>Pico crítico: ${safe(r.peor_hora)}</strong>${number(hours.find(x=>x.Hora===r.peor_hora)?.Rechazadas)} rechazos; tasa ${pct(r.peor_hora_tasa_rechazo_pct)}.</div><div class="callout"><strong>Intervalo prioritario: ${safe(peak?.FranjaInicio||r.peor_intervalo_15m)}</strong>${number(peak?.Rechazadas)} rechazos sobre ${number(peak?.TotalFinancieras)} operaciones; tasa ${pct(peak?.TasaRechazoPct)}.</div><div class="callout"><strong>Hipótesis inicial, no causa raíz</strong>DE39 ${safe(r.codigo_rechazo_principal)} concentra ${number(r.cantidad_codigo_principal)} rechazos. Para confirmar una falla técnica deben correlacionarse logs del switch, Sybase/Oracle y métricas.</div>`;
+  // Red/formato del banco (viene en el JSON). Define el rótulo y las descripciones.
+  const red=(d.formato||'').replace('_ISO8583','')||'—';
+  if($('de39Eyebrow'))$('de39Eyebrow').textContent='CAMPO 39 · '+red;
   const total=Number(r.rechazadas||1),codes=(d.codigos||[]).slice().sort((a,b)=>b.cantidad-a.cantidad);
-  $('codes').innerHTML=codes.map((x,i)=>{const m=codeMeta(x.de39);return `<tr><td class="rank">${i+1}</td><td><b>${safe(x.de39)}</b></td><td>${safe(m.name)}</td><td>${number(x.cantidad)}</td><td>${pct(x.cantidad/total*100)}</td><td>${safe(m.category)}</td><td>${safe(m.action)}</td></tr>`}).join('');
-  $('codeSelect').innerHTML=codes.map(x=>`<option value="${safe(x.de39)}">DE39 ${safe(x.de39)} · ${safe(codeMeta(x.de39).name)}</option>`).join('');$('codeSelect').value=String(r.codigo_rechazo_principal||codes[0]?.de39||'');renderCodeDetail($('codeSelect').value);
+  // nombre del DE39: primero la descripción del JSON (según la red), luego el catálogo local.
+  const nombreDe=x=>x.descripcion||codeMeta(x.de39).name;
+  $('codes').innerHTML=codes.map((x,i)=>{const m=codeMeta(x.de39);return `<tr><td class="rank">${i+1}</td><td><b>${safe(x.de39)}</b></td><td>${safe(nombreDe(x))}</td><td>${number(x.cantidad)}</td><td>${pct(x.cantidad/total*100)}</td><td>${safe(m.category)}</td><td>${safe(m.action)}</td></tr>`}).join('');
+  $('codeSelect').innerHTML=codes.map(x=>`<option value="${safe(x.de39)}">DE39 ${safe(x.de39)} · ${safe(nombreDe(x))}</option>`).join('');$('codeSelect').value=String(r.codigo_rechazo_principal||codes[0]?.de39||'');renderCodeDetail($('codeSelect').value);
   renderCruce(d);
 }
 
 /* ===== D3 · Cruce TRNin↔TRNout (sin respuesta / lentas / reversa) ===== */
-let cruceData=null,sortSin={k:'hora_in',dir:1},sortLen={k:'demora_seg',dir:-1};
+let cruceData=null,descCod={},sortSin={k:'hora_in',dir:1},sortLen={k:'demora_seg',dir:-1};
+const descDe=c=>descCod[String(c)]||codeMeta(c).name;
 const revCell=x=>x.tiene_reversa?`<span class="d3-rev-si">SÍ ${safe(x.hora_reversa||'')}</span>`:'<span class="d3-rev-no">—</span>';
 const filtrarD3=(arr,q)=>{q=q.trim().toLowerCase();return q?arr.filter(x=>[x.canal,x.terminal,x.comercio,x.stan,x.rrn,x.mti].some(v=>String(v||'').toLowerCase().includes(q))):arr;};
 const ordenarD3=(arr,s)=>arr.slice().sort((p,q)=>{let u=p[s.k],v=q[s.k];if(s.k==='demora_seg'){u=+u;v=+v;}else{u=String(u||'');v=String(v||'');}return(u>v?1:u<v?-1:0)*s.dir;});
@@ -69,12 +75,13 @@ function renderSinResp(){
 }
 function renderLentasD3(){
   const src=(cruceData&&cruceData.lentas)||[],arr=ordenarD3(filtrarD3(src,$('d3qLentas').value),sortLen);
-  $('d3tLentas').tBodies[0].innerHTML=arr.map(x=>`<tr><td>${safe(x.hora_in)}</td><td>${safe(x.hora_out)}</td><td class="warn">${Number(x.demora_seg||0).toFixed(1)}</td><td>${safe(x.canal)}</td><td>${safe(x.terminal)}</td><td>${safe(x.comercio)}</td><td>${safe(x.stan)}</td><td>${safe(x.rrn)}</td><td>${safe(x.monto)}</td><td title="${safe(codeMeta(x.de39).name)}">${safe(x.de39)}</td><td>${revCell(x)}</td></tr>`).join('')||'<tr><td colspan="11" class="d3-empty">Sin registros</td></tr>';
+  $('d3tLentas').tBodies[0].innerHTML=arr.map(x=>`<tr><td>${safe(x.hora_in)}</td><td>${safe(x.hora_out)}</td><td class="warn">${Number(x.demora_seg||0).toFixed(1)}</td><td>${safe(x.canal)}</td><td>${safe(x.terminal)}</td><td>${safe(x.comercio)}</td><td>${safe(x.stan)}</td><td>${safe(x.rrn)}</td><td>${safe(x.monto)}</td><td title="${safe(descDe(x.de39))}">${safe(x.de39)}</td><td>${revCell(x)}</td></tr>`).join('')||'<tr><td colspan="11" class="d3-empty">Sin registros</td></tr>';
   $('d3cLentas').textContent=`${number(arr.length)} de ${number(src.length)} transacciones`;
 }
 function renderCruce(d){
   const c=d.cruce;const sec=$('cruce');
   if(!c){sec.hidden=true;return}
+  descCod={};(d.codigos||[]).forEach(x=>{if(x.descripcion)descCod[String(x.de39)]=x.descripcion;});
   sec.hidden=false;cruceData=c;const r=c.resumen||{};
   $('d3Apar').textContent=number(r.apareadas);
   $('d3Sin').textContent=number(r.sin_respuesta)+(r.sin_respuesta_con_reversa?` · ${number(r.sin_respuesta_con_reversa)} c/rev`:'');

@@ -68,7 +68,7 @@ tbody tr{border-bottom:1px solid #12293d}tbody tr.curso{background:#0f2238}
 <main class="shell">
   <header class="top">
     <div>
-      <p class="eyebrow">OSC · AUTHORIZATION ANALYTICS</p>
+      <p class="eyebrow">OSC · AUTHORIZATION ANALYTICS <span id="rtRed" style="color:var(--muted)"></span></p>
       <h1>Monitoreo en Vivo de Autorizaciones
         <span class="live"><span class="dot off" id="dot"></span><span id="estadoTxt">conectando…</span></span>
       </h1>
@@ -157,6 +157,7 @@ async function tick(){
  try{
   const r=await fetch(BASE+'/api/estado',{cache:'no-store'});const e=await r.json();
   conexion(true);
+  $('rtRed').textContent=e.red?('· Red '+String(e.red).replace('_ISO8583','')):'';
   $('reloj').textContent=e.reloj||'--:--:--';
   const v=e.ventana||{};
   const kpi=(lbl,val,cls,sub,onclick)=>'<div class="kpi '+(cls||'')+(onclick?' click':'')+'"'+(onclick?' onclick="'+onclick+'"':'')+'><div class="lbl">'+lbl+'</div><div class="val">'+val+'</div>'+(sub?'<div class="sub">'+sub+'</div>':'')+'</div>';

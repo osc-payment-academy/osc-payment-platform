@@ -1,0 +1,29 @@
+OSC · Menú + páginas (una sola red, código no replicado)
+========================================================
+Extraé este ZIP sobre la raíz del proyecto (respeta public/). Reemplaza/agrega:
+
+  public/index.html                      -> MENÚ: "Análisis Diario de Autorizaciones" +
+                                            "🔴 Monitoreo en Vivo de Autorizaciones"
+                                            (ambos bajo data-feature AUTHORIZATION_ANALYTICS).
+  public/authorization-analytics.html    -> Análisis Diario con sección D3.
+  public/js/authorization-analytics.js   -> idem + usa la descripción DE39 y la red del JSON.
+  public/css/authorization-analytics.css -> idem.
+  public/monitoreo-vivo.html             -> Monitoreo en Vivo (consume agentes-rt; muestra la red).
+
+Después de subir: HARD REFRESH (Ctrl+F5).
+
+Un solo código para todos los bancos
+------------------------------------
+No se replica el proyecto por banco. Lo que cambia es:
+  (a) el config.txt del agente   -> Formato=LINK_ISO8583 (Banco Ciudad) o Formato=VISA_ISO8583 (Ecuador)
+  (b) el tenant/licencia en la plataforma.
+
+Las páginas son agnósticas a la red: las descripciones de los DE39 y el nombre de la red
+viajan DENTRO del JSON que genera el agente. El Diario muestra "CAMPO 39 · LINK" o "· VISA"
+según el archivo; el Monitoreo muestra "· Red LINK/VISA". Una red nueva se agrega en el
+agente (tabla de códigos + processor), sin tocar la plataforma.
+
+Ejecutables (actualizados)
+--------------------------
+  agentes.exe     v1.7     -> JSON único + descripciones DE39 + campo "formato".
+  agentes-rt.exe  rt-v1.6  -> CORS + descripciones DE39 + campo "red" en el snapshot.
