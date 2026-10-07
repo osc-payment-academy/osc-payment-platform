@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>OSC · Monitoreo en Vivo de Autorizaciones</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+<style>
+:root{--bg:#06111d;--panel:#0b1928;--panel2:#081624;--line:#23435f;--text:#f4f8fc;--muted:#98aec2;--blue:#42a5ff;--green:#21d187;--amber:#f7b51c;--red:#ff6670}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(circle at 84% 5%,#123b67 0,transparent 28%),var(--bg);color:var(--text);font-family:Inter,Segoe UI,Arial,sans-serif}
+.shell{max-width:1280px;margin:auto;padding:22px}
+.top{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap}
+.brand{font-weight:900}.brand span{color:var(--blue)}
+.eyebrow{color:var(--blue);font-size:11px;letter-spacing:.08em;margin:0}
+h1{margin:.3rem 0;display:flex;align-items:center;gap:12px}
+h2{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin:0 0 12px}
+.muted{color:var(--muted);line-height:1.5}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.btn{border:1px solid #3979a8;border-radius:9px;background:#113a5d;color:#fff;padding:9px 13px;text-decoration:none;font-weight:700;cursor:pointer;font-size:13px}
+input[type=text]{background:#061522;border:1px solid var(--line);border-radius:8px;color:var(--text);padding:8px 10px;font-size:13px}
+.live{display:inline-flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);font-weight:600}
+.dot{width:12px;height:12px;border-radius:50%;background:var(--green);box-shadow:0 0 10px var(--green);animation:pulse 1.4s infinite}
+.dot.off{background:var(--red);box-shadow:0 0 10px var(--red);animation:none}
+@keyframes pulse{0%{opacity:1}50%{opacity:.3}100%{opacity:1}}
+.reloj{font-size:26px;font-weight:800;font-variant-numeric:tabular-nums}
+.kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin:18px 0}
+@media(max-width:1000px){.kpis{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:620px){.kpis{grid-template-columns:repeat(2,1fr)}}
+.kpi,.panel{border:1px solid var(--line);border-radius:14px;background:linear-gradient(180deg,var(--panel),var(--panel2));padding:16px}
+.kpi .lbl{color:var(--muted);font-size:10px;letter-spacing:.06em;text-transform:uppercase}
+.kpi .val{font-size:27px;font-weight:800;margin-top:6px;font-variant-numeric:tabular-nums}
+.kpi .sub{color:var(--muted);font-size:11px;margin-top:4px;font-variant-numeric:tabular-nums}
+.kpi.bad .val{color:var(--red)}.kpi.warn .val{color:var(--amber)}
+.kpi.click{cursor:pointer;transition:border-color .15s}.kpi.click:hover{border-color:var(--blue)}
+.alertas{display:flex;flex-direction:column;gap:10px;margin-bottom:18px}
+.alerta{border-radius:10px;padding:11px 15px;font-weight:600;display:flex;gap:12px;align-items:center}
+.alerta.CRITICA{background:#2a0f12;border:1px solid var(--red);color:#ffb4ac}
+.alerta.ALERTA{background:#2a2410;border:1px solid var(--amber);color:#ffe79a}
+.badge{font-size:11px;padding:2px 8px;border-radius:20px;background:#0008}
+.sinalertas{color:var(--green);font-weight:600}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px}
+@media(max-width:1000px){.grid2{grid-template-columns:1fr}}
+.panel{margin-bottom:16px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:8px 12px;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+thead th{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--line)}
+tbody tr{border-bottom:1px solid #12293d}tbody tr.curso{background:#0f2238}
+.pill{font-size:10px;padding:1px 7px;border-radius:20px;background:#13324c;color:var(--blue);margin-left:8px}
+.tasa-hi{color:var(--red);font-weight:700}
+.foot{color:#4d6076;font-size:12px;margin-top:10px}
+.bar-row{display:flex;align-items:center;gap:10px;margin-bottom:6px;font-variant-numeric:tabular-nums}
+.bar-row .cod{width:48px;font-weight:700}
+.bar-track{flex:1;background:#061522;border-radius:6px;height:16px;overflow:hidden}
+.bar-fill{height:100%;background:var(--blue);border-radius:6px}
+.bar-row .n{width:150px;text-align:right;color:var(--muted)}
+.cfg{display:none;margin-top:10px;gap:8px;align-items:center;flex-wrap:wrap}
+.cfg.open{display:flex}
+.modal{position:fixed;inset:0;background:#000b;display:none;align-items:flex-start;justify-content:center;padding:40px 16px;z-index:10}
+.modal.open{display:flex}
+.modal .box{background:var(--panel);border:1px solid var(--line);border-radius:14px;max-width:1000px;width:100%;max-height:85vh;overflow:auto;padding:20px}
+.modal .x{float:right;cursor:pointer;color:var(--muted);font-size:20px}
+.svgwrap{width:100%;overflow:visible}
+</style>
+</head>
+<body>
+<main class="shell">
+  <header class="top">
+    <div>
+      <p class="eyebrow">OSC · AUTHORIZATION ANALYTICS</p>
+      <h1>Monitoreo en Vivo de Autorizaciones
+        <span class="live"><span class="dot off" id="dot"></span><span id="estadoTxt">conectando…</span></span>
+      </h1>
+      <p class="muted">Lectura del log al instante. Umbrales, latencia p95/p99, canales y transacciones sin respuesta en tiempo real.</p>
+      <div class="cfg" id="cfg">
+        <label class="muted" style="font-size:12px">URL del agente</label>
+        <input id="base" type="text" size="30" placeholder="http://localhost:8080">
+        <button class="btn" id="saveBase">Guardar</button>
+        <span class="muted" style="font-size:12px">El agente-rt debe estar corriendo y accesible desde este navegador.</span>
+      </div>
+    </div>
+    <div class="row">
+      <div class="reloj" id="reloj">--:--:--</div>
+      <button class="btn" id="gear" title="Configurar URL del agente">⚙ Agente</button>
+      <a class="btn" href="index.html">← Plataforma</a>
+    </div>
+  </header>
+
+  <section class="kpis" id="kpis"></section>
+  <h2>Alertas</h2>
+  <div class="alertas" id="alertas"></div>
+
+  <div class="grid2">
+    <div class="panel"><h2>Transacciones por hora</h2><div class="svgwrap" id="chartVol"></div></div>
+    <div class="panel"><h2>Tasa de rechazo por hora (%)</h2><div class="svgwrap" id="chartRech"></div></div>
+  </div>
+  <div class="grid2">
+    <div class="panel"><h2>Rechazos por código (ventana)</h2><div id="codigos"></div></div>
+    <div class="panel"><h2>Canales (ventana)</h2>
+      <table><thead><tr><th>Canal</th><th>Transacciones</th><th>Rechazadas</th><th>Tasa rechazo</th></tr></thead>
+      <tbody id="canales"></tbody></table>
+      <div class="foot">Sobre pares requerimiento + respuesta apareados.</div>
+    </div>
+  </div>
+  <div class="panel"><h2>Transacciones por hora (detalle)</h2>
+    <table><thead><tr><th>Hora</th><th>Fin.</th><th>Aprob.</th><th>Rech.</th><th>Tasa</th></tr></thead>
+    <tbody id="filas"></tbody></table>
+  </div>
+  <p class="foot" id="foot"></p>
+</main>
+
+<div class="modal" id="modal"><div class="box">
+  <span class="x" onclick="cerrarModal()">✕</span>
+  <h2 id="modalTit">Sin respuesta</h2>
+  <table><thead><tr><th>Hora</th><th>Canal</th><th>Terminal</th><th>Comercio</th><th>MTI</th><th>STAN</th><th>RRN</th><th>Monto</th><th>Reversa</th></tr></thead>
+  <tbody id="modalBody"></tbody></table>
+  <div class="foot">Seguimiento operativo: Terminal + STAN + RRN + hora.</div>
+</div></div>
+
+<script>
+const $=id=>document.getElementById(id);
+const fmt=n=>new Intl.NumberFormat('es-AR').format(Number(n||0));
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+// URL base del agente (persistida por navegador del NOC)
+let BASE='http://localhost:8080';
+try{BASE=localStorage.getItem('osc_rt_base')||BASE;}catch(e){}
+$('base').value=BASE;
+$('gear').onclick=()=>$('cfg').classList.toggle('open');
+$('saveBase').onclick=()=>{BASE=$('base').value.trim().replace(/\/$/,'');try{localStorage.setItem('osc_rt_base',BASE);}catch(e){}$('cfg').classList.remove('open');tick();};
+
+function lineChart(el,pts,color,fmtVal){
+  const W=el.clientWidth||520,H=200,pad={l:48,r:12,t:12,b:26};
+  if(!pts.length){el.innerHTML='<div style="color:var(--muted);padding:20px">Sin datos</div>';return;}
+  const ys=pts.map(p=>p.v),ymax=Math.max(1,...ys)*1.1,iw=W-pad.l-pad.r,ih=H-pad.t-pad.b;
+  const X=i=>pad.l+(pts.length<2?iw/2:iw*i/(pts.length-1)),Y=v=>pad.t+ih-ih*(v/ymax);
+  let g='';
+  for(let k=0;k<=4;k++){const v=ymax*k/4,y=Y(v);
+    g+='<line x1="'+pad.l+'" y1="'+y+'" x2="'+(W-pad.r)+'" y2="'+y+'" stroke="#23435f" stroke-width="1"/>';
+    g+='<text x="'+(pad.l-6)+'" y="'+(y+4)+'" fill="#4d6076" font-size="10" text-anchor="end">'+fmtVal(v)+'</text>';}
+  let d='';pts.forEach((p,i)=>{d+=(i?'L':'M')+X(i)+' '+Y(p.v)+' ';});
+  g+='<path d="'+d+'L'+X(pts.length-1)+' '+(pad.t+ih)+' L'+X(0)+' '+(pad.t+ih)+' Z" fill="'+color+'22"/>';
+  g+='<path d="'+d+'" fill="none" stroke="'+color+'" stroke-width="2"/>';
+  pts.forEach((p,i)=>{const x=X(i),y=Y(p.v),cur=p.cur;
+    g+='<circle cx="'+x+'" cy="'+y+'" r="'+(cur?5:3.5)+'" fill="'+(cur?'var(--bg)':color)+'" stroke="'+color+'" stroke-width="2"><title>'+p.l+(cur?' (en curso)':'')+': '+fmtVal(p.v)+'</title></circle>';
+    if(i%Math.ceil(pts.length/8||1)===0||cur)g+='<text x="'+x+'" y="'+(H-8)+'" fill="'+(cur?'var(--blue)':'#4d6076')+'" font-size="10" text-anchor="middle">'+p.l+'</text>';});
+  el.innerHTML='<svg viewBox="0 0 '+W+' '+H+'" width="100%" height="'+H+'">'+g+'</svg>';
+}
+
+function conexion(ok){
+  $('dot').className='dot'+(ok?'':' off');
+  $('estadoTxt').textContent=ok?'en vivo':'sin conexión';
+}
+
+async function tick(){
+ try{
+  const r=await fetch(BASE+'/api/estado',{cache:'no-store'});const e=await r.json();
+  conexion(true);
+  $('reloj').textContent=e.reloj||'--:--:--';
+  const v=e.ventana||{};
+  const kpi=(lbl,val,cls,sub,onclick)=>'<div class="kpi '+(cls||'')+(onclick?' click':'')+'"'+(onclick?' onclick="'+onclick+'"':'')+'><div class="lbl">'+lbl+'</div><div class="val">'+val+'</div>'+(sub?'<div class="sub">'+sub+'</div>':'')+'</div>';
+  $('kpis').innerHTML=
+    kpi('TPS (vent. '+(v.minutos||0)+'m)',(v.tps||0).toFixed(1))+
+    kpi('Tasa rechazo',(v.tasa_rechazo_pct||0).toFixed(2)+'%',v.tasa_rechazo_pct>=10?'bad':'')+
+    kpi('Latencia',(v.latencia_prom_seg||0).toFixed(2)+'s',v.latencia_p95_seg>=5?'warn':'','p95 '+(v.latencia_p95_seg||0).toFixed(2)+'s · p99 '+(v.latencia_p99_seg||0).toFixed(2)+'s')+
+    kpi('Sin respuesta',fmt(v.sin_respuesta),v.sin_respuesta>0?'bad':'','ver detalle ▸','abrirSinResp()')+
+    kpi('Resp. tarde',fmt(v.resp_tarde),v.resp_tarde>0?'warn':'')+
+    kpi('Caída volumen',(v.caida_volumen_pct||0).toFixed(0)+'%',v.caida_volumen_pct>=50?'bad':'','vs ventana previa');
+  const al=e.alertas||[];
+  $('alertas').innerHTML=al.length?al.map(a=>'<div class="alerta '+esc(a.nivel)+'"><span class="badge">'+esc(a.nivel)+'</span><span>'+esc(a.mensaje)+'</span></div>').join(''):'<div class="sinalertas">✓ Sin alertas — todo dentro de umbrales</div>';
+  const horas=(e.horas||[]).slice().reverse();
+  lineChart($('chartVol'),horas.map(h=>({l:h.hora.slice(0,2),v:h.financieras,cur:h.en_curso})),'#42a5ff',x=>fmt(Math.round(x)));
+  lineChart($('chartRech'),horas.map(h=>({l:h.hora.slice(0,2),v:h.tasa_rechazo_pct,cur:h.en_curso})),'#f7b51c',x=>x.toFixed(1)+'%');
+  const cods=e.rechazos||[],maxc=Math.max(1,...cods.map(c=>c.cantidad));
+  $('codigos').innerHTML=cods.length?cods.map(c=>'<div class="bar-row"><span class="cod">'+esc(c.codigo)+'</span><span class="bar-track"><span class="bar-fill" style="width:'+(c.cantidad*100/maxc)+'%"></span></span><span class="n">'+fmt(c.cantidad)+' · '+(c.porcentaje_de_rech||0).toFixed(1)+'%</span></div><div style="margin:-2px 0 9px 58px;color:var(--muted);font-size:12px">'+esc(c.descripcion||'')+'</div>').join(''):'<div class="muted">Sin rechazos en la ventana</div>';
+  $('canales').innerHTML=(e.canales||[]).map(c=>'<tr><td>'+esc(c.canal)+'</td><td>'+fmt(c.transacciones)+'</td><td>'+fmt(c.rechazadas)+'</td><td class="'+(c.tasa_rechazo_pct>=10?'tasa-hi':'')+'">'+(c.tasa_rechazo_pct||0).toFixed(2)+'%</td></tr>').join('')||'<tr><td colspan="4" style="text-align:center;color:var(--muted)">Sin datos</td></tr>';
+  $('filas').innerHTML=(e.horas||[]).map(h=>'<tr class="'+(h.en_curso?'curso':'')+'"><td>'+esc(h.hora)+(h.en_curso?'<span class="pill">en curso</span>':'')+'</td><td>'+fmt(h.financieras)+'</td><td>'+fmt(h.aprobadas)+'</td><td>'+fmt(h.rechazadas)+'</td><td class="'+(h.tasa_rechazo_pct>=10?'tasa-hi':'')+'">'+(h.tasa_rechazo_pct||0).toFixed(2)+'%</td></tr>').join('')||'<tr><td colspan="5" style="text-align:center;color:var(--muted)">Esperando datos…</td></tr>';
+  $('foot').textContent='Líneas procesadas: '+fmt(e.total_lineas)+' · actualiza cada 3s · '+BASE;
+ }catch(err){conexion(false);$('foot').textContent='No se pudo conectar con el agente en '+BASE+' — revisá que agentes-rt esté corriendo y la URL (⚙ Agente).';}
+}
+
+async function abrirSinResp(){
+  try{
+   const r=await fetch(BASE+'/api/sin_respuesta',{cache:'no-store'});const d=await r.json();
+   $('modalTit').textContent='Sin respuesta ('+(d?d.length:0)+') — ventana actual';
+   $('modalBody').innerHTML=(d&&d.length)?d.map(x=>'<tr><td>'+esc(x.hora)+'</td><td>'+esc(x.canal)+'</td><td>'+esc(x.terminal)+'</td><td>'+esc(x.comercio)+'</td><td>'+esc(x.mti)+'</td><td>'+esc(x.stan)+'</td><td>'+esc(x.rrn)+'</td><td>'+esc(x.monto)+'</td><td>'+(x.tiene_reversa?('SÍ '+esc(x.hora_reversa)):'—')+'</td></tr>').join(''):'<tr><td colspan="9" style="text-align:center;color:var(--muted)">Sin registros</td></tr>';
+   $('modal').classList.add('open');
+  }catch(e){}
+}
+function cerrarModal(){$('modal').classList.remove('open');}
+$('modal').addEventListener('click',e=>{if(e.target.id==='modal')cerrarModal();});
+tick();setInterval(tick,3000);
+</script>
+</body>
+</html>

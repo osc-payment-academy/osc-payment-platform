@@ -1,0 +1,48 @@
+OSC · Implementación única — Análisis Diario (D3) + Monitoreo en Vivo
+=====================================================================
+
+Contenido del ZIP
+-----------------
+public/authorization-analytics.html   -> Análisis Diario con la sección D3 (sin respuesta / lentas / reversa)
+public/js/authorization-analytics.js  -> idem (render del bloque "cruce")
+public/css/authorization-analytics.css-> idem (estilos del D3)
+public/monitoreo-vivo.html            -> NUEVA página de Monitoreo en Vivo (consume el agentes-rt)
+agentes.exe        -> motor BATCH v1.6 (genera TCPHandler_Analytics.json: horario + cruce D3, sin PAN)
+agentes-rt.exe     -> motor REALTIME rt-v1.5 (ahora con CORS para que la página lo consuma)
+
+1) Análisis Diario (batch)
+--------------------------
+- Reemplazá los 3 archivos en public/ (html, js, css). Las partes nuevas están marcadas con
+  <!-- D3 ... --> y /* D3 ... */ por si tu deploy está más nuevo que el zip: en ese caso copiá
+  solo esos bloques.
+- Corré agentes.exe como siempre. Ahora genera un archivo nuevo en la carpeta de salida:
+  TCPHandler_Analytics.json  <- ESTE es el que subís en "Publicar análisis".
+  (Incluye el horario D1/D2 + el cruce D3, sin PAN. Validado contra el guardrail del backend.)
+- La sección D3 aparece sola al pie si el JSON trae el bloque "cruce". Si subís un JSON viejo
+  (sin cruce), la sección queda oculta y no rompe nada.
+
+2) Monitoreo en Vivo (realtime)
+-------------------------------
+- Copiá public/monitoreo-vivo.html a public/ de la plataforma.
+- Corré agentes-rt.exe con su config (config-rt.txt). Levanta el dashboard y los endpoints en el
+  puerto PuertoDashboard (por defecto 8080).
+- Abrí la página Monitoreo en Vivo. Con el botón "⚙ Agente" configurás la URL del agente
+  (por defecto http://localhost:8080). Queda guardada en el navegador.
+
+  IMPORTANTE (alcance de red):
+  - Funciona directo si abrís la página en la MISMA máquina donde corre agentes-rt
+    (http://localhost:8080). Chrome permite que una página https llame a localhost; ya se agregó
+    el header de Private Network Access y CORS en el agente para eso.
+  - Si el agente corre en OTRO server (http://10.x.x.x:puerto), el navegador bloquea la llamada
+    por "mixed content" (página https -> agente http). Para ese caso hay que poner el agente
+    detrás de HTTPS (un reverse proxy con certificado). Es un paso de infra, no de código.
+
+3) Menú (navigation.js)
+-----------------------
+En la entrada que hoy apunta a authorization-analytics.html, cambiá el label a "Análisis Diario":
+  {href:'authorization-analytics.html',icon:'📊',label:'Análisis Diario'},
+
+Y agregá debajo la entrada del Monitoreo en Vivo:
+  {href:'monitoreo-vivo.html',icon:'🔴',label:'Monitoreo en Vivo'},
+
+(Opcional: gating por producto en el backend, como authorization-analytics, si querés cobrarlo aparte.)

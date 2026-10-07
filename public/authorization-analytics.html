@@ -46,8 +46,9 @@
         </form>
         <p id="uploadMessage" class="message"></p>
         <p class="sensitive">
-          Solo se aceptan agregados: 24 horas, 96 intervalos y códigos DE39. No
-          cargar tramas, PAN, Track, PIN/PIN Block ni CVV/CVC.
+          El JSON incluye agregados horarios y el cruce de no respondidas /
+          lentas (sin PAN). La trama con datos sensibles nunca sale de tu
+          entorno: no se cargan Track, PIN/PIN Block ni CVV/CVC.
         </p>
       </section>
       <p id="empty" class="muted"></p>
@@ -132,6 +133,98 @@
             </table>
           </div>
         </section>
+        <!-- D3 START · Cruce TRNin↔TRNout (sin respuesta / lentas / reversa) -->
+        <section id="cruce" class="panel d3" hidden>
+          <p class="eyebrow">DASHBOARD 3 · CRUCE TRNin ↔ TRNout</p>
+          <h2>Transacciones sin respuesta y lentas</h2>
+          <p class="muted">
+            Detección de timeouts, demoras sobre umbral y si el sistema generó
+            la reversa. Para seguimiento operativo: Terminal + STAN + RRN + hora.
+          </p>
+          <section class="metrics d3-metrics">
+            <article class="metric">
+              <span>APAREADAS (REQ↔RESP)</span><strong id="d3Apar">—</strong>
+            </article>
+            <article class="metric">
+              <span>SIN RESPUESTA</span
+              ><strong><span id="d3Sin" class="bad">—</span></strong>
+            </article>
+            <article class="metric">
+              <span>LENTAS (&gt; UMBRAL)</span
+              ><strong><span id="d3Lentas" class="warn">—</span></strong>
+            </article>
+            <article class="metric">
+              <span>REVERSAS</span><strong id="d3Rev">—</strong>
+            </article>
+            <article class="metric">
+              <span>UMBRAL</span><strong id="d3Umbral">—</strong>
+            </article>
+          </section>
+          <h3 class="d3-h3">Sin respuesta por hora</h3>
+          <div id="d3Chart" class="chart"></div>
+          <div class="axis">
+            <span>00:00</span><span>06:00</span><span>12:00</span
+            ><span>18:00</span><span>23:00</span>
+          </div>
+          <p class="muted d3-note" id="d3ChartNote"></p>
+          <div class="d3-toolbar">
+            <h3 class="d3-h3">
+              Transacciones SIN respuesta
+              <span class="d3-pill" id="d3SinResumen"></span>
+            </h3>
+            <input
+              id="d3qSin"
+              class="d3-search"
+              type="text"
+              placeholder="Buscar terminal, STAN, RRN, canal…"
+            />
+          </div>
+          <div class="table-wrap d3-tablewrap">
+            <table id="d3tSin">
+              <thead>
+                <tr>
+                  <th data-k="hora_in">Hora</th><th data-k="canal">Canal</th>
+                  <th data-k="terminal">Terminal</th>
+                  <th data-k="comercio">Comercio</th>
+                  <th data-k="mti">MTI</th><th data-k="stan">STAN</th>
+                  <th data-k="rrn">RRN</th><th data-k="monto">Monto</th>
+                  <th data-k="tiene_reversa">Reversa</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <p class="d3-count" id="d3cSin"></p>
+          <div class="d3-toolbar">
+            <h3 class="d3-h3">
+              Transacciones LENTAS <span class="d3-pill" id="d3UmbralPill"></span>
+            </h3>
+            <input
+              id="d3qLentas"
+              class="d3-search"
+              type="text"
+              placeholder="Buscar terminal, STAN, RRN, canal…"
+            />
+          </div>
+          <div class="table-wrap d3-tablewrap">
+            <table id="d3tLentas">
+              <thead>
+                <tr>
+                  <th data-k="hora_in">Hora in</th>
+                  <th data-k="hora_out">Hora out</th>
+                  <th data-k="demora_seg">Demora (s)</th>
+                  <th data-k="canal">Canal</th><th data-k="terminal">Terminal</th>
+                  <th data-k="comercio">Comercio</th><th data-k="stan">STAN</th>
+                  <th data-k="rrn">RRN</th><th data-k="monto">Monto</th>
+                  <th data-k="de39">DE39</th><th data-k="tiene_reversa">Reversa</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <p class="d3-count" id="d3cLentas"></p>
+        </section>
+        <!-- D3 END -->
       <section class="panel de39-deep" hidden aria-hidden="true" data-temporarily-disabled="json-1.1">
           <div class="row">
             <div>

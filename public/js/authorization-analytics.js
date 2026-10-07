@@ -54,7 +54,46 @@ function render(d){
   const total=Number(r.rechazadas||1),codes=(d.codigos||[]).slice().sort((a,b)=>b.cantidad-a.cantidad);
   $('codes').innerHTML=codes.map((x,i)=>{const m=codeMeta(x.de39);return `<tr><td class="rank">${i+1}</td><td><b>${safe(x.de39)}</b></td><td>${safe(m.name)}</td><td>${number(x.cantidad)}</td><td>${pct(x.cantidad/total*100)}</td><td>${safe(m.category)}</td><td>${safe(m.action)}</td></tr>`}).join('');
   $('codeSelect').innerHTML=codes.map(x=>`<option value="${safe(x.de39)}">DE39 ${safe(x.de39)} · ${safe(codeMeta(x.de39).name)}</option>`).join('');$('codeSelect').value=String(r.codigo_rechazo_principal||codes[0]?.de39||'');renderCodeDetail($('codeSelect').value);
+  renderCruce(d);
 }
+
+/* ===== D3 · Cruce TRNin↔TRNout (sin respuesta / lentas / reversa) ===== */
+let cruceData=null,sortSin={k:'hora_in',dir:1},sortLen={k:'demora_seg',dir:-1};
+const revCell=x=>x.tiene_reversa?`<span class="d3-rev-si">SÍ ${safe(x.hora_reversa||'')}</span>`:'<span class="d3-rev-no">—</span>';
+const filtrarD3=(arr,q)=>{q=q.trim().toLowerCase();return q?arr.filter(x=>[x.canal,x.terminal,x.comercio,x.stan,x.rrn,x.mti].some(v=>String(v||'').toLowerCase().includes(q))):arr;};
+const ordenarD3=(arr,s)=>arr.slice().sort((p,q)=>{let u=p[s.k],v=q[s.k];if(s.k==='demora_seg'){u=+u;v=+v;}else{u=String(u||'');v=String(v||'');}return(u>v?1:u<v?-1:0)*s.dir;});
+function renderSinResp(){
+  const src=(cruceData&&cruceData.sin_respuesta)||[],arr=ordenarD3(filtrarD3(src,$('d3qSin').value),sortSin);
+  $('d3tSin').tBodies[0].innerHTML=arr.map(x=>`<tr><td>${safe(x.hora_in)}</td><td>${safe(x.canal)}</td><td>${safe(x.terminal)}</td><td>${safe(x.comercio)}</td><td>${safe(x.mti)}</td><td>${safe(x.stan)}</td><td>${safe(x.rrn)}</td><td>${safe(x.monto)}</td><td>${revCell(x)}</td></tr>`).join('')||'<tr><td colspan="9" class="d3-empty">Sin registros</td></tr>';
+  $('d3cSin').textContent=`${number(arr.length)} de ${number(src.length)} transacciones`;
+}
+function renderLentasD3(){
+  const src=(cruceData&&cruceData.lentas)||[],arr=ordenarD3(filtrarD3(src,$('d3qLentas').value),sortLen);
+  $('d3tLentas').tBodies[0].innerHTML=arr.map(x=>`<tr><td>${safe(x.hora_in)}</td><td>${safe(x.hora_out)}</td><td class="warn">${Number(x.demora_seg||0).toFixed(1)}</td><td>${safe(x.canal)}</td><td>${safe(x.terminal)}</td><td>${safe(x.comercio)}</td><td>${safe(x.stan)}</td><td>${safe(x.rrn)}</td><td>${safe(x.monto)}</td><td title="${safe(codeMeta(x.de39).name)}">${safe(x.de39)}</td><td>${revCell(x)}</td></tr>`).join('')||'<tr><td colspan="11" class="d3-empty">Sin registros</td></tr>';
+  $('d3cLentas').textContent=`${number(arr.length)} de ${number(src.length)} transacciones`;
+}
+function renderCruce(d){
+  const c=d.cruce;const sec=$('cruce');
+  if(!c){sec.hidden=true;return}
+  sec.hidden=false;cruceData=c;const r=c.resumen||{};
+  $('d3Apar').textContent=number(r.apareadas);
+  $('d3Sin').textContent=number(r.sin_respuesta)+(r.sin_respuesta_con_reversa?` · ${number(r.sin_respuesta_con_reversa)} c/rev`:'');
+  $('d3Lentas').textContent=number(r.lentas_sobre_umbral);
+  $('d3Rev').textContent=number(r.total_reversas);
+  $('d3Umbral').textContent=`${number(c.umbral_respuesta_segundos||60)} s`;
+  $('d3UmbralPill').textContent=`> ${number(c.umbral_respuesta_segundos||60)} s`;
+  const m={};(c.sin_respuesta||[]).forEach(x=>{m[x.canal||'?']=(m[x.canal||'?']||0)+1;});
+  $('d3SinResumen').textContent=Object.entries(m).sort((a,b)=>b[1]-a[1]).slice(0,4).map(([k,v])=>`${k}: ${number(v)}`).join(' · ');
+  const h=new Array(24).fill(0);(c.sin_respuesta||[]).forEach(x=>{const hh=parseInt(String(x.hora_in).slice(0,2));if(hh>=0&&hh<24)h[hh]++;});
+  const max=Math.max(1,...h);
+  $('d3Chart').innerHTML=h.map((v,i)=>`<div class="bar-wrap" title="${String(i).padStart(2,'0')}:00 · ${number(v)} sin respuesta"><div class="bar" style="height:${Math.max(v?2:0,v/max*100)}%"></div></div>`).join('');
+  const pico=h.indexOf(max);
+  $('d3ChartNote').textContent=(c.sin_respuesta||[]).length?`Pico: ${String(pico).padStart(2,'0')}:00 con ${number(max)} sin respuesta. Un pico aislado fuera del horario de volumen suele señalar un incidente.`:'Sin transacciones sin respuesta en el período.';
+  renderSinResp();renderLentasD3();
+}
+$('d3qSin').oninput=renderSinResp;$('d3qLentas').oninput=renderLentasD3;
+document.querySelectorAll('#d3tSin thead th').forEach(th=>th.onclick=()=>{const k=th.dataset.k;sortSin={k,dir:sortSin.k===k?-sortSin.dir:1};renderSinResp();});
+document.querySelectorAll('#d3tLentas thead th').forEach(th=>th.onclick=()=>{const k=th.dataset.k;sortLen={k,dir:sortLen.k===k?-sortLen.dir:1};renderLentasD3();});
 
 async function load(date){
   const qs=new URLSearchParams();if(date)qs.set('date',date);const response=await fetch('/api/authorization-analytics?'+qs),d=await response.json();if(response.status===403)return location.href='/expired?product=authorization-analytics';if(!response.ok){$('empty').textContent='No fue posible cargar el análisis.';return}
