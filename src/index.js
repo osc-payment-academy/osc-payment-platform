@@ -13,8 +13,25 @@ const cookie = request => Object.fromEntries((request.headers.get('cookie')||'')
 const sessionCookie = (token, maxAge=28800) => `osc_session=${encodeURIComponent(token)}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${maxAge}`;
 const readBody = async request => { try { return await request.json(); } catch { return {}; } };
 
-const LEARNING_MODULES=['course_iso8583','pos','parser','constructor','atm','ecommerce','wallet','switch_emisor'];
+// rc.1.22 · Módulos habilitables (por edición de curso y por consultora).
+//   ebook · banco_simulado (Clientes, Pasivas, Solicitudes, Cuenta del Cliente) · switch_adquirente (Switch + Compensación Visa/Mastercard)
+//   parser = Parser ISO8583 + Parser Guiado.
+const LEARNING_MODULES=['course_iso8583','ebook','banco_simulado','constructor','pos','atm','wallet','ecommerce','switch_adquirente','switch_emisor','parser'];
 const DAY1_MODULES=['course_iso8583','pos','parser','constructor'];
+// Módulos que antes de rc.1.22 estaban siempre visibles: en las ediciones se siembran habilitados para no cambiar nada sin aviso.
+const DEFAULT_ON_MODULES=['ebook','banco_simulado','switch_adquirente'];
+const PRODUCT_PAYMENT='product_payment',PRODUCT_DAILY='product_authorization_analytics',PRODUCT_LIVE='product_live_monitoring';
+const PAGE_MODULES={
+  'curso_interactivo.html':'course_iso8583','ebook.html':'ebook',
+  'clientes.html':'banco_simulado','pasivas.html':'banco_simulado','solicitudes.html':'banco_simulado','cuenta_cliente.html':'banco_simulado',
+  'constructor.html':'constructor','pos.html':'pos','atm.html':'atm','wallet.html':'wallet','ecommerce.html':'ecommerce',
+  'switch.html':'switch_adquirente','compensacion.html':'switch_adquirente','compensacion_mastercard.html':'switch_adquirente',
+  'switch_emisor.html':'switch_emisor','parser.html':'parser','parser_guiado.html':'parser'
+};
+const MODULE_DAY={course_iso8583:1,pos:1,parser:1,constructor:1,atm:2,ecommerce:3,wallet:4,switch_emisor:5};
+// Solo administración (rc.1.22): Documentación Técnica (los alumnos llegan a los PDF desde la manito) e Investigación.
+const ADMIN_ONLY_PAGES=new Set(['documentacion.html','research.html']);
+const ACTIVITY_PAGES={'index.html':'dashboard','account.html':'cuenta','authorization-analytics.html':'analisis_diario','monitoreo-vivo.html':'monitoreo_vivo'};
 const TUTOR_MODULES=['course_iso8583','pos','atm','constructor','wallet','ecommerce'];
 const TUTOR_SEED=[
   ['mti-0200','0200 mti mensaje financiero solicitud compra','El MTI 0200 identifica una solicitud de transacción financiera. En los laboratorios de POS y Wallet se utiliza para iniciar una compra; la respuesta asociada normalmente es 0210.','Curso interactivo · Lámina 13: MTI 0200','EXPLICAR'],
@@ -65,21 +82,70 @@ async function ensureModuleAccessSchema(env){
 }
 async function seedCohortModules(env,cohortId,actorId=null){
   await ensureModuleAccessSchema(env); const ts=now();
-  await env.DB.batch(LEARNING_MODULES.map(k=>env.DB.prepare(`INSERT OR IGNORE INTO cohort_module_access(cohort_id,module_key,enabled,enabled_at,updated_by,updated_at) VALUES(?,?,?,?,?,?)`).bind(cohortId,k,DAY1_MODULES.includes(k)?1:0,DAY1_MODULES.includes(k)?ts:null,actorId,ts)));
+  const on=k=>DAY1_MODULES.includes(k)||DEFAULT_ON_MODULES.includes(k);
+  await env.DB.batch(LEARNING_MODULES.map(k=>env.DB.prepare(`INSERT OR IGNORE INTO cohort_module_access(cohort_id,module_key,enabled,enabled_at,updated_by,updated_at) VALUES(?,?,?,?,?,?)`).bind(cohortId,k,on(k)?1:0,on(k)?ts:null,actorId,ts)));
 }
+async function ensureTenantModuleSchema(env){
+  await env.DB.prepare(`CREATE TABLE IF NOT EXISTS tenant_module_access (
+    tenant_id TEXT NOT NULL,module_key TEXT NOT NULL,enabled INTEGER NOT NULL DEFAULT 0,updated_by TEXT,updated_at TEXT NOT NULL,
+    PRIMARY KEY(tenant_id,module_key),FOREIGN KEY(tenant_id) REFERENCES tenants(id))`).run();
+}
+async function ensureLiveMonitoringProduct(env){
+  await env.DB.prepare("INSERT OR IGNORE INTO products(id,name,slug,core_enabled,status,created_at,updated_at) VALUES(?,?,?,0,'ACTIVE',?,?)").bind(PRODUCT_LIVE,'OSC Monitoreo en Vivo de Autorizaciones','live-monitoring',now(),now()).run();
+  await env.DB.prepare("INSERT OR IGNORE INTO products(id,name,slug,core_enabled,status,created_at,updated_at) VALUES(?,?,?,0,'ACTIVE',?,?)").bind(PRODUCT_DAILY,'OSC Authorization Analytics','authorization-analytics',now(),now()).run();
+}
+/* rc.1.22 · Acceso por módulo.
+   - Admin OSC: todo.
+   - Consultora con licencia Payment Academy: los módulos marcados en su ficha (tenant_module_access). Sin ficha = todos (consultoras anteriores).
+   - Edición de curso: habilitación progresiva (cohort_module_access). Lo no habilitado se muestra con candado ("locked").
+   - Lo que no está en la licencia de una consultora queda oculto ("hidden"). */
 async function learningAccess(env,user){
-  if(user.platform_role==='OSC_ADMIN')return {progressive:false,enabled:[...LEARNING_MODULES]};
-  const consultancy=await env.DB.prepare(`SELECT 1 ok FROM memberships m JOIN tenants t ON t.id=m.tenant_id JOIN licenses l ON l.tenant_id=t.id WHERE m.user_id=? AND m.status='ACTIVE' AND t.tenant_type='CONSULTANCY' AND l.product_id='product_payment' AND l.status='ACTIVE' AND (l.expires_at IS NULL OR l.expires_at>?) LIMIT 1`).bind(user.id,now()).first();
-  if(consultancy)return {progressive:false,enabled:[...LEARNING_MODULES]};
+  if(user.platform_role==='OSC_ADMIN')return {progressive:false,enabled:[...LEARNING_MODULES],locked:[],hidden:[],admin:true};
+  const ts=now();
+  await ensureTenantModuleSchema(env);
+  const consultancies=(await env.DB.prepare(`SELECT DISTINCT t.id FROM memberships m JOIN tenants t ON t.id=m.tenant_id JOIN licenses l ON l.tenant_id=t.id WHERE m.user_id=? AND m.status='ACTIVE' AND t.tenant_type='CONSULTANCY' AND l.product_id='product_payment' AND l.status='ACTIVE' AND l.starts_at<=? AND (l.expires_at IS NULL OR l.expires_at>?)`).bind(user.id,ts,ts).all()).results;
+  const enabled=new Set();
+  for(const c of consultancies){
+    const rows=(await env.DB.prepare('SELECT module_key,enabled FROM tenant_module_access WHERE tenant_id=?').bind(c.id).all()).results;
+    if(!rows.length) LEARNING_MODULES.forEach(k=>enabled.add(k));
+    else rows.filter(r=>r.enabled).forEach(r=>enabled.add(r.module_key));
+  }
   await ensureModuleAccessSchema(env);
-  const cohorts=(await env.DB.prepare(`SELECT c.id FROM cohort_enrollments e JOIN cohorts c ON c.id=e.cohort_id JOIN licenses l ON l.cohort_id=c.id WHERE e.user_id=? AND e.status='ACTIVE' AND c.status='ACTIVE' AND l.product_id='product_payment' AND l.status='ACTIVE' AND l.starts_at<=? AND (l.expires_at IS NULL OR l.expires_at>?)`).bind(user.id,now(),now()).all()).results;
-  if(!cohorts.length)return {progressive:false,enabled:[...LEARNING_MODULES]};
-  for(const c of cohorts)await seedCohortModules(env,c.id);
-  const marks=cohorts.map(()=>'?').join(',');
-  const rows=(await env.DB.prepare(`SELECT DISTINCT module_key FROM cohort_module_access WHERE cohort_id IN (${marks}) AND enabled=1`).bind(...cohorts.map(c=>c.id)).all()).results;
-  return {progressive:true,enabled:rows.map(r=>r.module_key)};
+  const cohorts=(await env.DB.prepare(`SELECT c.id FROM cohort_enrollments e JOIN cohorts c ON c.id=e.cohort_id JOIN licenses l ON l.cohort_id=c.id WHERE e.user_id=? AND e.status='ACTIVE' AND c.status='ACTIVE' AND l.product_id='product_payment' AND l.status='ACTIVE' AND l.starts_at<=? AND (l.expires_at IS NULL OR l.expires_at>?)`).bind(user.id,ts,ts).all()).results;
+  const cohortEnabled=new Set();
+  if(cohorts.length){
+    for(const c of cohorts)await seedCohortModules(env,c.id);
+    const marks=cohorts.map(()=>'?').join(',');
+    (await env.DB.prepare(`SELECT DISTINCT module_key FROM cohort_module_access WHERE cohort_id IN (${marks}) AND enabled=1`).bind(...cohorts.map(c=>c.id)).all()).results.forEach(r=>{cohortEnabled.add(r.module_key);enabled.add(r.module_key);});
+  }
+  if(!consultancies.length&&!cohorts.length){
+    // Sin edición ni consultora: licencia Payment Academy directa = todo; sin licencia Payment Academy = nada.
+    if(await hasPaymentAcademyLicense(env,user)) LEARNING_MODULES.forEach(k=>enabled.add(k));
+  }
+  const locked=cohorts.length?LEARNING_MODULES.filter(k=>!enabled.has(k)):[];
+  const hidden=LEARNING_MODULES.filter(k=>!enabled.has(k)&&!locked.includes(k));
+  return {progressive:cohorts.length>0,enabled:[...enabled],locked,hidden,admin:false};
 }
-
+async function tenantAdminTenants(env,user){
+  if(user.platform_role==='OSC_ADMIN')return null; // null = todas
+  return (await env.DB.prepare(`SELECT t.id,t.name FROM memberships m JOIN tenants t ON t.id=m.tenant_id WHERE m.user_id=? AND m.status='ACTIVE' AND m.role='TENANT_ADMIN' AND t.tenant_type='CONSULTANCY' AND t.status='ACTIVE'`).bind(user.id).all()).results;
+}
+async function ensureActivitySchema(env){
+  await env.DB.prepare(`CREATE TABLE IF NOT EXISTS user_activity (
+    user_id TEXT NOT NULL,day TEXT NOT NULL,module_key TEXT NOT NULL,hits INTEGER NOT NULL DEFAULT 0,first_at TEXT NOT NULL,last_at TEXT NOT NULL,
+    PRIMARY KEY(user_id,day,module_key),FOREIGN KEY(user_id) REFERENCES users(id))`).run();
+}
+// Día calendario en hora de Argentina (UTC-3) para contar "días de uso".
+const activityDay=()=>new Date(Date.now()-3*3600e3).toISOString().slice(0,10);
+async function trackActivity(env,user,moduleKey){
+  try{
+    if(!user||user.platform_role==='OSC_ADMIN'||!moduleKey)return;
+    await ensureActivitySchema(env);
+    const ts=now();
+    await env.DB.prepare(`INSERT INTO user_activity(user_id,day,module_key,hits,first_at,last_at) VALUES(?,?,?,1,?,?)
+      ON CONFLICT(user_id,day,module_key) DO UPDATE SET hits=hits+1,last_at=excluded.last_at`).bind(user.id,activityDay(),moduleKey,ts,ts).run();
+  }catch(e){/* el registro de actividad nunca debe bloquear la navegación */}
+}
 
 async function currentUser(request, env){
   const token=cookie(request).osc_session;
@@ -479,9 +545,13 @@ async function api(request,env,path){
     const cohorts=(await env.DB.prepare(`SELECT c.id,c.name,c.starts_at,c.expires_at,c.forum_status,co.name course_name
       FROM cohort_enrollments e JOIN cohorts c ON c.id=e.cohort_id JOIN courses co ON co.id=c.course_id
       WHERE e.user_id=? AND e.status='ACTIVE' ORDER BY c.starts_at DESC`).bind(auth.user.id).all()).results;
-    const analytics=await productAccess(env,auth.user,'product_authorization_analytics');
+    const analytics=await productAccess(env,auth.user,PRODUCT_DAILY);
+    const live=await productAccess(env,auth.user,PRODUCT_LIVE);
     const modules=await learningAccess(env,auth.user);
-    return json({user:auth.user,memberships,cohorts,entitlements:{authorizationAnalytics:!!analytics},moduleAccess:modules});
+    const adminTenants=await tenantAdminTenants(env,auth.user);
+    return json({user:auth.user,memberships,cohorts,
+      entitlements:{authorizationAnalytics:!!analytics,liveMonitoring:!!live,usagePanel:auth.user.platform_role==='OSC_ADMIN'||!!adminTenants?.length},
+      moduleAccess:modules});
   }
 
   if(path==='/api/workspace/payment'){
@@ -636,6 +706,194 @@ async function api(request,env,path){
   }
 
 
+  /* ===================== rc.1.22 · Consultoras: módulos y productos ===================== */
+  async function resolveUsers(list,ts){
+    const out=[],created=[];
+    for(const raw of (Array.isArray(list)?list:[])){
+      const v=String(raw||'').trim(); if(!v) continue;
+      let u=await env.DB.prepare('SELECT id,email,full_name FROM users WHERE id=? OR lower(email)=lower(?)').bind(v,v).first();
+      if(!u&&/@/.test(v)){
+        const temp=randomToken().slice(0,14),salt=randomToken(),hash=await passwordHash(temp,salt),uid=id('usr');
+        await env.DB.prepare("INSERT INTO users(id,email,full_name,password_hash,password_salt,platform_role,status,created_at,updated_at) VALUES(?,?,?,?,?,'USER','ACTIVE',?,?)").bind(uid,v.toLowerCase(),v.split('@')[0],hash,salt,ts,ts).run();
+        u={id:uid,email:v.toLowerCase(),full_name:v.split('@')[0]};created.push({userId:uid,email:u.email,temporaryPassword:temp});
+      }
+      if(u&&!out.find(x=>x.id===u.id))out.push(u);
+      if(!u)return {error:`No existe el usuario ${v}`};
+    }
+    return {users:out,created};
+  }
+  async function upsertProductLicense(tenantId,productId,on,seats,expiresAt,ts){
+    const lic=await env.DB.prepare("SELECT id FROM licenses WHERE tenant_id=? AND product_id=? ORDER BY created_at DESC LIMIT 1").bind(tenantId,productId).first();
+    if(lic) await env.DB.prepare("UPDATE licenses SET status=?,seat_limit=?,expires_at=?,updated_at=? WHERE id=?").bind(on?'ACTIVE':'INACTIVE',seats,expiresAt,ts,lic.id).run();
+    else if(on) await env.DB.prepare("INSERT INTO licenses(id,tenant_id,product_id,license_type,starts_at,expires_at,seat_limit,status,created_at,updated_at) VALUES(?,?,?,'CONSULTANCY',?,?,?,'ACTIVE',?,?)").bind(id('lic'),tenantId,productId,ts,expiresAt,seats,ts,ts).run();
+  }
+  async function saveTenantModules(tenantId,modules,actorId,ts){
+    await ensureTenantModuleSchema(env);
+    const on=new Set((Array.isArray(modules)?modules:[]).filter(k=>LEARNING_MODULES.includes(k)));
+    await env.DB.batch(LEARNING_MODULES.map(k=>env.DB.prepare(`INSERT INTO tenant_module_access(tenant_id,module_key,enabled,updated_by,updated_at) VALUES(?,?,?,?,?)
+      ON CONFLICT(tenant_id,module_key) DO UPDATE SET enabled=excluded.enabled,updated_by=excluded.updated_by,updated_at=excluded.updated_at`).bind(tenantId,k,on.has(k)?1:0,actorId,ts)));
+  }
+  async function consultancyDetail(tenantId){
+    await ensureTenantModuleSchema(env);
+    const t=await env.DB.prepare("SELECT id,name,status,created_at FROM tenants WHERE id=? AND tenant_type='CONSULTANCY'").bind(tenantId).first();
+    if(!t)return null;
+    const licenses=(await env.DB.prepare("SELECT id,product_id,seat_limit,starts_at,expires_at,status FROM licenses WHERE tenant_id=? ORDER BY created_at").bind(tenantId).all()).results;
+    const members=(await env.DB.prepare("SELECT u.id,u.email,u.full_name,m.role,u.last_login_at FROM memberships m JOIN users u ON u.id=m.user_id WHERE m.tenant_id=? AND m.status='ACTIVE' ORDER BY u.full_name").bind(tenantId).all()).results;
+    const mods=(await env.DB.prepare("SELECT module_key,enabled FROM tenant_module_access WHERE tenant_id=?").bind(tenantId).all()).results;
+    const active=p=>licenses.some(l=>l.product_id===p&&l.status==='ACTIVE');
+    const pay=licenses.filter(l=>l.status==='ACTIVE').sort((a,b)=>String(b.expires_at||'9').localeCompare(String(a.expires_at||'9')))[0];
+    return {...t,licenses,members,
+      modules:mods.length?mods.filter(m=>m.enabled).map(m=>m.module_key):(active(PRODUCT_PAYMENT)?[...LEARNING_MODULES]:[]),
+      modulesConfigured:mods.length>0,
+      products:{payment:active(PRODUCT_PAYMENT),daily:active(PRODUCT_DAILY),live:active(PRODUCT_LIVE)},
+      seats:pay?.seat_limit||members.length,expiresAt:pay?.expires_at||null};
+  }
+  if(path==='/api/admin/consultancies'&&request.method==='GET'){
+    const auth=await requireUser(request,env,['OSC_ADMIN']); if(auth.error)return auth.error;
+    const ids=(await env.DB.prepare("SELECT id FROM tenants WHERE tenant_type='CONSULTANCY' ORDER BY created_at DESC").all()).results;
+    const out=[];for(const r of ids)out.push(await consultancyDetail(r.id));
+    return json({consultancies:out,modules:LEARNING_MODULES.map(k=>({key:k,label:MODULE_LABELS[k]}))});
+  }
+  if(path==='/api/admin/consultancies'&&request.method==='POST'){
+    const auth=await requireUser(request,env,['OSC_ADMIN']); if(auth.error)return auth.error;
+    await ensureLiveMonitoringProduct(env);
+    const b=await readBody(request),ts=now();
+    const name=String(b.name||'').trim(); if(!name)return json({error:'INVALID_DATA',message:'Falta el nombre de la consultora.'},400);
+    const r=await resolveUsers(b.users,ts); if(r.error)return json({error:'USER_NOT_FOUND',message:r.error},400);
+    if(!r.users.length)return json({error:'INVALID_DATA',message:'Indicá al menos un usuario (correo o ID).'},400);
+    const admin=await resolveUsers([b.adminUser||r.users[0].id],ts); if(admin.error)return json({error:'USER_NOT_FOUND',message:admin.error},400);
+    const adminId=admin.users[0].id;
+    const seats=Math.max(Number(b.seats||r.users.length),r.users.length),expiresAt=b.expiresAt||null;
+    const tenantId=id('tenant');
+    await env.DB.prepare("INSERT INTO tenants(id,name,slug,tenant_type,status,created_at,updated_at) VALUES(?,?,?,'CONSULTANCY','ACTIVE',?,?)").bind(tenantId,name,name.toLowerCase().replace(/[^a-z0-9]+/g,'-')+'-'+Date.now(),ts,ts).run();
+    const modules=(Array.isArray(b.modules)?b.modules:[]).filter(k=>LEARNING_MODULES.includes(k));
+    const products={payment:modules.length>0,daily:!!b.products?.daily,live:!!b.products?.live};
+    await upsertProductLicense(tenantId,PRODUCT_PAYMENT,products.payment,seats,expiresAt,ts);
+    await upsertProductLicense(tenantId,PRODUCT_DAILY,products.daily,seats,expiresAt,ts);
+    await upsertProductLicense(tenantId,PRODUCT_LIVE,products.live,seats,expiresAt,ts);
+    await saveTenantModules(tenantId,modules,auth.user.id,ts);
+    const all=[...r.users];if(!all.find(u=>u.id===adminId))all.push(admin.users[0]);
+    for(const u of all){
+      await env.DB.prepare("INSERT OR IGNORE INTO memberships(id,tenant_id,user_id,role,status,created_at,updated_at) VALUES(?,?,?,?,'ACTIVE',?,?)").bind(id('mem'),tenantId,u.id,u.id===adminId?'TENANT_ADMIN':'STUDENT',ts,ts).run();
+      if(products.payment)await env.DB.prepare('UPDATE workspaces_v4 SET tenant_id=?,updated_at=? WHERE user_id=? AND product_id=?').bind(tenantId,ts,u.id,PRODUCT_PAYMENT).run();
+    }
+    await audit(env,auth.user.id,'CREATE_CONSULTANCY','TENANT',tenantId,{modules,products,seats,expiresAt,users:all.map(u=>u.id)});
+    return json({ok:true,tenantId,created:[...r.created,...admin.created],consultancy:await consultancyDetail(tenantId)},201);
+  }
+  const consultancyMatch=path.match(/^\/api\/admin\/consultancies\/([^/]+)$/);
+  if(consultancyMatch&&request.method==='PUT'){
+    const auth=await requireUser(request,env,['OSC_ADMIN']); if(auth.error)return auth.error;
+    await ensureLiveMonitoringProduct(env);
+    const tenantId=consultancyMatch[1],b=await readBody(request),ts=now();
+    const current=await consultancyDetail(tenantId); if(!current)return json({error:'TENANT_NOT_FOUND'},404);
+    const add=await resolveUsers(b.addUsers,ts); if(add.error)return json({error:'USER_NOT_FOUND',message:add.error},400);
+    const seats=Number(b.seats||current.seats||1),expiresAt=b.expiresAt===undefined?current.expiresAt:(b.expiresAt||null);
+    if(current.members.length+add.users.filter(u=>!current.members.find(m=>m.id===u.id)).length>seats)return json({error:'SEAT_LIMIT_EXCEEDED',message:'Superás la cantidad de licencias. Aumentá las licencias o quitá usuarios.'},409);
+    const modules=(Array.isArray(b.modules)?b.modules:current.modules).filter(k=>LEARNING_MODULES.includes(k));
+    const products={payment:modules.length>0,daily:b.products?.daily??current.products.daily,live:b.products?.live??current.products.live};
+    await upsertProductLicense(tenantId,PRODUCT_PAYMENT,products.payment,seats,expiresAt,ts);
+    await upsertProductLicense(tenantId,PRODUCT_DAILY,!!products.daily,seats,expiresAt,ts);
+    await upsertProductLicense(tenantId,PRODUCT_LIVE,!!products.live,seats,expiresAt,ts);
+    await saveTenantModules(tenantId,modules,auth.user.id,ts);
+    for(const u of add.users){
+      await env.DB.prepare("INSERT OR IGNORE INTO memberships(id,tenant_id,user_id,role,status,created_at,updated_at) VALUES(?,?,?,'STUDENT','ACTIVE',?,?)").bind(id('mem'),tenantId,u.id,ts,ts).run();
+      await env.DB.prepare("UPDATE memberships SET status='ACTIVE',updated_at=? WHERE tenant_id=? AND user_id=?").bind(ts,tenantId,u.id).run();
+    }
+    if(b.adminUser){
+      const a=await resolveUsers([b.adminUser],ts);
+      if(!a.error&&a.users[0]){
+        await env.DB.prepare("UPDATE memberships SET role='STUDENT',updated_at=? WHERE tenant_id=? AND role='TENANT_ADMIN'").bind(ts,tenantId).run();
+        await env.DB.prepare("INSERT OR IGNORE INTO memberships(id,tenant_id,user_id,role,status,created_at,updated_at) VALUES(?,?,?,'TENANT_ADMIN','ACTIVE',?,?)").bind(id('mem'),tenantId,a.users[0].id,ts,ts).run();
+        await env.DB.prepare("UPDATE memberships SET role='TENANT_ADMIN',status='ACTIVE',updated_at=? WHERE tenant_id=? AND user_id=?").bind(ts,tenantId,a.users[0].id).run();
+      }
+    }
+    for(const uid of (Array.isArray(b.removeUsers)?b.removeUsers:[]))await env.DB.prepare("UPDATE memberships SET status='INACTIVE',updated_at=? WHERE tenant_id=? AND user_id=? AND role<>'TENANT_ADMIN'").bind(ts,tenantId,uid).run();
+    await audit(env,auth.user.id,'UPDATE_CONSULTANCY','TENANT',tenantId,{modules,products,seats,expiresAt,added:add.users.map(u=>u.id)});
+    return json({ok:true,created:add.created,consultancy:await consultancyDetail(tenantId)});
+  }
+
+  /* ===================== rc.1.22 · Uso de licencias ===================== */
+  async function usageScope(user,url){
+    const adminTenants=await tenantAdminTenants(env,user);
+    if(adminTenants!==null&&!adminTenants.length)return {error:json({error:'FORBIDDEN'},403)};
+    const groups=adminTenants===null
+      ? (await env.DB.prepare(`SELECT t.id,t.name,t.tenant_type type,(SELECT MAX(l.expires_at) FROM licenses l WHERE l.tenant_id=t.id AND l.status='ACTIVE') expires_at,
+          (SELECT MIN(l.starts_at) FROM licenses l WHERE l.tenant_id=t.id) starts_at FROM tenants t WHERE t.tenant_type IN ('COURSE','CONSULTANCY') AND t.status='ACTIVE' ORDER BY t.created_at DESC`).all()).results
+      : (await Promise.all(adminTenants.map(t=>env.DB.prepare(`SELECT t.id,t.name,t.tenant_type type,(SELECT MAX(l.expires_at) FROM licenses l WHERE l.tenant_id=t.id AND l.status='ACTIVE') expires_at,(SELECT MIN(l.starts_at) FROM licenses l WHERE l.tenant_id=t.id) starts_at FROM tenants t WHERE t.id=?`).bind(t.id).first())));
+    const requested=url.searchParams.get('tenantId');
+    const selected=requested?groups.filter(g=>g.id===requested):groups;
+    if(requested&&!selected.length)return {error:json({error:'FORBIDDEN'},403)};
+    return {groups,selected,isAdmin:adminTenants===null};
+  }
+  async function usageRows(tenants){
+    await ensureActivitySchema(env); await ensureTutorSchema(env);
+    const rows=[];
+    for(const t of tenants){
+      const members=(await env.DB.prepare(`SELECT u.id,u.email,u.full_name,u.created_at,u.last_login_at,m.role,
+          (SELECT MAX(a.last_at) FROM user_activity a WHERE a.user_id=u.id) last_activity_at,
+          (SELECT COUNT(DISTINCT a.day) FROM user_activity a WHERE a.user_id=u.id AND a.day>=substr(COALESCE(?, u.created_at),1,10)) active_days,
+          (SELECT GROUP_CONCAT(DISTINCT a.module_key) FROM user_activity a WHERE a.user_id=u.id) modules,
+          (SELECT MAX(w.updated_at) FROM workspace_data w WHERE w.user_id=u.id) workspace_saved_at,
+          (SELECT COUNT(*) FROM tutor_pending q WHERE q.user_id=u.id) tutor_questions,
+          (SELECT COUNT(*) FROM forum_topics f WHERE f.author_user_id=u.id)+(SELECT COUNT(*) FROM forum_replies r WHERE r.author_user_id=u.id) forum_posts,
+          (SELECT MAX(x.created_at) FROM audit_log x WHERE x.action='USAGE_REMINDER' AND x.entity_id=u.id) last_reminder_at
+        FROM memberships m JOIN users u ON u.id=m.user_id WHERE m.tenant_id=? AND m.status='ACTIVE' AND u.platform_role<>'OSC_ADMIN' ORDER BY u.full_name`).bind(t.starts_at||null,t.id).all().catch(()=>
+          // Base sin alguna tabla opcional (workspace_data / foro): se informa con los datos básicos.
+          env.DB.prepare(`SELECT u.id,u.email,u.full_name,u.created_at,u.last_login_at,m.role,
+            (SELECT MAX(a.last_at) FROM user_activity a WHERE a.user_id=u.id) last_activity_at,
+            (SELECT COUNT(DISTINCT a.day) FROM user_activity a WHERE a.user_id=u.id) active_days,
+            (SELECT GROUP_CONCAT(DISTINCT a.module_key) FROM user_activity a WHERE a.user_id=u.id) modules,
+            NULL workspace_saved_at,0 tutor_questions,0 forum_posts,
+            (SELECT MAX(x.created_at) FROM audit_log x WHERE x.action='USAGE_REMINDER' AND x.entity_id=u.id) last_reminder_at
+            FROM memberships m JOIN users u ON u.id=m.user_id WHERE m.tenant_id=? AND m.status='ACTIVE' AND u.platform_role<>'OSC_ADMIN' ORDER BY u.full_name`).bind(t.id).all())).results;
+      for(const m of members){
+        const last=[m.last_login_at,m.last_activity_at,m.workspace_saved_at].filter(Boolean).sort().pop()||null;
+        const days=last?Math.floor((Date.now()-new Date(last).getTime())/86400e3):null;
+        rows.push({...m,tenant_id:t.id,tenant_name:t.name,tenant_type:t.type,license_expires_at:t.expires_at,
+          last_seen_at:last,days_since:days,status:last==null?'never':days<=7?'active':days<=14?'warning':'inactive',
+          modules:m.modules?String(m.modules).split(','):[]});
+      }
+    }
+    return rows;
+  }
+  if(path==='/api/usage/overview'&&request.method==='GET'){
+    const auth=await requireUser(request,env); if(auth.error)return auth.error;
+    const scope=await usageScope(auth.user,new URL(request.url)); if(scope.error)return scope.error;
+    const rows=await usageRows(scope.selected);
+    const order={never:0,inactive:1,warning:2,active:3};
+    rows.sort((a,b)=>order[a.status]-order[b.status]||((b.days_since??-1)-(a.days_since??-1))||String(a.full_name).localeCompare(String(b.full_name)));
+    const summary={assigned:rows.length,never:rows.filter(r=>r.status==='never').length,active7:rows.filter(r=>r.status==='active').length,inactive:rows.filter(r=>r.status==='warning'||r.status==='inactive').length};
+    return json({isAdmin:scope.isAdmin,groups:scope.groups,summary,users:rows,moduleLabels:{...MODULE_LABELS,dashboard:'Inicio',cuenta:'Mi cuenta',analisis_diario:'Análisis Diario',monitoreo_vivo:'Monitoreo en Vivo'}});
+  }
+  const usageUserMatch=path.match(/^\/api\/usage\/users\/([^/]+)$/);
+  if(usageUserMatch&&request.method==='GET'){
+    const auth=await requireUser(request,env); if(auth.error)return auth.error;
+    const targetId=usageUserMatch[1];
+    const adminTenants=await tenantAdminTenants(env,auth.user);
+    if(adminTenants!==null){
+      const ok=adminTenants.length&&await env.DB.prepare(`SELECT 1 ok FROM memberships WHERE user_id=? AND status='ACTIVE' AND tenant_id IN (${adminTenants.map(()=>'?').join(',')})`).bind(targetId,...adminTenants.map(t=>t.id)).first();
+      if(!ok)return json({error:'FORBIDDEN'},403);
+    }
+    await ensureActivitySchema(env);
+    const since=new Date(Date.now()-90*86400e3).toISOString().slice(0,10);
+    const days=(await env.DB.prepare(`SELECT day,GROUP_CONCAT(module_key) modules,SUM(hits) hits,MIN(first_at) first_at,MAX(last_at) last_at FROM user_activity WHERE user_id=? AND day>=? GROUP BY day ORDER BY day DESC`).bind(targetId,since).all()).results;
+    const user=await env.DB.prepare('SELECT id,email,full_name,last_login_at,created_at FROM users WHERE id=?').bind(targetId).first();
+    return json({user,days:days.map(d=>({...d,modules:String(d.modules||'').split(',').filter(Boolean)}))});
+  }
+  if(path==='/api/usage/reminder'&&request.method==='POST'){
+    const auth=await requireUser(request,env); if(auth.error)return auth.error;
+    const b=await readBody(request),targetId=String(b.userId||'');
+    const adminTenants=await tenantAdminTenants(env,auth.user);
+    if(adminTenants!==null){
+      const ok=adminTenants.length&&await env.DB.prepare(`SELECT 1 ok FROM memberships WHERE user_id=? AND status='ACTIVE' AND tenant_id IN (${adminTenants.map(()=>'?').join(',')})`).bind(targetId,...adminTenants.map(t=>t.id)).first();
+      if(!ok)return json({error:'FORBIDDEN'},403);
+    }
+    const user=await env.DB.prepare('SELECT id,email,full_name FROM users WHERE id=?').bind(targetId).first();
+    if(!user)return json({error:'USER_NOT_FOUND'},404);
+    await audit(env,auth.user.id,'USAGE_REMINDER','USER',user.id,{email:user.email,channel:'mailto'});
+    return json({ok:true,email:user.email,fullName:user.full_name,remindedAt:now()});
+  }
+
   const moduleMatch=path.match(/^\/api\/admin\/cohorts\/([^/]+)\/modules$/);
   if(moduleMatch){
     const auth=await requireUser(request,env,['OSC_ADMIN']); if(auth.error)return auth.error;
@@ -726,7 +984,14 @@ async function api(request,env,path){
   return json({error:'NOT_FOUND'},404);
 }
 
-export default {async fetch(request,env){
+/* rc.1.22 · Página de "módulo no disponible" (bloqueo del lado servidor, además del menú). */
+function moduleBlockedPage(title,message,status=403){
+  const esc=v=>String(v).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]);
+  return new Response(`<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(title)} · OSC Payment Academy</title><link rel="icon" type="image/svg+xml" href="/favicon.svg"></head><body style="margin:0;min-height:100vh;display:grid;place-items:center;background:#06111d;color:#f5f8fc;font-family:Inter,Segoe UI,Arial,sans-serif;padding:16px"><main style="max-width:560px;text-align:center;border:1px solid #1d405c;border-radius:16px;padding:36px;background:#0a1928"><div style="font-size:42px">🔒</div><h1 style="font-size:24px">${esc(title)}</h1><p style="color:#9cb2c6;line-height:1.55">${esc(message)}</p><a href="/" style="display:inline-block;margin-top:14px;padding:11px 18px;border-radius:9px;background:#0875dc;color:white;text-decoration:none">← Volver a la plataforma</a></main></body></html>`,{status,headers:{'content-type':'text/html; charset=utf-8','cache-control':'no-store'}});
+}
+const MODULE_LABELS={course_iso8583:'Curso Interactivo',ebook:'eBook ISO 8583',banco_simulado:'Banco simulado',constructor:'Constructor ISO8583',pos:'POS Virtual',atm:'ATM Virtual',wallet:'Wallet / Tokenización',ecommerce:'E-Commerce / 3DS',switch_adquirente:'Switch del Adquirente',switch_emisor:'Switch Emisor',parser:'Parser ISO8583'};
+
+export default {async fetch(request,env,ctx){
   const url=new URL(request.url),path=url.pathname;
   if(url.hostname==='www.oscpaymentacademy.com'){
     url.hostname='oscpaymentacademy.com';
@@ -749,6 +1014,8 @@ export default {async fetch(request,env){
     const user=await currentUser(request,env);
     if(!user)return Response.redirect(`${url.origin}/login?next=${encodeURIComponent(path)}`,302);
     if(!(await hasPaymentAcademyLicense(env,user)))return Response.redirect(`${url.origin}/expired?product=payment-academy`,302);
+    const access=await learningAccess(env,user);
+    if(!access.enabled.includes('ebook'))return moduleBlockedPage('eBook ISO 8583','El eBook no está incluido en tu licencia. Consultá con tu administrador.');
     const response=await env.ASSETS.fetch(request);
     const headers=new Headers(response.headers);
     headers.set('content-disposition','attachment; filename="ISO_8583_Desde_Cero_Oscar_Sanchez_Castro.epub"');
@@ -768,8 +1035,41 @@ export default {async fetch(request,env){
   if(!publicPaths.has(path)&&!assetLike){
     const user=await currentUser(request,env);
     if(!user)return Response.redirect(`${url.origin}/login?next=${encodeURIComponent(path+url.search)}`,302);
-    if((path==='/authorization-analytics'||path==='/authorization-analytics.html')&&!(await productAccess(env,user,'product_authorization_analytics')))return Response.redirect(`${url.origin}/expired?product=authorization-analytics`,302);
+    // rc.1.22 · Análisis Diario y Monitoreo en Vivo se habilitan con licencias SEPARADAS.
+    if((path==='/authorization-analytics'||path==='/authorization-analytics.html')&&!(await productAccess(env,user,PRODUCT_DAILY)))return Response.redirect(`${url.origin}/expired?product=authorization-analytics`,302);
+    if((path==='/monitoreo-vivo'||path==='/monitoreo-vivo.html')&&!(await productAccess(env,user,PRODUCT_LIVE)))return Response.redirect(`${url.origin}/expired?product=live-monitoring`,302);
     if(path!=='/expired'&&path!=='/expired.html'&&!(await hasActiveLicense(env,user)))return Response.redirect(`${url.origin}/expired`,302);
+    // rc.1.22 · Páginas por módulo, solo administración y registro de actividad.
+    let page=(path.split('/').pop()||'index.html').toLowerCase();
+    if(!page.includes('.'))page+='.html';
+    if(ADMIN_ONLY_PAGES.has(page)&&user.platform_role!=='OSC_ADMIN')
+      return moduleBlockedPage(page==='research.html'?'Investigación':'Documentación Técnica','Esta sección es solo para la administración de OSC. Los manuales se abren desde la manito ☝ de cada campo en el Parser y el Constructor.');
+    const moduleKey=PAGE_MODULES[page];
+    if(moduleKey&&user.platform_role!=='OSC_ADMIN'){
+      const access=await learningAccess(env,user);
+      if(!access.enabled.includes(moduleKey)){
+        const label=MODULE_LABELS[moduleKey]||'Módulo';
+        if(access.locked.includes(moduleKey))return moduleBlockedPage(label,`Este módulo forma parte del programa progresivo y estará disponible después de la clase${MODULE_DAY[moduleKey]?' del Día '+MODULE_DAY[moduleKey]:''}.`);
+        return moduleBlockedPage(label,'Este módulo no está incluido en la licencia de tu empresa. Consultá con tu administrador.');
+      }
+    }
+    const activityKey=/\.html$/.test(page)?(moduleKey||ACTIVITY_PAGES[page]||null):null;
+    if(activityKey){
+      // Se registra solo la página efectivamente servida (no las redirecciones /pos.html → /pos).
+      const response=await env.ASSETS.fetch(request);
+      if(response.status===200){
+        if(ctx?.waitUntil)ctx.waitUntil(trackActivity(env,user,activityKey));
+        else await trackActivity(env,user,activityKey);
+      }
+      return response;
+    }
+    if(/^\/+manuals\//i.test(path)){
+      const response=await env.ASSETS.fetch(request);
+      const headers=new Headers(response.headers);
+      headers.set('cache-control','private, no-store');
+      headers.set('x-robots-tag','noindex, nofollow');
+      return new Response(response.body,{status:response.status,statusText:response.statusText,headers});
+    }
   }
   return env.ASSETS.fetch(request);
 }};

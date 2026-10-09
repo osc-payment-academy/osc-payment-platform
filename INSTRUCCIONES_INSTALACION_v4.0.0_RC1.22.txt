@@ -1,0 +1,38 @@
+OSC Payment Academy v4.0.0-rc.1.22 — Licencias por módulo, uso de licencias, cuotas, ARQC/ARPC y PIN Block
+
+UPDATE ONLY (paquete INCREMENTAL, se instala sobre la rc.1.21):
+1. Descomprimir el ZIP incremental.
+2. Copiar su contenido sobre la raíz del proyecto, reemplazando archivos.
+   (src/index.js, archivos de public/, manuales nuevos en public/manuals/, migración SQL, notas.)
+3. Ejecutar la migración D1 UNA vez (es idempotente):
+     npx wrangler d1 execute osc-academy --remote --file=MIGRATION_v4.0.0-rc.1.22_LICENCIAS_MODULOS_USO.sql
+4. Ejecutar el despliegue habitual de Cloudflare Workers.
+
+RESPALDO (paquete COMPLETO): contiene todo el proyecto; se conserva sin instalar.
+
+Pruebas mínimas (en este orden):
+1. Como OSC_ADMIN, abrir Panel OSC → "Consultoras · licencias por módulo".
+   Crear una consultora de prueba con un correo, marcar solo POS y ATM + Análisis Diario.
+2. Ingresar con ese usuario: el menú muestra POS, ATM, Análisis Diario, Uso de licencias y Mi cuenta.
+   Escribir a mano /wallet.html → "Módulo no disponible". /monitoreo-vivo.html → "licencia vencida".
+3. Volver al Panel OSC → Editar → marcar Monitoreo en Vivo → el usuario lo ve al recargar.
+4. Panel OSC → "Uso de licencias": aparecen todos los grupos; probar Detalle, Recordar y Exportar CSV.
+   Con el usuario administrador de la consultora: ve solo a su gente.
+5. Como alumno de una edición de curso: el menú muestra 🔒 en los módulos aún no habilitados.
+6. Como alumno: /documentacion.html y /research.html → "solo administración".
+   La manito ☝ del Parser abre el manual (Mastercard → Customer Interface Specification; Amex → Network Specifications).
+7. POS:
+   - Visa Crédito, 6 cuotas con interés, chip, PIN 1234 → 0100 con Field 104 (5D) y 126.13 = I; 0110 con tag 91.
+   - Mastercard Crédito, 3 cuotas → DE 48 "R9506ARGCTA" y DE 112 "0010042103".
+   - Amex Crédito, cuotas con interés → 1100 (108) / 1110 (planes) / 1100 (100) / 1110.
+   - PIN 9999 → 55 PIN INCORRECTO. Activar "Alterar un dato en tránsito" → Visa 82 / Mastercard 88.
+   - Botones 🔐 ARQC/ARPC, 🔑 PIN Block y HSM, 💳 Cuotas → pestaña "Tu transacción" con los valores reales.
+8. ATM: PIN 1234 → 00; otro PIN → 55. Botón "PIN Block y HSM".
+9. Wallet: cambiar de tarjeta (Visa / Mastercard / Amex) y pagar → mensaje propio de cada red.
+   E-Commerce: elegir la red en "Tarjeta de prueba" y pagar.
+
+Notas:
+- PIN de prueba de todas las tarjetas del laboratorio: 1234.
+- Las claves criptográficas son de práctica (públicas). Los algoritmos son reales.
+- Las consultoras creadas antes de esta versión siguen viendo todos los módulos hasta que se editen.
+- Quien tenía licencia de Analytics conserva el Monitoreo en Vivo (lo copia la migración).

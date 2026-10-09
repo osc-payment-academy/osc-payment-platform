@@ -1777,6 +1777,8 @@
     <script src="js/switch-store.js?v=4.0.0-rc1.6"></script>
     <script src="js/network-profiles.js"></script>
     <script src="js/help-catalog.js"></script>
+    <script src="js/iso-network-spec.js?v=4.0.0-rc1.22"></script>
+    <script src="js/security-edu.js?v=4.0.0-rc1.22"></script>
     <script>
       (() => {
         function constructorManualNetwork() {
@@ -1994,14 +1996,14 @@
             name: "PIN Data",
             fmt: "B64",
             len: 16,
-            desc: "PIN Block cifrado representado en hexadecimal.",
+            desc: "PIN Block ISO 9564 formato 0 (PIN XOR PAN) cifrado con 3DES, representado en hexadecimal. El PIN nunca viaja en claro: solo el HSM del emisor puede descifrarlo.",
           },
           {
             de: 53,
             name: "Security-Related Control Information",
             fmt: "N16",
             len: 16,
-            desc: "Información de control relacionada con PIN y seguridad.",
+            desc: "Cómo se cifró el PIN. Visa: 20 (zone encryption) · 01 (DES) · 01 (ISO formato 0) · 01 (índice de clave) → 2001010100000000. Mastercard CIS: 97 · 01 · 10 · 0001 → 9701100001000000. El MDS (débito Mastercard) no usa el DE 53.",
           },
           {
             de: 50,
@@ -2093,7 +2095,7 @@
               42: "OSCACADEMY00001",
               49: "032",
               52: "A1B2C3D4E5F60718",
-              53: "2000000000000000",
+              53: "2001010100000000",
               55: "9F2608A1B2C3D4E5F607089F2701809F0206000000001250",
             },
           },
@@ -2112,7 +2114,7 @@
               41: "ATM00001",
               49: "032",
               52: "1122334455667788",
-              53: "2000000000000000",
+              53: "2001010100000000",
             },
           },
           reversal: {
@@ -3891,7 +3893,7 @@ ${raw()}`,
           clearTimeout(zone._manualTimer);
           zone.classList.remove("manual-ready");
           const enabled =
-            network !== "amex" && OSCHelp.hasTechnical?.(de, network);
+            OSCHelp.hasTechnical?.(de, network); // rc.1.22: Amex con manito (Network Specifications – Authorization)
           zone.classList.toggle("manual-disabled", !enabled);
           button.dataset.manualDe = String(de);
           button.dataset.manualNetwork = network;
@@ -4134,7 +4136,7 @@ ${raw()}`,
       Baseline v3.5.4.23 · REJECT seleccionable en Parser
     </div>
     <script src="js/module-guide.js"></script>
-    <script src="js/navigation.js?v=3.5.4.46"></script>
+    <script src="js/navigation.js?v=4.0.0-rc1.22"></script>
     <script src="js/tutor-osc.js?v=4.0.0-rc1.8" data-module="constructor"></script>
   </body>
 </html>

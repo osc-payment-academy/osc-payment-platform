@@ -31,7 +31,22 @@
 <style id="osc-fullscreen-simulator">
 .sidebar{display:none!important}.app{display:block!important;grid-template-columns:1fr!important}.main{margin-left:0!important;width:100%!important;max-width:none!important}.osc-back-platform{position:fixed;left:14px;top:12px;z-index:99999;background:#0b2238;color:#fff;border:1px solid #2f83ff;border-radius:8px;padding:8px 12px;text-decoration:none;font:600 12px Inter,Segoe UI,Arial,sans-serif;box-shadow:0 6px 18px #0006}.topbar{padding-left:115px!important}
 </style>
-<style id="osc-pos-qr41">.q41{background:linear-gradient(145deg,#f8fcff,#eef8ff);border:1px solid #c5deef;border-radius:16px;padding:18px;color:#17364e}.q41-head{text-align:center}.q41-head>span{font-size:10px;font-weight:900;letter-spacing:.12em;color:#0877c5}.q41-head h3{font-size:21px;margin:5px}.q41-head p{color:#5c788c;margin:0 auto 16px;max-width:720px}.q41-main{display:flex;align-items:stretch;justify-content:center;gap:6px;flex-wrap:wrap}.q41-main>strong{display:grid;place-items:center;color:#1686d4;font-size:19px}.q41-node{width:105px;min-height:118px;background:white;border:1px solid #bad8ea;border-radius:13px;padding:10px 7px;text-align:center}.q41-node.qr{border:2px solid #1586d2;background:#eaf7ff}.q41-node i{display:block;font-style:normal;font-size:27px;margin:4px}.q41-node b{display:block;font-size:10px;color:#173f5d}.q41-node small{display:block;font-size:8px;line-height:1.4;color:#6b8598;margin-top:4px}.q41-return{margin-top:14px;background:#e8f7ef;border-left:4px solid #20a96d;border-radius:8px;padding:10px;font-size:10px;color:#315f4a}.q41-points{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}.q41-points div{background:#fff;border:1px solid #c9dfef;border-radius:9px;padding:9px;font-size:9px;color:#4d6c80}.q41-points b{display:block;color:#0877c5;margin-bottom:3px}@media(max-width:800px){.q41-main>strong{display:none}.q41-points{grid-template-columns:1fr}}</style><style id="osc-qr-flow42">.qr-education-dialog.qr-image-only{width:auto!important;max-width:96vw!important;max-height:96vh!important;overflow:visible!important;padding:0!important;border:0!important;border-radius:14px!important;background:transparent!important;box-shadow:none!important}.qr-image-flow{display:block!important;margin:0!important;padding:0!important;border:0!important;background:transparent!important}.qr42-approved{display:block;margin:0;padding:0;background:transparent;border-radius:14px;overflow:hidden;line-height:0}.qr42-approved img{display:block;width:auto;height:auto;max-width:96vw;max-height:94vh;object-fit:contain;margin:0}.qr-image-only .qr-education-close{right:8px;top:8px;z-index:2;width:34px;height:34px;border-radius:50%;background:#ffffffdd;color:#35536a}</style></head>
+<style id="osc-pos-qr41">.q41{background:linear-gradient(145deg,#f8fcff,#eef8ff);border:1px solid #c5deef;border-radius:16px;padding:18px;color:#17364e}.q41-head{text-align:center}.q41-head>span{font-size:10px;font-weight:900;letter-spacing:.12em;color:#0877c5}.q41-head h3{font-size:21px;margin:5px}.q41-head p{color:#5c788c;margin:0 auto 16px;max-width:720px}.q41-main{display:flex;align-items:stretch;justify-content:center;gap:6px;flex-wrap:wrap}.q41-main>strong{display:grid;place-items:center;color:#1686d4;font-size:19px}.q41-node{width:105px;min-height:118px;background:white;border:1px solid #bad8ea;border-radius:13px;padding:10px 7px;text-align:center}.q41-node.qr{border:2px solid #1586d2;background:#eaf7ff}.q41-node i{display:block;font-style:normal;font-size:27px;margin:4px}.q41-node b{display:block;font-size:10px;color:#173f5d}.q41-node small{display:block;font-size:8px;line-height:1.4;color:#6b8598;margin-top:4px}.q41-return{margin-top:14px;background:#e8f7ef;border-left:4px solid #20a96d;border-radius:8px;padding:10px;font-size:10px;color:#315f4a}.q41-points{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}.q41-points div{background:#fff;border:1px solid #c9dfef;border-radius:9px;padding:9px;font-size:9px;color:#4d6c80}.q41-points b{display:block;color:#0877c5;margin-bottom:3px}@media(max-width:800px){.q41-main>strong{display:none}.q41-points{grid-template-columns:1fr}}</style><style id="osc-qr-flow42">.qr-education-dialog.qr-image-only{width:auto!important;max-width:96vw!important;max-height:96vh!important;overflow:visible!important;padding:0!important;border:0!important;border-radius:14px!important;background:transparent!important;box-shadow:none!important}.qr-image-flow{display:block!important;margin:0!important;padding:0!important;border:0!important;background:transparent!important}.qr42-approved{display:block;margin:0;padding:0;background:transparent;border-radius:14px;overflow:hidden;line-height:0}.qr42-approved img{display:block;width:auto;height:auto;max-width:96vw;max-height:94vh;object-fit:contain;margin:0}.qr-image-only .qr-education-close{right:8px;top:8px;z-index:2;width:34px;height:34px;border-radius:50%;background:#ffffffdd;color:#35536a}</style><style>
+.installment-config{margin-top:10px;border:1px solid #244762;border-radius:10px;padding:9px 10px;background:#0a1a29}
+.installment-config.hidden{display:none}
+.installment-config .test-card-heading{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.installment-row{display:grid;grid-template-columns:1fr;gap:6px;margin:6px 0}
+.installment-row select{width:100%;padding:8px;border-radius:8px;border:1px solid #31536f;background:#06121e;color:#eaf3fb;font-size:12px}
+.installment-config small{display:block;color:#9fb4c7;font-size:11px;line-height:1.4}
+.osc-test-pin{margin-top:6px}
+.tamper-control{display:flex;gap:8px;align-items:flex-start;margin-top:10px;font-size:11.5px;color:#f3c76b;cursor:pointer}
+.tamper-control input{margin-top:2px}
+.osc-edu-buttons{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.osc-edu-buttons button{border:1px solid #2f6f9f;background:#0d2a44;color:#e6f2fb;border-radius:999px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer}
+.osc-edu-buttons button:hover{background:#13406a}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+</style>
+</head>
 <body><a class="osc-back-platform" href="index.html">← Plataforma</a>
 <div class="app">
   <aside class="sidebar">
@@ -154,6 +169,23 @@
       </button>
     </div>
     <div class="selected-test-card" id="selectedTestCardSummary">Visa Crédito · PAN de prueba asignado automáticamente</div>
+    <div class="selected-test-card osc-test-pin">PIN de prueba de todas las tarjetas: <b>1234</b></div>
+    <div id="installmentConfig" class="installment-config">
+      <div class="test-card-heading">CUOTAS · SOLO CRÉDITO <button id="installmentHelp" class="qr-education-help" type="button" aria-label="Cómo viajan las cuotas en cada red">☝️</button></div>
+      <div class="installment-row">
+        <label class="sr-only" for="installmentCount">Cantidad de cuotas</label>
+        <select id="installmentCount">
+          <option value="1">1 pago</option><option value="2">2 cuotas</option><option value="3">3 cuotas</option><option value="6">6 cuotas</option>
+          <option value="9">9 cuotas</option><option value="12">12 cuotas</option><option value="18">18 cuotas</option><option value="24">24 cuotas</option>
+        </select>
+        <label class="sr-only" for="installmentPlan">Tipo de plan</label>
+        <select id="installmentPlan" disabled>
+          <option value="merchant">Sin interés · financia el comercio</option>
+          <option value="issuer">Con interés · financia el emisor</option>
+        </select>
+      </div>
+      <small id="installmentSummary">Pago en 1 cuota</small>
+    </div>
   </div>
   <div id="qrPaymentConfig" class="payment-config hidden">
     <label for="qrTypeSelect">Tipo de QR</label>
@@ -304,7 +336,7 @@
         </div>
 
 
-        <section class="pos-middle-section pos-scenario-full"><h3>ESCENARIOS DE RESPUESTA</h3><div class="scenario-grid" id="scenarioGrid"><button class="selected success" data-code="00">✓ 00 - APROBADA</button><button class="danger" data-code="51">◉ 51 - FONDOS INSUFICIENTES</button><button class="purple" data-code="54">◉ 54 - TARJETA VENCIDA</button><button class="warning" data-code="05">◉ 05 - NO APROBAR</button><button class="blue" data-code="91">◉ 91 - EMISOR NO DISPONIBLE</button><button class="neutral" data-code="TO">◉ TIME OUT - SIN RESPUESTA</button></div><div class="scenario-actions"><label class="auto-response-control" for="autoResponse">Respuesta Automática <input id="autoResponse" type="checkbox" role="switch"><span class="switch"></span></label><button id="sendResponse" type="button">Enviar Respuesta ▷</button></div></section>
+        <section class="pos-middle-section pos-scenario-full"><h3>ESCENARIOS DE RESPUESTA</h3><div class="scenario-grid" id="scenarioGrid"><button class="selected success" data-code="00">✓ 00 - APROBADA</button><button class="danger" data-code="51">◉ 51 - FONDOS INSUFICIENTES</button><button class="purple" data-code="54">◉ 54 - TARJETA VENCIDA</button><button class="warning" data-code="05">◉ 05 - NO APROBAR</button><button class="blue" data-code="91">◉ 91 - EMISOR NO DISPONIBLE</button><button class="neutral" data-code="TO">◉ TIME OUT - SIN RESPUESTA</button><button class="warning" data-code="57">◉ 57 - CUOTAS NO PERMITIDAS</button></div><label class="tamper-control" for="tamperInTransit"><input id="tamperInTransit" type="checkbox"> 🔧 Alterar un dato en tránsito (el importe cambia después de que la tarjeta firmó el ARQC)</label><div class="scenario-actions"><label class="auto-response-control" for="autoResponse">Respuesta Automática <input id="autoResponse" type="checkbox" role="switch"><span class="switch"></span></label><button id="sendResponse" type="button">Enviar Respuesta ▷</button></div></section>
         <section class="pos-middle-section"><h3>MODO TÉCNICO · EVENTOS EN TIEMPO REAL</h3><div class="pos-tech-events" id="posTechEvents"><div>Esperando inicio de operación.</div><div>El POS construirá 0100 o 0200 según marca/producto.</div></div></section>
         <div class="result-box" id="resultBox">
           <h3>RESULTADO</h3>
@@ -320,6 +352,7 @@
         <div class="atm-like-summary"><div><span>MTI</span><strong id="mti">----</strong></div><div><span>BITMAP</span><strong id="bitmap">0000000000000000</strong></div><div><span>CAMPOS</span><strong id="fieldCount">0</strong></div></div>
         <section class="atm-like-bitmaps"><div class="atm-like-section-title"><h3>BITMAPS ISO8583</h3><p>Las posiciones presentes se resaltan en verde.</p></div><div class="bitmap-title"><span>BITMAP PRIMARIO (1–64)</span><span id="selectedBitmapPrimaryHex">0000000000000000</span></div><div class="bitmap-64 atm-grid" id="selectedBitmapPrimaryBits"></div><div class="bitmap-title"><span>BITMAP SECUNDARIO (65–128)</span><span id="selectedBitmapSecondaryHex">0000000000000000</span></div><div class="bitmap-64 atm-grid" id="selectedBitmapSecondaryBits"></div><span id="selectedBitmapFields" class="hidden"></span><div id="selectedBitmapSecondaryWrap" class="hidden"></div></section>
         <div class="atm-like-section-title data-title"><h3>DATA ELEMENTS</h3><p>Detalle completo de cada dato que compone el mensaje seleccionado.</p></div>
+        <div class="osc-edu-buttons" aria-label="Ayudas de seguridad y cuotas"><button id="eduArqc" type="button">🔐 ARQC / ARPC</button><button id="eduPin" type="button">🔑 PIN Block y HSM</button><button id="eduCuotas" type="button">💳 Cuotas</button></div>
         <div class="tabs">
           <button class="active">DATA ELEMENTS</button><button>VISTA TLV</button><button>EXPLICACIÓN</button><button>VALIDACIONES</button>
         </div>
@@ -404,11 +437,14 @@
 
 <script src="js/network-profiles.js?v=3.5.4.49"></script>
 <script src="js/switch-store.js?v=4.0.0-rc1.6"></script>
-<script src="js/app.js?v=3.5.4.49"></script>
+<script src="js/emv-crypto.js?v=4.0.0-rc1.22"></script>
+<script src="js/iso-network-spec.js?v=4.0.0-rc1.22"></script>
+<script src="js/security-edu.js?v=4.0.0-rc1.22"></script>
+<script src="js/app.js?v=4.0.0-rc1.22"></script>
 <script>document.addEventListener('DOMContentLoaded',()=>{document.querySelectorAll('.pos-scenario-mini button').forEach((b,i)=>b.onclick=()=>{document.querySelectorAll('.pos-scenario-mini button').forEach(x=>x.classList.remove('active'));b.classList.add('active');const original=document.querySelectorAll('#scenarioGrid button')[i];if(original)original.click()});const log=document.getElementById('posTechEvents');const status=document.getElementById('flowResponse');if(log&&status)new MutationObserver(()=>{const d=document.createElement('div');d.textContent=new Date().toLocaleTimeString('es-AR')+' · '+status.textContent;log.prepend(d);while(log.children.length>8)log.lastChild.remove()}).observe(status,{childList:true,subtree:true,characterData:true})});</script>
 <script src="js/permissions.js"></script>
 
 
 <script src="js/help-catalog.js"></script>
-<script src="js/module-guide.js"></script><script src="js/navigation.js?v=4.0.0-rc1.7"></script><script src="js/osc-learning.js?v=4.0.0-rc1.19" data-module="pos"></script><script src="js/tutor-osc.js?v=4.0.0-rc1.19" data-module="pos"></script></body>
+<script src="js/module-guide.js"></script><script src="js/navigation.js?v=4.0.0-rc1.22"></script><script src="js/osc-learning.js?v=4.0.0-rc1.19" data-module="pos"></script><script src="js/tutor-osc.js?v=4.0.0-rc1.19" data-module="pos"></script></body>
 </html>

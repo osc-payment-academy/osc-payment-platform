@@ -1,1 +1,101 @@
-<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Panel OSC · OSC Payment Academy</title><link rel="icon" type="image/svg+xml" href="/favicon.svg"><link rel="stylesheet" href="css/saas.css"></head><body><main class="shell"><header class="top"><div><div class="brand"><span>OSC</span> PAYMENT ACADEMY</div><h1>Panel OSC</h1><p class="muted">Cursos, licencias y conversión de alumnos en consultoras.</p></div><nav class="tabs"><a class="btn" href="index.html">CORE</a><a class="btn" href="support.html">Soporte Online</a><a class="btn" href="tutor-admin.html">Tutor OSC</a><button class="btn" id="logout">Cerrar sesión</button></nav></header><section class="grid"><article class="metric"><span>USUARIOS</span><strong id="users">—</strong></article><article class="metric"><span>EMPRESAS / GRUPOS</span><strong id="tenants">—</strong></article><article class="metric"><span>EDICIONES</span><strong id="cohorts">—</strong></article><article class="metric"><span>LICENCIAS</span><strong id="licenses">—</strong></article></section><section class="panel"><p class="eyebrow">Nuevo paquete</p><h2>Curso en vivo + 30 días de práctica</h2><form id="courseForm" class="form-grid"><div class="field"><label>Nombre del curso</label><input id="courseName" required placeholder="Introducción práctica a ISO 8583"></div><div class="field"><label>Nombre del grupo</label><input id="groupName" required placeholder="Septiembre 2026 · Grupo 01"></div><div class="field"><label>Fecha de inicio</label><input id="startsAt" type="datetime-local" required></div><div class="field"><label>Fecha de clase en vivo</label><input id="liveAt" type="datetime-local"></div><div class="field"><label>Cupos</label><input id="seatLimit" type="number" min="1" value="12" required></div><div class="field"><label>Producto</label><select id="productId"><option value="product_payment">OSC Payment Academy · CORE</option></select></div><div class="full-row"><button class="btn primary">Crear curso y licencia</button></div></form><div id="courseMessage" class="message"></div></section><section class="panel"><p class="eyebrow">Conversión comercial</p><h2>Convertir alumnos en consultora</h2><p class="muted">La operación crea una licencia corporativa y conserva la identidad y el workspace de cada alumno seleccionado.</p><form id="convertForm" class="form-grid"><div class="field"><label>Nombre de la consultora</label><input id="consultancyName" required></div><div class="field"><label>ID del administrador</label><input id="adminUserId" required></div><div class="field full-row"><label>IDs de usuarios, separados por coma</label><input id="userIds" required></div><div class="field"><label>Producto contratado</label><select id="consultancyProduct"><option value="product_payment">OSC Payment Academy</option><option value="product_authorization_analytics">OSC Authorization Analytics</option></select></div><div class="field"><label>Cantidad de licencias</label><input id="consultancySeats" type="number" min="1" value="4" required></div><div class="field"><label>Vencimiento corporativo (opcional)</label><input id="consultancyExpires" type="date"></div><div class="full-row"><button class="btn primary">Crear consultora y migrar</button></div></form><div id="convertMessage" class="message"></div></section></main><script src="js/saas-session.js"></script><script>const show=(id,t,e=false)=>{const x=document.getElementById(id);x.textContent=t;x.className='message show '+(e?'error':'ok')};async function load(){const r=await fetch('/api/admin/overview');if(r.status===403)return location.href='/';if(!r.ok)return;const d=await r.json();['users','tenants','cohorts','licenses'].forEach(k=>document.getElementById(k).textContent=d[k])}courseForm.onsubmit=async e=>{e.preventDefault();const body={courseName:courseName.value,groupName:groupName.value,startsAt:new Date(startsAt.value).toISOString(),liveAt:liveAt.value?new Date(liveAt.value).toISOString():null,seatLimit:Number(seatLimit.value),productId:productId.value};const r=await fetch('/api/admin/course-package',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});if(r.ok){const d=await r.json();show('courseMessage','Curso creado. La licencia y el foro vencen el '+new Date(d.expiresAt).toLocaleDateString('es-AR'));courseForm.reset();load()}else show('courseMessage','No se pudo crear el curso.',true)};convertForm.onsubmit=async e=>{e.preventDefault();const body={name:consultancyName.value,productId:consultancyProduct.value,adminUserId:adminUserId.value,userIds:userIds.value.split(',').map(x=>x.trim()).filter(Boolean),seatLimit:Number(consultancySeats.value),expiresAt:consultancyExpires.value?new Date(consultancyExpires.value+'T23:59:59').toISOString():null};const r=await fetch('/api/admin/convert-consultancy',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});if(r.ok){const d=await r.json();show('convertMessage',d.migratedUsers+' usuarios migrados sin perder su workspace.');convertForm.reset();load()}else show('convertMessage','Verificá los usuarios y la configuración.',true)};load();</script></body></html>
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Panel OSC · OSC Payment Academy</title><link rel="icon" type="image/svg+xml" href="/favicon.svg"><link rel="stylesheet" href="css/saas.css">
+<style>
+.check-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px;margin:8px 0}
+.check{display:flex;gap:9px;align-items:flex-start;border:1px solid #23435f;border-radius:9px;padding:9px 10px;background:#081725;cursor:pointer;font-size:13px}
+.check input{width:auto;margin-top:2px}
+.check small{display:block;color:var(--muted);font-size:11px;margin-top:2px}
+.group-title{margin:16px 0 4px;color:#66b9ff;font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+.cons-list{display:grid;gap:10px}
+.cons{border:1px solid var(--line);border-radius:12px;background:#081725;padding:14px}
+.cons-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.chip{display:inline-block;padding:4px 8px;border-radius:99px;background:#173d60;color:#8dcdff;font-size:11px}
+.chip.prod{background:#14402c;color:#7be3ae}
+.chip.off{background:#2a2f36;color:#8c9aa6}
+.inline-actions{display:flex;gap:8px;flex-wrap:wrap}
+.hidden{display:none!important}
+code{background:#06121e;border:1px solid #23435f;border-radius:6px;padding:1px 6px}
+</style></head><body><main class="shell">
+<header class="top"><div><div class="brand"><span>OSC</span> PAYMENT ACADEMY</div><h1>Panel OSC</h1><p class="muted">Cursos, licencias por módulo, consultoras y uso de la plataforma.</p></div>
+<nav class="tabs"><a class="btn" href="index.html">CORE</a><a class="btn primary" href="uso-licencias.html">📈 Uso de licencias</a><a class="btn" href="support.html">Soporte Online</a><a class="btn" href="tutor-admin.html">Tutor OSC</a><button class="btn" id="logout">Cerrar sesión</button></nav></header>
+
+<section class="grid"><article class="metric"><span>USUARIOS</span><strong id="users">—</strong></article><article class="metric"><span>EMPRESAS / GRUPOS</span><strong id="tenants">—</strong></article><article class="metric"><span>EDICIONES</span><strong id="cohorts">—</strong></article><article class="metric"><span>LICENCIAS</span><strong id="licenses">—</strong></article></section>
+
+<section class="panel"><p class="eyebrow">Nuevo paquete</p><h2>Curso en vivo + 30 días de práctica</h2><form id="courseForm" class="form-grid"><div class="field"><label for="courseName">Nombre del curso</label><input id="courseName" required placeholder="Introducción práctica a ISO 8583"></div><div class="field"><label for="groupName">Nombre del grupo</label><input id="groupName" required placeholder="Septiembre 2026 · Grupo 01"></div><div class="field"><label for="startsAt">Fecha de inicio</label><input id="startsAt" type="datetime-local" required></div><div class="field"><label for="liveAt">Fecha de clase en vivo</label><input id="liveAt" type="datetime-local"></div><div class="field"><label for="seatLimit">Cupos</label><input id="seatLimit" type="number" min="1" value="12" required></div><div class="field"><label for="productId">Producto</label><select id="productId"><option value="product_payment">OSC Payment Academy · CORE</option></select></div><div class="full-row"><button class="btn primary">Crear curso y licencia</button> <a class="btn" href="students.html">Alumnos y módulos por edición →</a></div></form><div id="courseMessage" class="message"></div></section>
+
+<section class="panel" id="consultancyPanel">
+  <p class="eyebrow">Consultoras · licencias por módulo</p>
+  <h2 id="consFormTitle">Nueva consultora</h2>
+  <p class="muted">Marcá qué módulos y qué soluciones incluye la licencia. El menú de cada usuario muestra solo lo habilitado y el servidor bloquea el resto aunque se escriba la URL. Los usuarios se indican por <b>correo</b> o por <b>ID</b>; si un correo no existe, se crea con una clave temporal.</p>
+  <form id="consForm">
+    <input type="hidden" id="consId">
+    <div class="form-grid">
+      <div class="field"><label for="consName">Nombre de la consultora</label><input id="consName" required placeholder="Ej.: Luis Aquino · Consultoría"></div>
+      <div class="field"><label for="consAdmin">Administrador de la cuenta (correo o ID)</label><input id="consAdmin" placeholder="luisaquino82@gmail.com"></div>
+      <div class="field full-row"><label for="consUsers" id="consUsersLabel">Usuarios de la consultora (correos o IDs, separados por coma o renglón)</label><textarea id="consUsers" placeholder="luisaquino82@gmail.com"></textarea></div>
+      <div class="field"><label for="consSeats">Cantidad de licencias</label><input id="consSeats" type="number" min="1" value="1" required></div>
+      <div class="field"><label for="consExpires">Vencimiento (opcional)</label><input id="consExpires" type="date"></div>
+    </div>
+    <div class="group-title">Módulos de Payment Academy</div>
+    <div class="check-grid" id="moduleChecks"></div>
+    <div class="inline-actions"><button type="button" class="btn" id="checkAll">Marcar todos</button><button type="button" class="btn" id="checkNone">Desmarcar todos</button></div>
+    <div class="group-title">Soluciones profesionales (licencias separadas)</div>
+    <div class="check-grid">
+      <label class="check"><input type="checkbox" id="prodDaily"><span>📊 Análisis Diario de Autorizaciones<small>Producto OSC Authorization Analytics</small></span></label>
+      <label class="check"><input type="checkbox" id="prodLive"><span>🔴 Monitoreo en Vivo de Autorizaciones<small>Producto OSC Monitoreo en Vivo</small></span></label>
+    </div>
+    <div class="full-row" style="margin-top:14px"><button class="btn primary" id="consSubmit">Crear consultora</button> <button type="button" class="btn hidden" id="consCancel">Cancelar edición</button></div>
+  </form>
+  <div id="consMessage" class="message"></div>
+  <div id="consCreated" class="muted"></div>
+</section>
+
+<section class="panel"><div class="cons-head"><div><p class="eyebrow">Consultoras existentes</p><h2>Licencias y módulos</h2></div><button class="btn" id="reloadCons" type="button">Actualizar</button></div><div class="cons-list" id="consList"><p class="muted">Cargando…</p></div></section>
+</main>
+<script src="js/saas-session.js"></script>
+<script>
+const show=(id,t,e=false)=>{const x=document.getElementById(id);x.textContent=t;x.className='message show '+(e?'error':'ok')};
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]);
+const MODULE_INFO={course_iso8583:['🎓 Curso Interactivo',''],ebook:['📖 eBook ISO 8583','Lectura y descarga'],banco_simulado:['🏦 Banco simulado','Clientes · Pasivas · Solicitudes · Cuenta del Cliente'],constructor:['⌘ Constructor ISO8583',''],pos:['▣ POS Virtual','Incluye cuotas, ARQC/ARPC y PIN'],atm:['🏧 ATM Virtual',''],wallet:['📱 Wallet / Tokenización',''],ecommerce:['🛒 E-Commerce / 3DS',''],switch_adquirente:['🏦 Switch del Adquirente','Incluye Compensación Visa / Mastercard'],switch_emisor:['🌎 Switch Emisor',''],parser:['◉ Parser','Parser ISO8583 + Parser Guiado']};
+let MODULES=Object.keys(MODULE_INFO), CONS=[];
+function renderChecks(selected){
+  moduleChecks.innerHTML=MODULES.map(k=>`<label class="check"><input type="checkbox" data-module="${k}" ${selected.includes(k)?'checked':''}><span>${MODULE_INFO[k]?.[0]||k}${MODULE_INFO[k]?.[1]?`<small>${MODULE_INFO[k][1]}</small>`:''}</span></label>`).join('');
+}
+async function load(){const r=await fetch('/api/admin/overview');if(r.status===403)return location.href='/';if(!r.ok)return;const d=await r.json();['users','tenants','cohorts','licenses'].forEach(k=>document.getElementById(k).textContent=d[k])}
+async function loadCons(){
+  const r=await fetch('/api/admin/consultancies');if(!r.ok){consList.innerHTML='<p class="muted">No se pudieron cargar las consultoras.</p>';return}
+  const d=await r.json();CONS=d.consultancies||[];if(d.modules?.length)MODULES=d.modules.map(m=>m.key);
+  consList.innerHTML=CONS.length?CONS.map(c=>`<article class="cons"><div class="cons-head"><div><h3 style="margin:0">${esc(c.name)}</h3><p class="muted" style="margin:4px 0">${c.members.length} de ${c.seats} licencias · ${c.expiresAt?'vence '+new Date(c.expiresAt).toLocaleDateString('es-AR'):'sin vencimiento'} · ID <code>${esc(c.id)}</code></p></div><div class="inline-actions"><a class="btn" href="uso-licencias.html?tenantId=${encodeURIComponent(c.id)}">📈 Uso</a><button class="btn primary" data-edit="${esc(c.id)}">Editar</button></div></div>
+    <div class="chips">${MODULES.map(k=>`<span class="chip ${c.modules.includes(k)?'':'off'}">${c.modules.includes(k)?'✓':'✗'} ${(MODULE_INFO[k]?.[0]||k).replace(/^\S+\s/,'')}</span>`).join('')}<span class="chip ${c.products.daily?'prod':'off'}">${c.products.daily?'✓':'✗'} Análisis Diario</span><span class="chip ${c.products.live?'prod':'off'}">${c.products.live?'✓':'✗'} Monitoreo en Vivo</span>${c.modulesConfigured?'':'<span class="chip">Consultora anterior a rc.1.22: todos los módulos hasta que la edites</span>'}</div>
+    <p class="muted" style="margin:10px 0 0">${c.members.map(m=>`${esc(m.full_name)} &lt;${esc(m.email)}&gt;${m.role==='TENANT_ADMIN'?' · <b>administrador</b>':''}`).join(' · ')||'Sin usuarios'}</p></article>`).join(''):'<p class="muted">Todavía no hay consultoras.</p>';
+  consList.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>startEdit(b.dataset.edit));
+}
+function resetForm(){consForm.reset();consId.value='';consFormTitle.textContent='Nueva consultora';consSubmit.textContent='Crear consultora';consCancel.classList.add('hidden');consUsersLabel.textContent='Usuarios de la consultora (correos o IDs, separados por coma o renglón)';consName.disabled=false;renderChecks(MODULES)}
+function startEdit(idv){
+  const c=CONS.find(x=>x.id===idv);if(!c)return;
+  consId.value=c.id;consName.value=c.name;consName.disabled=true;consAdmin.value=c.members.find(m=>m.role==='TENANT_ADMIN')?.email||'';
+  consUsers.value='';consUsersLabel.textContent='Agregar usuarios (opcional · correos o IDs). Los actuales se conservan.';
+  consSeats.value=c.seats;consExpires.value=c.expiresAt?c.expiresAt.slice(0,10):'';
+  renderChecks(c.modules);prodDaily.checked=!!c.products.daily;prodLive.checked=!!c.products.live;
+  consFormTitle.textContent='Editar · '+c.name;consSubmit.textContent='Guardar cambios';consCancel.classList.remove('hidden');
+  document.getElementById('consultancyPanel').scrollIntoView({behavior:'smooth'});
+}
+consCancel.onclick=resetForm;checkAll.onclick=()=>moduleChecks.querySelectorAll('input').forEach(i=>i.checked=true);checkNone.onclick=()=>moduleChecks.querySelectorAll('input').forEach(i=>i.checked=false);
+reloadCons.onclick=loadCons;
+consForm.onsubmit=async e=>{e.preventDefault();
+  const modules=[...moduleChecks.querySelectorAll('input:checked')].map(i=>i.dataset.module);
+  const users=consUsers.value.split(/[\n,;]+/).map(x=>x.trim()).filter(Boolean);
+  const body={name:consName.value.trim(),adminUser:consAdmin.value.trim()||undefined,seats:Number(consSeats.value||1),expiresAt:consExpires.value?new Date(consExpires.value+'T23:59:59').toISOString():null,modules,products:{daily:prodDaily.checked,live:prodLive.checked}};
+  const editing=!!consId.value;
+  if(editing)body.addUsers=users;else body.users=users;
+  if(!modules.length&&!prodDaily.checked&&!prodLive.checked)return show('consMessage','Marcá al menos un módulo o una solución.',true);
+  const r=await fetch(editing?'/api/admin/consultancies/'+encodeURIComponent(consId.value):'/api/admin/consultancies',{method:editing?'PUT':'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});
+  const d=await r.json().catch(()=>({}));
+  if(!r.ok)return show('consMessage',d.message||'No se pudo guardar. Verificá los datos.',true);
+  show('consMessage',editing?'Cambios guardados. Se aplican al próximo ingreso o al recargar la página.':'Consultora creada.');
+  consCreated.innerHTML=(d.created||[]).map(x=>`<article class="topic"><strong>${esc(x.email)}</strong><p>Usuario nuevo · clave temporal: <code>${esc(x.temporaryPassword)}</code> (se muestra una sola vez)</p></article>`).join('');
+  resetForm();loadCons();load();
+};
+courseForm.onsubmit=async e=>{e.preventDefault();const body={courseName:courseName.value,groupName:groupName.value,startsAt:new Date(startsAt.value).toISOString(),liveAt:liveAt.value?new Date(liveAt.value).toISOString():null,seatLimit:Number(seatLimit.value),productId:productId.value};const r=await fetch('/api/admin/course-package',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});if(r.ok){const d=await r.json();show('courseMessage','Curso creado. La licencia y el foro vencen el '+new Date(d.expiresAt).toLocaleDateString('es-AR'));courseForm.reset();load()}else show('courseMessage','No se pudo crear el curso.',true)};
+renderChecks(MODULES);load();loadCons();
+</script></body></html>

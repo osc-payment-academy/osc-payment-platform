@@ -41,3 +41,6 @@ Incorpora el **Laboratorio Interactivo ISO 8583 – Construcción de Mensajes**,
 
 ## Baseline v3.0 — Multi Network Edition
 Perfiles Visa, Mastercard y arquitectura preparada para American Express. Detección automática por PAN compartida por POS, ATM, Parser y Constructor.
+
+## v4.0.0-rc.1.22
+Licencias por módulo para consultoras y ediciones, Análisis Diario y Monitoreo en Vivo con licencias separadas, panel **Uso de licencias** (admin OSC y administrador de cada consultora) con recordatorio por correo, cuotas en el POS (Visa 5D, Mastercard ARGCTA + DE 112, Amex DPP), ARQC/ARPC y PIN Block/HSM con algoritmos reales y claves de práctica, Wallet y E-Commerce por red, y manuales Mastercard CIS / M/Chip y Amex Network Specifications con manito. Requiere `MIGRATION_v4.0.0-rc.1.22_LICENCIAS_MODULOS_USO.sql`. Ver `RELEASE_NOTES_v4.0.0-rc.1.22.md`.

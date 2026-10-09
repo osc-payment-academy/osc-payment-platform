@@ -871,6 +871,8 @@
 
           <script src="js/network-profiles.js"></script>
           <script src="js/help-catalog.js"></script>
+          <script src="js/iso-network-spec.js?v=4.0.0-rc1.22"></script>
+          <script src="js/security-edu.js?v=4.0.0-rc1.22"></script>
           <script>
             // --- LÓGICA DE AUTENTICACIÓN ---
             window.onload = function () {
@@ -1812,7 +1814,9 @@
                 "9F10": "Issuer Application Data",
                 "9F1A": "Terminal Country Code",
                 "9F1E": "Interface Device Serial Number",
-                "9F26": "Application Cryptogram",
+                "9F26": "Application Cryptogram (ARQC/TC/AAC)",
+                "91": "Issuer Authentication Data (ARPC + ARC)",
+                "9F6E": "Form Factor Indicator / Third Party Data",
                 "9F27": "Cryptogram Information Data",
                 "9F33": "Terminal Capabilities",
                 "9F34": "Cardholder Verification Method Results",
@@ -1893,6 +1897,9 @@
                       tag +
                       "</strong> " +
                       (EMV_TAG_NAMES[tag] || "Tag no catalogado") +
+                      (tag === "9F26" || tag === "91"
+                        ? ' <button type="button" title="Qué es el ARQC / ARPC" style="border:1px solid #2f6f9f;background:#0d2a44;color:#e6f2fb;border-radius:999px;padding:1px 7px;font-size:.7rem;cursor:pointer" onclick="event.stopPropagation();window.OSCSecurityEdu&&OSCSecurityEdu.open(\'arqc\')">☝ ARQC/ARPC</button>'
+                        : "") +
                       " · " +
                       len +
                       ' B · <span class="mono">' +
@@ -3297,12 +3304,13 @@
                 let rows = result.fields
                   .map((f) => {
                     const manualEnabled =
-                      manualNetwork !== "amex" &&
-                      OSCHelp.hasTechnical?.(f.num, manualNetwork);
+                      OSCHelp.hasTechnical?.(f.num, manualNetwork); // rc.1.22: también Amex
                     const heading =
                       manualNetwork === "mastercard"
-                        ? `DE ${f.num}—${f.name}`
-                        : `Field ${f.num} – ${f.name}`;
+                        ? `DE ${f.num} (${f.name})`
+                        : manualNetwork === "amex"
+                          ? `Bit ${f.num} ${f.name}`
+                          : `Field ${f.num} – ${f.name}`;
                     return `
           <tr class="${manualEnabled ? "manual-hover-row" : ""}">
             <td class="fnum">${f.num}</td>
@@ -3488,6 +3496,6 @@
       Baseline v3.5.4.23 · REJECT seleccionable en Parser
     </div>
     <script src="js/module-guide.js"></script>
-    <script src="js/navigation.js?v=3.5.4.46"></script>
+    <script src="js/navigation.js?v=4.0.0-rc1.22"></script>
   </body>
 </html>

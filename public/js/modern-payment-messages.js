@@ -1,7 +1,27 @@
-(function(){
- function fieldsFor(channel,response){if(channel==='ECOMMERCE')return response?{'11':'481205','39':'00','41':'ECOM0001','42':'OSCSTORE0100001'}:{'2':'4895********7812','3':'000000','4':'000000012000','11':'481205','22':'0120','41':'ECOM0001','42':'OSCSTORE0100001','49':'840'};return response?{'11':'481205','39':'00','41':'POSNFC01','42':'OSCSTORE0100001'}:{'2':'4895********7812','3':'000000','4':'000000002500','11':'481205','22':'0710','41':'POSNFC01','42':'OSCSTORE0100001','49':'032','55':'TOKENIZED NFC DATA'};}
- async function record(channel){if(!window.OSCSwitchStore?.addIsoMessage)return;await window.OSCSwitchStore.ready;const e=channel==='ECOMMERCE',id=(e?'ecom':'wallet')+'-'+Date.now(),req=e?'0100':'0200',res=e?'0110':'0210',amount=e?12000:250000,currency=e?'USD':'ARS';window.OSCSwitchStore.addIsoMessage({transactionId:id,channel,network:'VISA',direction:'REQUEST',operation:e?'Compra E-Commerce':'Compra Wallet NFC',mti:req,bitmap:'723C448128E08010',fields:fieldsFor(channel,false),raw:req+'723C448128E08010',amountCents:amount,currency,status:'SENT',panLast4:'7812'});window.OSCSwitchStore.addIsoMessage({transactionId:id,channel,network:'VISA',direction:'RESPONSE',operation:e?'Compra E-Commerce':'Compra Wallet NFC',mti:res,bitmap:'323C44812AE08010',fields:fieldsFor(channel,true),raw:res+'323C44812AE08010',amountCents:amount,currency,responseCode:'00',status:'APPROVED',panLast4:'7812'});await window.OSCSwitchStore.flush();setTimeout(()=>render(channel),150)}
- function render(channel){const db=window.OSCSwitchStore?.read?.();const tbody=document.getElementById('hist');if(!db||!tbody)return;const rows=(db.isoMessages||[]).filter(m=>m.channel===channel).slice(0,20);if(!rows.length)return;tbody.innerHTML=rows.map((m,i)=>`<tr class="iso-msg-row" data-id="${m.id}" style="cursor:pointer"><td>${new Date(m.createdAt).toLocaleTimeString('es-AR')}</td><td>${m.operation} - ${m.direction==='REQUEST'?'Solicitud':'Respuesta'}</td><td>${m.network} ••••${m.panLast4}</td><td>${m.currency} ${(m.amountCents/100).toLocaleString('es-AR',{minimumFractionDigits:2})}</td><td><b>${m.mti}</b></td><td class="${m.direction==='RESPONSE'?'ok':''}">${m.direction==='REQUEST'?'Enviada':'✓ Aprobada'}</td></tr>`).join('');tbody.querySelectorAll('.iso-msg-row').forEach(tr=>tr.onclick=()=>selectMessage(tr.dataset.id,channel))}
- function selectMessage(id,channel){const m=(window.OSCSwitchStore.read().isoMessages||[]).find(x=>x.id===id);if(!m)return;document.querySelectorAll('.iso-msg-row').forEach(r=>r.classList.toggle('selected',r.dataset.id===id));const panel=[...document.querySelectorAll('.panel')].find(x=>x.querySelector('h2')?.textContent.includes('Mensaje ISO8583'));if(!panel)return;const sub=panel.querySelector('.sub');if(sub)sub.textContent=`${m.mti} · ${m.direction==='REQUEST'?'Solicitud':'Respuesta'} · ${m.network}`;const metrics=panel.querySelectorAll('.metric b');if(metrics[0])metrics[0].textContent=m.mti;if(metrics[1])metrics[1].textContent=m.bitmap;if(metrics[2])metrics[2].textContent=Object.keys(m.fields||{}).length;const tb=panel.querySelector('.debox tbody');if(tb)tb.innerHTML=Object.entries(m.fields||{}).map(([de,v])=>`<tr title="☝ Consultar definición en manual ${m.network}"><td>DE ${de}</td><td>Campo ISO8583 ☝</td><td>${v}</td></tr>`).join('')}
- window.addEventListener('DOMContentLoaded',()=>{const ch=location.pathname.includes('ecommerce')?'ECOMMERCE':location.pathname.includes('wallet')?'WALLET':null;if(!ch)return;(window.OSCSwitchStore?.ready||Promise.resolve()).then(()=>render(ch));document.getElementById('pay')?.addEventListener('click',()=>setTimeout(()=>record(ch),2600));});
+/* OSC Payment Academy v4.0.0-rc.1.22 · Mensajes ISO de Wallet y E-commerce en el Switch.
+   Registra la solicitud y la respuesta REALES de la última operación (armadas por red en js/modern-channel-iso.js). */
+(function () {
+  function record(channel) {
+    const tx = window.OSCModernLastTx;
+    if (!tx || tx.channel !== channel || !window.OSCSwitchStore?.addIsoMessage) return;
+    const id = channel.toLowerCase() + "-" + Date.now();
+    const op = channel === "ECOMMERCE" ? "Compra E-Commerce" : "Compra Wallet NFC";
+    const currency = tx.currency === "840" ? "USD" : "ARS";
+    const toObj = (f) => Object.fromEntries(f.map((r) => [r[0], r[2]]));
+    window.OSCSwitchStore.addIsoMessage({ transactionId: id, channel, network: tx.network.toUpperCase(), direction: "REQUEST", operation: op, mti: tx.request.mti, bitmap: tx.request.bitmap, fields: toObj(tx.request.fields), raw: tx.request.mti + tx.request.bitmap, amountCents: tx.amountCents, currency, status: "SENT", panLast4: tx.panLast4 });
+    window.OSCSwitchStore.addIsoMessage({ transactionId: id, channel, network: tx.network.toUpperCase(), direction: "RESPONSE", operation: op, mti: tx.response.mti, bitmap: tx.response.bitmap, fields: toObj(tx.response.fields), raw: tx.response.mti + tx.response.bitmap, amountCents: tx.amountCents, currency, responseCode: tx.code, status: tx.approved ? "APPROVED" : "DECLINED", panLast4: tx.panLast4 });
+    window.OSCSwitchStore.flush?.();
+    tx.recorded = true;
+  }
+  window.addEventListener("DOMContentLoaded", () => {
+    const ch = location.pathname.includes("ecommerce") ? "ECOMMERCE" : location.pathname.includes("wallet") ? "WALLET" : null;
+    if (!ch) return;
+    document.getElementById("pay")?.addEventListener("click", () => {
+      const wait = setInterval(() => {
+        const tx = window.OSCModernLastTx;
+        if (tx && !tx.recorded && tx.channel === ch) { clearInterval(wait); record(ch); }
+      }, 300);
+      setTimeout(() => clearInterval(wait), 8000);
+    });
+  });
 })();

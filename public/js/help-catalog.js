@@ -160,6 +160,13 @@
     1:201,2:202,3:203,4:206,5:207,6:209,7:210,8:211,9:212,10:213,11:214,12:215,13:216,14:217,15:218,16:219,17:220,18:221,19:223,20:224,21:225,22:226,23:228,24:229,25:230,26:231,27:232,28:233,29:234,30:235,31:236,32:237,33:238,34:239,35:240,36:242,37:243,38:244,39:245,40:250,41:251,42:252,43:253,44:255,45:257,46:259,47:260,48:261,49:273,50:274,51:275,52:276,53:277,54:278,55:280,56:284,57:285,58:286,59:287,60:288,61:295,62:298,63:299,64:302,65:303,66:304,67:305,68:306,69:307,70:308,71:309,72:310,73:311,74:312,75:313,76:314,77:315,78:316,79:317,80:318,81:319,82:320,83:321,84:322,85:323,86:324,87:325,88:326,89:327,90:328,91:329,92:331,93:332,94:333,95:334,96:336,97:337,98:339,99:340,100:341,101:342,102:343,103:344,104:345,112:347,120:353,121:359,122:360,126:362,127:363,128:364
   };
 
+
+  /* rc.1.22 · Mastercard crédito: Customer Interface Specification (25 feb 2025). Página física del encabezado "DE n (Nombre)".
+     Mastercard débito (MDS 0200) sigue en MasterCard Debit Switch Online Specifications (jun03): mastercardPages. */
+  const mastercardCisPages={2:298,3:301,4:307,5:313,6:315,7:317,8:320,9:320,10:323,11:325,12:328,13:329,14:330,15:332,16:333,17:334,18:335,19:337,20:338,21:339,22:339,23:347,24:350,25:350,27:352,28:352,29:355,30:356,31:358,32:359,33:361,34:363,35:364,36:366,37:366,38:369,39:371,40:389,41:389,42:391,43:392,44:398,45:403,46:405,47:405,48:405,49:715,50:716,51:718,52:719,53:721,54:725,55:733,56:745,60:748,61:773,62:786,63:788,64:804,65:804,66:805,67:805,68:805,69:806,70:806,71:810,72:810,73:811,74:811,75:811,76:811,77:811,78:811,79:812,80:812,81:812,82:812,83:812,84:813,85:813,86:813,87:813,88:813,89:814,90:814,91:817,92:818,93:818,94:819,95:821,96:825,97:826,98:826,99:827,100:827,101:828,102:829,103:830,104:831,105:847,106:850,107:850,108:995,109:1067,110:1067,111:1087,112:1087,115:1196,118:1218,119:1221,120:1227,121:1263,123:1282,124:1283,125:1302,126:1303,127:1304,128:1305};
+  /* rc.1.22 · American Express: Network Specifications – Authorization (oct 2023). Página física del "Bit n" en la 1100. */
+  const amexPages={2:89,3:89,4:89,5:90,7:90,11:90,12:90,13:90,14:91,18:91,19:91,22:91,23:92,24:92,25:165,26:93,30:125,31:94,32:94,33:180,34:94,35:94,37:95,38:127,39:127,41:95,42:95,43:95,44:102,45:98,48:99,49:100,50:100,52:101,53:101,54:132,55:102,56:147,60:104,61:110,62:112,63:114,111:101,112:118,113:118};
+
   function ensureModal(){
     if(document.getElementById('oscHelpModal')) return;
     const style=document.createElement('style');
@@ -255,10 +262,20 @@
     }
     return fallback;
   }
+  function mastercardManual(){
+    // Si la pantalla trabaja con débito por MDS (0200) se abre el MDS; en el resto, el Customer Interface Specification.
+    const ctx=(document.getElementById('mti')?.textContent||'')+' '+(document.body?.dataset?.mcManual||'');
+    return /\b02[0-9]0\b|MDS/.test(ctx)?'mds':'cis';
+  }
   function openTechnical(de, network){
     const net=(network||selectedNetwork()).toLowerCase();
     const number=Number(de);
-    if(net==='amex') return false;
+    if(net==='amex'){
+      const page=amexPages[number];
+      if(!page) return false;
+      window.open(`manuals/amex-network-specifications-authorization-oct2023.pdf#page=${page}`,'_blank','noopener');
+      return true;
+    }
     if(net==='visa'){
       const page=refs.visa[number]?.page;
       if(!page) return false;
@@ -266,6 +283,10 @@
       return true;
     }
     if(net==='mastercard'){
+      if(mastercardManual()==='cis'&&mastercardCisPages[number]){
+        window.open(`manuals/mastercard-customer-interface-specification-feb2025.pdf#page=${mastercardCisPages[number]}`,'_blank','noopener');
+        return true;
+      }
       const page=mastercardPages[number];
       if(!page) return false;
       window.open(`manuals/mastercard-debit-switch-online-specifications-jun03.pdf#page=${page}`,'_blank','noopener');
@@ -275,7 +296,7 @@
   }
   function hasTechnical(de,network){
     const net=String(network||'').toLowerCase(),number=Number(de);
-    return net==='visa' ? Boolean(refs.visa[number]?.page) : net==='mastercard' ? Boolean(mastercardPages[number]) : false;
+    return net==='visa' ? Boolean(refs.visa[number]?.page) : net==='mastercard' ? Boolean(mastercardCisPages[number]||mastercardPages[number]) : net==='amex' ? Boolean(amexPages[number]) : false;
   }
   function showNetworkRequired(de){
     show(`☝ DE${de} · Seleccione la marca`,`<p>Para abrir la referencia técnica correcta, primero ingrese el <b>DE2 / PAN</b> para detectar la marca automáticamente o seleccione manualmente Visa, Mastercard o American Express.</p><p>OSC Academy no toma Visa como marca predeterminada.</p>`);
@@ -338,6 +359,6 @@
     attachHelpAfter(document.getElementById('reconcileAtm'),'reconcile');
     attachHelpAfter(document.querySelector('[data-scenario="dispenserFail"]'),'dispenserFail');
   }
-  window.OSCHelp={contextual,refs,mastercardPages,openContext,openTechnical,hasTechnical,showNetworkRequired,decorateContext,selectedNetwork};
+  window.OSCHelp={contextual,refs,mastercardPages,mastercardCisPages,amexPages,openContext,openTechnical,hasTechnical,showNetworkRequired,decorateContext,selectedNetwork};
   document.addEventListener('DOMContentLoaded',()=>{ensureModal();decorateContext()});
 })();

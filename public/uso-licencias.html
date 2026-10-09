@@ -1,0 +1,154 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Uso de licencias · OSC Payment Academy</title><link rel="icon" type="image/svg+xml" href="/favicon.svg"><link rel="stylesheet" href="css/saas.css">
+<style>
+.filters{display:grid;grid-template-columns:2fr 2fr 1.3fr auto;gap:10px;align-items:end}
+.filters .field{margin:0}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:15px 0}
+.kpi{border:1px solid var(--line);border-radius:12px;background:#091827;padding:14px 16px}
+.kpi span{display:block;color:var(--muted);font-size:11px;letter-spacing:.06em;text-transform:uppercase}
+.kpi strong{display:block;font-size:30px;margin-top:6px;font-variant-numeric:tabular-nums}
+.kpi small{color:var(--muted);font-size:12px}
+.kpi.warn strong{color:var(--amber)} .kpi.bad strong{color:var(--red)} .kpi.good strong{color:var(--green)}
+.table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:980px}
+th,td{padding:10px 12px;border-bottom:1px solid #17354b;text-align:left;vertical-align:top}
+th{color:#9eb6c9;font-size:11px;letter-spacing:.05em;text-transform:uppercase;background:#0a1a29;position:sticky;top:0}
+tr:hover td{background:#0b1f31}
+.status{display:inline-flex;align-items:center;gap:7px;font-weight:700;white-space:nowrap}
+.dot{width:10px;height:10px;border-radius:50%;display:inline-block}
+.s-active .dot{background:var(--green)} .s-warning .dot{background:var(--amber)} .s-inactive .dot,.s-never .dot{background:var(--red)}
+.s-active{color:#7be3ae} .s-warning{color:#ffd577} .s-inactive,.s-never{color:#ffabb0}
+.mods{display:flex;flex-wrap:wrap;gap:4px;max-width:300px}
+.mods span{padding:3px 7px;border-radius:99px;background:#173d60;color:#8dcdff;font-size:11px}
+.muted-sm{color:var(--muted);font-size:12px}
+.actions{display:flex;gap:6px;flex-wrap:wrap}
+.btn.sm{padding:7px 10px;font-size:12px}
+.toolbar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.modal{position:fixed;inset:0;background:#020913cc;display:none;place-items:center;padding:16px;z-index:50}
+.modal.show{display:grid}
+.modal-card{width:min(860px,100%);max-height:90vh;overflow:auto;border:1px solid var(--line);border-radius:16px;background:#0a1928;padding:20px}
+.days{display:grid;grid-template-columns:repeat(15,1fr);gap:4px;margin:12px 0}
+.day{aspect-ratio:1;border-radius:4px;background:#13283b;position:relative}
+.day.on{background:#18a86a}.day.on.hi{background:#20d985}
+.legend{display:flex;gap:12px;align-items:center;color:var(--muted);font-size:12px}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:4px;vertical-align:-2px}
+.empty{padding:28px;text-align:center;color:var(--muted)}
+@media(max-width:900px){.filters{grid-template-columns:1fr 1fr}.kpis{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:520px){.filters{grid-template-columns:1fr}.kpis{grid-template-columns:1fr 1fr}.kpi strong{font-size:24px}.shell{padding:16px}}
+</style></head><body><main class="shell">
+<header class="top"><div><div class="brand"><span>OSC</span> PAYMENT ACADEMY</div><h1>Uso de licencias</h1><p class="muted" id="subtitle">Quién ingresa y quién está usando la plataforma.</p></div>
+<nav class="tabs"><a class="btn" id="backLink" href="index.html">← Plataforma</a><button class="btn" id="logout">Cerrar sesión</button></nav></header>
+
+<section class="panel">
+  <div class="filters">
+    <div class="field"><label for="groupSel">Empresa / grupo</label><select id="groupSel"><option value="">Todos</option></select></div>
+    <div class="field"><label for="search">Buscar alumno</label><input id="search" placeholder="Nombre o correo"></div>
+    <div class="field"><label for="statusSel">Estado</label><select id="statusSel"><option value="">Todos</option><option value="never">Nunca ingresó</option><option value="inactive">Inactivo (+14 días)</option><option value="warning">8 a 14 días</option><option value="active">Activo (7 días)</option></select></div>
+    <button class="btn" id="exportCsv" type="button">⬇ Exportar CSV</button>
+  </div>
+  <div class="kpis">
+    <div class="kpi"><span>Licencias asignadas</span><strong id="kAssigned">—</strong><small>usuarios con acceso</small></div>
+    <div class="kpi bad"><span>Nunca ingresaron</span><strong id="kNever">—</strong><small>sin ningún acceso</small></div>
+    <div class="kpi good"><span>Activos</span><strong id="kActive">—</strong><small>usaron la plataforma en 7 días</small></div>
+    <div class="kpi warn"><span>Inactivos</span><strong id="kInactive">—</strong><small>más de 7 días sin uso</small></div>
+  </div>
+  <div class="toolbar"><p class="muted-sm" style="margin:0">🟢 hasta 7 días · 🟡 de 8 a 14 días · 🔴 más de 14 días o nunca. El uso por módulo se registra desde la versión rc.1.22; el último ingreso existe desde antes.</p><button class="btn sm" id="remindAll" type="button">✉ Recordar a todos los inactivos</button></div>
+  <div class="table-wrap"><table><thead><tr><th>Estado</th><th>Alumno</th><th>Empresa / grupo</th><th>Último uso</th><th>Días de uso</th><th>Módulos usados</th><th>Licencia</th><th>Recordatorio</th><th>Acciones</th></tr></thead><tbody id="rows"><tr><td colspan="9" class="empty">Cargando…</td></tr></tbody></table></div>
+  <div id="msg" class="message"></div>
+</section>
+</main>
+
+<div class="modal" id="detail" role="dialog" aria-modal="true" aria-labelledby="dTitle"><div class="modal-card">
+  <div class="toolbar"><div><h2 id="dTitle" style="margin:0">Detalle</h2><p class="muted-sm" id="dSub" style="margin:4px 0 0"></p></div><button class="btn sm" id="dClose" type="button">✕ Cerrar</button></div>
+  <div class="legend"><span><i style="background:#13283b"></i>sin uso</span><span><i style="background:#18a86a"></i>usó la plataforma</span><span><i style="background:#20d985"></i>uso intenso</span></div>
+  <div class="days" id="dDays"></div>
+  <div class="table-wrap"><table style="min-width:520px"><thead><tr><th>Día</th><th>Módulos</th><th>Visitas</th><th>Horario</th></tr></thead><tbody id="dRows"></tbody></table></div>
+</div></div>
+
+<script src="js/saas-session.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]);
+let DATA=null;
+const STATUS={active:'Activo',warning:'8–14 días',inactive:'Inactivo',never:'Nunca ingresó'};
+const fmtDate=d=>d?new Date(d).toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric'}):'—';
+const fmtDateTime=d=>d?new Date(d).toLocaleString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}):'—';
+function ago(days){if(days==null)return'Nunca';if(days===0)return'Hoy';if(days===1)return'Ayer';return`Hace ${days} días`}
+function licenseLeft(exp){if(!exp)return'Sin vencimiento';const d=Math.ceil((new Date(exp)-Date.now())/86400e3);return d<0?'Vencida':d===0?'Vence hoy':`${d} días restantes`}
+function moduleName(k){return DATA?.moduleLabels?.[k]||k}
+function filtered(){
+  const q=$('search').value.trim().toLowerCase(),st=$('statusSel').value;
+  return (DATA?.users||[]).filter(u=>(!q||(u.full_name+' '+u.email).toLowerCase().includes(q))&&(!st||u.status===st));
+}
+function render(){
+  const list=filtered();
+  const s=DATA.summary;$('kAssigned').textContent=s.assigned;$('kNever').textContent=s.never;$('kActive').textContent=s.active7;$('kInactive').textContent=s.inactive;
+  $('rows').innerHTML=list.length?list.map(u=>`<tr>
+    <td><span class="status s-${u.status}"><span class="dot"></span>${STATUS[u.status]}</span></td>
+    <td><b>${esc(u.full_name)}</b><br><span class="muted-sm">${esc(u.email)}</span>${u.role==='TENANT_ADMIN'?'<br><span class="muted-sm">Administrador de la cuenta</span>':''}</td>
+    <td>${esc(u.tenant_name)}<br><span class="muted-sm">${u.tenant_type==='CONSULTANCY'?'Consultora':'Curso'}</span></td>
+    <td title="Último ingreso: ${esc(fmtDateTime(u.last_login_at))}">${ago(u.days_since)}<br><span class="muted-sm">${u.last_seen_at?fmtDate(u.last_seen_at):'—'}</span></td>
+    <td><b>${u.active_days||0}</b>${u.tutor_questions||u.forum_posts?`<br><span class="muted-sm">${u.tutor_questions?u.tutor_questions+' preg. al Tutor':''}${u.tutor_questions&&u.forum_posts?' · ':''}${u.forum_posts?u.forum_posts+' en foro':''}</span>`:''}</td>
+    <td><div class="mods">${(u.modules||[]).map(m=>`<span>${esc(moduleName(m))}</span>`).join('')||'<span class="muted-sm" style="background:none;padding:0">—</span>'}</div></td>
+    <td>${esc(licenseLeft(u.license_expires_at))}</td>
+    <td>${u.last_reminder_at?esc(fmtDate(u.last_reminder_at)):'<span class="muted-sm">—</span>'}</td>
+    <td><div class="actions"><button class="btn sm" data-detail="${esc(u.id)}" type="button">Detalle</button><button class="btn sm primary" data-remind="${esc(u.id)}" type="button">✉ Recordar</button></div></td></tr>`).join(''):'<tr><td colspan="9" class="empty">No hay alumnos para este filtro.</td></tr>';
+  $('rows').querySelectorAll('[data-detail]').forEach(b=>b.onclick=()=>openDetail(b.dataset.detail));
+  $('rows').querySelectorAll('[data-remind]').forEach(b=>b.onclick=()=>remind(DATA.users.find(u=>u.id===b.dataset.remind)));
+}
+function reminderText(u){
+  const first=(u.full_name||'').split(' ')[0]||'';
+  const left=licenseLeft(u.license_expires_at);
+  const body=u.status==='never'
+    ? `Hola ${first}:\n\nTe recordamos que ya tenés habilitado tu acceso a OSC Payment Academy (${location.origin}).\nTodavía no ingresaste: entrá con tu correo ${u.email}. Si no recordás la clave, usá "¿Olvidaste tu contraseña?" en la pantalla de ingreso.\n\nTu licencia: ${left}.\n\nCualquier duda, respondé este correo.\n\nSaludos,`
+    : `Hola ${first}:\n\nVimos que hace ${u.days_since} días que no ingresás a OSC Payment Academy (${location.origin}).\nTe esperamos para seguir practicando con los simuladores: POS, ATM, Wallet, E-commerce y el Parser.\n\nTu licencia: ${left}.\n\nCualquier duda, respondé este correo.\n\nSaludos,`;
+  return {subject:'OSC Payment Academy · Tu acceso a la plataforma',body};
+}
+async function remind(u){
+  if(!u)return;
+  const r=await fetch('/api/usage/reminder',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({userId:u.id})});
+  if(!r.ok){showMsg('No se pudo registrar el recordatorio.',true);return}
+  const t=reminderText(u);
+  location.href=`mailto:${encodeURIComponent(u.email)}?subject=${encodeURIComponent(t.subject)}&body=${encodeURIComponent(t.body)}`;
+  u.last_reminder_at=new Date().toISOString();render();
+}
+$('remindAll').onclick=async()=>{
+  const targets=(DATA?.users||[]).filter(u=>u.status!=='active');
+  if(!targets.length)return showMsg('No hay alumnos inactivos en este filtro.');
+  for(const u of targets)await fetch('/api/usage/reminder',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({userId:u.id})});
+  const body=`Hola:\n\nTe recordamos que tenés habilitado tu acceso a OSC Payment Academy (${location.origin}). Ingresá con tu correo para seguir practicando. Si no recordás la clave, usá "¿Olvidaste tu contraseña?".\n\nSaludos,`;
+  location.href=`mailto:?bcc=${encodeURIComponent(targets.map(u=>u.email).join(','))}&subject=${encodeURIComponent('OSC Payment Academy · Tu acceso a la plataforma')}&body=${encodeURIComponent(body)}`;
+  targets.forEach(u=>u.last_reminder_at=new Date().toISOString());render();
+};
+async function openDetail(idv){
+  const u=DATA.users.find(x=>x.id===idv);$('dTitle').textContent=u?.full_name||'Detalle';$('dSub').textContent=`${u?.email||''} · último ingreso ${fmtDateTime(u?.last_login_at)}`;
+  $('dDays').innerHTML='';$('dRows').innerHTML='<tr><td colspan="4" class="empty">Cargando…</td></tr>';$('detail').classList.add('show');
+  const r=await fetch('/api/usage/users/'+encodeURIComponent(idv));if(!r.ok){$('dRows').innerHTML='<tr><td colspan="4" class="empty">Sin permiso para ver este detalle.</td></tr>';return}
+  const d=await r.json();const map=new Map(d.days.map(x=>[x.day,x]));
+  const cells=[];for(let i=89;i>=0;i--){const day=new Date(Date.now()-3*3600e3-i*86400e3).toISOString().slice(0,10);const x=map.get(day);cells.push(`<div class="day ${x?'on':''} ${x&&x.hits>=10?'hi':''}" title="${day}${x?' · '+x.modules.map(moduleName).join(', '):' · sin uso'}"></div>`)}
+  $('dDays').innerHTML=cells.join('');
+  $('dRows').innerHTML=d.days.length?d.days.map(x=>`<tr><td>${esc(new Date(x.day+'T12:00:00').toLocaleDateString('es-AR',{weekday:'short',day:'2-digit',month:'2-digit'}))}</td><td><div class="mods">${x.modules.map(m=>`<span>${esc(moduleName(m))}</span>`).join('')}</div></td><td>${x.hits}</td><td>${new Date(x.first_at).toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'})} – ${new Date(x.last_at).toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'})}</td></tr>`).join(''):'<tr><td colspan="4" class="empty">Sin actividad registrada en los últimos 90 días.</td></tr>';
+}
+$('dClose').onclick=()=>$('detail').classList.remove('show');$('detail').onclick=e=>{if(e.target.id==='detail')$('detail').classList.remove('show')};
+document.addEventListener('keydown',e=>{if(e.key==='Escape')$('detail').classList.remove('show')});
+$('exportCsv').onclick=()=>{
+  const head=['Estado','Nombre','Correo','Empresa/grupo','Ultimo ingreso','Ultimo uso','Dias desde el ultimo uso','Dias de uso','Modulos usados','Preguntas al Tutor','Mensajes en foro','Licencia','Ultimo recordatorio'];
+  const rows=filtered().map(u=>[STATUS[u.status],u.full_name,u.email,u.tenant_name,fmtDateTime(u.last_login_at),fmtDateTime(u.last_seen_at),u.days_since??'',u.active_days||0,(u.modules||[]).map(moduleName).join(' / '),u.tutor_questions||0,u.forum_posts||0,licenseLeft(u.license_expires_at),fmtDate(u.last_reminder_at)]);
+  const csv=[head,...rows].map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(';')).join('\r\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8'}));a.download='uso-licencias-'+new Date().toISOString().slice(0,10)+'.csv';a.click();
+};
+function showMsg(t,e=false){const m=$('msg');m.textContent=t;m.className='message show '+(e?'error':'ok');}
+async function load(){
+  const params=new URLSearchParams(location.search);const g=$('groupSel').value||params.get('tenantId')||'';
+  const r=await fetch('/api/usage/overview'+(g?'?tenantId='+encodeURIComponent(g):''));
+  if(r.status===401)return location.href='/login.html';
+  if(r.status===403){$('rows').innerHTML='<tr><td colspan="9" class="empty">Esta sección es para el administrador de la cuenta y para OSC.</td></tr>';return}
+  DATA=await r.json();
+  if(DATA.isAdmin){$('backLink').href='saas-admin.html';$('backLink').textContent='← Panel OSC'}
+  const sel=$('groupSel');if(sel.options.length<=1){sel.innerHTML=(DATA.groups.length>1?'<option value="">Todos</option>':'')+DATA.groups.map(x=>`<option value="${esc(x.id)}">${esc(x.name)} · ${x.type==='CONSULTANCY'?'Consultora':'Curso'}</option>`).join('');if(g)sel.value=g}
+  $('subtitle').textContent=DATA.isAdmin?'Vista de administración OSC: todas las empresas y grupos.':'Vista del administrador de la cuenta: solo los usuarios de tu empresa.';
+  render();
+}
+$('groupSel').onchange=()=>{history.replaceState(null,'',$('groupSel').value?'?tenantId='+encodeURIComponent($('groupSel').value):location.pathname);load()};
+$('search').oninput=()=>DATA&&render();$('statusSel').onchange=()=>DATA&&render();
+load();
+</script></body></html>

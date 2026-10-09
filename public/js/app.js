@@ -8,6 +8,12 @@
     amountDigits:'',
     pinDigits:'',
     pinBlock:null,
+    pinTrace:null,
+    emvUn:null,
+    emvAtc:null,
+    lastArqc:null,
+    tamperInTransit:false,
+    installments:{count:1,plan:'merchant'},
     entryMode:null,
     responseCode:'00',
     transactions:0,
@@ -95,7 +101,8 @@
   const entryModes = {
     chip:{label:'Chip EMV',de22:'051',hasPin:true,hasDE55:true,hasDE35:true,de35Origin:'Track 2 Equivalent Data del chip'},
     contactless:{label:'Contactless EMV',de22:'071',hasPin:false,hasDE55:true,hasDE35:true,de35Origin:'Track 2 Equivalent Data contactless'},
-    magstripe:{label:'Banda magnética',de22:'021',hasPin:true,hasDE55:false,hasDE35:true,de35Origin:'Track 2 leído de la banda'},
+    // rc.1.22: banda leída completa = 90 (Visa Field 22 y Mastercard DE 22 subfield 1). El 02 indica pista NO completa.
+    magstripe:{label:'Banda magnética',de22:'901',hasPin:true,hasDE55:false,hasDE35:true,de35Origin:'Track 2 completo leído de la banda (DE 22 = 90)'},
     manual:{label:'Ingreso manual',de22:'011',hasPin:false,hasDE55:false,hasDE35:false,de35Origin:'No aplica'}
   };
   // Visa Field 22 = 4 N: modo de ingreso (2) + capacidad de PIN (1) + relleno en cero (1). Mastercard DE 22 = n-3.
@@ -153,19 +160,28 @@
     const currency='0032'; // ISO 4217 numeric ARS encoded as BCD-style demo
     const country='0032';
     const isCl=modeKey==='contactless';
+    // rc.1.22: ARQC calculado (esquema EMV CSK con clave de práctica) y verificable por el emisor simulado.
+    const {atc}=emvSession();
+    const un=amexUnpredictableNumber(), aip=isCl?'1980':'1800', iad=isCl?'06011203A0B800':'06010A03A0B800';
+    let arqc='A1B2C3D4E5F60708';
+    if(window.OSCEmvCrypto){
+      const r=OSCEmvCrypto.computeArqc({pan:state.pan,psn:'01',atc,scheme:'CSK',tags:{'9F02':amt,'9F03':other,'9F1A':country,'95':'0000000000','5F2A':currency,'9A':date,'9C':txnType,'9F37':un,'82':aip,cvr:iad.slice(6)}});
+      arqc=r.arqc; state.lastArqc={...r,pan:state.pan,psn:'01',atc,network:'amex'};
+    }
+    const sentAmt=state.tamperInTransit?String(Number(amt)+100000).padStart(12,'0').slice(-12):amt;
     const tags=[
-      ['9F02','06',amt],
+      ['9F02','06',sentAmt],
       ['9F03','06',other],
       ['9F1A','02',country],
       ['5F2A','02',currency],
       ['9A','03',date],
       ['9C','01',txnType],
-      ['9F37','04',amexUnpredictableNumber()],
-      ['82','02',isCl?'1980':'1800'],
-      ['9F36','02','0012'],
-      ['9F26','08','A1B2C3D4E5F60708'],
+      ['9F37','04',un],
+      ['82','02',aip],
+      ['9F36','02',atc],
+      ['9F26','08',arqc],
       ['9F27','01','80'],
-      ['9F10','07',isCl?'06011203A0B800':'06010A03A0B800'],
+      ['9F10','07',iad],
       ['9F34','03',isCl?'1F0302':(amexDebitOnlinePinRequired()?'020300':'1E0300')],
       ['9F33','03','E0F8C8'],
       ['9F35','01','22'],
@@ -183,9 +199,11 @@
       : 'American Express AEIPS Chip · BER-TLV ICC data';
   }
 
-  function amex1100RequestFields(){
+  function amex1100RequestFields(opts={}){
     const mode=entryModes[state.entryMode]||entryModes.chip;
     const card=selectedCard();
+    const plan=installmentPlanNow();
+    const dppKind=opts.dppKind||(plan?(plan.interest?'issuer-auth-request':'acquirer-auth-request'):null);
     const rows=[
       field(2,'Primary Account Number (PAN)',state.pan,String(state.pan.length),'LLVAR','American Express Card'),
       field(3,'Processing Code','004000','6','FIXED','Card Authorization Request'),
@@ -196,7 +214,7 @@
       field(14,'Card Expiration Date',card.expiry,'4','FIXED','YYMM'),
       field(19,'Country Code, Acquiring Institution','032','3','FIXED','Argentina · simulator profile'),
       field(22,'Point of Service Data Code',amexPosDataCode(state.entryMode),'12','FIXED','AMEX GNS · 12 positions'),
-      field(24,'Function Code','100','3','FIXED','Original authorization · amount accurate'),
+      field(24,'Function Code',opts.functionCode||'100','3','FIXED',(opts.functionCode||'100')==='108'?'Inquiry · DPP Pre-Authorization (consulta de planes del emisor)':'Original authorization · amount accurate'),
       field(26,'Card Acceptor Business Code','5812','4','FIXED','MCC · Eating Places / Restaurants'),
       field(32,'Acquiring Institution Identification (AIN) Code','12345678901','11','LLVAR','Demo AIN del adquirente'),
       field(37,'Acquirer Reference Number (ARN)',`${state.currentStan}${String(Date.now()).slice(-6)}`.slice(0,12),'12','FIXED','Referencia del adquirente'),
@@ -208,8 +226,9 @@
       rows.push(field(35,'Track 2 Data',card.track2,String(card.track2.length),'LLVAR',mode.de35Origin));
     }
     if(amexDebitOnlinePinRequired()){
-      rows.push(field(52,'Personal Identification Number (PIN)',state.pinBlock||'A1B2C3D4E5F60708','8 bytes','BINARY','PIN online cifrado · Acquirer certificado'));
+      rows.push(field(52,'Personal Identification Number (PIN)',state.pinBlock||'A1B2C3D4E5F60708','8 bytes','BINARY','PIN Block ISO formato 0 cifrado con 3DES · PIN online'));
     }
+    if(dppKind&&plan&&window.OSCIsoSpec) rows.push(OSCIsoSpec.amexBit48Row(dppKind,plan));
     if(mode.hasDE55 && ['chip','contactless'].includes(state.entryMode)){
       const icc=amexBit55(state.entryMode);
       rows.push(field(55,'ICC System Related Data',icc,String(icc.length/2)+' bytes','LLLVAR',amexBit55Description(state.entryMode)));
@@ -227,6 +246,11 @@
   };
 
   function amexActionFromScenario(){
+    // rc.1.22: el escenario elegido en el POS (state.responseCode) ahora se respeta también en Amex.
+    const byCode={'00':AMEX_ACTION_CODES.approved,'51':AMEX_ACTION_CODES.insufficient,'54':AMEX_ACTION_CODES.expired,'05':AMEX_ACTION_CODES.deny,
+      '91':{code:'912',label:'Host Unavailable',status:'RECHAZADA'},'TO':{code:'911',label:'Card Issuer Timed Out',status:'RECHAZADA'},
+      '57':{code:'115',label:'Requested Function Not Supported (DPP)',status:'RECHAZADA'}};
+    if(byCode[state.responseCode]) return byCode[state.responseCode];
     const scenario=(state.responseScenario||state.scenario||'approved').toLowerCase();
     if(scenario.includes('51') || scenario.includes('fund')) return AMEX_ACTION_CODES.insufficient;
     if(scenario.includes('54') || scenario.includes('expir')) return AMEX_ACTION_CODES.expired;
@@ -264,9 +288,12 @@
     if(action.code==='000'){
       const approval=sourceOp.auth || (sourceOp.auth=random6());
       rows.push(field(38,'Approval Code',approval,'6','FIXED','Issuer approval code'));
-      if(['chip','contactless'].includes(state.entryMode)){
-        const issuerAuth='910A11223344556677883030';
-        rows.push(field(55,'ICC System Related Data',issuerAuth,String(issuerAuth.length/2)+' bytes','LLLVAR','Issuer Authentication Data · tag 91'));
+      if(['chip','contactless'].includes(state.entryMode)&&sourceOp.issuerAuth?.tlv){
+        const issuerAuth=sourceOp.issuerAuth.tlv;
+        rows.push(field(55,'ICC System Related Data',issuerAuth,String(issuerAuth.length/2)+' bytes','LLLVAR','Issuer Authentication Data · tag 91 = ARPC Método 1 + ARC 3030'));
+      }
+      if(sourceOp.installments&&window.OSCIsoSpec){
+        rows.push(OSCIsoSpec.amexBit48Row(sourceOp.installments.interest?'issuer-auth-response':'acquirer-auth-response',sourceOp.installments));
       }
     }
     return rows.sort((a,b)=>Number(a[0])-Number(b[0]));
@@ -276,7 +303,10 @@
     if(profile().id!=='amex' || state.step!=='waiting' || state.currentOperation!=='purchase') return false;
     const op=state.operations.find(o=>o.id===state.selectedSourceOperationId);
     if(!op) return false;
-    const action=amexActionFromScenario();
+    let action=amexActionFromScenario();
+    const checked=issuerChecks(op,action.code);
+    if(checked!==action.code) action={code:checked,label:checked==='117'?'Incorrect PIN (HSM del emisor)':'Deny · Cryptogram Validation Result 01 (Invalid Cryptogram)',status:'RECHAZADA'};
+    if(op.arqcValidation) op.issuerAuth=issuerAuthenticationData('amex',op.arqcValidation,action.code==='000');
     const fields=amex1110ResponseFields(op, action);
     op.status=action.status;
     op.responseCode=action.code;
@@ -291,6 +321,7 @@
     persistSwitchTransaction(op);
     renderMessage(state.messages[0]);
     $('flowResponse').textContent=`${action.code} · ${action.label}`;
+    $('resultText').textContent=action.code==='000'?'APROBADA':'RECHAZADA';$('resultCode').textContent=action.code;$('resultDetail').textContent=`American Express · Action Code ${action.code} · ${action.label}`;$('authCode').textContent=op.auth||'------';
     $('time5').textContent=timeNow();
     state.step='done';setStep(6);
     if(action.code==='000'){
@@ -316,7 +347,11 @@
     '54':{label:'TARJETA VENCIDA',detail:'TRANSACCIÓN RECHAZADA'},
     '05':{label:'NO APROBAR',detail:'TRANSACCIÓN RECHAZADA'},
     '91':{label:'EMISOR NO DISPONIBLE',detail:'TRANSACCIÓN RECHAZADA'},
-    'TO':{label:'SIN RESPUESTA',detail:'TIME OUT'}
+    'TO':{label:'SIN RESPUESTA',detail:'TIME OUT'},
+    '57':{label:'NO PERMITIDA AL TITULAR',detail:'PLAN DE CUOTAS NO PERMITIDO PARA LA TARJETA'},
+    '55':{label:'PIN INCORRECTO',detail:'EL HSM DEL EMISOR NO VERIFICÓ EL PIN'},
+    '82':{label:'CRIPTOGRAMA INVÁLIDO',detail:'VISA · NEGATIVE ONLINE CAM (ARQC NO VALIDÓ)'},
+    '88':{label:'FALLA CRIPTOGRÁFICA',detail:'MASTERCARD · CRYPTOGRAPHIC FAILURE (ARQC NO VALIDÓ)'}
   };
 
   const operationLabels = {
@@ -358,7 +393,101 @@
   };
 
   const random6 = () => String(Math.floor(100000+Math.random()*900000));
-  const createPinBlock = () => Array.from({length:16},()=>Math.floor(Math.random()*16).toString(16).toUpperCase()).join('');
+  /* rc.1.22 · PIN Block ISO 9564 formato 0 cifrado con 3DES (ZPK de práctica) y verificado por un HSM simulado.
+     El PIN de prueba de las tarjetas del laboratorio es 1234. */
+  const TEST_PIN='1234';
+  function createPinBlock(){
+    if(!window.OSCEmvCrypto||!state.pinDigits) return null;
+    const b=OSCEmvCrypto.pinBlockEncrypted(state.pinDigits,state.pan);
+    state.pinTrace={pinLength:state.pinDigits.length,pinFieldMasked:b.pinField.slice(0,2)+'•'.repeat(state.pinDigits.length)+b.pinField.slice(2+state.pinDigits.length),panField:b.panField,encrypted:b.encrypted,zpk:b.zpk};
+    return b.encrypted;
+  }
+  const de53For=net=>net==='mastercard'?(window.OSCIsoSpec?.MC_DE53||'9701100001000000'):(window.OSCIsoSpec?.VISA_DE53||'2001010100000000');
+  const de53Origin=net=>net==='mastercard'?'97 claves indexadas · 01 DES · 10 ISO formato 0 · índice 0001 (CIS DE 53)':'20 Zone Encryption · 01 DES · 01 ISO formato 0 · índice 01 (Visa Field 53)';
+
+  /* rc.1.22 · ARQC real (didáctico) · cada operación usa su propio número impredecible (9F37) y contador (9F36). */
+  function emvSession(){
+    if(!state.emvUn) state.emvUn=Array.from({length:8},()=>Math.floor(Math.random()*16).toString(16).toUpperCase()).join('');
+    if(!state.emvAtc){
+      let n=18; try{n=Number(localStorage.getItem('oscPosAtc')||'18')+1;localStorage.setItem('oscPosAtc',String(n));}catch(_){}
+      state.emvAtc=(n%65535).toString(16).toUpperCase().padStart(4,'0');
+    }
+    return {un:state.emvUn,atc:state.emvAtc};
+  }
+  function arqcSchemeFor(net){return net==='visa'?'UDK':'CSK';}
+  function cvrFromIad(net,iad){return net==='mastercard'?iad.slice(4,16):iad.slice(6);}
+  function parseTlv(hex){
+    const out={};let i=0;hex=String(hex||'');
+    if(/^01[0-9A-F]{4}/.test(hex)&&hex.length>6&&parseInt(hex.slice(2,6),16)*2===hex.length-6) i=6; // Visa Field 55 Dataset 01
+    while(i<hex.length-3){
+      let tag=hex.slice(i,i+2);i+=2;
+      if((parseInt(tag,16)&0x1F)===0x1F){tag+=hex.slice(i,i+2);i+=2;}
+      const len=parseInt(hex.slice(i,i+2),16);i+=2;
+      out[tag]=hex.slice(i,i+len*2);i+=len*2;
+    }
+    return out;
+  }
+  /* El emisor recalcula el ARQC con los datos que recibió en el DE 55 / Bit 55. */
+  function issuerValidateArqc(net,de55){
+    if(!window.OSCEmvCrypto||!de55) return null;
+    const t=parseTlv(de55);
+    const iad=t['9F10']||'';
+    const r=OSCEmvCrypto.computeArqc({pan:state.pan,psn:t['5F34']||'00',atc:t['9F36'],scheme:arqcSchemeFor(net),tags:{'9F02':t['9F02'],'9F03':t['9F03']||'000000000000','9F1A':t['9F1A'],'95':t['95'],'5F2A':t['5F2A'],'9A':t['9A'],'9C':t['9C'],'9F37':t['9F37'],'82':t['82'],cvr:cvrFromIad(net,iad)}});
+    return {ok:r.arqc===t['9F26'],recomputed:r.arqc,received:t['9F26'],key:r.key,reason:r.arqc===t['9F26']?'':'El importe (9F02) cambió después de que la tarjeta firmó'};
+  }
+  function issuerVerifyPin(){
+    if(!window.OSCEmvCrypto||!state.pinBlock) return null;
+    const v=OSCEmvCrypto.hsmVerifyPin(state.pinBlock,state.pan,TEST_PIN);
+    if(state.pinTrace) state.pinTrace.hsm=v;
+    return v;
+  }
+  function issuerAuthenticationData(net,validation,approved){
+    // Visa/MC/Amex: tag 91 = ARPC (8) + ARC (2) solo si el ARQC validó y la respuesta es aprobada (M/Chip RI178.15 / RI209.15).
+    if(!validation?.ok||!approved||!window.OSCEmvCrypto) return null;
+    const arpc=OSCEmvCrypto.computeArpc(validation.key,validation.received,'3030');
+    if(state.lastArqc) state.lastArqc.arpc=arpc;
+    return {arpc,tlv:'910A'+arpc.arpc+arpc.arc};
+  }
+
+  /* rc.1.22 · Controles del emisor simulado: HSM (PIN) y validación del ARQC. Devuelve el código final. */
+  function issuerChecks(op,chosen=state.responseCode){
+    let code=chosen;
+    if(!op) return code;
+    op.issuerAuth=null; op.arqcValidation=null; op.issuerReason='';
+    if(state.paymentMethod==='qr'||isDomesticCard()||code==='TO'||code==='911') return code;
+    const net=op.network||profile().id, ok=net==='amex'?'000':'00';
+    const req=(state.messages||[]).find(m=>m.operationId===op.id&&m.direction==='SALIENTE'&&['0100','0200','1100'].includes(m.mti));
+    const fields=req?.fields||[];
+    if(fields.find(r=>r[0]==='52')){
+      const v=issuerVerifyPin();
+      if(v&&!v.match&&code===ok){code=net==='amex'?'117':'55';op.issuerReason='HSM: PIN incorrecto';}
+    }
+    const de55=fields.find(r=>r[0]==='55')?.[2];
+    if(de55){
+      const val=issuerValidateArqc(net,de55);
+      op.arqcValidation=val;
+      if(state.lastArqc) state.lastArqc.validation=val;
+      if(val&&!val.ok&&code===ok){code=net==='visa'?'82':net==='mastercard'?'88':'100';op.issuerReason='ARQC inválido';}
+      if(val&&net!=='amex') op.issuerAuth=issuerAuthenticationData(net,val,code===ok);
+    }
+    const ev=document.getElementById('posTechEvents');
+    if(ev){
+      const add=t=>{const d=document.createElement('div');d.textContent=new Date().toLocaleTimeString('es-AR')+' · '+t;ev.prepend(d);};
+      if(op.arqcValidation) add(op.arqcValidation.ok?`Emisor: ARQC ${op.arqcValidation.received} validado ✓${op.issuerAuth?' · ARPC '+op.issuerAuth.arpc.arpc:''}`:`Emisor: ARQC no coincide (recalculado ${op.arqcValidation.recomputed}) ✗`);
+      if(state.pinTrace?.hsm&&fields.find(r=>r[0]==='52')) add(state.pinTrace.hsm.match?'HSM del emisor: PIN verificado ✓':'HSM del emisor: PIN incorrecto ✗');
+    }
+    return code;
+  }
+
+  /* rc.1.22 · Cuotas (solo crédito) */
+  function installmentsActive(card=selectedCard()){
+    const product=(card?.product||'').toLowerCase();
+    return state.paymentMethod!=='qr'&&state.currentOperation==='purchase'&&!product.includes('débito')&&!product.includes('debito')&&!isDomesticCard()&&Number(state.installments?.count||1)>1;
+  }
+  function installmentPlanNow(amountCents){
+    if(!installmentsActive()||!window.OSCIsoSpec) return null;
+    return OSCIsoSpec.installmentPlan({totalCents:Number(amountCents||state.amountDigits||0),count:Number(state.installments.count),interest:state.installments.plan==='issuer'});
+  }
   const profile = () => window.OSCNetworks ? OSCNetworks.resolve(state.network,state.pan) : {id:'visa',name:'Visa',short:'VISA'};
   const field = (de,name,value,length,format,origin='POS') => [String(de),name,String(value),String(length),format,origin];
 
@@ -379,14 +508,25 @@
     const amt=String(amountDigits??state.amountDigits??'0').padStart(12,'0').slice(-12);
     const cvm=mode==='contactless'?'1F0302':(entryModes[mode]?.hasPin?'020300':'1E0300');
     const iad=net==='mastercard'?'0110A00003220000000000000000000000':'06010A03A0B800';
+    // rc.1.22: el ARQC (9F26) se calcula de verdad con la clave de práctica de la tarjeta (ver js/emv-crypto.js).
+    const {un,atc}=emvSession();
+    const date=emvDateYYMMDD();
+    let arqc='A1B2C3D4E5F60708';
+    if(window.OSCEmvCrypto){
+      const r=OSCEmvCrypto.computeArqc({pan:state.pan,psn:'00',atc,scheme:arqcSchemeFor(net),tags:{'9F02':amt,'9F03':'000000000000','9F1A':'0032','95':'0000000000','5F2A':'0032','9A':date,'9C':txnType,'9F37':un,'82':'1800',cvr:cvrFromIad(net,iad)}});
+      arqc=r.arqc;
+      if(txnType==='00') state.lastArqc={...r,pan:state.pan,psn:'00',atc,network:net};
+    }
+    // "Alterar un dato en tránsito": el importe cambia DESPUÉS de que la tarjeta firmó.
+    const sentAmt=state.tamperInTransit&&txnType==='00'?String(Number(amt)+100000).padStart(12,'0').slice(-12):amt;
     const tags=[
-      ['9F26','08','A1B2C3D4E5F60708'],['9F27','01','80'],
-      ['9F10',String(iad.length/2).padStart(2,'0'),iad],['9F37','04','A1B2C3D4'],
-      ['9F36','02','0012'],['95','05','0000000000'],['9A','03',emvDateYYMMDD()],
-      ['9F02','06',amt],['9C','01',txnType],['5F2A','02','0032'],['82','02','1800'],
+      ['9F26','08',arqc],['9F27','01','80'],
+      ['9F10',(iad.length/2).toString(16).toUpperCase().padStart(2,'0'),iad],['9F37','04',un], // longitud TLV en hexadecimal (rc.1.22)
+      ['9F36','02',atc],['95','05','0000000000'],['9A','03',date],
+      ['9F02','06',sentAmt],['9C','01',txnType],['5F2A','02','0032'],['82','02','1800'],
       ['9F1A','02','0032'],['9F34','03',cvm],
-      ['84',String(cardAid.length/2).padStart(2,'0'),cardAid],
-      ['9F33','03','E0F8C8'],['9F35','01','22']
+      ['84',(cardAid.length/2).toString(16).toUpperCase().padStart(2,'0'),cardAid],
+      ['9F33','03','E0F8C8'],['9F35','01','22'],['5F34','01','00']
     ];
     const tlv=tags.map(([t,l,v])=>t+l+v).join('');
     return net==='visa'?visaDataset01(tlv):tlv;
@@ -427,8 +567,32 @@
       field(11,'System Trace Audit Number (STAN)',state.currentStan,'6','FIXED',state.paymentMethod==='qr'?'Generado por el adquirente/procesador':'Generado por el POS')
     );
     if(state.paymentMethod!=='qr' && mode.hasPin){
-      rows.push(field(52,'PIN Data (Encrypted PIN Block)',state.pinBlock||'—','8 bytes','B64','PIN cifrado'));
-      rows.push(field(53,'Security-Related Control Information','2000000000000000','16','FIXED','Seguridad PIN'));
+      rows.push(field(52,'PIN Data (Encrypted PIN Block)',state.pinBlock||'—','8 bytes','B64','PIN Block ISO formato 0 cifrado con 3DES (ZPK de práctica)'));
+      rows.push(field(53,'Security-Related Control Information',de53For(profile().id),'16','FIXED',de53Origin(profile().id)));
+    }
+    return withNetworkRequestFields(rows);
+  }
+
+  /* rc.1.22 · Completa los campos obligatorios de cada red según su manual (ver js/iso-network-spec.js). */
+  function withNetworkRequestFields(rows){
+    const spec=window.OSCIsoSpec, net=profile().id;
+    if(!spec||state.paymentMethod==='qr'||isDomesticCard()) return rows.sort((a,b)=>Number(a[0])-Number(b[0]));
+    const mode=entryModes[state.entryMode]||entryModes.chip;
+    const chip=['chip','contactless'].includes(state.entryMode);
+    const plan=installmentPlanNow();
+    const isCredit=posMessageProfile().request==='0100';
+    if(net==='visa'){
+      const add=spec.visaRequestAdditions({stan:state.currentStan,channel:'card'});
+      if(chip) add.push(spec.row(23,'Card Sequence Number','000','3','FIXED','PAN Sequence Number del chip (5F34) · Visa Tabla 289: C'));
+      if(plan){add.push(spec.visaInstallmentF104(plan));add.push(spec.visaInstallment126());}
+      return spec.merge(rows,add);
+    }
+    // Mastercard débito viaja por MDS (0200): el MDS no usa el DE 53 (MDS Online Specifications, DE 53).
+    if(net==='mastercard'&&!isCredit) return spec.merge(rows,[],[53]);
+    if(net==='mastercard'&&isCredit){
+      // Mastercard no usa DE 25: lo reemplaza el DE 61 (CIS, DE 61).
+      const add=spec.mcRequestAdditions({stan:state.currentStan,channel:'card',chip:chip&&mode.hasDE55,installments:plan});
+      return spec.merge(rows,add,[25]);
     }
     return rows.sort((a,b)=>Number(a[0])-Number(b[0]));
   }
@@ -447,7 +611,29 @@
       field(49,'Transaction Currency Code','032','3','FIXED','Eco de solicitud')
     ];
     if(code==='00') rows.splice(6,0,field(38,'Authorization Identification Response',operation.auth,'6','FIXED','Host emisor'));
-    return rows;
+    return withNetworkResponseFields(rows,code,operation);
+  }
+
+  /* rc.1.22 · Respuesta: ecos obligatorios por red, tag 91 (ARPC) y datos de cuotas. */
+  function withNetworkResponseFields(rows,code,operation){
+    const spec=window.OSCIsoSpec, net=operation.network||profile().id;
+    const req=(state.messages||[]).find(m=>m.operationId===operation.id&&m.direction==='SALIENTE')?.fields||[];
+    let out=rows;
+    if(spec&&state.paymentMethod!=='qr'&&!isDomesticCard()){
+      if(net==='visa'){
+        const add=spec.visaResponseAdditions({request:req});
+        const f104=req.find(r=>r[0]==='104');
+        if(f104){const c=f104.slice();c[5]='Dataset 5D devuelto al adquirente (Visa: "Acquirers that submit this field in the request message receive it in the response")';add.push(c);}
+        out=spec.merge(rows,add);
+      }else if(net==='mastercard'&&(operation.requestMti||'0100')==='0100'){
+        out=spec.merge(rows,spec.mcResponseAdditions({request:req,installments:operation.installments||null}),[42]);
+      }
+    }
+    if(operation.issuerAuth?.tlv){
+      const v=net==='visa'?'01'+(operation.issuerAuth.tlv.length/2).toString(16).padStart(4,'0').toUpperCase()+operation.issuerAuth.tlv:operation.issuerAuth.tlv;
+      out=(spec?spec.merge(out,[field(55,'ICC Data · Issuer Authentication Data (tag 91)',v,String(v.length/2)+' bytes','LLLVAR','ARPC Método 1 + ARC 3030 · el emisor validó el ARQC')]):out);
+    }
+    return out.sort((a,b)=>Number(a[0])-Number(b[0]));
   }
 
   function originalDataElements(source, originalMti=null){
@@ -764,8 +950,10 @@
     const paymentLabel=isQr?(QR_PROFILES[op.qrType]?.label||'QR'):`${card.label}`;
     const readingLabel=isQr?'QR · WALLET':mode.label.toUpperCase();
     const aid=isQr?'NO APLICA':(mode.hasDE55?card.aid:'NO APLICA');
-    const selectedMessage=state.messages.find(m=>m.operationId===op.id && m.mti==='0210')||state.messages.find(m=>m.operationId===op.id);
-    const isoRows=(selectedMessage?.fields||[]).filter(r=>['2','3','4','7','11','14','22','35','37','38','39','48','55'].includes(String(r[0])));
+    const selectedMessage=state.messages.find(m=>m.operationId===op.id && m.mti===(op.responseMti||'0210'))||state.messages.find(m=>m.operationId===op.id);
+    const isoRows=(selectedMessage?.fields||[]).filter(r=>['2','3','4','7','11','14','22','35','37','38','39','48','55','104','112'].includes(String(r[0])));
+    const inst=op.installments;
+    const installmentsLine=inst?`${inst.count} x ${formatCents(inst.installmentCents)}${inst.interest?` · TOTAL FINANCIADO ${formatCents(inst.financedCents)} · CON INTERÉS (${String(inst.rate).replace('.',',')}% MENSUAL)`:' · SIN INTERÉS'}`:`1 x ${formatCents(op.amountCents)}`;
     const isoBlock=state.showIsoTicket?`<div class="ticket-iso"><strong>INFORMACIÓN ISO8583</strong>${selectedMessage?`<div><span>MTI</span><b>${selectedMessage.mti}</b></div>`:''}${isoRows.map(r=>`<div><span>DE${r[0]}</span><b>${r[0]==='2'?String(r[2]).replace(/.(?=.{4})/g,'•'):r[2]}</b></div>`).join('')}</div>`:'';
     const brandClass=isQr?'qr':p.id;
     const brandMain=isQr?'QR':p.short;
@@ -789,7 +977,7 @@
       <div class="ticket-operation">${operationLabel}</div>
       <div class="ticket-box">
         <div class="ticket-total"><strong>Total</strong><b class="ticket-link" data-de="4">${formatCents(op.amountCents)}</b></div>
-        <div class="ticket-installments">Cuotas <span>(1 x ${formatCents(op.amountCents)})</span></div>
+        <div class="ticket-installments">Cuotas <span>(${installmentsLine})</span></div>
         <div class="ticket-status ticket-link" data-de="39">${status}</div>
       </div>
       <div class="ticket-card-block">
@@ -1008,12 +1196,12 @@
       updateAmount();
     }else if(state.step==='pin'){
       if(state.pinDigits.length<6)state.pinDigits+=key;
-      if(state.pinDigits.length===1&&!state.pinBlock)state.pinBlock=createPinBlock();
+      state.pinBlock=createPinBlock(); // rc.1.22: PIN Block ISO 0 real, recalculado con cada dígito
       screen('PIN',`<small>Ingrese PIN</small><strong>${'•'.repeat(state.pinDigits.length)}</strong><span>Presione VERDE para continuar</span>`);
       $('flowPin').textContent='•'.repeat(state.pinDigits.length);
       const f=entryFields();
       f.push(field(52,profile().id==='amex'?'Personal Identification Number (PIN)':'PIN Data (Encrypted PIN Block)',state.pinBlock,'8 bytes','B64',profile().id==='amex'?'AMEX Bit 52 · PIN cifrado':'PIN cifrado'));
-      if(profile().id!=='amex') f.push(field(53,'Security-Related Control Information','2000000000000000','16','FIXED','Seguridad PIN'));
+      if(profile().id!=='amex'&&!(profile().id==='mastercard'&&posMessageProfile().request==='0200')) f.push(field(53,'Security-Related Control Information',de53For(profile().id),'16','FIXED',de53Origin(profile().id)));
       renderFields(f.sort((a,b)=>Number(a[0])-Number(b[0])));
     }
   }
@@ -1092,7 +1280,19 @@
     const msgProfile=posMessageProfile();
     const requestMti=msgProfile.request;
     op.requestMti=requestMti;op.responseMti=msgProfile.response;op.messageFamily=msgProfile.family;
+    op.installments=installmentPlanNow(op.amountCents);
+    if(op.installments) op.installments.network=profile().id;
+    // Amex · plan del emisor: primero 1100 con función 108 (consulta) y 1110 con los planes (Network Spec. Authorization, Tabla 2-19).
+    if(isAmex&&op.installments?.interest&&window.OSCIsoSpec){
+      const pre=amex1100RequestFields({functionCode:'108',dppKind:'issuer-preauth-request'});
+      addMessage({id:`MSG-${Date.now()}-1100-108`,operationId:op.id,mti:'1100',operation:'CONSULTA PLANES DPP',direction:'SALIENTE',dateTime:dateTimeNow(),responseCode:'',fields:pre,bitmap:bitmapHex(pre),amountCents:op.amountCents,stan:op.stan,batch:op.batch});
+      const get=de=>pre.find(r=>r[0]===String(de))?.[2]||'';
+      const preRes=[2,3,4,7,11,12].map(de=>pre.find(r=>r[0]===String(de))).filter(Boolean).map(r=>{const c=r.slice();c[5]='Eco';return c;});
+      preRes.push(field(24,'Function Code','108','3','FIXED','Eco'),field(32,'Acquiring Institution Identification (AIN) Code',get(32),String(get(32).length),'LLVAR','Eco'),field(37,'Acquirer Reference Number (ARN)',get(37),'12','FIXED','Eco'),field(39,'Action Code','000','3','FIXED','Planes disponibles'),OSCIsoSpec.amexBit48Row('issuer-preauth-response',op.installments),field(49,'Currency Code, Transaction','032','3','FIXED','Eco'));
+      addMessage({id:`MSG-${Date.now()}-1110-108`,operationId:op.id,mti:'1110',operation:'PLANES DPP DEL EMISOR',direction:'ENTRANTE',dateTime:dateTimeNow(),responseCode:'000',fields:preRes.sort((a,b)=>Number(a[0])-Number(b[0])),bitmap:bitmapHex(preRes),amountCents:op.amountCents,stan:op.stan,batch:op.batch});
+    }
     const fields=isAmex?amex1100RequestFields():purchaseRequestFields();
+    const r37=fields.find(r=>r[0]==='37'); if(r37&&!isAmex) op.rrn=r37[2];
     renderFields(fields);
     screen('PROCESANDO',`<small>${state.paymentMethod==='qr'?'Procesador envía':'Enviando'} ${requestMti}</small><strong>...</strong><span>${isAmex?'American Express GNS':state.paymentMethod==='qr'?'Hacia la red y el emisor':'Aguarde'}</span>`);
     setTimeout(()=>{
@@ -1141,7 +1341,9 @@
       return;
     }
     const op=state.operations.find(o=>o.id===state.selectedSourceOperationId);
-    const response=scenarios[state.responseCode];
+    const chosenCode=state.responseCode;
+    state.responseCode=issuerChecks(op);
+    const response=scenarios[state.responseCode]||{label:'RECHAZADA',detail:'TRANSACCIÓN RECHAZADA'};
     state.currentAuth=state.responseCode==='00'?random6():'-';
     op.auth=state.currentAuth;op.status=state.responseCode==='00'?'APROBADA':'RECHAZADA';
     $('time5').textContent=timeNow();$('flowResponse').textContent=`${state.responseCode} - ${response.label}`;
@@ -1160,6 +1362,9 @@
       op.status='TIMEOUT';
       setTimeout(()=>runAutomaticTimeoutReversal(op),350);
     }
+    op.responseCode=state.responseCode;
+    if(op.issuerReason) $('resultDetail').textContent=`${response.detail} · ${op.issuerReason}`;
+    state.responseCode=chosenCode; // el escenario elegido por el alumno no cambia
     setStep(6);
     setTimeout(()=>{$('time6').textContent=timeNow();printReceipt(op);state.transactions++;$('sessionTx').textContent=state.transactions;state.step='done';refreshHistoryStatuses()},600);
   }
@@ -1460,7 +1665,7 @@
   }
 
   function reset(){
-    state.currentOperation='purchase';state.step='amount';state.amountDigits='';state.pinDigits='';state.pinBlock=null;state.entryMode=null;state.currentStan=null;state.currentAuth=null;state.selectedMessageId=null;state.selectedSourceOperationId=null;
+    state.currentOperation='purchase';state.step='amount';state.amountDigits='';state.pinDigits='';state.pinBlock=null;state.pinTrace=null;state.emvUn=null;state.emvAtc=null;state.entryMode=null;state.currentStan=null;state.currentAuth=null;state.selectedMessageId=null;state.selectedSourceOperationId=null;
     $('entryModePanel').classList.add('hidden');$('qrStage')?.classList.add('hidden');$('captureStage').classList.add('hidden');$('captureStage').classList.remove('success');
     ['captureChip','captureContactless','captureMagstripe','captureManual'].forEach(id=>$(id).classList.add('hidden'));
     $('receiptPaper').classList.remove('printing');$('receiptPaper').textContent='';
@@ -1524,6 +1729,36 @@ ${rawMessage(msg)}`;
   document.querySelectorAll('[data-code]').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('[data-code]').forEach(b=>b.classList.remove('selected'));btn.classList.add('selected');state.responseCode=btn.dataset.code}));
   $('sendResponse').addEventListener('click',sendPurchaseResponse);
   $('newTest').addEventListener('click',reset);
+
+  /* rc.1.22 · Cuotas, prueba de ARQC y ayudas educativas */
+  function refreshInstallmentUi(){
+    const box=$('installmentConfig'); if(!box) return;
+    const product=(selectedCard()?.product||'').toLowerCase();
+    const credit=!product.includes('débito')&&!product.includes('debito')&&!isDomesticCard()&&state.paymentMethod!=='qr';
+    box.classList.toggle('hidden',!credit);
+    if(!credit){state.installments={count:1,plan:'merchant'};if($('installmentCount'))$('installmentCount').value='1';}
+    const count=Number($('installmentCount')?.value||1), plan=$('installmentPlan')?.value||'merchant';
+    state.installments={count,plan};
+    if($('installmentPlan')) $('installmentPlan').disabled=count<=1;
+    const net=profile().id;
+    const how=net==='visa'?'Visa · Field 104 Dataset 5D + 126.13 = I':net==='mastercard'?'Mastercard · DE 48 SE 95 = ARGCTA + DE 112 SE 001':'Amex · Bit 48 DPP'+(plan==='issuer'?' (plan del emisor: consulta 108 + autorización 100)':' (plan del adquirente)');
+    if($('installmentSummary')) $('installmentSummary').textContent=count<=1?'Pago en 1 cuota (sin datos de cuotas en el mensaje)':`${count} cuotas ${plan==='issuer'?'con interés (financia el emisor)':'sin interés (financia el comercio)'} · ${how}`;
+  }
+  $('installmentCount')?.addEventListener('change',refreshInstallmentUi);
+  $('installmentPlan')?.addEventListener('change',refreshInstallmentUi);
+  document.querySelectorAll('[data-test-card],[data-payment-method]').forEach(b=>b.addEventListener('click',()=>setTimeout(refreshInstallmentUi,0)));
+  window.OSCRefreshInstallments=refreshInstallmentUi;
+  setTimeout(refreshInstallmentUi,0);
+  $('tamperInTransit')?.addEventListener('change',e=>{state.tamperInTransit=e.target.checked;});
+  $('installmentHelp')?.addEventListener('click',()=>window.OSCSecurityEdu?.open('cuotas'));
+  $('eduArqc')?.addEventListener('click',()=>window.OSCSecurityEdu?.open('arqc',state.lastArqc,state.lastArqc?'trace':'simple'));
+  $('eduPin')?.addEventListener('click',()=>window.OSCSecurityEdu?.open('pin',state.pinTrace,state.pinTrace?'trace':'simple'));
+  $('eduCuotas')?.addEventListener('click',()=>{
+    const op=[...state.operations].reverse().find(o=>o.installments);
+    const inst=op?.installments;
+    const msg=op&&state.messages.find(m=>m.operationId===op.id&&m.direction==='SALIENTE'&&m.fields.some(r=>['48','104','112'].includes(r[0])));
+    window.OSCSecurityEdu?.open('cuotas',inst?{network:(op.network||'').toUpperCase(),count:inst.count,interest:inst.interest,installmentLabel:formatCents(inst.installmentCents),totalLabel:formatCents(inst.financedCents),fields:(msg?.fields||[]).filter(r=>['48','104','112','126'].includes(r[0])).map(r=>[r[0],r[2]])}:null,inst?'trace':'simple');
+  });
   $('printAgain').addEventListener('click',()=>{const op=state.operations.find(o=>o.id===state.selectedSourceOperationId)||state.operations.find(o=>o.type!=='batch');if(op)printReceipt(op);else alert('Todavía no hay un ticket disponible para reimprimir. Realizá primero una operación.');});
   $('copyBtn')?.addEventListener('click',copySelectedMessage);
   $('analyzeBtn')?.addEventListener('click',openSelectedInParser);

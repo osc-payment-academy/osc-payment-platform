@@ -3203,6 +3203,10 @@
               <div class="iso-block">
                 <h3>DATA ELEMENTS</h3>
                 <p>Detalle completo de cada dato que compone el mensaje.</p>
+                <div class="osc-edu-buttons" style="display:flex;flex-wrap:wrap;gap:8px;margin:10px 0">
+                  <button type="button" style="border:1px solid #2f6f9f;background:#0d2a44;color:#e6f2fb;border-radius:999px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer" onclick="window.OSCSecurityEdu&&OSCSecurityEdu.open('pin',window.OSCAtmPinTrace,window.OSCAtmPinTrace?'trace':'simple')">🔑 PIN Block y HSM</button>
+                  <button type="button" style="border:1px solid #2f6f9f;background:#0d2a44;color:#e6f2fb;border-radius:999px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer" onclick="window.OSCSecurityEdu&&OSCSecurityEdu.open('arqc',window.OSCAtmArqcTrace,window.OSCAtmArqcTrace?'trace':'simple')">🔐 ARQC del chip</button>
+                </div>
                 <div class="table-wrap">
                   <table>
                     <thead>
@@ -3296,6 +3300,9 @@
     </div>
 
     <script src="js/network-profiles.js"></script>
+    <script src="js/emv-crypto.js?v=4.0.0-rc1.22"></script>
+    <script src="js/iso-network-spec.js?v=4.0.0-rc1.22"></script>
+    <script src="js/security-edu.js?v=4.0.0-rc1.22"></script>
     <script src="js/switch-store.js?v=4.0.0-rc1.6"></script>
     <script>
       (() => {
@@ -3625,12 +3632,28 @@
         };
         const random6 = () =>
           String(Math.floor(100000 + Math.random() * 900000));
-        const pinBlock = () =>
-          Array.from({ length: 16 }, () =>
-            Math.floor(Math.random() * 16)
-              .toString(16)
-              .toUpperCase(),
+        // rc.1.22 · PIN Block ISO 9564 formato 0 cifrado con 3DES (ZPK de práctica). PIN de prueba: 1234.
+        const pinBlock = () => {
+          if (window.OSCEmvCrypto && state.pin && state.pan) {
+            const b = OSCEmvCrypto.pinBlockEncrypted(state.pin, state.pan);
+            window.OSCAtmPinTrace = {
+              pinLength: state.pin.length,
+              pinFieldMasked: b.pinField.slice(0, 2) + "•".repeat(state.pin.length) + b.pinField.slice(2 + state.pin.length),
+              panField: b.panField, encrypted: b.encrypted, zpk: b.zpk,
+            };
+            return b.encrypted;
+          }
+          return Array.from({ length: 16 }, () =>
+            Math.floor(Math.random() * 16).toString(16).toUpperCase(),
           ).join("");
+        };
+        // HSM del emisor simulado: descifra el DE 52 / Bit 52 y verifica el PIN de prueba.
+        const hsmVerifyAtmPin = (block) => {
+          if (!window.OSCEmvCrypto || !block) return null;
+          const v = OSCEmvCrypto.hsmVerifyPin(block, state.pan, "1234");
+          if (window.OSCAtmPinTrace) window.OSCAtmPinTrace.hsm = v;
+          return v;
+        };
         const formatAmount = (digits) =>
           (Number(digits || 0) / 100).toLocaleString("es-AR", {
             style: "currency",
@@ -3690,6 +3713,9 @@
             return { code: "116", label: "Not sufficient funds" };
           if (state.scenario === "issuerDown")
             return { code: "100", label: "Deny" };
+          // rc.1.22 · HSM del emisor: Action Code 117 si el PIN no verifica (Codes Reference Guide).
+          const v = window.OSCAtmPinTrace ? hsmVerifyAtmPin(window.OSCAtmPinTrace.encrypted) : null;
+          if (v && !v.match) return { code: "117", label: "Incorrect PIN (HSM del emisor)" };
           return { code: "000", label: "Approved" };
         }
         function amexAtmRequestFields() {
@@ -4050,21 +4076,32 @@
             net === "mastercard"
               ? "0110A00003220000000000000000000000"
               : "06010A03A0B800";
+          // rc.1.22 · ARQC calculado con la clave de práctica (Visa CVN 10 / M/Chip EMV CSK). Longitudes TLV en hex.
+          const txnType = state.operation === "withdrawal" ? "01" : "00";
+          if (!state.emvUn) state.emvUn = Array.from({ length: 8 }, () => Math.floor(Math.random() * 16).toString(16).toUpperCase()).join("");
+          if (!state.emvAtc) { let n = 40; try { n = Number(localStorage.getItem("oscAtmAtc") || "40") + 1; localStorage.setItem("oscAtmAtc", String(n)); } catch (_) {} state.emvAtc = (n % 65535).toString(16).toUpperCase().padStart(4, "0"); }
+          let arqc = "A1B2C3D4E5F60708";
+          if (window.OSCEmvCrypto) {
+            const r = OSCEmvCrypto.computeArqc({ pan: state.pan, psn: "00", atc: state.emvAtc, scheme: net === "visa" ? "UDK" : "CSK",
+              tags: { "9F02": amount, "9F03": "000000000000", "9F1A": "0032", "95": "0000000000", "5F2A": "0840", "9A": date, "9C": txnType, "9F37": state.emvUn, "82": "1800", cvr: net === "mastercard" ? iad.slice(4, 16) : iad.slice(6) } });
+            arqc = r.arqc;
+            window.OSCAtmArqcTrace = { ...r, pan: state.pan, psn: "00", atc: state.emvAtc, network: net };
+          }
           const tags = [
-            ["9F26", "08", "A1B2C3D4E5F60708"],
+            ["9F26", "08", arqc],
             ["9F27", "01", "80"],
-            ["9F10", String(iad.length / 2).padStart(2, "0"), iad],
-            ["9F37", "04", "A1B2C3D4"],
-            ["9F36", "02", "0012"],
+            ["9F10", (iad.length / 2).toString(16).toUpperCase().padStart(2, "0"), iad],
+            ["9F37", "04", state.emvUn],
+            ["9F36", "02", state.emvAtc],
             ["95", "05", "0000000000"],
             ["9A", "03", date],
             ["9F02", "06", amount],
-            ["9C", "01", state.operation === "withdrawal" ? "01" : "00"],
+            ["9C", "01", txnType],
             ["5F2A", "02", "0840"],
             ["82", "02", "1800"],
             ["9F1A", "02", "0032"],
             ["9F34", "03", "020300"],
-            ["84", String(aid.length / 2).padStart(2, "0"), aid],
+            ["84", (aid.length / 2).toString(16).toUpperCase().padStart(2, "0"), aid],
             ["9F33", "03", "E0F8C8"],
             ["9F35", "01", "14"],
           ];
@@ -4125,15 +4162,19 @@
               "Institución operadora",
             ),
             field(49, "Currency Code", "840", "N3", "Configuración ATM"),
-            field(52, "PIN Data", pinBlock(), "B64", "PIN cifrado"),
-            field(
-              53,
-              "Security Control Information",
-              "2000000000000000",
-              "N16",
-              "Seguridad PIN",
-            ),
+            field(52, "PIN Data", pinBlock(), "B64", "PIN Block ISO formato 0 cifrado con 3DES"),
           ];
+          // rc.1.22 · Visa Field 53: 20 / 01 / 01 / 01. Mastercard por MDS no usa el DE 53 (MDS Online Specifications).
+          if (state.brand !== "mastercard")
+            fields.push(
+              field(
+                53,
+                "Security Control Information",
+                (window.OSCIsoSpec && OSCIsoSpec.VISA_DE53) || "2001010100000000",
+                "N16",
+                "20 Zone Encryption · 01 DES · 01 ISO formato 0 · índice 01",
+              ),
+            );
           if (state.operation !== "balance")
             fields.splice(
               3,
@@ -5737,10 +5778,17 @@
               else {
                 if (state.scenario === "insufficient") code = "51";
                 if (state.scenario === "issuerDown") code = "91";
+                // rc.1.22 · HSM del emisor: verifica el PIN del DE 52.
+                const block = (req.find((r) => String(r[0]) === "52") || [])[2];
+                const v = code === "00" ? hsmVerifyAtmPin(block) : null;
+                if (v) {
+                  addTechEvent(v.match ? "HSM del emisor: PIN Block descifrado y PIN verificado ✓" : "HSM del emisor: PIN incorrecto ✗ (PIN de prueba: 1234)", v.match ? "done" : "warn");
+                  if (!v.match) code = "55";
+                }
               }
               state.auth = code === "00" ? random6() : "-";
               $("hostStatus").textContent =
-                `${code} - ${code === "00" ? "Aprobada" : code === "51" ? "Fondos insuficientes" : "Emisor no disponible"}`;
+                `${code} - ${code === "00" ? "Aprobada" : code === "51" ? "Fondos insuficientes" : code === "55" ? "PIN incorrecto" : "Emisor no disponible"}`;
               const res = responseFields(code);
               addMessage("0210", labelOperation(), code, res);
               persistAtmTransaction(req, res, code);
@@ -5939,6 +5987,7 @@ ${raw(m)}`;
         function reset() {
           state.step = "card";
           state.pin = "";
+          state.emvUn = null; state.emvAtc = null; window.OSCAtmPinTrace = null;
           state.amount = "";
           state.destination = ""; state.destinationAccountId=""; state.newPin=""; state.pinConfirm="";
           state.stan = null;
@@ -6218,7 +6267,7 @@ ${raw(m)}`;
     </div>
     <script src="js/help-catalog.js"></script>
     <script src="js/module-guide.js"></script>
-    <script src="js/navigation.js?v=4.0.0-rc1.7"></script>
+    <script src="js/navigation.js?v=4.0.0-rc1.22"></script>
   
 <style id="osc-atm-v51">
 .atm-history-wide{min-height:360px}.atm-history-wide .history{max-height:330px;overflow:auto}
