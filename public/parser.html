@@ -1,6 +1,6 @@
 <!doctype html>
 <html>
-  <head>
+  <head><style id="osc-net-gate">html.osc-net-pending [data-test-card],html.osc-net-pending [data-atm-card],html.osc-net-pending .wallet-card,html.osc-net-pending .network-card,html.osc-net-pending [data-payment-method="qr"],html.osc-net-pending #ecomNetwork,html.osc-net-pending #constructorNetworkSelect,html.osc-net-pending #parserNetworkSelect{visibility:hidden!important}</style><script id="osc-net-gate-js">document.documentElement.classList.add("osc-net-pending");setTimeout(function(){document.documentElement.classList.remove("osc-net-pending")},6000);</script>
     <base target="_top" />
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -870,11 +870,11 @@
             </div>
           </div>
 
-          <script src="js/network-profiles.js?v=4.0.0-rc1.24"></script>
-          <script src="js/link-hth.js?v=4.0.0-rc1.25"></script>
+          <script src="js/network-profiles.js?v=4.0.0-rc1.26"></script>
+          <script src="js/link-hth.js?v=4.0.0-rc1.26"></script>
           <script src="js/help-catalog.js"></script>
           <script src="js/iso-network-spec.js?v=4.0.0-rc1.22"></script>
-          <script src="js/security-edu.js?v=4.0.0-rc1.22"></script>
+          <script src="js/security-edu.js?v=4.0.0-rc1.26"></script>
           <script>
             // --- LÓGICA DE AUTENTICACIÓN ---
             window.onload = function () {
@@ -2841,7 +2841,7 @@
               function parseTrama(raw) {
                 // rc.1.24 · Red LINK: "ISO" + header BASE24 + MTI + bitmap (C-X-1-2-3).
                 const nsel = document.getElementById("parserNetworkSelect");
-                if (window.OSCLinkHth && (selectedParserNetwork() === "link" || /^\s*ISO\d{13}[0-9A-Fa-f]{16}/.test(String(raw || "")))) {
+                if (window.OSCLinkHth && (selectedParserNetwork() === "link" || /ISO\d{13}[0-9A-Fa-f]{16}/.test(OSCLinkHth.unhtml(raw)))) {
                   if (nsel && nsel.value !== "link" && [...nsel.options].some((o) => o.value === "link")) nsel.value = "link";
                   return OSCLinkHth.parse(raw);
                 }
@@ -3509,6 +3509,6 @@
       Baseline v3.5.4.23 · REJECT seleccionable en Parser
     </div>
     <script src="js/module-guide.js"></script>
-    <script src="js/network-access.js?v=4.0.0-rc1.24"></script><script src="js/navigation.js?v=4.0.0-rc1.24"></script>
+    <script src="js/network-access.js?v=4.0.0-rc1.26"></script><script src="js/navigation.js?v=4.0.0-rc1.24"></script>
   </body>
 </html>

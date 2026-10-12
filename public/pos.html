@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
-<head>
+<head><style id="osc-net-gate">html.osc-net-pending [data-test-card],html.osc-net-pending [data-atm-card],html.osc-net-pending .wallet-card,html.osc-net-pending .network-card,html.osc-net-pending [data-payment-method="qr"],html.osc-net-pending #ecomNetwork,html.osc-net-pending #constructorNetworkSelect,html.osc-net-pending #parserNetworkSelect{visibility:hidden!important}</style><script id="osc-net-gate-js">document.documentElement.classList.add("osc-net-pending");setTimeout(function(){document.documentElement.classList.remove("osc-net-pending")},6000);</script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>OSC Payment Academy · POS Virtual · v3.5.3.20</title>
@@ -442,17 +442,17 @@
   </div>
 </div>
 
-<script src="js/network-profiles.js?v=4.0.0-rc1.24"></script>
+<script src="js/network-profiles.js?v=4.0.0-rc1.26"></script>
 <script src="js/switch-store.js?v=4.0.0-rc1.6"></script>
 <script src="js/emv-crypto.js?v=4.0.0-rc1.22"></script>
 <script src="js/iso-network-spec.js?v=4.0.0-rc1.22"></script>
-<script src="js/security-edu.js?v=4.0.0-rc1.22"></script>
-<script src="js/link-hth.js?v=4.0.0-rc1.25"></script>
+<script src="js/security-edu.js?v=4.0.0-rc1.26"></script>
+<script src="js/link-hth.js?v=4.0.0-rc1.26"></script>
 <script src="js/app.js?v=4.0.0-rc1.25"></script>
 <script>document.addEventListener('DOMContentLoaded',()=>{document.querySelectorAll('.pos-scenario-mini button').forEach((b,i)=>b.onclick=()=>{document.querySelectorAll('.pos-scenario-mini button').forEach(x=>x.classList.remove('active'));b.classList.add('active');const original=document.querySelectorAll('#scenarioGrid button')[i];if(original)original.click()});const log=document.getElementById('posTechEvents');const status=document.getElementById('flowResponse');if(log&&status)new MutationObserver(()=>{const d=document.createElement('div');d.textContent=new Date().toLocaleTimeString('es-AR')+' · '+status.textContent;log.prepend(d);while(log.children.length>8)log.lastChild.remove()}).observe(status,{childList:true,subtree:true,characterData:true})});</script>
 <script src="js/permissions.js"></script>
 
 
 <script src="js/help-catalog.js"></script>
-<script src="js/module-guide.js"></script><script src="js/network-access.js?v=4.0.0-rc1.24"></script><script src="js/navigation.js?v=4.0.0-rc1.24"></script><script src="js/osc-learning.js?v=4.0.0-rc1.19" data-module="pos"></script><script src="js/tutor-osc.js?v=4.0.0-rc1.19" data-module="pos"></script></body>
+<script src="js/module-guide.js"></script><script src="js/network-access.js?v=4.0.0-rc1.26"></script><script src="js/navigation.js?v=4.0.0-rc1.24"></script><script src="js/osc-learning.js?v=4.0.0-rc1.19" data-module="pos"></script><script src="js/tutor-osc.js?v=4.0.0-rc1.26" data-module="pos"></script></body>
 </html>

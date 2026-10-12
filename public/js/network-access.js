@@ -96,14 +96,17 @@
     document.dispatchEvent(new CustomEvent('osc-networks-ready', { detail: { allowed: [...state.allowed], restricted: state.restricted } }));
   }
 
+  // rc.1.26 · Las páginas arrancan con html.osc-net-pending (tarjetas ocultas) y se liberan recién con las redes resueltas.
+  const release = () => document.documentElement.classList.remove('osc-net-pending');
   ready.then(r => {
     state.allowed = r.allowed; state.restricted = r.restricted;
-    if (!r.restricted) return;
-    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => setTimeout(apply, 0));
-    else setTimeout(apply, 0);
+    if (!r.restricted) return release();
+    const first = () => { try { apply(); } finally { release(); } };
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => setTimeout(first, 0));
+    else setTimeout(first, 0);
     // Las tarjetas Doméstica se completan después de consultar el Banco simulado: se reaplica una vez más.
     setTimeout(apply, 1500);
-  });
+  }, release);
 
   window.OSCNetworkAccess = { ready, allows, apply, label: n => LABEL[n] || n, get allowed() { return [...state.allowed]; } };
 })();

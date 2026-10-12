@@ -1,0 +1,17 @@
+OSC Payment Academy v4.0.0-rc.1.26 (acumulativa: incluye rc.1.22 a rc.1.25)
+Ajustes LINK, entrega de billetes, PIN fijo 1234, Tutor por red y vista previa de evaluaciones.
+
+INSTALACIÓN (paquete INCREMENTAL · sirve si hoy tenés instalada la rc.1.21 a rc.1.25):
+1. Descomprimir el ZIP incremental y copiar su contenido sobre la raíz del repositorio en GitHub, reemplazando archivos.
+2. Si todavía existe, BORRAR del repositorio 03-Analisis-Horario-TCPHandler.ps1 (el ZIP no puede borrar archivos).
+3. No hay migración nueva. (Si nunca ejecutaste la de la rc.1.22, ejecutala una vez.)
+4. Despliegue habitual.
+
+Pruebas mínimas:
+1. Usuario de una consultora solo con LINK → abrir POS y ATM: no aparecen Visa / Mastercard / Amex ni por un instante.
+2. ATM con LINK → PIN 1234 → Extracción → aparecen los billetes con "Retirar efectivo", "Dispensación parcial 80%" y "No retirar".
+3. Repetir y tocar "Dispensación parcial 80%" → 0420 / 0430 con código 32. Repetir sin tocar nada → a los 9 s retracto y 0420 / 0430 con código 17.
+4. ATM con LINK → PIN 1235 → 55 y Eventos técnicos lo explica. Cambio de PIN → se cursa, y la próxima operación sigue con 1234.
+5. Seleccionar un mensaje LINK del historial, recargar la página, "Copiar trama" → pegar en el Parser: se reconoce sin errores.
+6. Con tarjeta LINK: "PIN Block y HSM" y "ARQC del chip" abren la versión LINK. Tutor → un campo (ej. 60): cita el manual LINK C-X-1-2-3.
+7. Evaluaciones (admin OSC) → Vista previa de preguntas → elegir etapa y red → Ver ejemplo.

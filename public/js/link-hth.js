@@ -446,17 +446,20 @@
     const r0430 = message({ mti: '0430', header: '014000005', rows: pick(m2, [3, 4, 7, 11, 32, 35, 37, 39, 41, 49, 90]), label: '0430 · Host emisor confirma la reversa', leg: 'Respuesta a la reversa (0430 INPUT B24)', direction: 'ENTRANTE', responseCode: reason });
     return [r0420, r0430];
   }
-  // Aplica el evento posterior elegido (cancelación 17, entrega parcial 32, timeout 68) y devuelve el saldo a su lugar.
-  function applyAfter(out, ctx, b) {
-    const ev = ctx.after;
-    const reversible = out.code === '00' && out.messages.length >= 2;
-    if (!ev || ev === 'none' || !reversible) return out;
+  // Aplica el evento posterior (cancelación 17, entrega parcial 32, timeout 68, retracto de billetes) y devuelve el saldo a su lugar.
+  // rc.1.26 · La entrega parcial paga el 80% (redondeado a billetes enteros) y reversa el 20% restante.
+  const CASH_KINDS = ['withdrawal', 'withdrawal_usd', 'cash_advance'];
+  function partialCents(amount) { return Math.floor((amount * 0.8) / 100) * 100; }
+  function reverseOut(out, ctx, b, ev) {
+    const reversible = out.code === '00' && out.messages.length >= 2 && !out.reversal;
+    if (!ev || ev === 'none' || !reversible) return null;
     const kind = out.kind, o = OPS[kind] || {};
-    if (ev === 'partial' && !['withdrawal', 'withdrawal_usd', 'cash_advance'].includes(kind)) return out;
+    if ((ev === 'partial' || ev === 'retract') && !CASH_KINDS.includes(kind)) return null;
     const req = out.messages[0];
     const amount = Number(out.amountCents ?? ctx.amountCents ?? 0);
-    const dispensed = ev === 'partial' ? Math.floor(amount / 2 / 100) * 100 : 0;
-    const reason = ev === 'cancel' ? '17' : ev === 'partial' ? '32' : '68';
+    const dispensed = ev === 'partial' ? partialCents(amount) : 0;
+    // El C-X-8 no tiene un código propio para billetes no retirados: se informa como transacción cancelada (17).
+    const reason = ev === 'partial' ? '32' : ev === 'timeout' ? '68' : '17';
     const rev = buildReversal(ctx, req, reason, dispensed);
     const t = out.debitAccount || ctx.accountType;
     const back = amount - dispensed;
@@ -464,15 +467,32 @@
     if (debitLike && b[t] != null) { b[t] += back; addHistory(b, t, 'REVERSA ' + reason, back, 1); if (['withdrawal'].includes(kind)) b.withdrawnToday = Math.max(0, (b.withdrawnToday || 0) - back); }
     if (o.credit && b[t] != null) { b[t] -= back; addHistory(b, t, 'REVERSA ' + reason, back, -1); }
     if (kind === 'deposit' && ctx.depositType !== 'C') b[t] -= back;
-    if (ev === 'timeout') {
-      // Sin respuesta del host dentro del timer: no hay 0210; LINK envía el 0420 con código 68.
-      out.messages = [out.messages[0], ...rev];
-      out.timeout = true;
-    } else out.messages = [...out.messages, ...rev];
     out.balanceCents = Number(b[t] || 0);
-    out.reversal = { reason, text: REVERSAL[reason], dispensedCents: dispensed, returnedCents: back };
-    out.summary = ev === 'timeout' ? 'El host no respondió a tiempo: LINK envió la reversa 0420 (68) y el host la confirmó con 0430.' : ev === 'partial' ? `El cajero entregó ${money(dispensed, out.currency)} de ${money(amount, out.currency)}: reversa parcial 0420 (32) con el monto real en el campo 95.` : 'El cliente canceló después de la aprobación: reversa total 0420 (17) y confirmación 0430.';
+    out.reversal = { reason, event: ev, text: REVERSAL[reason], dispensedCents: dispensed, returnedCents: back };
+    out.summary = ev === 'timeout' ? 'El host no respondió a tiempo: LINK envió la reversa 0420 (68) y el host la confirmó con 0430.'
+      : ev === 'partial' ? `El cajero entregó ${money(dispensed, out.currency)} de ${money(amount, out.currency)} (80%): reversa parcial 0420 (32) por ${money(back, out.currency)}, con el monto realmente entregado en el campo 95.`
+      : ev === 'retract' ? `El cliente no retiró los billetes y el cajero los retractó: reversa total 0420 (17 · el C-X-8 no tiene un código propio para retracto) y confirmación 0430. Vuelven ${money(back, out.currency)} a la cuenta.`
+      : 'El cliente canceló después de la aprobación: reversa total 0420 (17) y confirmación 0430.';
+    return rev;
+  }
+  function applyAfter(out, ctx, b) {
+    const ev = ctx.after;
+    if (ev === 'retract') return out; // el retracto lo decide el dispensador del ATM después de presentar los billetes
+    const rev = reverseOut(out, ctx, b, ev);
+    if (!rev) return out;
+    if (ev === 'timeout') { out.messages = [out.messages[0], ...rev]; out.timeout = true; }
+    else out.messages = [...out.messages, ...rev];
     return out;
+  }
+  // rc.1.26 · Reversa decidida en el dispositivo (ATM): billetes no retirados o entrega parcial. Devuelve solo el 0420 / 0430.
+  function reverseLater(out, ev) {
+    const b = balances();
+    const rev = reverseOut(out, out.ctx, b, ev);
+    if (!rev) return [];
+    saveBalances(b);
+    out.messages = [...out.messages, ...rev];
+    out.resultText = `APROBADA Y REVERSADA (${out.reversal.reason})`;
+    return rev;
   }
 
   function build(kind, ctx) {
@@ -501,8 +521,8 @@
     const s = document.createElement('style'); s.id = 'osc-link-css';
     s.textContent = `.lk-sp{color:#4f6b85;font-style:normal;opacity:.7}
 .test-card.link .card-network,.test-card.domestic .card-network{font-size:0!important;color:transparent!important}
-.test-card.link .card-network::before{content:"";display:block;width:30px;height:30px;border-radius:50%;background:url('assets/brand-link.png') center/contain no-repeat;box-shadow:0 0 0 1.5px #fff}
-.test-card.link.active{border-color:#e9eef5!important;box-shadow:0 0 0 3px rgba(233,238,245,.16)!important}
+.test-card.link .card-network::before{content:"";display:block;width:30px;height:30px;border-radius:50%;background:url('assets/brand-link.png?v=4.0.0-rc1.26') center/contain no-repeat;box-shadow:0 0 0 1.5px #fff}
+.test-card.link.active{border-color:#9fd18b!important;box-shadow:0 0 0 3px rgba(159,209,139,.22)!important}
 .test-card.domestic .card-network::before{content:"DOMÉSTICA";display:block;font-size:.62rem;font-weight:900;letter-spacing:.08em;color:#55e6ae;line-height:20px}
 .test-card.domestic.no-card{opacity:.6}
 .link-panel{margin-top:10px;border:1px solid #31506b;border-radius:10px;padding:10px;background:#0a1b2b;display:grid;gap:8px}
@@ -538,11 +558,11 @@
 <div id="linkOriginalBox" style="display:none"><label>Operación original<select id="linkOriginal"><option value="">— No hay operaciones aprobadas para referenciar —</option></select></label></div>
 <div id="linkCashbackBox" style="display:none"><label>Efectivo a retirar (cash-back)<input id="linkCashback" inputmode="numeric" value="5000" placeholder="Importe en pesos"></label></div>
 <div id="linkCuotasBox" style="display:none"><label>Cuotas (Maestro · campo 48)<select id="linkCuotas"><option value="1">1 pago</option><option value="3">3 cuotas</option><option value="6">6 cuotas</option></select></label></div>` : '';
-    const afterOpts = pos ? [['none', 'Ninguno'], ['cancel', '17 · El cliente cancela después de aprobada'], ['timeout', '68 · Sin respuesta del host (timeout)']] : [['none', 'Ninguno'], ['cancel', '17 · El cliente cancela después de aprobada'], ['partial', '32 · Entrega parcial de dinero (solo extracción)'], ['timeout', '68 · Sin respuesta del host (timeout)']];
-    return `<h4><img src="assets/brand-link.png" alt="">Red LINK · Host to Host ISO 8583</h4>${txSel}
-<div class="link-row"><label>Cuenta<select id="linkAccountType"><option value="10">Caja de ahorros $ (10)</option><option value="20">Cuenta corriente $ (20)</option>${pos ? '' : '<option value="15">Caja de ahorros U$S (15)</option><option value="07">Cuenta corriente U$S (07)</option>'}</select></label>
-<label>Respuesta del host<select id="linkScenario">${SCENARIOS.map(c => `<option value="${c}">${c} · ${RESULT[c].toLowerCase()}</option>`).join('')}</select></label></div>
-<label>Evento después de la respuesta (reversa 0420 / 0430)<select id="linkAfter">${afterOpts.map(([v, l]) => `<option value="${v}">${l}</option>`).join('')}</select></label>
+    const afterOpts = pos ? [['none', 'Ninguno'], ['cancel', 'Reversa total · 17 · el cliente cancela'], ['timeout', 'Reversa por timeout · 68 · el host no responde']] : [['none', 'Ninguno'], ['cancel', 'Reversa total · 17 · el cliente cancela'], ['partial', 'Reversa parcial · 32 · el cajero entrega el 80% (solo extracción)'], ['timeout', 'Reversa por timeout · 68 · el host no responde']];
+    return `<h4><img src="assets/brand-link.png?v=4.0.0-rc1.26" alt="">Red LINK · Host to Host ISO 8583</h4>${txSel}
+<div class="link-row" style="grid-template-columns:1fr"><label>Cuenta<select id="linkAccountType"><option value="10">Caja de ahorros $ (10)</option><option value="20">Cuenta corriente $ (20)</option>${pos ? '' : '<option value="15">Caja de ahorros U$S (15)</option><option value="07">Cuenta corriente U$S (07)</option>'}</select></label>
+</div>
+<label>Escenario de prueba<select id="linkScenario"><optgroup label="Respuesta del host (0210)">${SCENARIOS.map(c => `<option value="${c}">${c} · ${RESULT[c].toLowerCase()}</option>`).join('')}</optgroup><optgroup label="Aprobada y luego reversada (0420 / 0430)">${afterOpts.filter(([v]) => v !== 'none').map(([v, l]) => `<option value="00|${v}">${l}</option>`).join('')}</optgroup></select></label>
 <div id="linkTransferBox" class="hidden" style="display:grid;gap:6px">
 <label>CBU destino (22 dígitos)<input id="linkCbu" inputmode="numeric" maxlength="22" value="0140999901000012345678"></label>
 <div class="link-row"><label>Red del banco destino<select id="linkDestNetwork"><option value="LINK">LINK</option><option value="BANELCO">BANELCO (FIID 5892)</option></select></label>
@@ -559,7 +579,7 @@
   function readPanel() {
     const v = id => document.getElementById(id)?.value || '';
     return {
-      accountType: v('linkAccountType') || '10', scenario: v('linkScenario') || '00', after: v('linkAfter') || 'none',
+      accountType: v('linkAccountType') || '10', scenario: (v('linkScenario') || '00').split('|')[0], after: (v('linkScenario') || '').split('|')[1] || 'none',
       cashbackCents: Math.round(Number(String(v('linkCashback')).replace(/\./g, '').replace(',', '.')) * 100) || 0,
       installments: Number(v('linkCuotas') || 1), originalId: v('linkOriginal'),
       destination: { cbu: v('linkCbu'), network: v('linkDestNetwork'), toTyp: v('linkToTyp'), mismoTitular: v('linkMismoTitular'), motivo: v('linkMotivo'), name: v('linkDestName') },
@@ -649,8 +669,26 @@
       default: return null;
     }
   }
+  // rc.1.26 · Quita el HTML de visualización (blancos marcados con ·) y devuelve el texto real de la trama.
+  function unhtml(v) {
+    return String(v ?? '').replace(/<i class="lk-sp">[^<]*<\/i>/g, ' ').replace(/<[^>]*>/g, '')
+      .replace(/&nbsp;/g, ' ').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&');
+  }
+  // Reconstruye la trama LINK desde las filas [de, nombre, valorHTML, ...] (mensajes de historial viejos sin raw).
+  function rawFromRows(message) {
+    const rows = (message.fields || []).map(r => [Number(r[0]), unhtml(r[2])]).filter(r => r[0] > 1).sort((a, b) => a[0] - b[0]);
+    const mti = String(message.mti || '');
+    const header = /^04/.test(mti) ? '014000005' : (mti.endsWith('10') || mti.endsWith('30')) ? '014000015' : '014000010';
+    const hasSec = rows.some(r => r[0] > 64);
+    const bits = new Array(hasSec ? 128 : 64).fill(0); if (hasSec) bits[0] = 1;
+    rows.forEach(([n]) => { bits[n - 1] = 1; });
+    const hex = b => b.join('').match(/.{4}/g).map(x => parseInt(x, 2).toString(16).toUpperCase()).join('');
+    // Los valores de las filas LINK ya incluyen el indicador de longitud de los campos LLVAR / LLLVAR.
+    const body = rows.map(([, v]) => v).join('');
+    return 'ISO' + header + mti + hex(bits.slice(0, 64)) + (hasSec ? hex(bits.slice(64)) : '') + body;
+  }
   function parse(input) {
-    const raw = String(input || '').replace(/[\r\n]+/g, '');
+    const raw = unhtml(input).replace(/[\r\n]+/g, '');
     const start = raw.indexOf('ISO');
     const errors = [], warnings = [], fields = [];
     if (start < 0 || !/^ISO\d{9}\d{4}[0-9A-Fa-f]{16}/.test(raw.slice(start))) return { errors: ['No se reconoce el formato LINK: se espera "ISO" + header de 9 dígitos + MTI + bitmap.'], warnings, fields };
@@ -678,5 +716,5 @@
     return { mti, primaryHex, secondaryHex, allBits, fields, errors, warnings, consumed: pos, total: raw.length, linkHeader: header, linkHeaderText: HEADERS[header] || 'Header no reconocido', link: true };
   }
   if (document.readyState !== 'loading') css(); else document.addEventListener('DOMContentLoaded', css);
-  window.OSCLinkHth = { LINK, TX, RESULT, SCENARIOS, build, balances, displayValue, annotated, css, panelHtml, readPanel, syncPanel, accountLabel: t => LINK.accounts[t]?.label || t, parse, OPS, REVERSAL, money };
+  window.OSCLinkHth = { LINK, TX, RESULT, SCENARIOS, build, balances, displayValue, annotated, css, panelHtml, readPanel, syncPanel, accountLabel: t => LINK.accounts[t]?.label || t, parse, OPS, REVERSAL, money, unhtml, rawFromRows, reverseLater, partialCents, CASH_KINDS };
 })();

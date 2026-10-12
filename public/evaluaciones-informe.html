@@ -20,6 +20,12 @@ th{color:#9eb6c9;font-size:11px;letter-spacing:.05em;text-transform:uppercase;ba
 .empty{padding:28px;text-align:center;color:var(--muted)}
 .hidden{display:none!important}
 @media(max-width:900px){.filters{grid-template-columns:1fr 1fr}.kpis{grid-template-columns:1fr 1fr}.grow{grid-template-columns:1fr 1fr}}
+.pv-ctl{display:flex;flex-wrap:wrap;gap:10px;align-items:end;margin-top:6px}.pv-ctl .field{min-width:170px}
+.pv-trama{font:13px/1.7 Consolas,Menlo,monospace;word-break:break-all;background:#06111d;border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin:6px 0 12px}
+.pv-trama .m{background:#5a4a12;color:#ffe08a;border-radius:3px}.pv-trama .b{background:#123c5a;color:#9fd8ff;border-radius:3px}.pv-trama .s{color:#56708a}
+.pv-q{border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin:8px 0;background:#091827}.pv-q .tag{font-size:11px;font-weight:700;letter-spacing:.04em;padding:2px 7px;border-radius:999px;margin-right:6px}
+.pv-q .dec{background:#16324d;color:#9fd8ff}.pv-q .int{background:#3b2a52;color:#e0c8ff}.pv-ans{margin-top:6px;padding:7px 10px;border-left:3px solid #2fbf71;background:#0b2219;font-size:13px}.pv-ans code{font:13px Consolas,Menlo,monospace;color:#bff5d6}
+.pv-meta{font-size:13px;color:#9fb6cb;margin:4px 0 10px}
 @media print{body{background:#fff;color:#111}.tabs,.filters,#adminPanel,.no-print{display:none!important}.panel,.kpi,.table-wrap{background:#fff!important;border-color:#bbb!important}th{background:#eee!important;color:#333!important}td,th{border-color:#ddd!important}.sub,.kpi span,.kpi small{color:#555!important}.ok{color:#127a45!important}.bad{color:#b3261e!important}}
 </style></head><body><main class="shell">
 <header class="top"><div><div class="brand"><span>OSC</span> PAYMENT ACADEMY</div><h1>Informe de evaluaciones</h1><p class="muted" id="subtitle">Evolución de cada alumno: inicial → intermedia → final.</p></div>
@@ -30,6 +36,14 @@ th{color:#9eb6c9;font-size:11px;letter-spacing:.05em;text-transform:uppercase;ba
   <p class="muted" style="margin-top:0">Los alumnos del grupo ven la etapa en <b>Evaluaciones</b> cuando la habilitás. Las respuestas no se pueden cambiar después de guardadas.</p>
   <div class="groups" id="groupToggles"><p class="muted">Cargando…</p></div>
   <div id="adminMsg" class="message"></div>
+  <h3 style="margin:22px 0 4px">Vista previa de preguntas</h3>
+  <p class="muted" style="margin-top:0">Genera un examen de ejemplo con las respuestas correctas. No se guarda ni consume intentos. Cada alumno recibe tramas distintas en cada intento; las preguntas siguen esta misma estructura.</p>
+  <div class="pv-ctl">
+    <div class="field"><label for="pvStage">Etapa</label><select id="pvStage"><option value="inicial">Inicial</option><option value="intermedia">Intermedia</option><option value="final">Final</option></select></div>
+    <div class="field"><label for="pvNet">Red de la trama</label><select id="pvNet"><option value="visa">Visa</option><option value="mastercard">Mastercard</option><option value="amex">American Express</option><option value="link">Red LINK</option></select></div>
+    <button class="btn" id="pvGo" type="button">👁 Ver ejemplo</button>
+  </div>
+  <div id="pvOut"></div>
 </section>
 
 <section class="panel">
@@ -121,6 +135,35 @@ $('exportCsv').onclick=()=>{
   const csv=[head,...rows].map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(';')).join('\r\n');
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8'}));a.download='evaluaciones-'+new Date().toISOString().slice(0,10)+'.csv';a.click();
 };
+
+// rc.1.26 · Vista previa de preguntas (solo administración OSC).
+const vis=v=>esc(v).replace(/ /g,'<span class="s">·</span>');
+function tramaHtml(t){const r=t.raw,ms=t.mtiStart,bs=t.bitmapStart;return vis(r.slice(0,ms))+'<span class="m">'+vis(r.slice(ms,ms+4))+'</span>'+vis(r.slice(ms+4,bs))+'<span class="b">'+vis(r.slice(bs,bs+16))+'</span>'+vis(r.slice(bs+16));}
+function answerHtml(q,ex,d){
+  const t=ex.tramas.find(x=>x.id===q.tramaId)||ex.tramas[0], a=q.answer, o=ex.de3Options||{};
+  switch(q.type){
+    case 'mti':return `Carácter N° <b>${a.index+1}</b> de la trama · el MTI es <code>${esc(t.raw.slice(t.mtiStart,a.index+1))}</code>`;
+    case 'nibbles':{const hx=parseInt(a.bits,2).toString(16).toUpperCase().padStart(2,'0');return `Par <code>${hx}</code> → bits <code>${a.bits}</code> → campos activos: <b>${a.fields.join(', ')||'ninguno'}</b> <span class="sub">(50% bits + 50% campos)</span>`;}
+    case 'extract':return q.varLen?`Prefijo <code>${esc(a.prefix)}</code> · valor <code>${vis(a.value)}</code> <span class="sub">(50% prefijo + 50% valor)</span>`:`Valor <code>${vis(a.value)}</code>`;
+    case 'de3':
+      if(a.code)return `Código <code>${esc(a.code)}</code> · ${esc((d.amexCodes||{})[a.code]||'')}`;
+      return `<code>${a.tx}</code> ${esc(o.tx?.[a.tx]||'')} · desde <code>${a.from}</code> ${esc(o.acct?.[a.from]||'')} · hacia <code>${a.to}</code> ${esc(o.acct?.[a.to]||'')} <span class="sub">(1/3 por cada par)</span>`;
+    default:return '';
+  }
+}
+async function preview(){
+  const out=$('pvOut'); out.innerHTML='<p class="muted">Generando…</p>';
+  const r=await fetch(`/api/assessments/admin/preview?stage=${$('pvStage').value}&network=${$('pvNet').value}`);
+  if(!r.ok){out.innerHTML='<p class="muted">No se pudo generar el ejemplo.</p>';return;}
+  const d=await r.json(), ex=d.exam, c=d.config;
+  const dec=ex.questions.filter(q=>q.kind==='decode').length, int=ex.questions.length-dec;
+  out.innerHTML=`<div class="pv-meta"><b>${esc(d.label)}</b> · ${ex.questions.length} preguntas (${dec} de decodificar, ${int} de interpretar) · ${c.minutes?c.minutes+' minutos':'sin límite de tiempo'} · ${c.pass?'aprueba con '+c.pass+'/100':'puntaje de 0 a 100'} · ${c.maxAttempts} intento${c.maxAttempts>1?'s':''}</div>`
+    +ex.tramas.map(t=>`<div><b>Trama ${esc(t.label)}</b> <span class="sub">MTI ${esc(t.mti)} · <span style="color:#ffe08a">MTI</span> / <span style="color:#9fd8ff">bitmap primario</span> resaltados</span><div class="pv-trama">${tramaHtml(t)}</div></div>`).join('')
+    +ex.questions.map((q,i)=>`<div class="pv-q"><span class="tag ${q.kind==='decode'?'dec':'int'}">${q.kind==='decode'?'DECODIFICAR':'INTERPRETAR'}</span><b>Pregunta ${i+1}</b> <span class="sub">· trama ${esc(q.tramaId)}</span><div style="margin-top:4px">${esc(q.prompt)}</div><div class="pv-ans">✔ ${answerHtml(q,ex,d)}</div></div>`).join('')
+    +`<p class="sub">En el examen real el alumno responde sobre la trama (clic en el carácter, conversión de bits, prefijo y valor, selección de significados); las respuestas nunca viajan a su navegador.</p>`;
+  $('pvGo').textContent='↻ Otro ejemplo';
+}
+$('pvGo').onclick=preview;$('pvStage').onchange=$('pvNet').onchange=()=>{$('pvGo').textContent='👁 Ver ejemplo';};
 $('groupSel').onchange=load;$('search').oninput=()=>DATA&&render();$('reload').onclick=load;
 load();
 </script></body></html>

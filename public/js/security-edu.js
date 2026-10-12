@@ -90,6 +90,73 @@
         ["Emisor", "Responde 00 si el PIN es correcto, 55 / 117 si no."],
       ]),
     },
+    // rc.1.26 · Red LINK (BASE24 Host to Host). Fuentes: C-X-1-2-3 (formato de mensajes), C-X-4 (registros 0200/0210/0220),
+    // C-X-6 (códigos de resultado) y Anexo Técnico I Cobro con Transferencias A-8406.
+    link_pin: {
+      title: "PIN en la Red LINK · campo 52",
+      simple: () => `
+        <p><b>El PIN nunca viaja a la vista.</b> El teclado del cajero lo cifra apenas lo tipeás, y LINK lo envía al banco emisor en el <b>campo 52</b> del 0200, siempre cifrado.</p>
+        <p>Entre LINK y el banco, el PIN viaja cifrado con la <b>clave de comunicación</b> que comparten. El banco emisor lo descifra en su equipo de seguridad (HSM), lo compara con el PIN de la tarjeta y responde en el 0210: <b>00</b> si es correcto o <b>55</b> si es incorrecto.</p>
+        <div class="osc-sec-note">En el laboratorio, el PIN de prueba de todas las tarjetas es <b>1234</b>. El Cambio de PIN se puede practicar, pero no modifica el PIN de prueba.</div>`,
+      technical: () => `
+        <h4>Campos de LINK relacionados con el PIN</h4>
+        ${table(["Campo", "Nombre / atributo", "Qué dice el manual"], [
+          [mono("52"), "pin · X(16)", "Número de PIN, en forma encriptada (C-X-1-2-3). Los anexos lo describen como el PIN del tarjetahabiente <i>encriptado por la clave de comunicación</i>."],
+          [mono("63"), "pri-rsrvd4-prvt · PIN-OFFSET", "Campo de PIN offset (C-X-1-2-3)."],
+          [mono("54"), "add-amts · Cambio de PIN (32)", "En el cambio de PIN encriptado lleva el <b>nuevo PIN offset</b> X(16) + blancos. El PIN nuevo nunca viaja en claro."],
+          [mono("42"), "crd-accpt-id-cde", "En dispositivos que no son cajeros se informa <b>CIT</b>: el host valida la clave telefónica en lugar del PIN de cajero."],
+        ])}
+        <p>El campo 53 (sec-cntrl-info) figura en la tabla de bits de BASE24, pero no está entre los campos que LINK describe para su implementación: a diferencia de Visa y Mastercard, el mensaje LINK no informa cómo se cifró el bloque.</p>
+        <h4>Casos especiales</h4>
+        <ul>
+          <li><b>Cobro con Transferencias (A-8406):</b> el campo 52 viaja con 16 «F» (no hay PIN del tarjetahabiente).</li>
+          <li><b>DEBIN:</b> en el simulador no se valida PIN (la autorización la da el comprador al aceptar el DEBIN).</li>
+        </ul>
+        <h4>Códigos de resultado vinculados al PIN (C-X-6)</h4>
+        ${table(["Código", "Descripción"], [
+          [mono("55"), "El PIN ingresado es incorrecto · PIN para compras en comercio no existe"],
+          [mono("38"), "Cantidad de intentos fallidos de ingreso de PIN excedida · captura de la tarjeta"],
+          [mono("75"), "Excede la cantidad de ingresos fallidos de PIN para compras"],
+          [mono("85"), "El usuario debe cambiar el PIN"],
+        ])}
+        <h4>Cómo lo arma el simulador</h4>
+        <p>El manual de LINK define el campo 52 como PIN encriptado X(16) pero no fija el formato del bloque. El laboratorio usa <b>ISO 9564 formato 0</b> (PIN XOR PAN) cifrado con 3DES y una clave de práctica, y el HSM del emisor simulado lo descifra y verifica.</p>
+        <div class="osc-sec-note">Fuentes: LINK C-X-1-2-3 Tipo y formato de mensajes · C-X-4 registros 0200 / 0210 / 0220 · C-X-6 Códigos de resultado · Anexo Técnico I Cobro con Transferencias A-8406.</div>`,
+      flow: () => flow([
+        ["Teclado del cajero", "Cifra el PIN apenas se ingresa."],
+        ["BASE24 (LINK)", "Arma el 0200 y envía el PIN cifrado en el campo 52 con la clave de comunicación del host."],
+        ["Host del emisor · HSM", "Descifra el campo 52 y verifica el PIN con su método (LINK define el campo 63 PIN-OFFSET)."],
+        ["Host del emisor", "Responde el 0210: 00 aprobada o 55 PIN incorrecto (38 si se superaron los intentos)."],
+        ["Cajero", "Continúa la operación o muestra el rechazo."],
+      ]),
+    },
+    link_chip: {
+      title: "Chip y criptograma en la Red LINK",
+      simple: () => `
+        <p>En Visa y Mastercard, el criptograma del chip (<b>ARQC</b>) viaja al banco dentro del <b>campo 55</b>, y el banco contesta con su propia firma (<b>ARPC</b>).</p>
+        <p>En la mensajería Host to Host de LINK es distinto: <b>el campo 55 no lleva datos del chip</b>. Lo usa para los datos de transferencias interbancarias, los pagos (PAS) o las cuentas relacionadas a la tarjeta. El banco recibe la tarjeta por el <b>track 2 (campo 35)</b> y el PIN cifrado (<b>campo 52</b>).</p>
+        <div class="osc-sec-note">Por eso, en una prueba LINK no hay ARQC ni ARPC para mostrar: la seguridad que ves en el mensaje es la del PIN. Mirá «PIN Block y HSM».</div>`,
+      technical: () => `
+        <h4>El campo 55 según la red</h4>
+        ${table(["Red", "Campo 55", "Fuente"], [
+          ["Visa / Mastercard", "ICC data: tags EMV (9F26 ARQC, 9F27, 9F10, 9F36…). La respuesta trae el tag 91 (ARPC).", "Full Service · CIS"],
+          ["Red LINK", "pri-rsrvd1-iso LLLVAR: datos para transacciones interbancarias (09 / 29 / 39, longitud 120), datos del pago PAS o cuentas relacionadas a la tarjeta. En DEBIN, los datos del débito (anexo II).", "C-X-1-2-3 · C-X-4 · Anexos"],
+        ])}
+        <h4>Qué identifica a la tarjeta en un mensaje LINK</h4>
+        ${table(["Campo", "Contenido"], [
+          [mono("35"), "Track 2 de la tarjeta, alineado a izquierda y relleno con blancos"],
+          [mono("52"), "PIN encriptado X(16)"],
+          [mono("61"), "Institución emisora de la tarjeta, red y tipos de cuenta"],
+          [mono("102 / 103"), "Cuentas desde / hacia"],
+        ])}
+        <div class="osc-sec-note">Los manuales Host to Host de LINK cargados en la plataforma (C-X y anexos de Transferencias y DEBIN) no definen tags EMV. Si LINK los incorpora en otra especificación, se suma a este simulador.</div>`,
+      flow: () => flow([
+        ["Cajero", "Lee la tarjeta y captura el PIN."],
+        ["BASE24 (LINK)", "Envía el 0200 con track 2 (35), PIN cifrado (52) y cuentas (102 / 103)."],
+        ["Host del emisor", "Valida PIN, cuenta y saldo. No recibe ARQC en este mensaje."],
+        ["Host del emisor", "Responde el 0210 con el código de resultado (campo 39) y los saldos (campo 44)."],
+      ]),
+    },
     cuotas: {
       title: "Compras en cuotas",
       simple: () => `
@@ -134,12 +201,13 @@
       if (t.arpc) rows.push(["ARPC (tag 91)", mono(`${t.arpc.arpc} + ARC ${t.arpc.arc}`)]);
       return table(["Paso", "Valor"], rows);
     }
-    if (kind === "pin") {
+    if (kind === "link_chip") return `<p class="osc-sec-muted">Esta prueba es de la Red LINK: el mensaje no lleva criptograma del chip. El campo 55 de tu operación, si está presente, contiene datos de transferencia o DEBIN.</p>`;
+    if (kind === "pin" || kind === "link_pin") {
       const rows = [
         ["PIN ingresado", mono("•".repeat(t.pinLength || 4)) + " (no se muestra)"],
         ["Bloque PIN", mono(t.pinFieldMasked)],
         ["Bloque PAN", mono(t.panField)],
-        ["PIN Block cifrado (DE 52)", mono(t.encrypted)],
+        [kind === "link_pin" ? "PIN cifrado (campo 52)" : "PIN Block cifrado (DE 52)", mono(t.encrypted)],
         ["Clave de práctica (ZPK)", mono(t.zpk)],
       ];
       if (t.hsm) {
@@ -204,7 +272,13 @@
     document.addEventListener("keydown", (e) => { if (e.key === "Escape") o.classList.remove("show"); });
   }
 
+  // rc.1.26 · Con la tarjeta LINK seleccionada, las ayudas de PIN y chip muestran la versión de los manuales LINK.
+  function activeNetwork() {
+    const b = document.querySelector("[data-atm-card].active, [data-test-card].active");
+    return String(b?.dataset.atmCard || b?.dataset.testCard || "").startsWith("link") ? "link" : "";
+  }
   function open(kind, trace, startTab) {
+    if (activeNetwork() === "link" && (kind === "pin" || kind === "arqc")) kind = kind === "pin" ? "link_pin" : "link_chip";
     const c = CONTENT[kind];
     if (!c) return;
     ensure();

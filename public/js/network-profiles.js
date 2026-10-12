@@ -5,7 +5,7 @@
     mastercard: {id:'mastercard', name:'Mastercard', short:'MC', color:'#ff5f00', manual:'Mastercard authorization profile / perfil educativo', status:'Activo'},
     amex: {id:'amex', name:'American Express', short:'AMEX', color:'#2f78c4', manual:'American Express GNS Network Specifications - Authorization · Oct 2023', status:'Core Online activo'},
     domestic: {id:'domestic', name:'Banco Virtual OSC', short:'DOM', color:'#18b981', manual:'Ruteo doméstico educativo · BIN 990001', status:'Banco Virtual activo'},
-    link: {id:'link', name:'Red LINK', short:'LINK', color:'#e9eef5', manual:'LINK · Conexión Host to Host ISO 8583 (BASE24) · C-X-1 a C-X-8 + anexos Transferencias y DEBIN', status:'Activo'}
+    link: {id:'link', name:'Red LINK', short:'LINK', color:'#9fd18b', manual:'LINK · Conexión Host to Host ISO 8583 (BASE24) · C-X-1 a C-X-8 + anexos Transferencias y DEBIN', status:'Activo'}
   };
   function detect(pan){
     const n=clean(pan);
@@ -29,7 +29,7 @@
   function logo(profile,size=''){
     const p=profile||profiles.visa;
     if(!profiles[p.id]) return `<strong>${p.name}</strong>`;
-    if(p.id==='link') return `<img class="network-brand-logo link ${size}" src="assets/brand-link.png" alt="Red LINK" style="height:22px;width:22px;border-radius:50%;box-shadow:0 0 0 1px #fff">`;
+    if(p.id==='link') return `<img class="network-brand-logo link ${size}" src="assets/brand-link.png?v=4.0.0-rc1.26" alt="Red LINK" style="height:22px;width:22px;border-radius:50%;box-shadow:0 0 0 1px #fff">`;
     if(p.id==='domestic') return `<strong class="network-brand-logo domestic ${size}" style="color:#55e6ae;font-size:11px;letter-spacing:.06em">DOMÉSTICA</strong>`;
     const file=p.id==='visa'?'brand-visa-blue.png':p.id==='mastercard'?'brand-mastercard.png':'brand-amex-white.png';
     return `<img class="network-brand-logo ${p.id} ${size}" src="assets/${file}" alt="${p.name}">`;

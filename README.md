@@ -1,4 +1,8 @@
-# OSC Payment Academy — v4.0.0-rc.1.25
+# OSC Payment Academy — v4.0.0-rc.1.26
+
+Ajustes LINK (entrega de billetes con reversa parcial/total, trama al Parser, logo nuevo), PIN fijo 1234 en todas las redes, Tutor y ayudas de PIN/chip según la red, sin parpadeo de redes y vista previa de evaluaciones. Ver RELEASE_NOTES_v4.0.0-rc.1.26.md.
+
+## v4.0.0-rc.1.25
 
 Red LINK ampliada: operaciones de ATM, compras Maestro en POS y reversas 0420/0430. Ver RELEASE_NOTES_v4.0.0-rc.1.25.md.
 

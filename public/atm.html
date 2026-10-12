@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="es">
-  <head>
+  <head><style id="osc-net-gate">html.osc-net-pending [data-test-card],html.osc-net-pending [data-atm-card],html.osc-net-pending .wallet-card,html.osc-net-pending .network-card,html.osc-net-pending [data-payment-method="qr"],html.osc-net-pending #ecomNetwork,html.osc-net-pending #constructorNetworkSelect,html.osc-net-pending #parserNetworkSelect{visibility:hidden!important}</style><script id="osc-net-gate-js">document.documentElement.classList.add("osc-net-pending");setTimeout(function(){document.documentElement.classList.remove("osc-net-pending")},6000);</script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>OSC Payment Academy · ATM Virtual</title>
@@ -2490,6 +2490,13 @@
       .atm-card.amex-card .mc-card-circles {
         display: none;
       }
+      /* rc.1.26 · Tarjeta física para LINK y Doméstica (antes quedaba la cara VISA) */
+      .atm-card.link-card { background: linear-gradient(140deg, #8cc777, #9fd18b 55%, #7fb96b) !important; }
+      .atm-card.link-card::after { content: "link"; color: #4d4d4d; font: 800 17px Arial; letter-spacing: -0.3px; text-shadow: none; }
+      .atm-card.link-card .card-pan, .atm-card.link-card .card-demo, .atm-card.link-card .card-contactless { color: #2f3a2b; text-shadow: none; }
+      .atm-card.domestic-card { background: linear-gradient(140deg, #2b2f3a, #4a5568 60%, #1f2430) !important; }
+      .atm-card.domestic-card::after { content: "OSC"; font: 900 15px Arial; letter-spacing: 0.5px; }
+      .atm-card.link-card .mc-card-circles, .atm-card.domestic-card .mc-card-circles { display: none; }
       .brand-logo.amex-mark {
         color: #70b7ff;
         font-size: 0.72rem;
@@ -3303,11 +3310,11 @@
       </aside>
     </div>
 
-    <script src="js/network-profiles.js?v=4.0.0-rc1.24"></script>
-    <script src="js/link-hth.js?v=4.0.0-rc1.25"></script>
+    <script src="js/network-profiles.js?v=4.0.0-rc1.26"></script>
+    <script src="js/link-hth.js?v=4.0.0-rc1.26"></script>
     <script src="js/emv-crypto.js?v=4.0.0-rc1.22"></script>
     <script src="js/iso-network-spec.js?v=4.0.0-rc1.22"></script>
-    <script src="js/security-edu.js?v=4.0.0-rc1.22"></script>
+    <script src="js/security-edu.js?v=4.0.0-rc1.26"></script>
     <script src="js/switch-store.js?v=4.0.0-rc1.6"></script>
     <script>
       (() => {
@@ -3592,6 +3599,8 @@
               c.brand === "mastercard",
             );
             physicalCard.classList.toggle("amex-card", c.brand === "amex");
+            physicalCard.classList.toggle("link-card", c.brand === "link");
+            physicalCard.classList.toggle("domestic-card", c.brand === "domestic");
           }
           addTechEvent(`${c.name} seleccionada · PAN •••• ${c.last4}`, "done");
           refreshAtmLinkUi();
@@ -3619,6 +3628,8 @@
               c.brand === "mastercard",
             );
             physicalCard.classList.toggle("amex-card", c.brand === "amex");
+            physicalCard.classList.toggle("link-card", c.brand === "link");
+            physicalCard.classList.toggle("domestic-card", c.brand === "domestic");
           }
           addTechEvent?.(
             `${c.name} seleccionada · PAN •••• ${c.last4}`,
@@ -4836,6 +4847,13 @@
           cashOutcomeHandled = true;
           clearInterval(cashTimer);
           cashTimer = null;
+          if (state.linkCash) {
+            $("cashActions").classList.remove("show");
+            $("dispenseCountdown").classList.remove("show");
+            setTimeout(() => { $("banknotes").classList.remove("dispense"); $("cashDoor").classList.remove("open"); }, 1200);
+            linkCashOutcome("partial");
+            return;
+          }
           const approved = Number(state.amount || 0);
           const dispensed = Math.floor((approved * 0.8) / 100) * 100;
           const difference = approved - dispensed;
@@ -4991,7 +5009,9 @@
             state.step = "pin";
             setFlow(2);
             addTechEvent(
-              "PIN solicitado · al confirmar se generarán DE52 y DE53",
+              state.brand === "link"
+                ? "PIN solicitado · tarjeta LINK: 4 dígitos, PIN de prueba 1234 · viaja cifrado en DE52"
+                : "PIN solicitado · al confirmar se generarán DE52 y DE53",
             );
             setScreen(
               "INGRESE PIN",
@@ -5043,7 +5063,7 @@
 
         async function changeDomesticPin(){
           if(state.brand!=="domestic" || !window.OSCATMSelectedCard?.cardId){setScreen("CAMBIO DE PIN","<strong>Operación didáctica</strong><small>Seleccione OSC Débito Doméstica para persistir el PIN.</small>");state.step="done";return;}
-          try{const r=await fetch("/api/bank/atm/pin",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({cardId:window.OSCATMSelectedCard.cardId,newPin:state.newPin})});const j=await r.json();if(!r.ok)throw new Error(j.message||"Error");setScreen("PIN ACTUALIZADO","<strong>Operación exitosa</strong><small>El nuevo PIN quedó registrado para la práctica.</small>");addTechEvent("Cambio de PIN doméstico confirmado","done");state.step="done";}catch(e){setScreen("CAMBIO DE PIN","<strong>Error</strong><small>No fue posible actualizar el PIN.</small>");state.step="done";}
+          try{const r=await fetch("/api/bank/atm/pin",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({cardId:window.OSCATMSelectedCard.cardId,newPin:state.newPin})});const j=await r.json();if(!r.ok)throw new Error(j.message||"Error");setScreen("PIN ACTUALIZADO","<strong>Operación exitosa</strong><small>Cambio de PIN cursado. En el simulador el PIN de prueba sigue siendo 1234.</small>");addTechEvent("Cambio de PIN doméstico confirmado","done");state.step="done";}catch(e){setScreen("CAMBIO DE PIN","<strong>Error</strong><small>No fue posible actualizar el PIN.</small>");state.step="done";}
         }
 
         async function showDomesticDestinationAccounts(){
@@ -5138,7 +5158,7 @@
           if(state.step === "pinNew"){state.newPin=(state.newPin+value.slice(0,1)).slice(0,4); const e=$("newPinDisplay");if(e)e.textContent="•".repeat(state.newPin.length);return;}
           if(state.step === "pinConfirm"){state.pinConfirm=(state.pinConfirm+value.slice(0,1)).slice(0,4); const e=$("pinConfirmDisplay");if(e)e.textContent="•".repeat(state.pinConfirm.length);return;}
           if (state.step === "pin") {
-            if (state.pin.length < 6) state.pin += value.slice(0, 1);
+            if (state.pin.length < (state.brand === "link" ? 4 : 6)) state.pin += value.slice(0, 1);
             const el = $("pinDisplay");
             if (el) el.textContent = "•".repeat(state.pin.length);
           } else if (state.step === "amount") {
@@ -5166,7 +5186,7 @@
             $("destDisplay").textContent = state.destination || "—";
         }
 
-        function addMessage(mti, operation, responseCode, fields) {
+        function addMessage(mti, operation, responseCode, fields, extra) {
           const message = {
             id: `MSG-${Date.now()}-${mti}`,
             mti,
@@ -5197,6 +5217,8 @@
                 ? "Aprobada"
                 : "Rechazada",
           };
+          // rc.1.26 · props extra (LINK: raw, bitmap, trama anotada, estado) antes de guardar el historial.
+          if (extra) Object.assign(message, extra);
           state.messages.unshift(message);
           $("historyBody").prepend(historyRow(message));
           saveAtmHistory();
@@ -5241,7 +5263,8 @@
         function finishCash(reason) {
           if (cashOutcomeHandled) return;
           cashOutcomeHandled = true;
-          if (reason === "taken") deductCash(Number(state.amount || 0));
+          const linkCash = state.linkCash;
+          if (reason === "taken" && !linkCash) deductCash(Number(state.amount || 0));
           clearInterval(cashTimer);
           cashTimer = null;
           const notes = $("banknotes"),
@@ -5272,6 +5295,7 @@
                 ? "<strong>Retire su tarjeta</strong><small>Gracias por utilizar OSC BANK</small>"
                 : "<strong>Los billetes volvieron al ATM</strong><small>Generando reversa total 0420</small>",
             );
+            if (linkCash) { linkCashOutcome(reason === "taken" ? "taken" : "retract"); return; }
             if (reason === "retracted") {
               addTechEvent(
                 "Billetes retractados · generando reversa total 0420",
@@ -5996,6 +6020,54 @@
           if (value.startsWith("linkdep:")) { state.linkDepType = value.slice(8); addTechEvent(`Depósito en ${state.linkDepType === "C" ? "cheque" : "efectivo"} · TIPO-DEP en el campo 54`, "done"); linkAskAmount(); return true; }
           return false;
         }
+        // rc.1.26 · PIN de prueba fijo para todas las redes. El Cambio de PIN se cursa (0200/0210) pero no lo modifica.
+        function linkPin() { return "1234"; }
+        // rc.1.26 · Muestra en la tabla y en eventos técnicos los mensajes LINK, uno por uno.
+        function showLinkMessages(out, list, done) {
+          const T = OSCLinkHth, kind = out.kind;
+          let i = 0;
+          const step = () => {
+            const m = list[i++];
+            if (!m) return done && done();
+            if (m.direction === "ENTRANTE") setFlow(5);
+            if (m.mti === "0420") setFlow(7);
+            const rows = m.fields.map((r) => [String(r.de), r.name, T.displayValue(r.value), r.attr, r.ref, r.value.length]);
+            const extra = { bitmap: m.bitmap, raw: m.raw, linkAnnotated: T.annotated(m), linkLabel: m.label, brand: "LINK", amount: String(out.amountCents ?? out.ctx.amountCents) };
+            if (m.mti === "0420" || m.mti === "0430") extra.status = "Reversada";
+            addMessage(m.mti, `LINK ${T.TX[kind].short}`, m.responseCode || " ", rows, extra);
+            addTechEvent(`${m.label}${m.responseCode ? " · DE39=" + m.responseCode : ""}`, m.mti.startsWith("04") ? "warn" : "done");
+            setTimeout(step, 650);
+          };
+          step();
+        }
+        // rc.1.26 · Resultado del dispensador en extracciones LINK.
+        function linkCashOutcome(ev) {
+          const T = OSCLinkHth, out = state.linkOut;
+          state.linkCash = false;
+          if (!out) return;
+          const amt = (c) => linkMoney(c, out.currency || (out.kind === "withdrawal_usd" ? "840" : "032"));
+          if (ev === "taken") {
+            $("deviceStatus").textContent = "Efectivo retirado · dispensador cerrado";
+            setScreen("OPERACIÓN FINALIZADA", "<strong>Retire su tarjeta</strong><small>Gracias por utilizar la Red LINK</small>");
+            return;
+          }
+          const rev = T.reverseLater(out, ev);
+          if (!rev.length) return;
+          $("hostStatus").textContent = `00 - ${out.resultText}`;
+          $("reversalStatus").textContent = ev === "partial" ? "0420 (32) · reversa parcial" : "0420 (17) · reversa total";
+          if (ev === "partial") {
+            $("deviceStatus").textContent = `Dispensación parcial · ${amt(out.reversal.dispensedCents)} entregado`;
+            setScreen("DISPENSACIÓN PARCIAL", `<strong>${amt(out.reversal.dispensedCents)} entregados</strong><small>No dispensado: ${amt(out.reversal.returnedCents)} · Generando 0420 (32)</small>`);
+          } else {
+            setScreen("EFECTIVO RETRACTADO", `<strong>Los billetes volvieron al ATM</strong><small>Generando reversa total 0420 (17)</small>`);
+          }
+          showLinkMessages(out, rev, () => {
+            addTechEvent(out.summary, "warn");
+            setScreen(ev === "partial" ? "ENTREGA PARCIAL" : "OPERACIÓN REVERSADA", ev === "partial"
+              ? `<strong>${amt(out.reversal.dispensedCents)}</strong><small>Reversa parcial confirmada con 0430 · vuelven ${amt(out.reversal.returnedCents)} a la cuenta</small>`
+              : `<strong>${amt(out.reversal.returnedCents)}</strong><small>Reversa total confirmada con 0430 · el importe vuelve a la cuenta · Retire su tarjeta</small>`);
+          });
+        }
         function linkAccept() {
           const T = window.OSCLinkHth, k = state.linkKind, p = T.readPanel();
           if (state.step === "linkPinNew") { if ((state.linkNewPin || "").length !== 4) return true; state.step = "linkPinConfirm"; setScreen("CONFIRMAR PIN", '<strong id="linkPinDisplay">____</strong><small>Repita el nuevo PIN y presione ACEPTAR</small>'); return true; }
@@ -6043,29 +6115,22 @@
           const cur = linkCur();
           state.step = "processing"; state.stan = random6(); setFlow(4);
           const noAmount = ["balance", "movements", "fx_rate", "pin_change"].includes(kind);
+          // rc.1.26 · El HSM del emisor simulado descifra el campo 52 y verifica el PIN (queda en «PIN Block y HSM · Tu transacción»).
+          const linkBlock = pinBlock();
+          const linkHsm = kind === "debin" ? null : hsmVerifyAtmPin(linkBlock);
           const out = T.build(kind, {
             terminal: "ATM", amountCents: noAmount ? 0 : Number(state.amount || 0), accountType: p.accountType, scenario: p.scenario, after: p.after,
             toAccount: state.linkTo, depositType: state.linkDepType,
-            pinBlock: pinBlock(), pinOk: kind === "debin" ? undefined : state.pin === "1234", stan: state.stan,
+            pinBlock: linkBlock, pinOk: kind === "debin" ? undefined : (linkHsm ? linkHsm.match : state.pin === linkPin()), stan: state.stan,
             destination: p.destination, debin: p.debin, termId: "S1AXOSC0001",
           });
+          // rc.1.26 · Verificación de PIN: el host compara el PIN del bloque DE52 contra el PIN de prueba 1234.
+          const linkPinOk = linkHsm ? linkHsm.match : state.pin === linkPin();
+          if (kind !== "debin") addTechEvent(linkPinOk ? "HSM del emisor · campo 52 descifrado · PIN verificado contra el PIN de prueba 1234" : "HSM del emisor · campo 52 descifrado · el PIN no coincide con el PIN de prueba 1234 → campo 39 = 55", linkPinOk ? "done" : "warn");
+          if (kind === "pin_change" && out.code === "00") addTechEvent("Simulador · el Cambio de PIN se cursó completo, pero el PIN de prueba sigue siendo 1234 para no bloquear las próximas prácticas", "done");
           setScreen("PROCESANDO", `<strong>LINK · 0200</strong><small>${T.TX[kind].short} · Aguarde</small>`);
           addTechEvent(`LINK · ${T.TX[kind].label} · DE3=${out.messages[0].fields.find((r) => r.de === 3)?.value}`, "done");
-          let i = 0;
-          const next = () => {
-            const m = out.messages[i++];
-            if (!m) return finish();
-            if (m.direction === "ENTRANTE") setFlow(5);
-            if (m.mti === "0420") setFlow(7);
-            const rows = m.fields.map((r) => [String(r.de), r.name, T.displayValue(r.value), r.attr, r.ref, r.value.length]);
-            const msg = addMessage(m.mti, `LINK ${T.TX[kind].short}`, m.responseCode || " ", rows);
-            msg.bitmap = m.bitmap; msg.raw = m.raw; msg.linkAnnotated = T.annotated(m); msg.linkLabel = m.label; msg.brand = "LINK";
-            msg.amount = String(out.amountCents ?? out.ctx.amountCents);
-            if (m.mti === "0420" || m.mti === "0430") msg.status = "Reversada";
-            renderMessage(msg);
-            addTechEvent(`${m.label}${m.responseCode ? " · DE39=" + m.responseCode : ""}`, "done");
-            setTimeout(next, 650);
-          };
+          const next = () => showLinkMessages(out, out.messages, finish);
           const finish = () => {
             const ok = out.code === "00";
             $("hostStatus").textContent = `${out.code} - ${out.resultText}`;
@@ -6092,11 +6157,12 @@
               card_payment: ["PAGO REGISTRADO", `<strong>${amt}</strong><small>Pago de resumen con débito en ${T.accountLabel(out.ctx.accountType)}</small>`],
               card_payment_cash: ["PAGO REGISTRADO", `<strong>${amt}</strong><small>Pago de resumen en efectivo (500030)</small>`],
               fx_rate: ["TIPO DE CAMBIO", out.fx ? `<strong>U$S 1 = $ ${out.fx.sell.toLocaleString("es-AR")}</strong><small>Comprador $ ${out.fx.buy.toLocaleString("es-AR")} · Vendedor $ ${out.fx.sell.toLocaleString("es-AR")} · Campo 127 del 0210</small>` : "<strong>—</strong>"],
-              pin_change: ["PIN ACTUALIZADO", "<strong>Operación exitosa</strong><small>El nuevo PIN offset viajó en el campo 54 (nunca el PIN en claro)</small>"],
+              pin_change: ["PIN ACTUALIZADO", "<strong>Operación exitosa</strong><small>El nuevo PIN offset viajó en el campo 54 (nunca el PIN en claro). En el simulador el PIN de prueba sigue siendo 1234.</small>"],
             };
             const [title, html] = screens[kind] || ["OPERACIÓN APROBADA", `<strong>${amt}</strong><small>${out.summary || ""}</small>`];
-            if (["withdrawal", "withdrawal_usd", "cash_advance"].includes(kind)) $("deviceStatus").textContent = "Efectivo entregado";
             setScreen(title, html);
+            // rc.1.26 · Extracciones aprobadas: el dispensador presenta los billetes (retirar / parcial 80% / no retirar → retracto).
+            if (T.CASH_KINDS.includes(kind)) { state.linkOut = out; state.linkCash = true; setFlow(6); $("deviceStatus").textContent = "Billetes presentados · esperando retiro"; dispenseCash(); }
           };
           setTimeout(next, 700);
         }
@@ -6127,6 +6193,7 @@
         }
         function raw(message) {
           if (message.raw) return message.raw;
+          if (message.brand === "LINK" && window.OSCLinkHth?.rawFromRows) return OSCLinkHth.rawFromRows(message);
           return (
             message.mti +
             message.bitmap +
@@ -6176,7 +6243,7 @@ ${raw(m)}`;
 
         function reset() {
           state.step = "card";
-          state.linkKind = null;
+          state.linkKind = null; state.linkCash = false; state.linkOut = null;
           state.pin = "";
           state.emvUn = null; state.emvAtc = null; window.OSCAtmPinTrace = null;
           state.amount = "";
@@ -6458,12 +6525,12 @@ ${raw(m)}`;
     </div>
     <script src="js/help-catalog.js"></script>
     <script src="js/module-guide.js"></script>
-    <script src="js/network-access.js?v=4.0.0-rc1.24"></script><script src="js/navigation.js?v=4.0.0-rc1.24"></script>
+    <script src="js/network-access.js?v=4.0.0-rc1.26"></script><script src="js/navigation.js?v=4.0.0-rc1.24"></script>
   
 <style id="osc-atm-v51">
 .atm-history-wide{min-height:360px}.atm-history-wide .history{max-height:330px;overflow:auto}
 .osc-know-btn{width:100%;margin:12px 0 24px;padding:14px;border:1px solid #2f83ff;border-radius:10px;background:#0b2238;color:#fff;font-weight:800;font-size:16px;cursor:pointer}
 .osc-know-modal{position:fixed;inset:0;background:#000a;z-index:100000;display:none;align-items:center;justify-content:center}.osc-know-modal.open{display:flex}.osc-know-card{width:min(820px,92vw);max-height:82vh;overflow:auto;background:#091a2a;border:1px solid #2f83ff;border-radius:16px;padding:24px;color:#fff}.osc-know-card h2{margin-top:0}.osc-know-card li{margin:10px 0;color:#c9dced}.osc-know-close{float:right;background:#17324b;color:#fff;border:1px solid #456;padding:8px 12px;border-radius:8px}
 </style>
-<script src="js/osc-learning.js?v=4.0.0-rc1.19" data-module="atm"></script><script src="js/tutor-osc.js?v=4.0.0-rc1.19" data-module="atm"></script></body>
+<script src="js/osc-learning.js?v=4.0.0-rc1.19" data-module="atm"></script><script src="js/tutor-osc.js?v=4.0.0-rc1.26" data-module="atm"></script></body>
 </html>
