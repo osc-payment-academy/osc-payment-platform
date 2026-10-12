@@ -1,4 +1,4 @@
-/* OSC Academy v4.0.0-rc.1.22 - navegación por licencia.
+/* OSC Academy v4.0.0-rc.1.24 - navegación por licencia y por redes habilitadas.
    - Cada opción del menú depende de un módulo habilitable (licencia de la consultora o edición del curso).
    - Edición de curso: lo no habilitado se muestra con candado (Día N). Consultora: lo no incluido no se muestra.
    - Análisis Diario y Monitoreo en Vivo: licencias separadas.
@@ -10,6 +10,7 @@
     { section: "Aprendizaje" },
     { href: "curso_interactivo.html", icon: "🎓", label: "Curso Interactivo", key: "course_iso8583", day: 1 },
     { href: "ebook.html", icon: "📖", label: "eBook ISO 8583", key: "ebook", version: "4.0.0-rc1.12" },
+    { href: "evaluacion.html", icon: "📝", label: "Evaluaciones", assess: true },
     { section: "Banco simulado" },
     { href: "clientes.html", icon: "👤", label: "CLIENTES", key: "banco_simulado" },
     { href: "pasivas.html", icon: "🏦", label: "PASIVAS", key: "banco_simulado" },
@@ -19,11 +20,12 @@
     { href: "constructor.html", icon: "⌘", label: "Constructor ISO8583", key: "constructor", day: 1 },
     { href: "pos.html", icon: "▣", label: "POS Virtual", key: "pos", day: 1 },
     { href: "atm.html", icon: "🏧", label: "ATM Virtual", key: "atm", day: 2 },
-    { href: "wallet.html", icon: "📱", label: "Wallet / Tokenización", key: "wallet", day: 4 },
-    { href: "ecommerce.html", icon: "🛒", label: "E-Commerce / 3DS", key: "ecommerce", day: 3 },
+    { href: "wallet.html", icon: "📱", label: "Wallet / Tokenización", key: "wallet", day: 4, nets: ["visa", "mastercard", "amex"] },
+    { href: "ecommerce.html", icon: "🛒", label: "E-Commerce / 3DS", key: "ecommerce", day: 3, nets: ["visa", "mastercard", "amex"] },
     { href: "switch.html", icon: "🏦", label: "Switch del Adquirente", key: "switch_adquirente" },
-    { href: "compensacion.html", icon: "⇄", label: "Compensación", key: "switch_adquirente", visible: false },
-    { href: "compensacion_mastercard.html", icon: "⇄", label: "Compensación Mastercard", key: "switch_adquirente", visible: false },
+    { href: "compensacion.html", icon: "⇄", label: "Compensación Visa (BASE II)", key: "switch_adquirente", nets: ["visa"] },
+    { href: "compensacion_mastercard.html", icon: "⇄", label: "Compensación Mastercard (IPM)", key: "switch_adquirente", nets: ["mastercard"] },
+    { href: "mastercard_iso.html", icon: "◉", label: "Mastercard ISO", key: "switch_adquirente", nets: ["mastercard"] },
     { href: "switch_emisor.html", icon: "🌎", label: "Switch Emisor", key: "switch_emisor", day: 5 },
     { href: "parser.html", icon: "◉", label: "Parser ISO8583", key: "parser", day: 1 },
     { href: "parser_guiado.html", icon: "🧩", label: "Parser Guiado", key: "parser", day: 1 },
@@ -32,30 +34,33 @@
     { href: "monitoreo-vivo.html", icon: "🔴", label: "Monitoreo en Vivo de Autorizaciones", product: "liveMonitoring" },
     { section: "Administración", adminSection: true },
     { href: "uso-licencias.html", icon: "📈", label: "Uso de licencias", usage: true },
+    { href: "evaluaciones-informe.html", icon: "📊", label: "Informe de evaluaciones", usage: true },
     { href: "documentacion.html", icon: "📚", label: "Documentación Técnica", adminOnly: true },
     { href: "research.html", icon: "🧪", label: "Investigación", adminOnly: true },
     { section: "Cuenta" },
     { href: "account.html", icon: "🔐", label: "Mi cuenta" },
-    { href: "mastercard_iso.html", icon: "◉", label: "Mastercard ISO", visible: false },
     { href: "ondemand_lab.html", icon: "🧩", label: "Laboratorio de Nuevas Funcionalidades", visible: false },
     { href: "production_diagnostic.html", icon: "🔎", label: "Diagnóstico de Procesos Productivos", visible: false },
   ];
   const current = (location.pathname.split("/").pop() || "index.html").toLowerCase().replace(/^([^.]+)$/, "$1.html");
   let me = null;
   try {
-    const r = await fetch("/api/auth/me", { credentials: "same-origin" });
-    if (r.ok) me = await r.json();
+    // rc.1.24 · Se reutiliza la consulta de network-access.js si ya se hizo.
+    me = await (window.OSCMePromise || (window.OSCMePromise = fetch("/api/auth/me", { credentials: "same-origin" }).then((r) => (r.ok ? r.json() : null))));
   } catch (_) {}
   // Sin sesión (vista previa local): se muestra todo, como antes.
   const isAdmin = !me || me.user?.platform_role === "OSC_ADMIN";
   const access = me?.moduleAccess || { progressive: false, enabled: [], locked: [], hidden: [] };
   const ent = me?.entitlements || {};
   const enabled = new Set(access.enabled || []), locked = new Set(access.locked || []);
+  const nets = new Set(me?.networks?.allowed || ["visa", "mastercard", "amex", "link", "domestic"]);
   const stateOf = (item) => {
     if (item.section) return "section";
+    if (item.nets && !isAdmin && !item.nets.some((n) => nets.has(n))) return "hidden";
     if (item.visible === false) return "hidden";
     if (item.adminOnly) return isAdmin ? "on" : "hidden";
     if (item.usage) return isAdmin || ent.usagePanel ? "on" : "hidden";
+    if (item.assess) return isAdmin || ent.assessments ? "on" : "hidden";
     if (item.product) return isAdmin || ent[item.product] ? "on" : "hidden";
     if (!item.key || isAdmin) return "on";
     if (enabled.has(item.key)) return "on";
@@ -94,7 +99,7 @@
   if (!sidebar) return;
   const managed = new Set(modules.filter((m) => m.href).map((item) => item.href));
   const style = document.createElement("style");
-  style.textContent = `.osc-primary-navigation{display:grid!important;gap:4px!important;margin:14px 0 16px!important}.osc-primary-navigation .nav{display:block!important;position:static!important;margin:0!important;padding:10px 12px!important;text-decoration:none!important;color:#c7d2df!important}.osc-primary-navigation .nav:visited{color:#c7d2df!important}.osc-primary-navigation .nav:hover{color:#ffffff!important;background:rgba(255,255,255,.06)!important}.osc-primary-navigation .nav.active{color:#ffffff!important;background:rgba(47,131,255,.16)!important;border-radius:8px!important}.osc-primary-navigation .nav.locked{opacity:.52}.osc-primary-navigation .osc-nav-section{margin:12px 12px 2px;color:#6f8ba3;font-size:10px;font-weight:800;letter-spacing:.09em;text-transform:uppercase}.future-resources{display:none!important}aside a[href="mastercard_iso.html"],aside a[href="cuenta_cliente.html"],aside a[href="ondemand_lab.html"],aside a[href="production_diagnostic.html"]{display:none!important}`;
+  style.textContent = `.osc-primary-navigation{display:grid!important;gap:4px!important;margin:14px 0 16px!important}.osc-primary-navigation .nav{display:block!important;position:static!important;margin:0!important;padding:10px 12px!important;text-decoration:none!important;color:#c7d2df!important}.osc-primary-navigation .nav:visited{color:#c7d2df!important}.osc-primary-navigation .nav:hover{color:#ffffff!important;background:rgba(255,255,255,.06)!important}.osc-primary-navigation .nav.active{color:#ffffff!important;background:rgba(47,131,255,.16)!important;border-radius:8px!important}.osc-primary-navigation .nav.locked{opacity:.52}.osc-primary-navigation .osc-nav-section{margin:12px 12px 2px;color:#6f8ba3;font-size:10px;font-weight:800;letter-spacing:.09em;text-transform:uppercase}.future-resources{display:none!important}aside a[href="cuenta_cliente.html"],aside a[href="ondemand_lab.html"],aside a[href="production_diagnostic.html"]{display:none!important}`;
   document.head.appendChild(style);
   sidebar.querySelectorAll("a[href]").forEach((link) => {
     const href = (link.getAttribute("href") || "").split(/[?#]/)[0].split("/").pop();

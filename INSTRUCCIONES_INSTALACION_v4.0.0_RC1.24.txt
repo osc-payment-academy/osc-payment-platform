@@ -1,0 +1,27 @@
+OSC Payment Academy v4.0.0-rc.1.24 (acumulativa: incluye rc.1.22 y rc.1.23)
+Red LINK, redes por consultora, autogestión de licencias, Parser LINK y Evaluaciones.
+
+INSTALACIÓN (paquete INCREMENTAL · sirve si hoy tenés instalada la rc.1.21, rc.1.22 o rc.1.23):
+1. Descomprimir el ZIP incremental.
+2. Copiar su contenido sobre la raíz del repositorio en GitHub, reemplazando archivos
+   (src/index.js, src/assessments.js NUEVO, archivos de public/, notas).
+3. NO hace falta migración nueva. Si nunca ejecutaste la de la rc.1.22, ejecutala una vez:
+     npx wrangler d1 execute osc-academy --remote --file=MIGRATION_v4.0.0-rc.1.22_LICENCIAS_MODULOS_USO.sql
+4. Despliegue habitual de Cloudflare (al subir a GitHub se publica solo).
+5. Recargar con Ctrl+F5.
+
+Los manuales (PDF y LINK) no viajan en este paquete: quedan los que ya tenés en public/manuals.
+
+RESPALDO (paquete COMPLETO sin manuales): todo el proyecto, para guardar.
+
+Pruebas mínimas:
+1. Panel OSC → editar "Banco Ciudad" → Redes habilitadas: dejar solo Red LINK (y Doméstica si corresponde) → Guardar.
+   Con el usuario de Luis: POS y ATM muestran solo LINK; Wallet/E-commerce no aparecen en el menú.
+2. POS con LINK: Extracción → importe → chip → PIN 1234 → 0200/0210 LINK. Probar Consulta, Transferencia y DEBIN.
+   "Analizar en Parser" → la trama se abre como Red LINK sin desalineaciones.
+3. ATM con LINK: insertar → PIN 1234 → pantalla "RED LINK" → elegir operación → tipo de cuenta.
+4. Uso de licencias (como Luis): ver "1 de 5 · 4 disponibles" → "Dar de alta usuario" → copiar clave → "Dar de baja".
+5. Panel OSC → "📝 Evaluaciones" → habilitar "inicial" en un grupo de prueba.
+   Con un alumno: Evaluaciones → Comenzar → guardar cada respuesta → Validar → puntaje.
+   Habilitar "final": cronómetro de 30 minutos; con menos de 70 permite "Nuevo intento" (tramas nuevas), hasta 5.
+   Volver a "📝 Evaluaciones": informe con inicial, intermedia, final, intentos y evolución.

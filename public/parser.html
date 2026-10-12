@@ -747,6 +747,7 @@
                       <option value="visa">Visa</option>
                       <option value="mastercard">Mastercard</option>
                       <option value="amex">American Express</option>
+                      <option value="link">Red LINK (Host to Host BASE24)</option>
                     </select>
                     <div id="parserNetworkBadge" class="network-parser-badge">
                       <span>El perfil se resolverá al analizar la trama.</span>
@@ -869,7 +870,8 @@
             </div>
           </div>
 
-          <script src="js/network-profiles.js"></script>
+          <script src="js/network-profiles.js?v=4.0.0-rc1.24"></script>
+          <script src="js/link-hth.js?v=4.0.0-rc1.25"></script>
           <script src="js/help-catalog.js"></script>
           <script src="js/iso-network-spec.js?v=4.0.0-rc1.22"></script>
           <script src="js/security-edu.js?v=4.0.0-rc1.22"></script>
@@ -2837,6 +2839,12 @@
               }
 
               function parseTrama(raw) {
+                // rc.1.24 · Red LINK: "ISO" + header BASE24 + MTI + bitmap (C-X-1-2-3).
+                const nsel = document.getElementById("parserNetworkSelect");
+                if (window.OSCLinkHth && (selectedParserNetwork() === "link" || /^\s*ISO\d{13}[0-9A-Fa-f]{16}/.test(String(raw || "")))) {
+                  if (nsel && nsel.value !== "link" && [...nsel.options].some((o) => o.value === "link")) nsel.value = "link";
+                  return OSCLinkHth.parse(raw);
+                }
                 applyParserFieldProfile();
                 const annotatedResult = parseAnnotatedTrama(raw);
                 if (annotatedResult) return annotatedResult;
@@ -3197,7 +3205,7 @@
                 const selected = networkSelect ? networkSelect.value : "";
                 if (!selected) {
                   alert(
-                    "Seleccione primero la marca de la trama: Visa, Mastercard o American Express.",
+                    "Seleccione primero la marca de la trama: Visa, Mastercard, American Express o Red LINK.",
                   );
                   return null;
                 }
@@ -3285,6 +3293,7 @@
           <div class="summary">
             <div class="item"><div class="k">MTI</div><div class="v mono">${result.mti}</div></div>
             <div class="item"><div class="k">Bitmap primario</div><div class="v mono">${result.primaryHex}</div></div>
+            ${result.link ? '<div class="item"><div class="k">Header BASE24</div><div class="v mono">ISO ' + result.linkHeader + "</div></div>" + '<div class="item"><div class="k">Origen</div><div class="v">' + result.linkHeaderText + "</div></div>" : ""}
             ${result.secondaryHex ? '<div class="item"><div class="k">Bitmap secundario</div><div class="v mono">' + result.secondaryHex + "</div></div>" : ""}
             <div class="item"><div class="k">Campos presentes</div><div class="v">${result.fields.length}</div></div>
             ${result.representation ? '<div class="item"><div class="k">Representación</div><div class="v mono">' + result.representation + "</div></div>" : ""}
@@ -3303,6 +3312,10 @@
                   document.getElementById("parserNetworkSelect")?.value || "";
                 let rows = result.fields
                   .map((f) => {
+                    if (result.link) {
+                      // LINK: valores con blancos visibles y desglose de subcampos según los manuales LINK.
+                      return `<tr><td class="fnum">${f.num}</td><td>${f.name}</td><td class="flen mono">${f.fmt}</td><td class="flen mono">${f.len}</td><td class="flen mono">${f.prefixDisplay || "—"}</td><td class="fval mono">${f.num === 35 ? maskTrack2(f.value) : f.num === 2 ? maskPAN(f.value) : f.valueHtml}</td><td class="fdesc">${f.desc || ""}</td></tr>`;
+                    }
                     const manualEnabled =
                       OSCHelp.hasTechnical?.(f.num, manualNetwork); // rc.1.22: también Amex
                     const heading =
@@ -3496,6 +3509,6 @@
       Baseline v3.5.4.23 · REJECT seleccionable en Parser
     </div>
     <script src="js/module-guide.js"></script>
-    <script src="js/navigation.js?v=4.0.0-rc1.22"></script>
+    <script src="js/network-access.js?v=4.0.0-rc1.24"></script><script src="js/navigation.js?v=4.0.0-rc1.24"></script>
   </body>
 </html>

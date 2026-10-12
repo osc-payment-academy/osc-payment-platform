@@ -1,0 +1,17 @@
+OSC Payment Academy v4.0.0-rc.1.25 (acumulativa: incluye rc.1.22, rc.1.23 y rc.1.24)
+Red LINK: operaciones de ATM, compras Maestro en POS y reversas 0420/0430.
+
+INSTALACIÓN (paquete INCREMENTAL · sirve si hoy tenés instalada la rc.1.21, 22, 23 o 24):
+1. Descomprimir el ZIP incremental y copiar su contenido sobre la raíz del repositorio en GitHub, reemplazando archivos.
+2. BORRAR del repositorio el archivo 03-Analisis-Horario-TCPHandler.ps1 (el ZIP no puede borrar archivos).
+3. No hay migración nueva. (Si nunca ejecutaste la de la rc.1.22, ejecutala una vez.)
+4. Despliegue habitual. Recargar con Ctrl+F5.
+
+Pruebas mínimas:
+1. ATM con LINK → PIN 1234 → "Extracción en dólares" → Caja de ahorros U$S → 0200 con DE3 011502 y moneda 840.
+2. ATM → Más operaciones → Tipo de cambio → luego Extracción en dólares dentro del minuto: el campo 127 del 0200 trae el tipo de cambio.
+3. ATM → Últimos movimientos → el 0210 trae el campo 125 y la pantalla lista los movimientos.
+4. ATM → panel LINK "Evento después de la respuesta" = 32 → Extracción → pantalla "ENTREGA PARCIAL" y mensajes 0420/0430.
+5. POS con LINK → Operación "Compra con débito (Maestro)" → luego "Anulación de compra" eligiendo la compra original.
+6. POS → Devolución parcial → el campo 48 lleva ORIG-NUM / ORIG-DATE de la compra.
+7. Seleccionar un 0420 en el historial → "Analizar en Parser" → se reconoce como Reversa sin desalineaciones.

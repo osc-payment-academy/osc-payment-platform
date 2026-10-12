@@ -1,3 +1,4 @@
+import {STAGES,generateExam,publicExam,scoreAttempt} from './assessments.js';
 const enc = new TextEncoder();
 const json = (data, status = 200, headers = {}) => new Response(JSON.stringify(data), {status, headers:{'content-type':'application/json; charset=utf-8',...headers}});
 const now = () => new Date().toISOString();
@@ -14,7 +15,7 @@ const sessionCookie = (token, maxAge=28800) => `osc_session=${encodeURIComponent
 const readBody = async request => { try { return await request.json(); } catch { return {}; } };
 
 // rc.1.22 · Módulos habilitables (por edición de curso y por consultora).
-//   ebook · banco_simulado (Clientes, Pasivas, Solicitudes, Cuenta del Cliente) · switch_adquirente (Switch + Compensación Visa/Mastercard)
+//   ebook · banco_simulado (Clientes, Pasivas, Solicitudes, Cuenta del Cliente) · switch_adquirente (Switch + Compensación Visa/Mastercard + Mastercard ISO)
 //   parser = Parser ISO8583 + Parser Guiado.
 const LEARNING_MODULES=['course_iso8583','ebook','banco_simulado','constructor','pos','atm','wallet','ecommerce','switch_adquirente','switch_emisor','parser'];
 const DAY1_MODULES=['course_iso8583','pos','parser','constructor'];
@@ -25,13 +26,13 @@ const PAGE_MODULES={
   'curso_interactivo.html':'course_iso8583','ebook.html':'ebook',
   'clientes.html':'banco_simulado','pasivas.html':'banco_simulado','solicitudes.html':'banco_simulado','cuenta_cliente.html':'banco_simulado',
   'constructor.html':'constructor','pos.html':'pos','atm.html':'atm','wallet.html':'wallet','ecommerce.html':'ecommerce',
-  'switch.html':'switch_adquirente','compensacion.html':'switch_adquirente','compensacion_mastercard.html':'switch_adquirente',
+  'switch.html':'switch_adquirente','compensacion.html':'switch_adquirente','compensacion_mastercard.html':'switch_adquirente','mastercard_iso.html':'switch_adquirente',
   'switch_emisor.html':'switch_emisor','parser.html':'parser','parser_guiado.html':'parser'
 };
 const MODULE_DAY={course_iso8583:1,pos:1,parser:1,constructor:1,atm:2,ecommerce:3,wallet:4,switch_emisor:5};
 // Solo administración (rc.1.22): Documentación Técnica (los alumnos llegan a los PDF desde la manito) e Investigación.
 const ADMIN_ONLY_PAGES=new Set(['documentacion.html','research.html']);
-const ACTIVITY_PAGES={'index.html':'dashboard','account.html':'cuenta','authorization-analytics.html':'analisis_diario','monitoreo-vivo.html':'monitoreo_vivo'};
+const ACTIVITY_PAGES={'index.html':'dashboard','account.html':'cuenta','authorization-analytics.html':'analisis_diario','monitoreo-vivo.html':'monitoreo_vivo','evaluacion.html':'evaluaciones'};
 const TUTOR_MODULES=['course_iso8583','pos','atm','constructor','wallet','ecommerce'];
 const TUTOR_SEED=[
   ['mti-0200','0200 mti mensaje financiero solicitud compra','El MTI 0200 identifica una solicitud de transacción financiera. En los laboratorios de POS y Wallet se utiliza para iniciar una compra; la respuesta asociada normalmente es 0210.','Curso interactivo · Lámina 13: MTI 0200','EXPLICAR'],
@@ -125,6 +126,28 @@ async function learningAccess(env,user){
   const locked=cohorts.length?LEARNING_MODULES.filter(k=>!enabled.has(k)):[];
   const hidden=LEARNING_MODULES.filter(k=>!enabled.has(k)&&!locked.includes(k));
   return {progressive:cohorts.length>0,enabled:[...enabled],locked,hidden,admin:false};
+}
+// rc.1.24 · Redes habilitadas por consultora (tenant). Sin filas = todas (comportamiento anterior).
+const NETWORKS=['visa','mastercard','amex','link','domestic'];
+const NETWORK_LABELS={visa:'Visa',mastercard:'Mastercard',amex:'American Express',link:'Red LINK',domestic:'Doméstica (Banco simulado)'};
+// Páginas que necesitan al menos una de estas redes.
+const NETWORK_PAGES={'compensacion.html':['visa'],'compensacion_mastercard.html':['mastercard'],'mastercard_iso.html':['mastercard'],'wallet.html':['visa','mastercard','amex'],'ecommerce.html':['visa','mastercard','amex']};
+async function ensureTenantNetworkSchema(env){
+  await env.DB.prepare(`CREATE TABLE IF NOT EXISTS tenant_network_access (tenant_id TEXT NOT NULL,network TEXT NOT NULL,enabled INTEGER NOT NULL DEFAULT 1,updated_by TEXT,updated_at TEXT NOT NULL,PRIMARY KEY(tenant_id,network))`).run();
+}
+async function tenantNetworks(env,tenantId){
+  await ensureTenantNetworkSchema(env);
+  const rows=(await env.DB.prepare('SELECT network,enabled FROM tenant_network_access WHERE tenant_id=?').bind(tenantId).all()).results;
+  return rows.length?NETWORKS.filter(n=>rows.some(r=>r.network===n&&r.enabled)):[...NETWORKS];
+}
+async function networkAccess(env,user){
+  if(user.platform_role==='OSC_ADMIN')return {allowed:[...NETWORKS],restricted:false};
+  const consultancies=(await env.DB.prepare(`SELECT DISTINCT t.id FROM memberships m JOIN tenants t ON t.id=m.tenant_id WHERE m.user_id=? AND m.status='ACTIVE' AND t.tenant_type='CONSULTANCY' AND t.status='ACTIVE'`).bind(user.id).all()).results;
+  if(!consultancies.length)return {allowed:[...NETWORKS],restricted:false}; // ediciones del curso y licencias directas: todas las redes
+  const allowed=new Set();
+  for(const c of consultancies)(await tenantNetworks(env,c.id)).forEach(n=>allowed.add(n));
+  const list=NETWORKS.filter(n=>allowed.has(n));
+  return {allowed:list,restricted:list.length<NETWORKS.length};
 }
 async function tenantAdminTenants(env,user){
   if(user.platform_role==='OSC_ADMIN')return null; // null = todas
@@ -549,8 +572,11 @@ async function api(request,env,path){
     const live=await productAccess(env,auth.user,PRODUCT_LIVE);
     const modules=await learningAccess(env,auth.user);
     const adminTenants=await tenantAdminTenants(env,auth.user);
-    return json({user:auth.user,memberships,cohorts,
-      entitlements:{authorizationAnalytics:!!analytics,liveMonitoring:!!live,usagePanel:auth.user.platform_role==='OSC_ADMIN'||!!adminTenants?.length},
+    const networks=await networkAccess(env,auth.user);
+    let assessments=false;
+    try{await ensureAssessmentSchema();assessments=(await assessmentGroups(auth.user)).some(g=>g.stages.length);}catch(_){}
+    return json({user:auth.user,memberships,cohorts,networks,
+      entitlements:{authorizationAnalytics:!!analytics,liveMonitoring:!!live,assessments,usagePanel:auth.user.platform_role==='OSC_ADMIN'||!!adminTenants?.length},
       moduleAccess:modules});
   }
 
@@ -733,6 +759,12 @@ async function api(request,env,path){
     await env.DB.batch(LEARNING_MODULES.map(k=>env.DB.prepare(`INSERT INTO tenant_module_access(tenant_id,module_key,enabled,updated_by,updated_at) VALUES(?,?,?,?,?)
       ON CONFLICT(tenant_id,module_key) DO UPDATE SET enabled=excluded.enabled,updated_by=excluded.updated_by,updated_at=excluded.updated_at`).bind(tenantId,k,on.has(k)?1:0,actorId,ts)));
   }
+  async function saveTenantNetworks(tenantId,list,actorId,ts){
+    await ensureTenantNetworkSchema(env);
+    const on=new Set((Array.isArray(list)?list:[]).filter(n=>NETWORKS.includes(n)));
+    await env.DB.batch(NETWORKS.map(n=>env.DB.prepare(`INSERT INTO tenant_network_access(tenant_id,network,enabled,updated_by,updated_at) VALUES(?,?,?,?,?)
+      ON CONFLICT(tenant_id,network) DO UPDATE SET enabled=excluded.enabled,updated_by=excluded.updated_by,updated_at=excluded.updated_at`).bind(tenantId,n,on.has(n)?1:0,actorId,ts)));
+  }
   async function consultancyDetail(tenantId){
     await ensureTenantModuleSchema(env);
     const t=await env.DB.prepare("SELECT id,name,status,created_at FROM tenants WHERE id=? AND tenant_type='CONSULTANCY'").bind(tenantId).first();
@@ -742,7 +774,8 @@ async function api(request,env,path){
     const mods=(await env.DB.prepare("SELECT module_key,enabled FROM tenant_module_access WHERE tenant_id=?").bind(tenantId).all()).results;
     const active=p=>licenses.some(l=>l.product_id===p&&l.status==='ACTIVE');
     const pay=licenses.filter(l=>l.status==='ACTIVE').sort((a,b)=>String(b.expires_at||'9').localeCompare(String(a.expires_at||'9')))[0];
-    return {...t,licenses,members,
+    const networks=await tenantNetworks(env,tenantId);
+    return {...t,licenses,members,networks,
       modules:mods.length?mods.filter(m=>m.enabled).map(m=>m.module_key):(active(PRODUCT_PAYMENT)?[...LEARNING_MODULES]:[]),
       modulesConfigured:mods.length>0,
       products:{payment:active(PRODUCT_PAYMENT),daily:active(PRODUCT_DAILY),live:active(PRODUCT_LIVE)},
@@ -752,13 +785,15 @@ async function api(request,env,path){
     const auth=await requireUser(request,env,['OSC_ADMIN']); if(auth.error)return auth.error;
     const ids=(await env.DB.prepare("SELECT id FROM tenants WHERE tenant_type='CONSULTANCY' ORDER BY created_at DESC").all()).results;
     const out=[];for(const r of ids)out.push(await consultancyDetail(r.id));
-    return json({consultancies:out,modules:LEARNING_MODULES.map(k=>({key:k,label:MODULE_LABELS[k]}))});
+    return json({consultancies:out,modules:LEARNING_MODULES.map(k=>({key:k,label:MODULE_LABELS[k]})),networks:NETWORKS.map(k=>({key:k,label:NETWORK_LABELS[k]}))});
   }
   if(path==='/api/admin/consultancies'&&request.method==='POST'){
     const auth=await requireUser(request,env,['OSC_ADMIN']); if(auth.error)return auth.error;
     await ensureLiveMonitoringProduct(env);
     const b=await readBody(request),ts=now();
     const name=String(b.name||'').trim(); if(!name)return json({error:'INVALID_DATA',message:'Falta el nombre de la consultora.'},400);
+    const networks=(Array.isArray(b.networks)?b.networks:NETWORKS).filter(n=>NETWORKS.includes(n));
+    if(!networks.length)return json({error:'INVALID_DATA',message:'Elegí al menos una red.'},400);
     const r=await resolveUsers(b.users,ts); if(r.error)return json({error:'USER_NOT_FOUND',message:r.error},400);
     if(!r.users.length)return json({error:'INVALID_DATA',message:'Indicá al menos un usuario (correo o ID).'},400);
     const admin=await resolveUsers([b.adminUser||r.users[0].id],ts); if(admin.error)return json({error:'USER_NOT_FOUND',message:admin.error},400);
@@ -772,6 +807,7 @@ async function api(request,env,path){
     await upsertProductLicense(tenantId,PRODUCT_DAILY,products.daily,seats,expiresAt,ts);
     await upsertProductLicense(tenantId,PRODUCT_LIVE,products.live,seats,expiresAt,ts);
     await saveTenantModules(tenantId,modules,auth.user.id,ts);
+    await saveTenantNetworks(tenantId,networks,auth.user.id,ts);
     const all=[...r.users];if(!all.find(u=>u.id===adminId))all.push(admin.users[0]);
     for(const u of all){
       await env.DB.prepare("INSERT OR IGNORE INTO memberships(id,tenant_id,user_id,role,status,created_at,updated_at) VALUES(?,?,?,?,'ACTIVE',?,?)").bind(id('mem'),tenantId,u.id,u.id===adminId?'TENANT_ADMIN':'STUDENT',ts,ts).run();
@@ -786,6 +822,8 @@ async function api(request,env,path){
     await ensureLiveMonitoringProduct(env);
     const tenantId=consultancyMatch[1],b=await readBody(request),ts=now();
     const current=await consultancyDetail(tenantId); if(!current)return json({error:'TENANT_NOT_FOUND'},404);
+    const putNetworks=Array.isArray(b.networks)?b.networks.filter(n=>NETWORKS.includes(n)):null;
+    if(putNetworks&&!putNetworks.length)return json({error:'INVALID_DATA',message:'Elegí al menos una red.'},400);
     const add=await resolveUsers(b.addUsers,ts); if(add.error)return json({error:'USER_NOT_FOUND',message:add.error},400);
     const seats=Number(b.seats||current.seats||1),expiresAt=b.expiresAt===undefined?current.expiresAt:(b.expiresAt||null);
     if(current.members.length+add.users.filter(u=>!current.members.find(m=>m.id===u.id)).length>seats)return json({error:'SEAT_LIMIT_EXCEEDED',message:'Superás la cantidad de licencias. Aumentá las licencias o quitá usuarios.'},409);
@@ -795,6 +833,7 @@ async function api(request,env,path){
     await upsertProductLicense(tenantId,PRODUCT_DAILY,!!products.daily,seats,expiresAt,ts);
     await upsertProductLicense(tenantId,PRODUCT_LIVE,!!products.live,seats,expiresAt,ts);
     await saveTenantModules(tenantId,modules,auth.user.id,ts);
+    if(putNetworks) await saveTenantNetworks(tenantId,putNetworks,auth.user.id,ts);
     for(const u of add.users){
       await env.DB.prepare("INSERT OR IGNORE INTO memberships(id,tenant_id,user_id,role,status,created_at,updated_at) VALUES(?,?,?,'STUDENT','ACTIVE',?,?)").bind(id('mem'),tenantId,u.id,ts,ts).run();
       await env.DB.prepare("UPDATE memberships SET status='ACTIVE',updated_at=? WHERE tenant_id=? AND user_id=?").bind(ts,tenantId,u.id).run();
@@ -863,7 +902,8 @@ async function api(request,env,path){
     const order={never:0,inactive:1,warning:2,active:3};
     rows.sort((a,b)=>order[a.status]-order[b.status]||((b.days_since??-1)-(a.days_since??-1))||String(a.full_name).localeCompare(String(b.full_name)));
     const summary={assigned:rows.length,never:rows.filter(r=>r.status==='never').length,active7:rows.filter(r=>r.status==='active').length,inactive:rows.filter(r=>r.status==='warning'||r.status==='inactive').length};
-    return json({isAdmin:scope.isAdmin,groups:scope.groups,summary,users:rows,moduleLabels:{...MODULE_LABELS,dashboard:'Inicio',cuenta:'Mi cuenta',analisis_diario:'Análisis Diario',monitoreo_vivo:'Monitoreo en Vivo'}});
+    const seats={};for(const g of scope.groups)if(g.type==='CONSULTANCY'){const si=await seatInfo(g.id);if(si){const {detail,...x}=si;seats[g.id]=x;}}
+    return json({isAdmin:scope.isAdmin,groups:scope.groups,summary,seats,users:rows,moduleLabels:{...MODULE_LABELS,dashboard:'Inicio',cuenta:'Mi cuenta',analisis_diario:'Análisis Diario',monitoreo_vivo:'Monitoreo en Vivo',evaluaciones:'Evaluaciones'}});
   }
   const usageUserMatch=path.match(/^\/api\/usage\/users\/([^/]+)$/);
   if(usageUserMatch&&request.method==='GET'){
@@ -892,6 +932,211 @@ async function api(request,env,path){
     if(!user)return json({error:'USER_NOT_FOUND'},404);
     await audit(env,auth.user.id,'USAGE_REMINDER','USER',user.id,{email:user.email,channel:'mailto'});
     return json({ok:true,email:user.email,fullName:user.full_name,remindedAt:now()});
+  }
+
+  /* rc.1.24 · Autogestión de licencias: el administrador de la consultora da de alta y de baja a su personal dentro del cupo pagado. */
+  async function seatInfo(tenantId){
+    const t=await consultancyDetail(tenantId); if(!t)return null;
+    const used=t.members.length,seats=Number(t.seats||used);
+    const expired=!!(t.expiresAt&&String(t.expiresAt).slice(0,10)<now().slice(0,10));
+    return {tenantId,name:t.name,seats,used,available:Math.max(seats-used,0),expiresAt:t.expiresAt,expired,detail:t};
+  }
+  async function seatScope(user,tenantId){
+    if(!tenantId)return {error:json({error:'INVALID_DATA',message:'Falta la empresa.'},400)};
+    const adminTenants=await tenantAdminTenants(env,user);
+    if(adminTenants!==null&&!adminTenants.find(t=>t.id===tenantId))return {error:json({error:'FORBIDDEN',message:'Solo el administrador de la cuenta puede gestionar sus licencias.'},403)};
+    const info=await seatInfo(tenantId); if(!info)return {error:json({error:'TENANT_NOT_FOUND',message:'Las altas y bajas se gestionan en consultoras.'},404)};
+    return {info};
+  }
+  if(path==='/api/usage/seats'&&request.method==='GET'){
+    const auth=await requireUser(request,env); if(auth.error)return auth.error;
+    const s=await seatScope(auth.user,new URL(request.url).searchParams.get('tenantId')); if(s.error)return s.error;
+    const {detail,...info}=s.info; return json(info);
+  }
+  if(path==='/api/usage/users'&&request.method==='POST'){
+    const auth=await requireUser(request,env); if(auth.error)return auth.error;
+    const b=await readBody(request),ts=now();
+    const s=await seatScope(auth.user,String(b.tenantId||'')); if(s.error)return s.error;
+    const info=s.info,email=String(b.email||'').trim().toLowerCase(),fullName=String(b.fullName||'').trim();
+    if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)||!fullName)return json({error:'INVALID_DATA',message:'Nombre y correo válidos son obligatorios.'},400);
+    if(info.expired)return json({error:'LICENSE_EXPIRED',message:'La licencia de la empresa está vencida. Contactá a OSC Payment Academy.'},409);
+    let user=await env.DB.prepare('SELECT id,email,full_name,platform_role,status FROM users WHERE lower(email)=?').bind(email).first(),temporaryPassword=null;
+    if(user?.platform_role==='OSC_ADMIN')return json({error:'INVALID_DATA',message:'Ese correo no puede asignarse.'},400);
+    if(user&&info.detail.members.find(m=>m.id===user.id))return json({error:'ALREADY_MEMBER',message:'Ese usuario ya tiene una licencia de la empresa.'},409);
+    if(info.available<=0)return json({error:'SEAT_LIMIT_EXCEEDED',message:`No quedan licencias disponibles (${info.used} de ${info.seats}). Dá de baja a alguien o pedí más licencias.`},409);
+    if(!user){
+      temporaryPassword=randomToken().slice(0,12);const salt=randomToken(),uid=id('usr');
+      await env.DB.prepare("INSERT INTO users(id,email,full_name,password_hash,password_salt,platform_role,status,created_at,updated_at) VALUES(?,?,?,?,?,'USER','ACTIVE',?,?)").bind(uid,email,fullName,await passwordHash(temporaryPassword,salt),salt,ts,ts).run();
+      user={id:uid,email,full_name:fullName};
+    }else if(user.status!=='ACTIVE')await env.DB.prepare("UPDATE users SET status='ACTIVE',updated_at=? WHERE id=?").bind(ts,user.id).run();
+    await env.DB.prepare("INSERT OR IGNORE INTO memberships(id,tenant_id,user_id,role,status,created_at,updated_at) VALUES(?,?,?,'STUDENT','ACTIVE',?,?)").bind(id('mem'),info.tenantId,user.id,ts,ts).run();
+    await env.DB.prepare("UPDATE memberships SET status='ACTIVE',role=CASE WHEN role='TENANT_ADMIN' THEN role ELSE 'STUDENT' END,updated_at=? WHERE tenant_id=? AND user_id=?").bind(ts,info.tenantId,user.id).run();
+    if(info.detail.products.payment)await env.DB.prepare('UPDATE workspaces_v4 SET tenant_id=?,updated_at=? WHERE user_id=? AND product_id=?').bind(info.tenantId,ts,user.id,PRODUCT_PAYMENT).run().catch(()=>{});
+    await audit(env,auth.user.id,'TENANT_USER_ADD','USER',user.id,{tenantId:info.tenantId,email,newUser:!!temporaryPassword});
+    const after=await seatInfo(info.tenantId);
+    return json({ok:true,user:{id:user.id,email:user.email,fullName:user.full_name||fullName},existing:!temporaryPassword,temporaryPassword,seats:{seats:after.seats,used:after.used,available:after.available}},201);
+  }
+  const usageRemoveMatch=path.match(/^\/api\/usage\/users\/([^/]+)\/remove$/);
+  if(usageRemoveMatch&&request.method==='POST'){
+    const auth=await requireUser(request,env); if(auth.error)return auth.error;
+    const b=await readBody(request),ts=now(),targetId=usageRemoveMatch[1];
+    const s=await seatScope(auth.user,String(b.tenantId||'')); if(s.error)return s.error;
+    const m=s.info.detail.members.find(x=>x.id===targetId);
+    if(!m)return json({error:'NOT_MEMBER',message:'El usuario no tiene licencia en esta empresa.'},404);
+    if(m.role==='TENANT_ADMIN'||targetId===auth.user.id)return json({error:'FORBIDDEN',message:'El administrador de la cuenta no puede darse de baja. Pedile el cambio a OSC Payment Academy.'},403);
+    await env.DB.prepare("UPDATE memberships SET status='INACTIVE',updated_at=? WHERE tenant_id=? AND user_id=?").bind(ts,s.info.tenantId,targetId).run();
+    // Si ya no tiene ninguna otra membresía activa, se cierran sus sesiones abiertas.
+    const other=await env.DB.prepare("SELECT 1 ok FROM memberships WHERE user_id=? AND status='ACTIVE'").bind(targetId).first();
+    if(!other)await env.DB.prepare('DELETE FROM sessions WHERE user_id=?').bind(targetId).run();
+    await audit(env,auth.user.id,'TENANT_USER_REMOVE','USER',targetId,{tenantId:s.info.tenantId,email:m.email});
+    const after=await seatInfo(s.info.tenantId);
+    return json({ok:true,seats:{seats:after.seats,used:after.used,available:after.available}});
+  }
+
+  /* ===================== rc.1.24 · Evaluaciones (inicial, intermedia, final) ===================== */
+  async function ensureAssessmentSchema(){
+    await env.DB.batch([
+      env.DB.prepare(`CREATE TABLE IF NOT EXISTS assessment_stage_access (tenant_id TEXT NOT NULL,stage TEXT NOT NULL,enabled INTEGER NOT NULL DEFAULT 0,updated_by TEXT,updated_at TEXT NOT NULL,PRIMARY KEY(tenant_id,stage))`),
+      env.DB.prepare(`CREATE TABLE IF NOT EXISTS assessment_attempts (id TEXT PRIMARY KEY,user_id TEXT NOT NULL,tenant_id TEXT,stage TEXT NOT NULL,attempt_no INTEGER NOT NULL,network TEXT,status TEXT NOT NULL,exam_json TEXT NOT NULL,started_at TEXT NOT NULL,deadline_at TEXT,validated_at TEXT,score INTEGER,score_decode INTEGER,score_interpret INTEGER,passed INTEGER,detail_json TEXT)`),
+      env.DB.prepare(`CREATE TABLE IF NOT EXISTS assessment_answers (attempt_id TEXT NOT NULL,qid TEXT NOT NULL,answer_json TEXT NOT NULL,saved_at TEXT NOT NULL,PRIMARY KEY(attempt_id,qid))`),
+      env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_assessment_attempts_user ON assessment_attempts(user_id,stage)`)
+    ]);
+  }
+  // Grupos del alumno (ediciones del curso y consultoras) y etapas habilitadas en ellos.
+  async function assessmentGroups(user){
+    if(user.platform_role==='OSC_ADMIN') return [{id:'tenant_osc',name:'OSC Academy',type:'OSC',stages:Object.keys(STAGES)}];
+    const groups=(await env.DB.prepare(`SELECT DISTINCT t.id,t.name,t.tenant_type type FROM memberships m JOIN tenants t ON t.id=m.tenant_id WHERE m.user_id=? AND m.status='ACTIVE' AND t.tenant_type IN ('COURSE','CONSULTANCY') AND t.status='ACTIVE'`).bind(user.id).all()).results;
+    for(const g of groups) g.stages=(await env.DB.prepare('SELECT stage FROM assessment_stage_access WHERE tenant_id=? AND enabled=1').bind(g.id).all()).results.map(r=>r.stage);
+    return groups;
+  }
+  async function attemptAnswers(attemptId){
+    const rows=(await env.DB.prepare('SELECT qid,answer_json,saved_at FROM assessment_answers WHERE attempt_id=?').bind(attemptId).all()).results;
+    return Object.fromEntries(rows.map(r=>[r.qid,{...JSON.parse(r.answer_json),savedAt:r.saved_at}]));
+  }
+  async function finalizeAttempt(att,reason){
+    const exam=JSON.parse(att.exam_json), answers=await attemptAnswers(att.id);
+    const s=scoreAttempt(exam,answers), cfg=STAGES[att.stage], ts=now();
+    const passed=cfg.pass==null?null:(s.score>=cfg.pass?1:0);
+    await env.DB.prepare(`UPDATE assessment_attempts SET status=?,validated_at=?,score=?,score_decode=?,score_interpret=?,passed=?,detail_json=? WHERE id=? AND status='IN_PROGRESS'`).bind(reason==='expired'?'EXPIRED':'VALIDATED',ts,s.score,s.decode,s.interpret,passed,JSON.stringify(s.detail),att.id).run();
+    await audit(env,att.user_id,'ASSESSMENT_VALIDATED','ASSESSMENT',att.id,{stage:att.stage,score:s.score,passed,reason});
+    return {...att,status:reason==='expired'?'EXPIRED':'VALIDATED',validated_at:ts,score:s.score,score_decode:s.decode,score_interpret:s.interpret,passed,detail_json:JSON.stringify(s.detail)};
+  }
+  const expired=att=>att.status==='IN_PROGRESS'&&att.deadline_at&&new Date(att.deadline_at).getTime()<Date.now();
+  async function loadAttempt(attId,user){
+    let att=await env.DB.prepare('SELECT * FROM assessment_attempts WHERE id=? AND user_id=?').bind(attId,user.id).first();
+    if(att&&expired(att)) att=await finalizeAttempt(att,'expired');
+    return att;
+  }
+  async function attemptView(att){
+    const exam=JSON.parse(att.exam_json), answers=await attemptAnswers(att.id);
+    const done=att.status!=='IN_PROGRESS';
+    return {id:att.id,stage:att.stage,label:STAGES[att.stage].label,attemptNo:att.attempt_no,maxAttempts:STAGES[att.stage].maxAttempts,status:att.status,
+      startedAt:att.started_at,deadlineAt:att.deadline_at,serverNow:now(),passMark:STAGES[att.stage].pass,
+      exam:publicExam(exam),answers,
+      result:done?{score:att.score,decode:att.score_decode,interpret:att.score_interpret,passed:att.passed,detail:JSON.parse(att.detail_json||'[]')}:null};
+  }
+  function stageSummary(stage,attempts){
+    const list=attempts.filter(a=>a.stage===stage&&a.status!=='VOID').sort((a,b)=>a.attempt_no-b.attempt_no);
+    const done=list.filter(a=>a.status!=='IN_PROGRESS');
+    const passedAt=list.find(a=>a.passed===1)?.attempt_no||null;
+    return {attempts:list.map(a=>({id:a.id,n:a.attempt_no,status:a.status,score:a.score,decode:a.score_decode,interpret:a.score_interpret,passed:a.passed,startedAt:a.started_at,validatedAt:a.validated_at})),
+      inProgress:list.find(a=>a.status==='IN_PROGRESS')?.id||null,last:done[done.length-1]||null,passedAt,used:list.length};
+  }
+
+  if(path==='/api/assessments/me'&&request.method==='GET'){
+    const auth=await requireUser(request,env); if(auth.error)return auth.error;
+    await ensureAssessmentSchema();
+    const groups=await assessmentGroups(auth.user);
+    const enabled=new Set(groups.flatMap(g=>g.stages));
+    const attempts=(await env.DB.prepare('SELECT * FROM assessment_attempts WHERE user_id=?').bind(auth.user.id).all()).results;
+    for(const a of attempts) if(expired(a)) Object.assign(a,await finalizeAttempt(a,'expired'));
+    const stages=Object.entries(STAGES).map(([k,c])=>{const s=stageSummary(k,attempts);return {key:k,label:c.label,enabled:enabled.has(k),maxAttempts:c.maxAttempts,minutes:c.minutes,passMark:c.pass,
+      ...s,last:s.last?{score:s.last.score,decode:s.last.score_decode,interpret:s.last.score_interpret,passed:s.last.passed,n:s.last.attempt_no}:null,
+      canStart:enabled.has(k)&&!s.inProgress&&s.used<c.maxAttempts&&!s.passedAt};});
+    return json({stages,groups:groups.map(g=>({id:g.id,name:g.name}))});
+  }
+  if(path==='/api/assessments/start'&&request.method==='POST'){
+    const auth=await requireUser(request,env); if(auth.error)return auth.error;
+    await ensureAssessmentSchema();
+    const b=await readBody(request), stage=String(b.stage||'');
+    const cfg=STAGES[stage]; if(!cfg)return json({error:'INVALID_STAGE'},400);
+    const groups=await assessmentGroups(auth.user);
+    const group=groups.find(g=>g.stages.includes(stage));
+    if(!group)return json({error:'NOT_ENABLED',message:'Esta evaluación todavía no está habilitada para tu grupo.'},403);
+    const attempts=(await env.DB.prepare(`SELECT * FROM assessment_attempts WHERE user_id=? AND stage=? AND status<>'VOID' ORDER BY attempt_no`).bind(auth.user.id,stage).all()).results;
+    const open=attempts.find(a=>a.status==='IN_PROGRESS');
+    if(open){const att=await loadAttempt(open.id,auth.user); if(att.status==='IN_PROGRESS')return json(await attemptView(att));}
+    const fresh=(await env.DB.prepare(`SELECT * FROM assessment_attempts WHERE user_id=? AND stage=? AND status<>'VOID'`).bind(auth.user.id,stage).all()).results;
+    if(fresh.some(a=>a.passed===1))return json({error:'ALREADY_PASSED',message:'Ya aprobaste esta evaluación.'},409);
+    if(fresh.length>=cfg.maxAttempts)return json({error:'NO_ATTEMPTS',message:cfg.maxAttempts>1?`Ya usaste los ${cfg.maxAttempts} intentos.`:'Esta evaluación ya fue realizada.'},409);
+    const net=await networkAccess(env,auth.user);
+    const exam=generateExam(stage,net.allowed);
+    const ts=now(), attId=id('asm'), n=fresh.length+1;
+    const deadline=cfg.minutes?new Date(Date.now()+cfg.minutes*60e3).toISOString():null;
+    await env.DB.prepare(`INSERT INTO assessment_attempts(id,user_id,tenant_id,stage,attempt_no,network,status,exam_json,started_at,deadline_at) VALUES(?,?,?,?,?,?,'IN_PROGRESS',?,?,?)`).bind(attId,auth.user.id,group.id,stage,n,exam.network,JSON.stringify(exam),ts,deadline).run();
+    await audit(env,auth.user.id,'ASSESSMENT_STARTED','ASSESSMENT',attId,{stage,attempt:n});
+    return json(await attemptView(await loadAttempt(attId,auth.user)),201);
+  }
+  const asmMatch=path.match(/^\/api\/assessments\/attempts\/([^/]+)(?:\/(answer|validate))?$/);
+  if(asmMatch){
+    const auth=await requireUser(request,env); if(auth.error)return auth.error;
+    await ensureAssessmentSchema();
+    const att=await loadAttempt(asmMatch[1],auth.user); if(!att)return json({error:'NOT_FOUND'},404);
+    if(!asmMatch[2]&&request.method==='GET')return json(await attemptView(att));
+    if(asmMatch[2]==='answer'&&request.method==='POST'){
+      if(att.status!=='IN_PROGRESS')return json({error:'CLOSED',message:att.status==='EXPIRED'?'Se terminó el tiempo: la evaluación se cerró con las respuestas guardadas.':'La evaluación ya fue validada.',view:await attemptView(att)},409);
+      const b=await readBody(request), exam=JSON.parse(att.exam_json), q=exam.questions.find(x=>x.id===b.qid);
+      if(!q)return json({error:'INVALID_QUESTION'},400);
+      const prev=await env.DB.prepare('SELECT 1 ok FROM assessment_answers WHERE attempt_id=? AND qid=?').bind(att.id,q.id).first();
+      if(prev)return json({error:'ALREADY_SAVED',message:'Esa respuesta ya quedó guardada en firme.'},409);
+      const a=b.answer||{}, clean=q.type==='mti'?{index:Number(a.index)}:q.type==='nibbles'?{bits:String(a.bits||'').replace(/[^01]/g,'').slice(0,8),fields:(Array.isArray(a.fields)?a.fields:[]).map(Number).filter(Number.isFinite)}:q.type==='extract'?{prefix:String(a.prefix||'').slice(0,3),value:String(a.value||'').slice(0,400)}:(a.code!==undefined?{code:String(a.code||'').slice(0,6)}:{tx:String(a.tx||''),from:String(a.from||''),to:String(a.to||'')});
+      await env.DB.prepare('INSERT INTO assessment_answers(attempt_id,qid,answer_json,saved_at) VALUES(?,?,?,?)').bind(att.id,q.id,JSON.stringify(clean),now()).run();
+      const count=await env.DB.prepare('SELECT COUNT(*) n FROM assessment_answers WHERE attempt_id=?').bind(att.id).first();
+      return json({ok:true,saved:count.n,total:exam.questions.length,allSaved:count.n>=exam.questions.length});
+    }
+    if(asmMatch[2]==='validate'&&request.method==='POST'){
+      if(att.status!=='IN_PROGRESS')return json(await attemptView(att));
+      const exam=JSON.parse(att.exam_json);
+      const count=await env.DB.prepare('SELECT COUNT(*) n FROM assessment_answers WHERE attempt_id=?').bind(att.id).first();
+      if(count.n<exam.questions.length)return json({error:'INCOMPLETE',message:`Faltan guardar ${exam.questions.length-count.n} respuesta(s).`},409);
+      return json(await attemptView(await finalizeAttempt(att,'validated')));
+    }
+  }
+  // Administración OSC: habilitar etapas por grupo.
+  if(path==='/api/assessments/admin/groups'&&request.method==='GET'){
+    const auth=await requireUser(request,env,['OSC_ADMIN']); if(auth.error)return auth.error;
+    await ensureAssessmentSchema();
+    const groups=(await env.DB.prepare(`SELECT id,name,tenant_type type FROM tenants WHERE tenant_type IN ('COURSE','CONSULTANCY') AND status='ACTIVE' ORDER BY created_at DESC`).all()).results;
+    for(const g of groups){const rows=(await env.DB.prepare('SELECT stage,enabled FROM assessment_stage_access WHERE tenant_id=?').bind(g.id).all()).results;g.stages=Object.fromEntries(Object.keys(STAGES).map(k=>[k,!!rows.find(r=>r.stage===k&&r.enabled)]));}
+    return json({groups,stages:Object.entries(STAGES).map(([k,c])=>({key:k,label:c.label}))});
+  }
+  const asmGroupMatch=path.match(/^\/api\/assessments\/admin\/groups\/([^/]+)$/);
+  if(asmGroupMatch&&request.method==='PUT'){
+    const auth=await requireUser(request,env,['OSC_ADMIN']); if(auth.error)return auth.error;
+    await ensureAssessmentSchema();
+    const b=await readBody(request), ts=now(), tenantId=asmGroupMatch[1];
+    const stmts=Object.keys(STAGES).filter(k=>b.stages&&k in b.stages).map(k=>env.DB.prepare(`INSERT INTO assessment_stage_access(tenant_id,stage,enabled,updated_by,updated_at) VALUES(?,?,?,?,?) ON CONFLICT(tenant_id,stage) DO UPDATE SET enabled=excluded.enabled,updated_by=excluded.updated_by,updated_at=excluded.updated_at`).bind(tenantId,k,b.stages[k]?1:0,auth.user.id,ts));
+    if(stmts.length)await env.DB.batch(stmts);
+    await audit(env,auth.user.id,'ASSESSMENT_STAGES','TENANT',tenantId,{stages:b.stages});
+    return json({ok:true});
+  }
+  // rc.1.24 · La inicial y la intermedia no se pueden repetir: no existe forma de anular un intento.
+  // Informe de evolución: administración OSC (todos los grupos) y administrador de la consultora (sus usuarios).
+  if(path==='/api/assessments/report'&&request.method==='GET'){
+    const auth=await requireUser(request,env); if(auth.error)return auth.error;
+    await ensureAssessmentSchema();
+    const scope=await usageScope(auth.user,new URL(request.url)); if(scope.error)return scope.error;
+    const users=[];
+    for(const t of scope.selected){
+      const members=(await env.DB.prepare(`SELECT u.id,u.email,u.full_name,m.role FROM memberships m JOIN users u ON u.id=m.user_id WHERE m.tenant_id=? AND m.status='ACTIVE' AND u.platform_role<>'OSC_ADMIN' ORDER BY u.full_name`).bind(t.id).all()).results;
+      for(const m of members){
+        const attempts=(await env.DB.prepare('SELECT * FROM assessment_attempts WHERE user_id=?').bind(m.id).all()).results;
+        for(const a of attempts) if(expired(a)) Object.assign(a,await finalizeAttempt(a,'expired'));
+        const st=Object.fromEntries(Object.keys(STAGES).map(k=>{const s=stageSummary(k,attempts);return [k,{attempts:s.attempts,passedAt:s.passedAt,inProgress:!!s.inProgress,last:s.last?{score:s.last.score,decode:s.last.score_decode,interpret:s.last.score_interpret,passed:s.last.passed,n:s.last.attempt_no,validatedAt:s.last.validated_at}:null}];}));
+        users.push({id:m.id,email:m.email,full_name:m.full_name,role:m.role,tenant_id:t.id,tenant_name:t.name,tenant_type:t.type,stages:st});
+      }
+    }
+    return json({isAdmin:scope.isAdmin,groups:scope.groups,users,stages:Object.entries(STAGES).map(([k,c])=>({key:k,label:c.label,passMark:c.pass,maxAttempts:c.maxAttempts}))});
   }
 
   const moduleMatch=path.match(/^\/api\/admin\/cohorts\/([^/]+)\/modules$/);
@@ -1052,6 +1297,11 @@ export default {async fetch(request,env,ctx){
         if(access.locked.includes(moduleKey))return moduleBlockedPage(label,`Este módulo forma parte del programa progresivo y estará disponible después de la clase${MODULE_DAY[moduleKey]?' del Día '+MODULE_DAY[moduleKey]:''}.`);
         return moduleBlockedPage(label,'Este módulo no está incluido en la licencia de tu empresa. Consultá con tu administrador.');
       }
+    }
+    if(NETWORK_PAGES[page]&&user.platform_role!=='OSC_ADMIN'){
+      const net=await networkAccess(env,user);
+      if(!NETWORK_PAGES[page].some(n=>net.allowed.includes(n)))
+        return moduleBlockedPage(({'compensacion.html':'Compensación Visa (BASE II)','compensacion_mastercard.html':'Compensación Mastercard (IPM)','mastercard_iso.html':'Mastercard ISO'})[page]||MODULE_LABELS[moduleKey]||'Módulo',`Este simulador trabaja con ${NETWORK_PAGES[page].map(n=>NETWORK_LABELS[n]).join(', ')}, y esa red no está incluida en la licencia de tu empresa. Consultá con tu administrador.`);
     }
     const activityKey=/\.html$/.test(page)?(moduleKey||ACTIVITY_PAGES[page]||null):null;
     if(activityKey){

@@ -2773,8 +2773,11 @@
                     ><strong>DÉBITO</strong
                     ><small>•••• 0127 · BIN 341234 · 1200/1210</small>
                   </button>
-                  <button type="button" class="test-card" id="atmDomesticCard" data-atm-card="osc-domestic" style="display:none;border-color:#18c987" onclick="window.OSCSelectATMCard && window.OSCSelectATMCard('osc-domestic')">
-                    <span class="card-network" style="color:#18c987">OSC</span><strong>DÉBITO DOMÉSTICA</strong><small id="atmDomesticCardSmall">BIN 990001 · Banco Virtual</small>
+                  <button type="button" class="test-card domestic no-card" id="atmDomesticCard" data-atm-card="osc-domestic" onclick="window.OSCSelectATMCard && window.OSCSelectATMCard('osc-domestic')">
+                    <span class="card-network">DOMÉSTICA</span><strong>DÉBITO</strong><small id="atmDomesticCardSmall">Emití tu tarjeta en SOLICITUDES</small>
+                  </button>
+                  <button type="button" class="test-card link" data-atm-card="link-debit" onclick="window.OSCSelectATMCard && window.OSCSelectATMCard('link-debit')">
+                    <span class="card-network">LINK</span><strong>LINK</strong><small>•••• 0018 · Host to Host BASE24</small>
                   </button>
                 </div>
                 <div class="atm-card-footer">
@@ -2783,6 +2786,7 @@
                   </div>
                   <div id="atmNetworkBadge" class="network-profile-badge"></div>
                 </div>
+                <div id="atmLinkPanel" class="link-panel hidden" aria-label="Parámetros de la red LINK"></div>
                 <div id="atmEntryModePanel" class="entry-mode-panel">
                   <strong>Seleccione forma de captura</strong>
                   <div class="entry-mode-grid capture-3">
@@ -3037,8 +3041,8 @@
                 </article>
               </div>
 
-              <h2 style="margin-top: 14px">ESCENARIO</h2>
-              <div class="scenario-grid" id="scenarioGrid">
+              <h2 style="margin-top: 14px" class="atm-card-scenario">ESCENARIO</h2>
+              <div class="scenario-grid atm-card-scenario" id="scenarioGrid">
                 <button class="selected" data-scenario="approved">
                   00 - Aprobada
                 </button>
@@ -3299,7 +3303,8 @@
       </aside>
     </div>
 
-    <script src="js/network-profiles.js"></script>
+    <script src="js/network-profiles.js?v=4.0.0-rc1.24"></script>
+    <script src="js/link-hth.js?v=4.0.0-rc1.25"></script>
     <script src="js/emv-crypto.js?v=4.0.0-rc1.22"></script>
     <script src="js/iso-network-spec.js?v=4.0.0-rc1.22"></script>
     <script src="js/security-edu.js?v=4.0.0-rc1.22"></script>
@@ -3363,7 +3368,9 @@
           const pan = String(message.pan || "");
           const brandText = String(message.brand || "").toLowerCase();
           const inferredBrand =
-            brandText.includes("amex") || /^3[47]/.test(pan)
+            brandText.includes("link") || /^990002/.test(pan)
+              ? "link"
+              : brandText.includes("amex") || /^3[47]/.test(pan)
               ? "amex"
               : brandText.includes("master") || /^2|^5/.test(pan)
                 ? "mastercard"
@@ -3372,7 +3379,7 @@
             window.OSCNetworks?.logo?.(
               window.OSCNetworks.profiles[inferredBrand],
             ) || inferredBrand.toUpperCase();
-          tr.innerHTML = `<td>${message.time}</td><td>${brandHtml}</td><td><span class="direction ${message.direction === "Entrante" ? "in" : "out"}">${message.direction}</span></td><td><b>${message.mti}</b></td><td>${message.operation}</td><td>•••• ${String(message.pan || "").slice(-4)}</td><td>${formatAmount(message.amount)}</td><td>${message.responseCode || "—"}</td><td>${message.stan}</td><td>${message.batch || "000001"}</td><td><span class="status-pill ${message.status === "Aprobada" ? "ok" : "bad"}">${message.status}</span></td>`;
+          tr.innerHTML = `<td>${message.time}</td><td>${brandHtml}</td><td><span class="direction ${message.direction === "Entrante" ? "in" : "out"}">${message.direction}</span></td><td><b>${message.mti}</b></td><td>${message.operation}</td><td>•••• ${String(message.pan || "").slice(-4)}</td><td>${message.brand === "LINK" || /^990002/.test(pan) ? linkMoney(message.amount, (message.fields.find((r) => r[0] === "49")?.[2] || "032").replace(/<[^>]*>/g, "")) : formatAmount(message.amount)}</td><td>${message.responseCode || "—"}</td><td>${message.stan}</td><td>${message.batch || "000001"}</td><td><span class="status-pill ${message.status === "Aprobada" ? "ok" : "bad"}">${message.status}</span></td>`;
           tr.addEventListener("click", () => renderMessage(message));
           return tr;
         }
@@ -3535,6 +3542,10 @@
           "osc-domestic": {
             brand: "domestic", type: "debit", pan: "9900010000000019", name: "OSC Débito Doméstica", last4: "0019", cardId: ""
           },
+          // rc.1.24 · Red LINK (Host to Host BASE24). PAN didáctico, BIN de práctica 990002.
+          "link-debit": {
+            brand: "link", type: "debit", pan: "9900020000000018", name: "LINK Débito", last4: "0018"
+          },
           "amex-credit": {
             brand: "amex",
             type: "credit",
@@ -3554,6 +3565,10 @@
         window.OSCSelectATMCard = function (key) {
           const c = ATM_CARDS[key];
           if (!c) return;
+          if (key === "osc-domestic" && !c.cardId) {
+            $("atmSelectedCardSummary").textContent = "Doméstica: primero emití una tarjeta de débito en Banco simulado → SOLICITUDES. Después vuelve a aparecer acá con su cuenta vinculada.";
+            return;
+          }
           document
             .querySelectorAll("[data-atm-card]")
             .forEach((x) =>
@@ -3579,6 +3594,7 @@
             physicalCard.classList.toggle("amex-card", c.brand === "amex");
           }
           addTechEvent(`${c.name} seleccionada · PAN •••• ${c.last4}`, "done");
+          refreshAtmLinkUi();
         };
         document
           .querySelectorAll("[data-atm-card]")
@@ -4985,6 +5001,7 @@
         }
 
         function handleOption(value) {
+          if (String(value).startsWith("link") && handleLinkOption(String(value))) return;
           if(String(value).startsWith("dest:")){
             const parts=String(value).split(":"); state.destinationAccountId=parts[1]; state.destination=parts.slice(2).join(":");
             addTechEvent(`Cuenta destino seleccionada: ${state.destination}`,"done"); state.step="amount";
@@ -5063,6 +5080,7 @@
               "PIN capturado en forma cifrada · DE52/DE53 activos",
               "done",
             );
+            if (state.brand === "link") { linkMenu("main"); return; }
             setScreen(
               "PANTALLA TÁCTIL",
               '<small>Toque la operación deseada</small><div class="touch-hint">La selección se realiza directamente sobre la pantalla.</div>',
@@ -5091,6 +5109,7 @@
             );
             return;
           }
+          if (state.operation === "link" && linkAccept()) return;
           if (state.step === "amount") {
             if (!state.amount || Number(state.amount) === 0) return;
             if (state.operation === "transfer") {
@@ -5115,6 +5134,7 @@
         }
 
         function pressKey(value) {
+          if (state.step === "linkPinNew" || state.step === "linkPinConfirm") { const k = state.step === "linkPinNew" ? "linkNewPin" : "linkPinConfirm"; state[k] = ((state[k] || "") + value.slice(0, 1)).slice(0, 4); const e = $("linkPinDisplay"); if (e) e.textContent = "•".repeat(state[k].length).padEnd(4, "_"); return; }
           if(state.step === "pinNew"){state.newPin=(state.newPin+value.slice(0,1)).slice(0,4); const e=$("newPinDisplay");if(e)e.textContent="•".repeat(state.newPin.length);return;}
           if(state.step === "pinConfirm"){state.pinConfirm=(state.pinConfirm+value.slice(0,1)).slice(0,4); const e=$("pinConfirmDisplay");if(e)e.textContent="•".repeat(state.pinConfirm.length);return;}
           if (state.step === "pin") {
@@ -5124,7 +5144,7 @@
           } else if (state.step === "amount") {
             state.amount = (state.amount + value).slice(0, 12);
             const el = $("amountDisplay");
-            if (el) el.textContent = formatAmount(state.amount);
+            if (el) el.textContent = state.operation === "link" ? linkMoney(state.amount) : formatAmount(state.amount);
           } else if (state.step === "destination") {
             state.destination = (state.destination + value).slice(0, 18);
             const el = $("destDisplay");
@@ -5133,6 +5153,7 @@
         }
 
         function clearKey() {
+          if (state.step === "linkPinNew" || state.step === "linkPinConfirm") { const k = state.step === "linkPinNew" ? "linkNewPin" : "linkPinConfirm"; state[k] = (state[k] || "").slice(0, -1); const e = $("linkPinDisplay"); if (e) e.textContent = "•".repeat(state[k].length).padEnd(4, "_"); return; }
           if (state.step === "pin") state.pin = state.pin.slice(0, -1);
           if (state.step === "amount") state.amount = state.amount.slice(0, -1);
           if (state.step === "destination")
@@ -5140,7 +5161,7 @@
           if ($("pinDisplay"))
             $("pinDisplay").textContent = "•".repeat(state.pin.length);
           if ($("amountDisplay"))
-            $("amountDisplay").textContent = formatAmount(state.amount);
+            $("amountDisplay").textContent = state.operation === "link" ? linkMoney(state.amount) : formatAmount(state.amount);
           if ($("destDisplay"))
             $("destDisplay").textContent = state.destination || "—";
         }
@@ -5157,7 +5178,9 @@
             time: new Date().toLocaleString("es-AR", { hour12: false }),
             createdAt: new Date().toISOString(),
             brand:
-              state.brand === "amex"
+              state.brand === "link"
+                ? "LINK"
+                : state.brand === "amex"
                 ? "Amex"
                 : state.brand === "mastercard"
                   ? "Mastercard"
@@ -5187,11 +5210,11 @@
           $("bitmapValue").textContent = message.bitmap;
           $("fieldCount").textContent = message.fields.length;
           $("messageSubtitle").textContent =
-            `${message.mti} · ${message.operation}`;
+            message.linkLabel || `${message.mti} · ${message.operation}`;
           $("deTable").innerHTML = message.fields
             .map(
               (r) =>
-                `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${String(r[2]).length}</td><td>${r[3]}</td><td>${r[4]}</td></tr>`,
+                `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[5] ?? String(r[2]).length}</td><td>${r[3]}</td><td>${r[4]}</td></tr>`,
             )
             .join("");
           const bits = activeBits(message.fields);
@@ -5689,6 +5712,7 @@
         }
 
         async function send0200() {
+          if (state.brand === "link") return sendLinkAtm();
           if (state.brand === "amex" && state.operation !== "withdrawal") {
             setScreen(
               "OPERACIÓN NO HABILITADA",
@@ -5913,6 +5937,170 @@
           }, 850);
         }
 
+        /* ===================== rc.1.24 / rc.1.25 · Red LINK (Host to Host BASE24) ===================== */
+        const LINK_ACCOUNTS = { withdrawal: ["10", "20"], transfer: ["10", "20"], debin: ["10", "20"], card_payment: ["10", "20"], withdrawal_usd: ["15", "07"], balance: ["10", "20", "15", "07"], movements: ["10", "20", "15", "07"], own_transfer: ["10", "20", "15", "07"], deposit: ["10", "20", "15", "07"] };
+        const LINK_ACCT_LABEL = { "10": "Caja de ahorros $", "20": "Cuenta corriente $", "15": "Caja de ahorros U$S", "07": "Cuenta corriente U$S" };
+        function linkCur() { const t = $("linkAccountType")?.value || "10"; return state.linkKind === "withdrawal_usd" || (["15", "07"].includes(t) && !["cash_advance", "fx_rate", "pin_change", "deposit_third", "card_payment_cash"].includes(state.linkKind)) ? "840" : "032"; }
+        function linkMoney(cents, cur) {
+          return (Number(cents || 0) / 100).toLocaleString("es-AR", { style: "currency", currency: (cur || linkCur()) === "840" ? "USD" : "ARS" });
+        }
+        function linkMenu(page) {
+          const menus = {
+            main: ["RED LINK", [["link:withdrawal", "💵 Extracción en pesos"], ["link:withdrawal_usd", "💵 Extracción en dólares"], ["link:balance", "📄 Consulta de saldo"], ["link:movements", "☷ Últimos movimientos"], ["linkmenu:transfers", "↔ Transferencias ▸"], ["linkmenu:more", "➕ Más operaciones ▸"], ["finish", "↪ Fin de operación"]]],
+            transfers: ["TRANSFERENCIAS", [["link:own_transfer", "Entre cuentas propias (40)"], ["link:transfer", "A terceros (09 / 29)"], ["link:debin", "DEBIN pendiente (F3 / F4)"], ["linkmenu:main", "← Volver"]]],
+            more: ["MÁS OPERACIONES", [["link:deposit", "Depósito (21)"], ["link:deposit_third", "Depósito a terceros (22)"], ["linkmenu:card", "Pago de resumen de tarjeta ▸"], ["link:cash_advance", "Adelanto de efectivo (013000)"], ["link:fx_rate", "Tipo de cambio (35)"], ["link:pin_change", "Cambio de PIN (32)"], ["linkmenu:main", "← Volver"]]],
+            card: ["PAGO DE RESUMEN", [["link:card_payment", "Con débito en cuenta (50XX30)"], ["link:card_payment_cash", "En efectivo (500030)"], ["linkmenu:more", "← Volver"]]],
+          };
+          const [title, opts] = menus[page] || menus.main;
+          state.step = "operation";
+          setScreen(title, '<small>Toque la operación deseada</small><div class="touch-hint">Red LINK · Host to Host ISO 8583 · BASE24</div>', opts.map(([value, label]) => ({ value, label })));
+          $("softOptions").classList.add("touch-operation-grid");
+        }
+        function linkAskAmount() {
+          state.step = "amount"; state.amount = "";
+          const k = state.linkKind;
+          const title = { transfer: "IMPORTE TRANSFERENCIA", own_transfer: "IMPORTE TRANSFERENCIA", debin: "IMPORTE DEL DEBIN", deposit: "IMPORTE DEL DEPÓSITO", deposit_third: "IMPORTE DEL DEPÓSITO", card_payment: "IMPORTE A PAGAR", card_payment_cash: "IMPORTE A PAGAR", cash_advance: "IMPORTE DEL ADELANTO" }[k] || "INGRESE IMPORTE";
+          setScreen(title, `<strong id="amountDisplay">${linkMoney(0)}</strong><small>Use el teclado físico</small><div class="screen-amount-note">BORRAR corrige · ACEPTAR confirma</div>`);
+        }
+        function linkProceed() {
+          const k = state.linkKind;
+          setFlow(4);
+          if (k === "own_transfer") {
+            const from = $("linkAccountType")?.value || "10";
+            const same = ["15", "07"].includes(from) ? ["15", "07"] : ["10", "20"];
+            setScreen("CUENTA DESTINO", "<small>Seleccione la cuenta propia que recibe</small>", same.filter((t) => t !== from).map((t) => ({ value: "linkto:" + t, label: LINK_ACCT_LABEL[t] })));
+            return;
+          }
+          if (k === "deposit" || k === "deposit_third") { setScreen("TIPO DE DEPÓSITO", "<small>Seleccione cómo deposita</small>", [{ value: "linkdep:E", label: "💵 Efectivo" }, { value: "linkdep:C", label: "🧾 Cheque" }]); return; }
+          if (["balance", "movements", "fx_rate"].includes(k)) { state.amount = "0"; sendLinkAtm(); return; }
+          if (k === "pin_change") { state.step = "linkPinNew"; state.linkNewPin = ""; state.linkPinConfirm = ""; setScreen("NUEVO PIN", '<strong id="linkPinDisplay">____</strong><small>Ingrese 4 dígitos y presione ACEPTAR</small>'); return; }
+          if (k === "card_payment_cash") state.linkDepType = "E";
+          linkAskAmount();
+        }
+        function handleLinkOption(value) {
+          const T = window.OSCLinkHth;
+          if (value.startsWith("linkmenu:")) { linkMenu(value.slice(9)); return true; }
+          if (value.startsWith("link:")) {
+            state.linkKind = value.slice(5); state.operation = "link"; state.linkTo = null; state.linkDepType = "E";
+            addTechEvent(`LINK · operación seleccionada: ${T.TX[state.linkKind].label}`, "done");
+            const accts = LINK_ACCOUNTS[state.linkKind];
+            if (accts) { setScreen("TIPO DE CUENTA", state.linkKind === "deposit" ? "<small>Seleccione la cuenta donde deposita</small>" : "<small>Seleccione la cuenta</small>", accts.map((t) => ({ value: "linkacct:" + t, label: LINK_ACCT_LABEL[t] }))); return true; }
+            linkProceed(); return true;
+          }
+          if (value.startsWith("linkacct:")) {
+            const t = value.slice(9); const sel = $("linkAccountType"); if (sel) sel.value = t;
+            addTechEvent(`Cuenta seleccionada: ${T.accountLabel(t)} (${t})`, "done");
+            linkProceed(); return true;
+          }
+          if (value.startsWith("linkto:")) { state.linkTo = value.slice(7); addTechEvent(`Cuenta destino: ${T.accountLabel(state.linkTo)} (${state.linkTo})`, "done"); linkAskAmount(); return true; }
+          if (value.startsWith("linkdep:")) { state.linkDepType = value.slice(8); addTechEvent(`Depósito en ${state.linkDepType === "C" ? "cheque" : "efectivo"} · TIPO-DEP en el campo 54`, "done"); linkAskAmount(); return true; }
+          return false;
+        }
+        function linkAccept() {
+          const T = window.OSCLinkHth, k = state.linkKind, p = T.readPanel();
+          if (state.step === "linkPinNew") { if ((state.linkNewPin || "").length !== 4) return true; state.step = "linkPinConfirm"; setScreen("CONFIRMAR PIN", '<strong id="linkPinDisplay">____</strong><small>Repita el nuevo PIN y presione ACEPTAR</small>'); return true; }
+          if (state.step === "linkPinConfirm") {
+            if ((state.linkPinConfirm || "").length !== 4) return true;
+            if (state.linkPinConfirm !== state.linkNewPin) { state.step = "linkPinNew"; state.linkNewPin = ""; state.linkPinConfirm = ""; setScreen("PIN NO COINCIDE", '<strong id="linkPinDisplay">____</strong><small>Ingrese nuevamente el nuevo PIN</small>'); return true; }
+            state.amount = "0"; sendLinkAtm(); return true;
+          }
+          if (state.step === "linkConfirm") { sendLinkAtm(); return true; }
+          if (state.step !== "amount") return false;
+          if (!state.amount || Number(state.amount) === 0) return true;
+          const review = (title, rows, foot) => { state.step = "linkConfirm"; setScreen(title, `<div class="transfer-review">${rows.map(([a, b]) => `<div><span>${a}</span><b>${b}</b></div>`).join("")}</div><small>${foot}</small>`); };
+          if (k === "transfer") return review("CONFIRMAR TRANSFERENCIA", [["Cuenta origen", T.accountLabel(p.accountType)], ["CBU destino", `${String(p.destination.cbu).slice(0, 8)}…${String(p.destination.cbu).slice(-4)}`], ["Importe", linkMoney(state.amount)]], "Presione ACEPTAR para enviar"), true;
+          if (k === "own_transfer") return review("CONFIRMAR TRANSFERENCIA", [["Desde", T.accountLabel(p.accountType)], ["Hacia", T.accountLabel(state.linkTo)], ["Importe", linkMoney(state.amount)]], "Presione ACEPTAR para enviar"), true;
+          if (k === "debin") return review("DEBIN PENDIENTE", [["Vendedor (CUIT)", p.debin.sellerCuit], ["Importe", linkMoney(state.amount)], ["Débito en", T.accountLabel(p.accountType)]], "ACEPTAR autoriza el débito del DEBIN"), true;
+          if (k === "deposit_third") return review("DEPÓSITO A TERCEROS", [["CBU destino", `${String(p.destination.cbu).slice(0, 8)}…${String(p.destination.cbu).slice(-4)}`], ["Tipo", state.linkDepType === "C" ? "Cheque" : "Efectivo"], ["Importe", linkMoney(state.amount, "032")]], "El CBU destino se toma del panel LINK · ACEPTAR para enviar"), true;
+          sendLinkAtm(); return true;
+        }
+        function refreshAtmLinkUi() {
+          const on = state.brand === "link";
+          const panel = $("atmLinkPanel");
+          if (panel) {
+            panel.classList.toggle("hidden", !on);
+            if (on && !panel.dataset.ready && window.OSCLinkHth) {
+              OSCLinkHth.css();
+              panel.innerHTML = OSCLinkHth.panelHtml({ mode: "atm" }) +
+                '<div class="link-note">La operación y la cuenta se eligen en la pantalla del cajero después del PIN. Acá se definen la respuesta del host, el evento posterior (reversa 0420/0430) y los datos de transferencia, depósito a terceros y DEBIN.</div>';
+              panel.dataset.ready = "1";
+              const tb = $("linkTransferBox"), db = $("linkDebinBox");
+              if (tb) { tb.classList.remove("hidden"); tb.style.display = "grid"; }
+              if (db) { db.classList.remove("hidden"); db.style.display = "grid"; }
+              const n = $("linkNote"); if (n) n.textContent = "Transferencia a terceros: débito 09XX00 y orden de acreditación 2900YY (el CBU también se usa en el depósito a terceros 2200YY). DEBIN: F3XX00 y F400XX.";
+            }
+          }
+          // LINK HTH viaja con Track 2 (campo 35) y no lleva datos EMV: se oculta Contactless.
+          document.querySelectorAll('[data-atm-entry="contactless"]').forEach((b) => (b.style.display = on ? "none" : ""));
+          // Con LINK la respuesta del host se elige en el panel LINK (códigos C-X-6).
+          document.querySelectorAll(".atm-card-scenario").forEach((el) => (el.style.display = on ? "none" : ""));
+          if (on && state.captureMode === "contactless" && typeof setCaptureMode === "function") setCaptureMode("chip");
+        }
+        function sendLinkAtm() {
+          if (!window.OSCLinkHth) return;
+          const T = OSCLinkHth, kind = state.linkKind || "withdrawal";
+          const p = T.readPanel();
+          const cur = linkCur();
+          state.step = "processing"; state.stan = random6(); setFlow(4);
+          const noAmount = ["balance", "movements", "fx_rate", "pin_change"].includes(kind);
+          const out = T.build(kind, {
+            terminal: "ATM", amountCents: noAmount ? 0 : Number(state.amount || 0), accountType: p.accountType, scenario: p.scenario, after: p.after,
+            toAccount: state.linkTo, depositType: state.linkDepType,
+            pinBlock: pinBlock(), pinOk: kind === "debin" ? undefined : state.pin === "1234", stan: state.stan,
+            destination: p.destination, debin: p.debin, termId: "S1AXOSC0001",
+          });
+          setScreen("PROCESANDO", `<strong>LINK · 0200</strong><small>${T.TX[kind].short} · Aguarde</small>`);
+          addTechEvent(`LINK · ${T.TX[kind].label} · DE3=${out.messages[0].fields.find((r) => r.de === 3)?.value}`, "done");
+          let i = 0;
+          const next = () => {
+            const m = out.messages[i++];
+            if (!m) return finish();
+            if (m.direction === "ENTRANTE") setFlow(5);
+            if (m.mti === "0420") setFlow(7);
+            const rows = m.fields.map((r) => [String(r.de), r.name, T.displayValue(r.value), r.attr, r.ref, r.value.length]);
+            const msg = addMessage(m.mti, `LINK ${T.TX[kind].short}`, m.responseCode || " ", rows);
+            msg.bitmap = m.bitmap; msg.raw = m.raw; msg.linkAnnotated = T.annotated(m); msg.linkLabel = m.label; msg.brand = "LINK";
+            msg.amount = String(out.amountCents ?? out.ctx.amountCents);
+            if (m.mti === "0420" || m.mti === "0430") msg.status = "Reversada";
+            renderMessage(msg);
+            addTechEvent(`${m.label}${m.responseCode ? " · DE39=" + m.responseCode : ""}`, "done");
+            setTimeout(next, 650);
+          };
+          const finish = () => {
+            const ok = out.code === "00";
+            $("hostStatus").textContent = `${out.code} - ${out.resultText}`;
+            addTechEvent(out.summary, ok && !out.reversal ? "done" : "warn");
+            state.step = "done";
+            const amt = linkMoney(out.amountCents ?? out.ctx.amountCents, out.currency || cur);
+            if (out.timeout) { setScreen("SIN RESPUESTA DEL BANCO", `<strong>Operación cancelada</strong><small>Timeout · reversa 0420 (68) confirmada con 0430. No se debitó su cuenta.</small>`); return; }
+            if (!ok) { setScreen("OPERACIÓN RECHAZADA", `<strong>${out.code}</strong><small>${out.resultText}</small>`); return; }
+            setFlow(out.reversal ? 7 : 6);
+            if (out.reversal?.reason === "32") { $("deviceStatus").textContent = "Entrega parcial"; setScreen("ENTREGA PARCIAL", `<strong>${linkMoney(out.reversal.dispensedCents, out.currency)}</strong><small>Se solicitaron ${amt}. Reversa parcial 0420 (32): el banco devuelve ${linkMoney(out.reversal.returnedCents, out.currency)} a la cuenta.</small>`); return; }
+            if (out.reversal) { setScreen("OPERACIÓN CANCELADA", `<strong>${amt}</strong><small>Reversa 0420 (17) confirmada con 0430 · el importe vuelve a la cuenta</small>`); return; }
+            const lines = (out.statement || []).map((h) => `<div style="display:flex;justify-content:space-between;gap:8px;font-size:12px"><span>${h.date} ${h.concept}</span><b>${h.sign < 0 ? "-" : "+"}${linkMoney(h.cents, out.currency)}</b></div>`).join("");
+            const screens = {
+              balance: ["SALDO DISPONIBLE", `<strong>${linkMoney(out.balanceCents, out.currency)}</strong><small>${T.accountLabel(out.ctx.accountType)} · Campo 44 del 0210 · Retire su tarjeta</small>`],
+              movements: ["ÚLTIMOS MOVIMIENTOS", `<div style="display:grid;gap:6px;width:100%">${lines || "<small>Sin movimientos en el período</small>"}</div><small>Campo 125 · statement print data · Saldo ${linkMoney(out.balanceCents, out.currency)}</small>`],
+              withdrawal: ["RETIRE SU DINERO", `<strong>${amt}</strong><small>Saldo disponible ${linkMoney(out.balanceCents)} · Retire su tarjeta</small>`],
+              withdrawal_usd: ["RETIRE SUS DÓLARES", `<strong>${amt}</strong><small>01XX02 · moneda 840 · Saldo ${linkMoney(out.balanceCents, "840")}</small>`],
+              cash_advance: ["RETIRE SU DINERO", `<strong>${amt}</strong><small>Adelanto con tarjeta de crédito (013000) · Disponible ${linkMoney(out.balanceCents, "032")}</small>`],
+              transfer: ["TRANSFERENCIA APROBADA", `<strong>${amt}</strong><small>Autorización ${out.auth} · ${out.summary}</small>`],
+              own_transfer: ["TRANSFERENCIA APROBADA", `<strong>${amt}</strong><small>${out.summary}</small>`],
+              debin: ["DEBIN ACEPTADO", `<strong>${amt}</strong><small>ID ${String(out.debinId || "").slice(0, 16)}… · Débito F3 y crédito F4</small>`],
+              deposit: ["DEPÓSITO REGISTRADO", `<strong>${amt}</strong><small>${out.summary}</small>`],
+              deposit_third: ["DEPÓSITO REGISTRADO", `<strong>${amt}</strong><small>Depósito a cuenta de terceros (2200YY)</small>`],
+              card_payment: ["PAGO REGISTRADO", `<strong>${amt}</strong><small>Pago de resumen con débito en ${T.accountLabel(out.ctx.accountType)}</small>`],
+              card_payment_cash: ["PAGO REGISTRADO", `<strong>${amt}</strong><small>Pago de resumen en efectivo (500030)</small>`],
+              fx_rate: ["TIPO DE CAMBIO", out.fx ? `<strong>U$S 1 = $ ${out.fx.sell.toLocaleString("es-AR")}</strong><small>Comprador $ ${out.fx.buy.toLocaleString("es-AR")} · Vendedor $ ${out.fx.sell.toLocaleString("es-AR")} · Campo 127 del 0210</small>` : "<strong>—</strong>"],
+              pin_change: ["PIN ACTUALIZADO", "<strong>Operación exitosa</strong><small>El nuevo PIN offset viajó en el campo 54 (nunca el PIN en claro)</small>"],
+            };
+            const [title, html] = screens[kind] || ["OPERACIÓN APROBADA", `<strong>${amt}</strong><small>${out.summary || ""}</small>`];
+            if (["withdrawal", "withdrawal_usd", "cash_advance"].includes(kind)) $("deviceStatus").textContent = "Efectivo entregado";
+            setScreen(title, html);
+          };
+          setTimeout(next, 700);
+        }
+
         function labelOperation() {
           if (state.operation === "withdrawal") return "Extracción";
           if (state.operation === "balance") return "Consulta de saldo";
@@ -5934,9 +6122,11 @@
         }
 
         function annotated(message) {
+          if (message.linkAnnotated) return message.linkAnnotated;
           return `${message.mti}|${message.bitmap}|${message.fields.map((r) => `${r[0]}=${r[2]}`).join("|")}`;
         }
         function raw(message) {
+          if (message.raw) return message.raw;
           return (
             message.mti +
             message.bitmap +
@@ -5986,6 +6176,7 @@ ${raw(m)}`;
 
         function reset() {
           state.step = "card";
+          state.linkKind = null;
           state.pin = "";
           state.emvUn = null; state.emvAtc = null; window.OSCAtmPinTrace = null;
           state.amount = "";
@@ -6204,7 +6395,7 @@ ${raw(m)}`;
             const r=await fetch("/api/bank/atm/cards"); if(!r.ok)return; const j=await r.json(); const c=(j.cards||[])[0]; if(!c)return;
             const item={brand:"domestic",type:"debit",name:"OSC Débito Doméstica",pan:String(c.card_number),last4:String(c.card_number).slice(-4),cardId:c.id,accountNumber:c.account_number,linkedAccountId:c.linked_account_id,balance:c.balance};
             cards["domestic-debit"]=item; cards["osc-domestic"]=item;
-            const b=document.getElementById("atmDomesticCard"); if(b){b.style.display=""; b.dataset.atmCard="osc-domestic";}
+            const b=document.getElementById("atmDomesticCard"); if(b){b.classList.remove("no-card"); b.dataset.atmCard="osc-domestic";}
             const sm=document.getElementById("atmDomesticCardSmall"); if(sm)sm.textContent=`•••• ${item.last4} · BIN 990001 · ${c.account_number}`;
             if(window.ATM_CARDS) window.ATM_CARDS["osc-domestic"]=item;
           } catch(e){}
@@ -6267,7 +6458,7 @@ ${raw(m)}`;
     </div>
     <script src="js/help-catalog.js"></script>
     <script src="js/module-guide.js"></script>
-    <script src="js/navigation.js?v=4.0.0-rc1.22"></script>
+    <script src="js/network-access.js?v=4.0.0-rc1.24"></script><script src="js/navigation.js?v=4.0.0-rc1.24"></script>
   
 <style id="osc-atm-v51">
 .atm-history-wide{min-height:360px}.atm-history-wide .history{max-height:330px;overflow:auto}

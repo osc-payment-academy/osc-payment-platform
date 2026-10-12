@@ -167,6 +167,12 @@
       <button type="button" class="test-card amex" data-test-card="amex-debit" onclick="window.OSCSelectTestCard && window.OSCSelectTestCard('amex-debit')">
         <span class="card-network">AMERICAN EXPRESS</span><strong>DÉBITO</strong><small>•••• 0127 · BIN 341234 · 1100 / 1110 + PIN online</small>
       </button>
+      <button type="button" class="test-card domestic no-card" data-test-card="domestic">
+        <span class="card-network">DOMÉSTICA</span><strong>DÉBITO</strong><small>Emití tu tarjeta en SOLICITUDES</small>
+      </button>
+      <button type="button" class="test-card link" data-test-card="link-debit">
+        <span class="card-network">LINK</span><strong>LINK</strong><small>•••• 0018 · Host to Host BASE24</small>
+      </button>
     </div>
     <div class="selected-test-card" id="selectedTestCardSummary">Visa Crédito · PAN de prueba asignado automáticamente</div>
     <div class="selected-test-card osc-test-pin">PIN de prueba de todas las tarjetas: <b>1234</b></div>
@@ -186,6 +192,7 @@
       </div>
       <small id="installmentSummary">Pago en 1 cuota</small>
     </div>
+    <div id="linkPanel" class="link-panel hidden" aria-label="Transacciones de la red LINK"></div>
   </div>
   <div id="qrPaymentConfig" class="payment-config hidden">
     <label for="qrTypeSelect">Tipo de QR</label>
@@ -435,16 +442,17 @@
   </div>
 </div>
 
-<script src="js/network-profiles.js?v=3.5.4.49"></script>
+<script src="js/network-profiles.js?v=4.0.0-rc1.24"></script>
 <script src="js/switch-store.js?v=4.0.0-rc1.6"></script>
 <script src="js/emv-crypto.js?v=4.0.0-rc1.22"></script>
 <script src="js/iso-network-spec.js?v=4.0.0-rc1.22"></script>
 <script src="js/security-edu.js?v=4.0.0-rc1.22"></script>
-<script src="js/app.js?v=4.0.0-rc1.22"></script>
+<script src="js/link-hth.js?v=4.0.0-rc1.25"></script>
+<script src="js/app.js?v=4.0.0-rc1.25"></script>
 <script>document.addEventListener('DOMContentLoaded',()=>{document.querySelectorAll('.pos-scenario-mini button').forEach((b,i)=>b.onclick=()=>{document.querySelectorAll('.pos-scenario-mini button').forEach(x=>x.classList.remove('active'));b.classList.add('active');const original=document.querySelectorAll('#scenarioGrid button')[i];if(original)original.click()});const log=document.getElementById('posTechEvents');const status=document.getElementById('flowResponse');if(log&&status)new MutationObserver(()=>{const d=document.createElement('div');d.textContent=new Date().toLocaleTimeString('es-AR')+' · '+status.textContent;log.prepend(d);while(log.children.length>8)log.lastChild.remove()}).observe(status,{childList:true,subtree:true,characterData:true})});</script>
 <script src="js/permissions.js"></script>
 
 
 <script src="js/help-catalog.js"></script>
-<script src="js/module-guide.js"></script><script src="js/navigation.js?v=4.0.0-rc1.22"></script><script src="js/osc-learning.js?v=4.0.0-rc1.19" data-module="pos"></script><script src="js/tutor-osc.js?v=4.0.0-rc1.19" data-module="pos"></script></body>
+<script src="js/module-guide.js"></script><script src="js/network-access.js?v=4.0.0-rc1.24"></script><script src="js/navigation.js?v=4.0.0-rc1.24"></script><script src="js/osc-learning.js?v=4.0.0-rc1.19" data-module="pos"></script><script src="js/tutor-osc.js?v=4.0.0-rc1.19" data-module="pos"></script></body>
 </html>

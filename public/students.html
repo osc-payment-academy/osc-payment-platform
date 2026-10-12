@@ -73,7 +73,7 @@
       const learningModules=[
         ['course_iso8583','Día 1 · ISO8583 Interactivo'],['pos','Día 1 · POS Virtual'],['parser','Día 1 · Parser + Parser Guiado'],['constructor','Día 1 · Constructor'],
         ['atm','Día 2 · ATM Virtual'],['ecommerce','Día 3 · E-Commerce / 3DS'],['wallet','Día 4 · Wallet / Tokenización'],['switch_emisor','Día 5 · Switch Emisor'],
-        ['ebook','eBook ISO 8583'],['banco_simulado','Banco simulado (Clientes · Pasivas · Solicitudes · Cuenta del Cliente)'],['switch_adquirente','Switch del Adquirente + Compensación Visa/Mastercard']
+        ['ebook','eBook ISO 8583'],['banco_simulado','Banco simulado (Clientes · Pasivas · Solicitudes · Cuenta del Cliente)'],['switch_adquirente','Switch del Adquirente + Compensación Visa/Mastercard + Mastercard ISO']
       ];
       async function loadModules(){
         if(!cohortId.value)return; const r=await fetch(`/api/admin/cohorts/${cohortId.value}/modules`); if(!r.ok)return; const d=await r.json();

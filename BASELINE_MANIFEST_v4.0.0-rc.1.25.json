@@ -1,0 +1,244 @@
+{
+ "product": "OSC-ACADEMY",
+ "version": "4.0.0-rc.1.25",
+ "title": "Acumulativo sobre rc.1.21: rc.1.22 + rc.1.23 + rc.1.24 + rc.1.25 (LINK: operaciones ATM, Maestro POS, reversas 0420/0430)",
+ "parent_baseline": "OSC-ACADEMY v4.0.0-rc.1.21",
+ "generated_at": "2026-10-12T03:40:31.587175+00:00",
+ "deleted_files": [
+  "03-Analisis-Horario-TCPHandler.ps1"
+ ],
+ "policy": {
+  "no_silent_file_deletion": true,
+  "sha256_inventory": true,
+  "incremental_install_package": true,
+  "complete_backup_package": true,
+  "manuals_excluded": true
+ },
+ "incremental_files": [
+  {
+   "path": "BASELINE_MANIFEST_v4.0.0-rc.1.22.json",
+   "sha256": "a9660c0112cc695f3018a031719cabc570c20321a333bcdd0e7f0b6ea989ea94"
+  },
+  {
+   "path": "BASELINE_MANIFEST_v4.0.0-rc.1.23.json",
+   "sha256": "f8ec364580fcb3be38f791edcc00e1fb99b773a7adefb271fcc079731b31ee8b"
+  },
+  {
+   "path": "BASELINE_MANIFEST_v4.0.0-rc.1.24.json",
+   "sha256": "25ffb64c286704f7f091a929636ebef5d413c72a11c4263e76c5cce90b83f146"
+  },
+  {
+   "path": "INSTRUCCIONES_INSTALACION_v4.0.0_RC1.22.txt",
+   "sha256": "840ac2f9fd711acd01a2cee1eb73853605e504e8824d579993badb09295eb581"
+  },
+  {
+   "path": "INSTRUCCIONES_INSTALACION_v4.0.0_RC1.23.txt",
+   "sha256": "6416fa23d0851c4bbc2cdd97655aa73914ffad10f3fcc3dd18875dcc481398d2"
+  },
+  {
+   "path": "INSTRUCCIONES_INSTALACION_v4.0.0_RC1.24.txt",
+   "sha256": "340666f13c459331fa061963e64ba9eb9e58162f75bd22724cb537b0e846c8dc"
+  },
+  {
+   "path": "INSTRUCCIONES_INSTALACION_v4.0.0_RC1.25.txt",
+   "sha256": "9c4bd3d48a9616dbbd8589726b004fe266c155a9a9c6d55035a1523e515648b2"
+  },
+  {
+   "path": "MIGRATION_v4.0.0-rc.1.22_LICENCIAS_MODULOS_USO.sql",
+   "sha256": "4c1a98a7611ef311e6fee43d1e4aaa3ca0014def52c8456e67c78d1098a8f816"
+  },
+  {
+   "path": "README.md",
+   "sha256": "c68a616aff7ff6d4646cc4671223d0b262fdde3cdc84e0dc6673a9a21549c8d3"
+  },
+  {
+   "path": "RELEASE_NOTES_v4.0.0-rc.1.22.md",
+   "sha256": "380312cf3c97de6c3bfda7c99306085f6fd613224f6157fe9fde9e4d41c66a1c"
+  },
+  {
+   "path": "RELEASE_NOTES_v4.0.0-rc.1.23.md",
+   "sha256": "bba64431278492d811d749db358b90b6bd9b41ae15499e534bad5fb7d47885cd"
+  },
+  {
+   "path": "RELEASE_NOTES_v4.0.0-rc.1.24.md",
+   "sha256": "a3d039f2bb299ea14073fedbeebd5daf8e5f9951f7831c5fd9428b272d742dbf"
+  },
+  {
+   "path": "RELEASE_NOTES_v4.0.0-rc.1.25.md",
+   "sha256": "7729b7c3862468f475280df525a0a48072c12f03db77c6e6cd382c9f4f4f7f4e"
+  },
+  {
+   "path": "package.json",
+   "sha256": "561c5a52bc6bd5cade5142e589890891ea6e823242ef9fb7ab671764b63a840c"
+  },
+  {
+   "path": "public/assets/brand-link.png",
+   "sha256": "3800fb4c74cb80392ba3786d08c4981d22a4831ce475a499fb67c3b3d4f7c2fb"
+  },
+  {
+   "path": "public/atm.html",
+   "sha256": "3108e590890cd7703681712a514d63a5be6f8f5c0d5b06ff489ed86dd4df11bb"
+  },
+  {
+   "path": "public/clientes.html",
+   "sha256": "2645104c174c45c31006de069c8c9113a7c2abe381bcf5f91f6ec7e6a996e237"
+  },
+  {
+   "path": "public/compensacion.html",
+   "sha256": "5ab0c33e4d7b0027ec388f1280ad59060731abe551d472fc5faca96fcb8e760e"
+  },
+  {
+   "path": "public/compensacion_mastercard.html",
+   "sha256": "f718a7272202c66c66e91c10ceaed4b0d74275453549e9b84282a067bb348950"
+  },
+  {
+   "path": "public/constructor.html",
+   "sha256": "6cbd09f4d420fa0b64349c667d295c1de430e0443c32f46542f3327893c5a32a"
+  },
+  {
+   "path": "public/cuenta_cliente.html",
+   "sha256": "54931874ca286dd33b8eb90157ee04e03ffcc976680ca7f9f187ec6eb379f8eb"
+  },
+  {
+   "path": "public/documentacion.html",
+   "sha256": "d337e810ce2495294d9b1cce37a32eaa7354ef9951b4725536ebb29106aa1289"
+  },
+  {
+   "path": "public/ebook.html",
+   "sha256": "8161b9676fc044bc1b1fd89fd5e0435e423d363e883378dcce92ae46f958ca33"
+  },
+  {
+   "path": "public/ecommerce.html",
+   "sha256": "cf8d88fbcaadaf7bf4a137465fd5c8f0629e153a595e9dafc77244be63e0df09"
+  },
+  {
+   "path": "public/evaluacion.html",
+   "sha256": "675ad4ea526149159bf087c209c63eae89bbc8197db9366851fa8c94c2eead68"
+  },
+  {
+   "path": "public/evaluaciones-informe.html",
+   "sha256": "2cbb04e044c519f63360aa0da7efb24ebe8a3df64c042c429cf823e0ab38877a"
+  },
+  {
+   "path": "public/img/link-logo.png",
+   "sha256": "292971802746adae82601e6f60789244b4e1b0bb3911dad0ae64af617ef588d6"
+  },
+  {
+   "path": "public/index.html",
+   "sha256": "d09863891e350bbe01eca8d9a5c608fc4266c52c480a0590009d22898e168d10"
+  },
+  {
+   "path": "public/js/app.js",
+   "sha256": "59c845c2e47405fa8b6ff220c980d6a2ad99ee03003279e3d7fe8a8adcadb3bd"
+  },
+  {
+   "path": "public/js/emv-crypto.js",
+   "sha256": "292193675bd592e62a745316f560f8a3d16075d38046a7c33f70f2e9523987bb"
+  },
+  {
+   "path": "public/js/help-catalog.js",
+   "sha256": "0076d74e54634f0c7169f68ae148ad404e3ed7e92e4dddaea534061ed9856ece"
+  },
+  {
+   "path": "public/js/iso-network-spec.js",
+   "sha256": "dcd7f08cf903d6fc55585729616a871f9be0e29998188450d5e93ff0f162c001"
+  },
+  {
+   "path": "public/js/link-hth.js",
+   "sha256": "d39408ddfd5ed4d4c0e3ded015aa72b7f0c7ffdb97bc5f086f7a6b6b78f3de5b"
+  },
+  {
+   "path": "public/js/modern-channel-iso.js",
+   "sha256": "2bc9422dcab61c5e46eb008fb1e2df4ac94f9a9ce6511cf38d6a8db6bbe6c030"
+  },
+  {
+   "path": "public/js/modern-payment-messages.js",
+   "sha256": "ca7ae238d25ef5a30a28ebb68d62ef4b38edc9302e1d2446aefe28bdc80f9b1e"
+  },
+  {
+   "path": "public/js/navigation.js",
+   "sha256": "77d8e32f1a0ccb901f269a96750247cb34236538b58f5edda74ea50b5ea136c9"
+  },
+  {
+   "path": "public/js/network-access.js",
+   "sha256": "611d52405bb7e6c2d19e4f44b0101e131dea183142785d5fcb3bd5da41486e89"
+  },
+  {
+   "path": "public/js/network-profiles.js",
+   "sha256": "7906e4457d6b21db5976ac5a35303fff68878b17b32d23f205d72e1a1a5dfe5b"
+  },
+  {
+   "path": "public/js/security-edu.js",
+   "sha256": "53aa6551b64aafe5bbf359f7633bf1db6ddb477601b8517129e75c21eac7493e"
+  },
+  {
+   "path": "public/mastercard_iso.html",
+   "sha256": "1b5d7d8dc25fbc5ad98c31cab3fc1e8f902dd15a8ebb5cc35149a3602dfe9a95"
+  },
+  {
+   "path": "public/ondemand_lab.html",
+   "sha256": "051a04b139e9d4a019f19a76bce32a3290fd3cebb7649bb6b7357d8802a99083"
+  },
+  {
+   "path": "public/parser.html",
+   "sha256": "de4726a50f5c7c4916401cb9dd1c1133615f1b69db63d8f3af443942e290afb7"
+  },
+  {
+   "path": "public/parser_guiado.html",
+   "sha256": "9e4da5b89236aa49d301d3c861f9c7ae26202aefb21d39207ae66642ee84ae57"
+  },
+  {
+   "path": "public/pasivas.html",
+   "sha256": "447defa43a0a2d852b1e39c7ee4789fd683c7fed9f36874b7411959aa3718642"
+  },
+  {
+   "path": "public/pos.html",
+   "sha256": "e65dd7f0a581d8954824bf981b0869be9e66ff3a7e1a0e19ab55c9b69b1127c0"
+  },
+  {
+   "path": "public/production_diagnostic.html",
+   "sha256": "4ef9da4bff2b159ac888d484caf19e06ffa6fda2dd688b1f4cf7dc7fd02d99b9"
+  },
+  {
+   "path": "public/research.html",
+   "sha256": "4f7f0a5b45fc1261719959f0502c3821c71fc312ec73d91fd1401a3571b94f73"
+  },
+  {
+   "path": "public/saas-admin.html",
+   "sha256": "22e23f2b43057d05a8b2a9764d1f1e04165b725b38a7692ab145001cd90d856b"
+  },
+  {
+   "path": "public/solicitudes.html",
+   "sha256": "f48dc659ced4907ae57d74d64c98d01a3c0cdea2a7d9b5139af060f31ac39cb4"
+  },
+  {
+   "path": "public/students.html",
+   "sha256": "831c6987872e5218f13dd82c44ae8f0de7d862b4f32515dec8208c0a677ab145"
+  },
+  {
+   "path": "public/switch.html",
+   "sha256": "a7fdb4ad8bb3a0ed92ec4e89b9d019339dfbb2a49de455072ce49eb5f2f53aa8"
+  },
+  {
+   "path": "public/switch_emisor.html",
+   "sha256": "53b23d86283744857dceedfb810d5d05e6e219df33a3f516804bd04a101f9f7b"
+  },
+  {
+   "path": "public/uso-licencias.html",
+   "sha256": "8c0903c7088a70e2eb944f7cfbddc0e16ae9d3242f999bd354c21c3a5f7d20a1"
+  },
+  {
+   "path": "public/wallet.html",
+   "sha256": "a2321487c3915f8af601a1fed36d4161bccdb0be9ac33ca1f41c33989ccc2e66"
+  },
+  {
+   "path": "src/assessments.js",
+   "sha256": "668982d69e91f5fe5ae3b903f90408c5d0a1c40ce5b1119be3a79bfb356d1279"
+  },
+  {
+   "path": "src/index.js",
+   "sha256": "bc237a9a7d8cc2e5c217196743dc8200cef1cdfd560dad7a131071f293e49527"
+  }
+ ],
+ "complete_file_count": 344
+}

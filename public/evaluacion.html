@@ -1,0 +1,199 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Evaluaciones · OSC Payment Academy</title><link rel="icon" type="image/svg+xml" href="/favicon.svg"><link rel="stylesheet" href="css/saas.css">
+<style>
+.stages{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.stage{border:1px solid var(--line);border-radius:14px;background:#091827;padding:18px;display:flex;flex-direction:column;gap:10px}
+.stage h3{margin:0}.stage .meta{color:var(--muted);font-size:13px;line-height:1.5}
+.stage.off{opacity:.55}
+.score-big{font-size:34px;font-weight:800;font-variant-numeric:tabular-nums}
+.split{display:flex;gap:10px;flex-wrap:wrap}.split span{padding:4px 9px;border-radius:99px;background:#123049;color:#bfe0ff;font-size:12px}
+.att{display:flex;justify-content:space-between;gap:8px;font-size:13px;border-top:1px solid #17354b;padding-top:6px}
+.ok{color:#7be3ae}.bad{color:#ffabb0}.warn{color:#ffd577}
+.bar{position:sticky;top:0;z-index:5;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;border:1px solid var(--line);border-radius:12px;background:#0a1d2fee;backdrop-filter:blur(4px);padding:10px 14px;margin-bottom:14px}
+.timer{font:800 22px ui-monospace,Consolas,monospace;font-variant-numeric:tabular-nums}.timer.low{color:var(--red)}
+.trama{border:1px solid #2f6a93;border-radius:12px;background:#06121e;padding:12px 14px;margin-bottom:12px}
+.trama h4{margin:0 0 8px;font-size:13px;color:#9fc2e0}
+.chars{font:14px/1.9 ui-monospace,Consolas,monospace;word-break:break-all;color:#dbeeff;letter-spacing:.5px}
+.chars span{padding:1px 0;border-radius:3px}
+.chars.pickable span{cursor:pointer}.chars.pickable span:hover{background:#1d4b70}
+.chars span.sp{color:#4f6b85}
+.chars span.sel{background:#f2c94c;color:#111}
+.q{border:1px solid var(--line);border-radius:12px;background:#091827;padding:14px 16px;margin-bottom:12px}
+.q.saved{border-color:#1f6b4a}.q .qhead{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:6px}
+.q .tag{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#8fb4d3}
+.q .prompt{margin:0 0 10px;line-height:1.5}
+.bits{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 10px}
+.bits button{width:38px;height:38px;border-radius:8px;border:1px solid #2a4964;background:#0e2539;color:#eef7ff;font:800 16px ui-monospace,monospace;cursor:pointer}
+.bits button.on{background:#1f6fd6;border-color:#4b93ff}
+.bits button:disabled{cursor:default;opacity:.85}
+.fields{display:flex;gap:8px;flex-wrap:wrap}
+.fields label{display:flex;gap:5px;align-items:center;border:1px solid #2a4964;border-radius:8px;padding:5px 8px;font-size:13px;cursor:pointer}
+.row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.row.two{grid-template-columns:120px 1fr}
+.q select,.q input[type=text]{width:100%;box-sizing:border-box}
+.saveline{display:flex;justify-content:space-between;align-items:center;margin-top:10px;gap:10px;flex-wrap:wrap}
+.mark{font-weight:800}
+.result{border:1px solid var(--line);border-radius:14px;background:#0a1d2f;padding:18px;margin:14px 0;text-align:center}
+.hidden{display:none!important}
+@media(max-width:900px){.stages{grid-template-columns:1fr}.row{grid-template-columns:1fr}}
+@media(max-width:520px){.shell{padding:16px}.bits button{width:32px;height:32px}}
+</style></head><body><main class="shell">
+<header class="top"><div><div class="brand"><span>OSC</span> PAYMENT ACADEMY</div><h1>Evaluaciones</h1><p class="muted">Interpretación de tramas ISO 8583: decodificar e interpretar.</p></div>
+<nav class="tabs"><a class="btn" href="index.html">← Plataforma</a></nav></header>
+
+<section id="home" class="panel">
+  <div class="stages" id="stages"><p class="muted">Cargando…</p></div>
+  <p class="muted" style="margin:14px 0 0;font-size:13px">Cada evaluación usa tramas propias para cada alumno. Las respuestas se guardan en firme una por una: después de guardar no se pueden cambiar. Al guardar la última se habilita <b>Validar respuestas</b>.</p>
+</section>
+
+<section id="exam" class="hidden">
+  <div class="bar"><div><b id="exLabel">—</b><div class="muted" style="font-size:13px" id="exSub"></div></div>
+    <div id="exProgress" class="muted"></div>
+    <div class="timer hidden" id="timer">30:00</div>
+    <button class="btn" id="backHome" type="button">← Evaluaciones</button></div>
+  <div id="exResult" class="result hidden"></div>
+  <div id="tramas"></div>
+  <div id="questions"></div>
+  <div style="text-align:center;margin:18px 0 30px"><button class="btn primary" id="validateBtn" type="button" disabled>Validar respuestas</button><div id="exMsg" class="message"></div></div>
+</section>
+</main>
+<script src="js/saas-session.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]);
+let VIEW=null, timerId=null, clockOffset=0;
+const STAGE_INFO={inicial:'Diagnóstico al comenzar: 5 ejercicios sobre una trama con bitmap primario.',intermedia:'Después del dictado: 8 ejercicios, bitmap secundario y campos de longitud variable.',final:'30 minutos · 11 ejercicios sobre una trama completa · aprueba con 70/100 · hasta 5 intentos.'};
+
+async function loadHome(){
+  const r=await fetch('/api/assessments/me'); if(r.status===401)return location.href='/login.html';
+  const d=await r.json();
+  $('stages').innerHTML=d.stages.map(s=>{
+    const last=s.last, isFinal=s.key==='final';
+    let status='';
+    if(!s.enabled) status='<span class="muted">Todavía no habilitada para tu grupo.</span>';
+    else if(s.inProgress) status='<span class="warn">En curso</span>';
+    else if(!last) status='<span class="muted">Pendiente</span>';
+    const scoreHtml=last?`<div class="score-big ${isFinal?(last.passed?'ok':'bad'):''}">${last.score}<small style="font-size:16px;color:var(--muted)">/100</small></div><div class="split"><span>Decodificar ${last.decode??'—'}</span><span>Interpretar ${last.interpret??'—'}</span></div>`:'';
+    const finalHtml=isFinal&&s.attempts.length?`<div>${s.attempts.map(a=>`<div class="att"><span>Intento ${a.n}</span><span>${a.status==='IN_PROGRESS'?'<span class="warn">en curso</span>':`${a.score}/100 ${a.passed?'<b class="ok">✓ aprobado</b>':'<span class="bad">✗</span>'}${a.status==='EXPIRED'?' <small class="muted">(tiempo agotado)</small>':''}`}</span></div>`).join('')}</div>${s.passedAt?`<b class="ok">Aprobada en el intento ${s.passedAt} de ${s.maxAttempts}</b>`:`<span class="muted">Intentos usados: ${s.used} de ${s.maxAttempts}</span>`}`:'';
+    const btn=s.inProgress?`<button class="btn primary" data-open="${s.inProgress}">Continuar</button>`:s.canStart?`<button class="btn primary" data-start="${s.key}">${isFinal&&s.used?'Nuevo intento':'Comenzar'}</button>`:(last&&!isFinal&&last?`<button class="btn" data-review="${s.attempts[s.attempts.length-1]?.id}">Ver resultado</button>`:'');
+    return `<article class="stage ${s.enabled?'':'off'}"><h3>${esc(s.label)}</h3><div class="meta">${STAGE_INFO[s.key]}</div>${status}${scoreHtml}${finalHtml}<div style="margin-top:auto">${btn}</div></article>`;
+  }).join('');
+  $('stages').querySelectorAll('[data-start]').forEach(b=>b.onclick=()=>start(b.dataset.start));
+  $('stages').querySelectorAll('[data-open],[data-review]').forEach(b=>b.onclick=()=>openAttempt(b.dataset.open||b.dataset.review));
+}
+async function start(stage){
+  if(stage==='final'&&!confirm('La evaluación final dura 30 minutos desde que comenzás. Si se termina el tiempo, se cierra con las respuestas guardadas. ¿Comenzar?'))return;
+  const r=await fetch('/api/assessments/start',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({stage})});
+  const d=await r.json(); if(!r.ok){alert(d.message||'No se pudo comenzar.');return loadHome();}
+  showExam(d);
+}
+async function openAttempt(idv){const r=await fetch('/api/assessments/attempts/'+encodeURIComponent(idv));if(r.ok)showExam(await r.json());}
+
+function tramaHtml(t,pickable){
+  return `<div class="trama"><h4>Trama ${esc(t.label)} · ${t.profile==='link'?'Red LINK (BASE24: "ISO" + header + MTI + bitmap)':t.profile==='amex'?'American Express 1100 / 1110 (texto, bitmap en hex)':'Formato texto ISO 8583 (bitmap en hex)'}</h4><div class="chars ${pickable?'pickable':''}" data-trama="${t.id}">${[...t.raw].map((c,i)=>`<span data-i="${i}" class="${c===' '?'sp':''}" title="Carácter N° ${i+1}">${c===' '?'·':esc(c)}</span>`).join('')}</div></div>`;
+}
+function qHtml(q,i,ans,closed,detail){
+  const saved=!!ans, dis=saved||closed?'disabled':'';
+  const tag=q.kind==='decode'?'Decodificar':'Interpretar';
+  let body='';
+  if(q.type==='mti') body=`<p class="muted" id="mtiSel-${q.id}">${saved?`Guardaste el carácter N° ${ans.index+1}.`:'Todavía no marcaste ningún carácter en la trama A.'}</p>`;
+  if(q.type==='nibbles'){
+    const bits=(ans?.bits||'00000000').split('');
+    body=`<div class="muted" style="font-size:13px">8 bits (tocá cada casilla para alternar 0 / 1):</div><div class="bits" data-bits="${q.id}">${bits.map(b=>`<button type="button" class="${b==='1'?'on':''}" ${dis}>${b}</button>`).join('')}</div>
+      <div class="muted" style="font-size:13px;margin-bottom:6px">Campos activos en esas 8 posiciones:</div><div class="fields" data-fields="${q.id}">${q.positions.map(p=>`<label><input type="checkbox" value="${p}" ${(ans?.fields||[]).includes(p)?'checked':''} ${dis}> DE ${p}</label>`).join('')}</div>`;
+  }
+  if(q.type==='extract') body=q.varLen
+    ?`<div class="row two"><label class="muted" style="font-size:13px">Prefijo (${q.prefixDigits} dígitos)<input type="text" data-prefix="${q.id}" maxlength="${q.prefixDigits}" value="${esc(ans?.prefix||'')}" ${dis}></label><label class="muted" style="font-size:13px">Valor<input type="text" data-value="${q.id}" value="${esc(ans?.value||'')}" ${dis} autocomplete="off" spellcheck="false"></label></div>`
+    :`<label class="muted" style="font-size:13px">Valor<input type="text" data-value="${q.id}" value="${esc(ans?.value||'')}" ${dis} autocomplete="off" spellcheck="false"></label>`;
+  if(q.type==='de3'&&VIEW.exam.de3Options?.codes){
+    body=`<label class="muted" style="font-size:13px">Significado del Processing Code<select data-de3="${q.id}" data-part="code" ${dis}><option value="">Elegí…</option>${Object.entries(VIEW.exam.de3Options.codes).map(([k,v])=>`<option value="${k}" ${ans?.code===k?'selected':''}>${k} · ${esc(v)}</option>`).join('')}</select></label>`;
+  }
+  else if(q.type==='de3'){
+    const o=VIEW.exam.de3Options, sel=(name,map,val)=>`<label class="muted" style="font-size:13px">${name}<select data-de3="${q.id}" data-part="${name==='Operación (pos. 1-2)'?'tx':name==='Cuenta desde (pos. 3-4)'?'from':'to'}" ${dis}><option value="">Elegí…</option>${Object.entries(map).map(([k,v])=>`<option value="${k}" ${val===k?'selected':''}>${k} · ${esc(v)}</option>`).join('')}</select></label>`;
+    body=`<div class="row">${sel('Operación (pos. 1-2)',o.tx,ans?.tx)}${sel('Cuenta desde (pos. 3-4)',o.acct,ans?.from)}${sel('Cuenta hacia (pos. 5-6)',o.acct,ans?.to)}</div>`;
+  }
+  const d=detail?.find(x=>x.id===q.id);
+  const mark=d?(d.credit>=1?'<span class="mark ok">✓ Correcta</span>':d.credit>0?`<span class="mark warn">◐ Parcial (${Math.round(d.credit*100)}%)</span>`:'<span class="mark bad">✗ Incorrecta</span>'):'';
+  return `<article class="q ${saved?'saved':''}" id="card-${q.id}"><div class="qhead"><b>${i+1}. ${q.type==='mti'?'Fin del MTI':q.type==='nibbles'?'Nibbles → bits':q.type==='extract'?(VIEW.exam.profile==='amex'?'Extraer Bit ':'Extraer DE ')+q.de:(VIEW.exam.profile==='amex'?'Interpretar Bit 3':'Interpretar DE 3')}</b><span class="tag">${tag}</span></div><p class="prompt">${esc(q.prompt)}</p>${body}
+    <div class="saveline"><span class="muted" style="font-size:13px">${saved?'✓ Guardada en firme':closed?'Sin respuesta':''}</span>${mark}${saved||closed?'':`<button class="btn primary" type="button" data-save="${q.id}">Guardar</button>`}</div></article>`;
+}
+let mtiPick=null;
+function showExam(v){
+  VIEW=v; mtiPick=null;
+  $('home').classList.add('hidden'); $('exam').classList.remove('hidden');
+  const closed=v.status!=='IN_PROGRESS';
+  $('exLabel').textContent=v.label;
+  $('exSub').textContent=`${v.maxAttempts>1?`Intento ${v.attemptNo} de ${v.maxAttempts} · `:''}${v.exam.questions.length} ejercicios${v.passMark?` · aprueba con ${v.passMark}/100`:''}`;
+  const qMti=v.exam.questions.find(q=>q.type==='mti');
+  const pickable=!closed&&qMti&&!v.answers[qMti.id];
+  $('tramas').innerHTML=v.exam.tramas.map(t=>tramaHtml(t,pickable&&t.id===qMti.tramaId)).join('');
+  if(qMti&&v.answers[qMti.id]) document.querySelector(`[data-trama="${qMti.tramaId}"] [data-i="${v.answers[qMti.id].index}"]`)?.classList.add('sel');
+  $('questions').innerHTML=v.exam.questions.map((q,i)=>qHtml(q,i,v.answers[q.id],closed,v.result?.detail)).join('');
+  bind(); progress(); renderResult(); setupTimer();
+  window.scrollTo({top:0});
+}
+function bind(){
+  document.querySelectorAll('.chars.pickable span').forEach(s=>s.onclick=()=>{
+    document.querySelectorAll('.chars.pickable span.sel').forEach(x=>x.classList.remove('sel'));
+    s.classList.add('sel'); mtiPick=Number(s.dataset.i);
+    const q=VIEW.exam.questions.find(x=>x.type==='mti'); const el=$('mtiSel-'+q.id); if(el) el.textContent=`Marcaste el carácter N° ${mtiPick+1} ("${s.textContent}").`;
+  });
+  document.querySelectorAll('.bits button').forEach(b=>b.onclick=()=>{b.classList.toggle('on');b.textContent=b.classList.contains('on')?'1':'0';});
+  document.querySelectorAll('[data-save]').forEach(b=>b.onclick=()=>save(b.dataset.save,b));
+  $('validateBtn').onclick=validate;
+}
+function collect(q){
+  if(q.type==='mti') return mtiPick==null?null:{index:mtiPick};
+  if(q.type==='nibbles') return {bits:[...document.querySelectorAll(`[data-bits="${q.id}"] button`)].map(b=>b.textContent).join(''),fields:[...document.querySelectorAll(`[data-fields="${q.id}"] input:checked`)].map(i=>Number(i.value))};
+  if(q.type==='extract'){const v=document.querySelector(`[data-value="${q.id}"]`)?.value||'';const p=document.querySelector(`[data-prefix="${q.id}"]`)?.value||'';if(!v.trim())return null;if(q.varLen&&!p.trim())return null;return {prefix:p,value:v};}
+  if(q.type==='de3'){const a={};document.querySelectorAll(`[data-de3="${q.id}"]`).forEach(s=>a[s.dataset.part]=s.value);if('code' in a)return a.code?{code:a.code}:null;return a.tx&&a.from&&a.to?a:null;}
+}
+async function save(qid,btn){
+  const q=VIEW.exam.questions.find(x=>x.id===qid); const answer=collect(q);
+  if(!answer){msg(q.type==='mti'?'Marcá primero el carácter en la trama A.':'Completá la respuesta antes de guardar.',true);return;}
+  if(!confirm('¿Guardar esta respuesta en firme? Después no se puede cambiar.'))return;
+  btn.disabled=true;
+  const r=await fetch(`/api/assessments/attempts/${VIEW.id}/answer`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({qid,answer})});
+  const d=await r.json().catch(()=>({}));
+  if(!r.ok){msg(d.message||'No se pudo guardar.',true);if(d.view)showExam(d.view);else btn.disabled=false;return;}
+  VIEW.answers[qid]={...answer,savedAt:new Date().toISOString()};
+  const card=$('card-'+qid); card.classList.add('saved'); card.querySelectorAll('input,select,.bits button').forEach(x=>x.disabled=true);
+  btn.remove(); card.querySelector('.saveline span').textContent='✓ Guardada en firme';
+  if(q.type==='mti') document.querySelectorAll('.chars.pickable').forEach(x=>x.classList.remove('pickable'));
+  msg(''); progress();
+}
+function progress(){
+  const n=Object.keys(VIEW.answers).length, total=VIEW.exam.questions.length, closed=VIEW.status!=='IN_PROGRESS';
+  $('exProgress').textContent=closed?'Evaluación cerrada':`${n} de ${total} respuestas guardadas`;
+  $('validateBtn').disabled=closed||n<total; $('validateBtn').classList.toggle('hidden',closed);
+}
+async function validate(){
+  const r=await fetch(`/api/assessments/attempts/${VIEW.id}/validate`,{method:'POST'});
+  const d=await r.json(); if(!r.ok){msg(d.message||'No se pudo validar.',true);return;}
+  showExam(d);
+}
+function renderResult(){
+  const box=$('exResult'), res=VIEW.result;
+  if(!res){box.classList.add('hidden');return;}
+  const isFinal=VIEW.stage==='final', left=VIEW.maxAttempts-VIEW.attemptNo;
+  box.classList.remove('hidden');
+  box.innerHTML=`${VIEW.status==='EXPIRED'?'<p class="warn"><b>Se terminó el tiempo.</b> Se calificó con las respuestas guardadas.</p>':''}
+    <div class="muted">Puntaje</div><div class="score-big ${isFinal?(res.passed?'ok':'bad'):''}" style="font-size:52px">${res.score}<small style="font-size:20px;color:var(--muted)">/100</small></div>
+    <div class="split" style="justify-content:center;margin:8px 0"><span>Decodificar ${res.decode??'—'}/100</span><span>Interpretar ${res.interpret??'—'}/100</span></div>
+    ${isFinal?(res.passed?`<p class="ok"><b>¡Aprobaste la evaluación final en el intento ${VIEW.attemptNo}!</b></p>`:(left>0?`<p class="bad"><b>No alcanzaste ${VIEW.passMark}/100.</b> Te quedan ${left} intento(s); cada intento usa tramas nuevas.</p><button class="btn primary" id="retry" type="button">Nuevo intento</button>`:'<p class="bad"><b>No alcanzaste el puntaje mínimo y ya usaste los 5 intentos.</b> Consultá con tu instructor.</p>')):''}`;
+  $('retry')?.addEventListener('click',()=>start('final'));
+}
+function setupTimer(){
+  clearInterval(timerId); const t=$('timer');
+  if(!VIEW.deadlineAt||VIEW.status!=='IN_PROGRESS'){t.classList.add('hidden');return;}
+  clockOffset=new Date(VIEW.serverNow).getTime()-Date.now(); t.classList.remove('hidden');
+  const tick=async()=>{
+    const left=new Date(VIEW.deadlineAt).getTime()-(Date.now()+clockOffset);
+    if(left<=0){clearInterval(timerId);t.textContent='00:00';const r=await fetch('/api/assessments/attempts/'+VIEW.id);if(r.ok)showExam(await r.json());return;}
+    const m=Math.floor(left/60000), s=Math.floor(left/1000)%60; t.textContent=`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`; t.classList.toggle('low',left<5*60000);
+  };
+  tick(); timerId=setInterval(tick,1000);
+}
+function msg(t,e=false){const m=$('exMsg');m.textContent=t;m.className=t?'message show '+(e?'error':'ok'):'message';}
+$('backHome').onclick=()=>{clearInterval(timerId);$('exam').classList.add('hidden');$('home').classList.remove('hidden');loadHome();};
+loadHome();
+</script></body></html>

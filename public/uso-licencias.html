@@ -32,6 +32,14 @@ tr:hover td{background:#0b1f31}
 .legend{display:flex;gap:12px;align-items:center;color:var(--muted);font-size:12px}
 .legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:4px;vertical-align:-2px}
 .empty{padding:28px;text-align:center;color:var(--muted)}
+.seatbar{display:none;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;border:1px solid var(--line);border-radius:12px;background:#0a1d2f;padding:12px 16px;margin:0 0 15px}
+.seatbar.show{display:flex}
+.seatbar .meter{flex:1;min-width:180px;height:8px;border-radius:99px;background:#13283b;overflow:hidden}
+.seatbar .meter i{display:block;height:100%;background:var(--green)}
+.seatbar.full .meter i{background:var(--amber)}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.cred{border:1px dashed #2f6a93;border-radius:10px;padding:12px;background:#08192a;font-family:ui-monospace,Consolas,monospace;font-size:13px;white-space:pre-wrap;word-break:break-all}
+@media(max-width:520px){.form-grid{grid-template-columns:1fr}}
 @media(max-width:900px){.filters{grid-template-columns:1fr 1fr}.kpis{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:520px){.filters{grid-template-columns:1fr}.kpis{grid-template-columns:1fr 1fr}.kpi strong{font-size:24px}.shell{padding:16px}}
 </style></head><body><main class="shell">
@@ -51,6 +59,7 @@ tr:hover td{background:#0b1f31}
     <div class="kpi good"><span>Activos</span><strong id="kActive">—</strong><small>usaron la plataforma en 7 días</small></div>
     <div class="kpi warn"><span>Inactivos</span><strong id="kInactive">—</strong><small>más de 7 días sin uso</small></div>
   </div>
+  <div class="seatbar" id="seatBar"><div><b id="seatText">—</b><br><span class="muted-sm" id="seatSub"></span></div><div class="meter"><i id="seatMeter" style="width:0"></i></div><button class="btn primary" id="addUserBtn" type="button">＋ Dar de alta usuario</button></div>
   <div class="toolbar"><p class="muted-sm" style="margin:0">🟢 hasta 7 días · 🟡 de 8 a 14 días · 🔴 más de 14 días o nunca. El uso por módulo se registra desde la versión rc.1.22; el último ingreso existe desde antes.</p><button class="btn sm" id="remindAll" type="button">✉ Recordar a todos los inactivos</button></div>
   <div class="table-wrap"><table><thead><tr><th>Estado</th><th>Alumno</th><th>Empresa / grupo</th><th>Último uso</th><th>Días de uso</th><th>Módulos usados</th><th>Licencia</th><th>Recordatorio</th><th>Acciones</th></tr></thead><tbody id="rows"><tr><td colspan="9" class="empty">Cargando…</td></tr></tbody></table></div>
   <div id="msg" class="message"></div>
@@ -64,13 +73,23 @@ tr:hover td{background:#0b1f31}
   <div class="table-wrap"><table style="min-width:520px"><thead><tr><th>Día</th><th>Módulos</th><th>Visitas</th><th>Horario</th></tr></thead><tbody id="dRows"></tbody></table></div>
 </div></div>
 
+<div class="modal" id="addModal" role="dialog" aria-modal="true" aria-labelledby="aTitle"><div class="modal-card" style="width:min(560px,100%)">
+  <div class="toolbar"><h2 id="aTitle" style="margin:0">Dar de alta usuario</h2><button class="btn sm" id="aClose" type="button">✕ Cerrar</button></div>
+  <form id="addForm"><p class="muted-sm" id="aSeats" style="margin-top:0"></p>
+    <div class="form-grid"><div class="field"><label for="aName">Nombre y apellido</label><input id="aName" required autocomplete="off"></div><div class="field"><label for="aEmail">Correo</label><input id="aEmail" type="email" required autocomplete="off"></div></div>
+    <p class="muted-sm">Recibe los mismos módulos y el mismo vencimiento que la licencia de la empresa.</p>
+    <button class="btn primary" id="aSubmit">Dar de alta</button></form>
+  <div id="aResult" hidden></div>
+  <div id="aMsg" class="message"></div>
+</div></div>
+
 <script src="js/saas-session.js"></script>
 <script>
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]);
 let DATA=null;
 const STATUS={active:'Activo',warning:'8–14 días',inactive:'Inactivo',never:'Nunca ingresó'};
-const fmtDate=d=>d?new Date(d).toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric'}):'—';
+const fmtDate=d=>d?new Date(/^\d{4}-\d{2}-\d{2}$/.test(d)?d+'T12:00:00':d).toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric'}):'—';
 const fmtDateTime=d=>d?new Date(d).toLocaleString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}):'—';
 function ago(days){if(days==null)return'Nunca';if(days===0)return'Hoy';if(days===1)return'Ayer';return`Hace ${days} días`}
 function licenseLeft(exp){if(!exp)return'Sin vencimiento';const d=Math.ceil((new Date(exp)-Date.now())/86400e3);return d<0?'Vencida':d===0?'Vence hoy':`${d} días restantes`}
@@ -81,7 +100,7 @@ function filtered(){
 }
 function render(){
   const list=filtered();
-  const s=DATA.summary;$('kAssigned').textContent=s.assigned;$('kNever').textContent=s.never;$('kActive').textContent=s.active7;$('kInactive').textContent=s.inactive;
+  const s=DATA.summary;const seat=currentSeat();$('kAssigned').textContent=seat?`${seat.used} de ${seat.seats}`:s.assigned;$('kAssigned').nextElementSibling.textContent=seat?`${seat.available} disponible${seat.available===1?'':'s'}`:'usuarios con acceso';renderSeatBar(seat);$('kNever').textContent=s.never;$('kActive').textContent=s.active7;$('kInactive').textContent=s.inactive;
   $('rows').innerHTML=list.length?list.map(u=>`<tr>
     <td><span class="status s-${u.status}"><span class="dot"></span>${STATUS[u.status]}</span></td>
     <td><b>${esc(u.full_name)}</b><br><span class="muted-sm">${esc(u.email)}</span>${u.role==='TENANT_ADMIN'?'<br><span class="muted-sm">Administrador de la cuenta</span>':''}</td>
@@ -91,9 +110,60 @@ function render(){
     <td><div class="mods">${(u.modules||[]).map(m=>`<span>${esc(moduleName(m))}</span>`).join('')||'<span class="muted-sm" style="background:none;padding:0">—</span>'}</div></td>
     <td>${esc(licenseLeft(u.license_expires_at))}</td>
     <td>${u.last_reminder_at?esc(fmtDate(u.last_reminder_at)):'<span class="muted-sm">—</span>'}</td>
-    <td><div class="actions"><button class="btn sm" data-detail="${esc(u.id)}" type="button">Detalle</button><button class="btn sm primary" data-remind="${esc(u.id)}" type="button">✉ Recordar</button></div></td></tr>`).join(''):'<tr><td colspan="9" class="empty">No hay alumnos para este filtro.</td></tr>';
+    <td><div class="actions"><button class="btn sm" data-detail="${esc(u.id)}" type="button">Detalle</button><button class="btn sm primary" data-remind="${esc(u.id)}" type="button">✉ Recordar</button>${u.tenant_type==='CONSULTANCY'&&u.role!=='TENANT_ADMIN'?`<button class="btn sm" data-remove="${esc(u.id)}" data-tenant="${esc(u.tenant_id)}" type="button" style="color:#ffabb0">Dar de baja</button>`:''}</div></td></tr>`).join(''):'<tr><td colspan="9" class="empty">No hay alumnos para este filtro.</td></tr>';
   $('rows').querySelectorAll('[data-detail]').forEach(b=>b.onclick=()=>openDetail(b.dataset.detail));
   $('rows').querySelectorAll('[data-remind]').forEach(b=>b.onclick=()=>remind(DATA.users.find(u=>u.id===b.dataset.remind)));
+  $('rows').querySelectorAll('[data-remove]').forEach(b=>b.onclick=()=>removeUser(DATA.users.find(u=>u.id===b.dataset.remove&&u.tenant_id===b.dataset.tenant)));
+}
+/* rc.1.24 · Autogestión de licencias (consultoras) */
+function currentTenantId(){return $('groupSel').value||(DATA?.groups?.length===1?DATA.groups[0].id:'')}
+function currentSeat(){const t=currentTenantId();return t&&DATA?.seats?.[t]||null}
+function renderSeatBar(seat){
+  const bar=$('seatBar');bar.classList.toggle('show',!!seat);if(!seat)return;
+  bar.classList.toggle('full',seat.available<=0);
+  $('seatText').textContent=`Licencias: ${seat.used} de ${seat.seats} en uso · ${seat.available} disponible${seat.available===1?'':'s'}`;
+  $('seatSub').textContent=seat.expired?'Licencia vencida: no se pueden dar altas.':(seat.expiresAt?`Vence el ${fmtDate(seat.expiresAt)}. `:'')+(seat.available<=0?'Para sumar a alguien, dá de baja a otro usuario o pedí más licencias.':'Podés dar de alta a tu personal hasta completar el cupo.');
+  $('seatMeter').style.width=Math.min(100,seat.seats?seat.used/seat.seats*100:0)+'%';
+  $('addUserBtn').disabled=seat.available<=0||seat.expired;
+}
+function openAdd(){
+  const seat=currentSeat();if(!seat)return;
+  $('addForm').hidden=false;$('aResult').hidden=true;$('aResult').innerHTML='';$('aMsg').className='message';$('aName').value='';$('aEmail').value='';
+  $('aSeats').textContent=`${seat.name}: quedan ${seat.available} licencia${seat.available===1?'':'s'} disponible${seat.available===1?'':'s'}.`;
+  $('addModal').classList.add('show');setTimeout(()=>$('aName').focus(),50);
+}
+function welcomeText(name,email,pwd){
+  const first=(name||'').split(' ')[0]||'';
+  return {subject:'OSC Payment Academy · Tu acceso a la plataforma',body:`Hola ${first}:\n\nYa tenés habilitado tu acceso a OSC Payment Academy.\n\nIngresá en: ${location.origin}/login\nCorreo: ${email}\n${pwd?`Clave inicial: ${pwd}\n\nAl ingresar, cambiá la clave desde "Mi cuenta".`:'Usá tu clave actual. Si no la recordás, usá "¿Olvidaste tu contraseña?".'}\n\nSaludos,`};
+}
+$('addUserBtn').onclick=openAdd;
+$('aClose').onclick=()=>$('addModal').classList.remove('show');
+$('addModal').onclick=e=>{if(e.target.id==='addModal')$('addModal').classList.remove('show')};
+$('addForm').onsubmit=async e=>{
+  e.preventDefault();const btn=$('aSubmit');btn.disabled=true;
+  try{
+    const r=await fetch('/api/usage/users',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({tenantId:currentTenantId(),fullName:$('aName').value.trim(),email:$('aEmail').value.trim()})});
+    const d=await r.json().catch(()=>({}));
+    if(!r.ok){const m=$('aMsg');m.textContent=d.message||'No se pudo dar de alta.';m.className='message show error';return}
+    const t=welcomeText(d.user.fullName,d.user.email,d.temporaryPassword);
+    $('addForm').hidden=true;$('aResult').hidden=false;
+    $('aResult').innerHTML=`<p><b>✓ ${esc(d.user.fullName)}</b> ya tiene acceso. Quedan ${d.seats.available} de ${d.seats.seats} licencias.</p>`+
+      (d.temporaryPassword?`<div class="cred">Ingreso: ${esc(location.origin)}/login\nCorreo: ${esc(d.user.email)}\nClave inicial: ${esc(d.temporaryPassword)}</div><p class="muted-sm">Copiá la clave ahora: por seguridad no se vuelve a mostrar.</p>`:`<p class="muted-sm">Ese correo ya tenía cuenta en la plataforma: entra con su clave actual y recupera su historial anterior.</p>`)+
+      `<div class="actions"><a class="btn primary" href="mailto:${encodeURIComponent(d.user.email)}?subject=${encodeURIComponent(t.subject)}&body=${encodeURIComponent(t.body)}">✉ Enviar bienvenida por correo</a>${d.temporaryPassword?'<button class="btn" type="button" id="aCopy">Copiar datos</button>':''}<button class="btn" type="button" id="aAnother">Dar de alta otro</button></div>`;
+    $('aCopy')&&($('aCopy').onclick=()=>navigator.clipboard?.writeText(`Ingreso: ${location.origin}/login\nCorreo: ${d.user.email}\nClave inicial: ${d.temporaryPassword}`).then(()=>$('aCopy').textContent='✓ Copiado'));
+    $('aAnother').onclick=()=>{d.seats.available>0?openAdd():$('addModal').classList.remove('show')};
+    await load();
+    $('aAnother').disabled=!(currentSeat()?.available>0);
+  }finally{btn.disabled=false}
+};
+async function removeUser(u){
+  if(!u)return;
+  if(!confirm(`¿Dar de baja a ${u.full_name} (${u.email})?\n\nPierde el acceso y se libera una licencia para otra persona.\nSu historial de prácticas queda guardado: si más adelante se lo vuelve a dar de alta con el mismo correo, lo recupera.`))return;
+  const r=await fetch('/api/usage/users/'+encodeURIComponent(u.id)+'/remove',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({tenantId:u.tenant_id})});
+  const d=await r.json().catch(()=>({}));
+  if(!r.ok)return showMsg(d.message||'No se pudo dar de baja.',true);
+  showMsg(`${u.full_name} fue dado de baja. Quedan ${d.seats.available} de ${d.seats.seats} licencias disponibles.`);
+  await load();
 }
 function reminderText(u){
   const first=(u.full_name||'').split(' ')[0]||'';
@@ -129,7 +199,7 @@ async function openDetail(idv){
   $('dRows').innerHTML=d.days.length?d.days.map(x=>`<tr><td>${esc(new Date(x.day+'T12:00:00').toLocaleDateString('es-AR',{weekday:'short',day:'2-digit',month:'2-digit'}))}</td><td><div class="mods">${x.modules.map(m=>`<span>${esc(moduleName(m))}</span>`).join('')}</div></td><td>${x.hits}</td><td>${new Date(x.first_at).toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'})} – ${new Date(x.last_at).toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'})}</td></tr>`).join(''):'<tr><td colspan="4" class="empty">Sin actividad registrada en los últimos 90 días.</td></tr>';
 }
 $('dClose').onclick=()=>$('detail').classList.remove('show');$('detail').onclick=e=>{if(e.target.id==='detail')$('detail').classList.remove('show')};
-document.addEventListener('keydown',e=>{if(e.key==='Escape')$('detail').classList.remove('show')});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){$('detail').classList.remove('show');$('addModal').classList.remove('show')}});
 $('exportCsv').onclick=()=>{
   const head=['Estado','Nombre','Correo','Empresa/grupo','Ultimo ingreso','Ultimo uso','Dias desde el ultimo uso','Dias de uso','Modulos usados','Preguntas al Tutor','Mensajes en foro','Licencia','Ultimo recordatorio'];
   const rows=filtered().map(u=>[STATUS[u.status],u.full_name,u.email,u.tenant_name,fmtDateTime(u.last_login_at),fmtDateTime(u.last_seen_at),u.days_since??'',u.active_days||0,(u.modules||[]).map(moduleName).join(' / '),u.tutor_questions||0,u.forum_posts||0,licenseLeft(u.license_expires_at),fmtDate(u.last_reminder_at)]);

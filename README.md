@@ -1,3 +1,11 @@
+# OSC Payment Academy — v4.0.0-rc.1.25
+
+Red LINK ampliada: operaciones de ATM, compras Maestro en POS y reversas 0420/0430. Ver RELEASE_NOTES_v4.0.0-rc.1.25.md.
+
+## v4.0.0-rc.1.24
+
+Red LINK (Host to Host BASE24) en POS, ATM y Parser · redes habilitadas por consultora · autogestión de licencias · evaluaciones inicial/intermedia/final con informe de evolución. Ver RELEASE_NOTES_v4.0.0-rc.1.24.md.
+
 # OSC Payment Academy — Baseline v3.0 Sprint 1
 
 POS Multi Network, tarjetas de prueba, QR educativo y ticket profesional.
@@ -44,3 +52,6 @@ Perfiles Visa, Mastercard y arquitectura preparada para American Express. Detecc
 
 ## v4.0.0-rc.1.22
 Licencias por módulo para consultoras y ediciones, Análisis Diario y Monitoreo en Vivo con licencias separadas, panel **Uso de licencias** (admin OSC y administrador de cada consultora) con recordatorio por correo, cuotas en el POS (Visa 5D, Mastercard ARGCTA + DE 112, Amex DPP), ARQC/ARPC y PIN Block/HSM con algoritmos reales y claves de práctica, Wallet y E-Commerce por red, y manuales Mastercard CIS / M/Chip y Amex Network Specifications con manito. Requiere `MIGRATION_v4.0.0-rc.1.22_LICENCIAS_MODULOS_USO.sql`. Ver `RELEASE_NOTES_v4.0.0-rc.1.22.md`.
+
+## v4.0.0-rc.1.23
+Mastercard ISO y Compensación Visa/Mastercard visibles con la casilla Switch del Adquirente. Investigación: Apple/Google Pay cubiertos por Wallet; quedan SoftPOS e ISO 20022.

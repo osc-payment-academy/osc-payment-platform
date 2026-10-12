@@ -17,7 +17,7 @@
 code{background:#06121e;border:1px solid #23435f;border-radius:6px;padding:1px 6px}
 </style></head><body><main class="shell">
 <header class="top"><div><div class="brand"><span>OSC</span> PAYMENT ACADEMY</div><h1>Panel OSC</h1><p class="muted">Cursos, licencias por módulo, consultoras y uso de la plataforma.</p></div>
-<nav class="tabs"><a class="btn" href="index.html">CORE</a><a class="btn primary" href="uso-licencias.html">📈 Uso de licencias</a><a class="btn" href="support.html">Soporte Online</a><a class="btn" href="tutor-admin.html">Tutor OSC</a><button class="btn" id="logout">Cerrar sesión</button></nav></header>
+<nav class="tabs"><a class="btn" href="index.html">CORE</a><a class="btn primary" href="uso-licencias.html">📈 Uso de licencias</a><a class="btn" href="evaluaciones-informe.html">📝 Evaluaciones</a><a class="btn" href="support.html">Soporte Online</a><a class="btn" href="tutor-admin.html">Tutor OSC</a><button class="btn" id="logout">Cerrar sesión</button></nav></header>
 
 <section class="grid"><article class="metric"><span>USUARIOS</span><strong id="users">—</strong></article><article class="metric"><span>EMPRESAS / GRUPOS</span><strong id="tenants">—</strong></article><article class="metric"><span>EDICIONES</span><strong id="cohorts">—</strong></article><article class="metric"><span>LICENCIAS</span><strong id="licenses">—</strong></article></section>
 
@@ -36,6 +36,9 @@ code{background:#06121e;border:1px solid #23435f;border-radius:6px;padding:1px 6
       <div class="field"><label for="consSeats">Cantidad de licencias</label><input id="consSeats" type="number" min="1" value="1" required></div>
       <div class="field"><label for="consExpires">Vencimiento (opcional)</label><input id="consExpires" type="date"></div>
     </div>
+    <div class="group-title">Redes habilitadas</div>
+    <p class="muted" style="margin:0 0 8px">Los simuladores (POS, ATM, Wallet, E-commerce, Constructor, Parser y Switch) muestran solo estas redes.</p>
+    <div class="check-grid" id="networkChecks"></div>
     <div class="group-title">Módulos de Payment Academy</div>
     <div class="check-grid" id="moduleChecks"></div>
     <div class="inline-actions"><button type="button" class="btn" id="checkAll">Marcar todos</button><button type="button" class="btn" id="checkNone">Desmarcar todos</button></div>
@@ -56,8 +59,13 @@ code{background:#06121e;border:1px solid #23435f;border-radius:6px;padding:1px 6
 <script>
 const show=(id,t,e=false)=>{const x=document.getElementById(id);x.textContent=t;x.className='message show '+(e?'error':'ok')};
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]);
-const MODULE_INFO={course_iso8583:['🎓 Curso Interactivo',''],ebook:['📖 eBook ISO 8583','Lectura y descarga'],banco_simulado:['🏦 Banco simulado','Clientes · Pasivas · Solicitudes · Cuenta del Cliente'],constructor:['⌘ Constructor ISO8583',''],pos:['▣ POS Virtual','Incluye cuotas, ARQC/ARPC y PIN'],atm:['🏧 ATM Virtual',''],wallet:['📱 Wallet / Tokenización',''],ecommerce:['🛒 E-Commerce / 3DS',''],switch_adquirente:['🏦 Switch del Adquirente','Incluye Compensación Visa / Mastercard'],switch_emisor:['🌎 Switch Emisor',''],parser:['◉ Parser','Parser ISO8583 + Parser Guiado']};
+const MODULE_INFO={course_iso8583:['🎓 Curso Interactivo',''],ebook:['📖 eBook ISO 8583','Lectura y descarga'],banco_simulado:['🏦 Banco simulado','Clientes · Pasivas · Solicitudes · Cuenta del Cliente'],constructor:['⌘ Constructor ISO8583',''],pos:['▣ POS Virtual','Incluye cuotas, ARQC/ARPC y PIN'],atm:['🏧 ATM Virtual',''],wallet:['📱 Wallet / Tokenización',''],ecommerce:['🛒 E-Commerce / 3DS',''],switch_adquirente:['🏦 Switch del Adquirente','Incluye Compensación Visa / Mastercard y Mastercard ISO'],switch_emisor:['🌎 Switch Emisor',''],parser:['◉ Parser','Parser ISO8583 + Parser Guiado']};
 let MODULES=Object.keys(MODULE_INFO), CONS=[];
+const NETWORK_INFO={visa:['Visa','POS, ATM, Wallet, E-commerce · Compensación BASE II'],mastercard:['Mastercard','POS, ATM, Wallet, E-commerce · Compensación IPM y Mastercard ISO'],amex:['American Express','POS, ATM, Wallet, E-commerce'],link:['Red LINK','POS y ATM · Host to Host BASE24 (extracción, consulta, transferencias, DEBIN)'],domestic:['Doméstica','Tarjeta de débito del Banco simulado en POS y ATM']};
+const NETWORKS=Object.keys(NETWORK_INFO);
+function renderNetworks(selected){
+  networkChecks.innerHTML=NETWORKS.map(k=>`<label class="check"><input type="checkbox" data-network="${k}" ${selected.includes(k)?'checked':''}><span>${NETWORK_INFO[k][0]}<small>${NETWORK_INFO[k][1]}</small></span></label>`).join('');
+}
 function renderChecks(selected){
   moduleChecks.innerHTML=MODULES.map(k=>`<label class="check"><input type="checkbox" data-module="${k}" ${selected.includes(k)?'checked':''}><span>${MODULE_INFO[k]?.[0]||k}${MODULE_INFO[k]?.[1]?`<small>${MODULE_INFO[k][1]}</small>`:''}</span></label>`).join('');
 }
@@ -66,17 +74,17 @@ async function loadCons(){
   const r=await fetch('/api/admin/consultancies');if(!r.ok){consList.innerHTML='<p class="muted">No se pudieron cargar las consultoras.</p>';return}
   const d=await r.json();CONS=d.consultancies||[];if(d.modules?.length)MODULES=d.modules.map(m=>m.key);
   consList.innerHTML=CONS.length?CONS.map(c=>`<article class="cons"><div class="cons-head"><div><h3 style="margin:0">${esc(c.name)}</h3><p class="muted" style="margin:4px 0">${c.members.length} de ${c.seats} licencias · ${c.expiresAt?'vence '+new Date(c.expiresAt).toLocaleDateString('es-AR'):'sin vencimiento'} · ID <code>${esc(c.id)}</code></p></div><div class="inline-actions"><a class="btn" href="uso-licencias.html?tenantId=${encodeURIComponent(c.id)}">📈 Uso</a><button class="btn primary" data-edit="${esc(c.id)}">Editar</button></div></div>
-    <div class="chips">${MODULES.map(k=>`<span class="chip ${c.modules.includes(k)?'':'off'}">${c.modules.includes(k)?'✓':'✗'} ${(MODULE_INFO[k]?.[0]||k).replace(/^\S+\s/,'')}</span>`).join('')}<span class="chip ${c.products.daily?'prod':'off'}">${c.products.daily?'✓':'✗'} Análisis Diario</span><span class="chip ${c.products.live?'prod':'off'}">${c.products.live?'✓':'✗'} Monitoreo en Vivo</span>${c.modulesConfigured?'':'<span class="chip">Consultora anterior a rc.1.22: todos los módulos hasta que la edites</span>'}</div>
+    <div class="chips">${MODULES.map(k=>`<span class="chip ${c.modules.includes(k)?'':'off'}">${c.modules.includes(k)?'✓':'✗'} ${(MODULE_INFO[k]?.[0]||k).replace(/^\S+\s/,'')}</span>`).join('')}${NETWORKS.map(k=>`<span class="chip ${(c.networks||NETWORKS).includes(k)?'prod':'off'}">${(c.networks||NETWORKS).includes(k)?'✓':'✗'} ${NETWORK_INFO[k][0]}</span>`).join('')}<span class="chip ${c.products.daily?'prod':'off'}">${c.products.daily?'✓':'✗'} Análisis Diario</span><span class="chip ${c.products.live?'prod':'off'}">${c.products.live?'✓':'✗'} Monitoreo en Vivo</span>${c.modulesConfigured?'':'<span class="chip">Consultora anterior a rc.1.22: todos los módulos hasta que la edites</span>'}</div>
     <p class="muted" style="margin:10px 0 0">${c.members.map(m=>`${esc(m.full_name)} &lt;${esc(m.email)}&gt;${m.role==='TENANT_ADMIN'?' · <b>administrador</b>':''}`).join(' · ')||'Sin usuarios'}</p></article>`).join(''):'<p class="muted">Todavía no hay consultoras.</p>';
   consList.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>startEdit(b.dataset.edit));
 }
-function resetForm(){consForm.reset();consId.value='';consFormTitle.textContent='Nueva consultora';consSubmit.textContent='Crear consultora';consCancel.classList.add('hidden');consUsersLabel.textContent='Usuarios de la consultora (correos o IDs, separados por coma o renglón)';consName.disabled=false;renderChecks(MODULES)}
+function resetForm(){consForm.reset();consId.value='';consFormTitle.textContent='Nueva consultora';consSubmit.textContent='Crear consultora';consCancel.classList.add('hidden');consUsersLabel.textContent='Usuarios de la consultora (correos o IDs, separados por coma o renglón)';consName.disabled=false;renderChecks(MODULES);renderNetworks(['visa','mastercard','amex','domestic'])}
 function startEdit(idv){
   const c=CONS.find(x=>x.id===idv);if(!c)return;
   consId.value=c.id;consName.value=c.name;consName.disabled=true;consAdmin.value=c.members.find(m=>m.role==='TENANT_ADMIN')?.email||'';
   consUsers.value='';consUsersLabel.textContent='Agregar usuarios (opcional · correos o IDs). Los actuales se conservan.';
   consSeats.value=c.seats;consExpires.value=c.expiresAt?c.expiresAt.slice(0,10):'';
-  renderChecks(c.modules);prodDaily.checked=!!c.products.daily;prodLive.checked=!!c.products.live;
+  renderChecks(c.modules);renderNetworks(c.networks||NETWORKS);prodDaily.checked=!!c.products.daily;prodLive.checked=!!c.products.live;
   consFormTitle.textContent='Editar · '+c.name;consSubmit.textContent='Guardar cambios';consCancel.classList.remove('hidden');
   document.getElementById('consultancyPanel').scrollIntoView({behavior:'smooth'});
 }
@@ -84,8 +92,10 @@ consCancel.onclick=resetForm;checkAll.onclick=()=>moduleChecks.querySelectorAll(
 reloadCons.onclick=loadCons;
 consForm.onsubmit=async e=>{e.preventDefault();
   const modules=[...moduleChecks.querySelectorAll('input:checked')].map(i=>i.dataset.module);
+  const networks=[...networkChecks.querySelectorAll('input:checked')].map(i=>i.dataset.network);
+  if(!networks.length)return show('consMessage','Marcá al menos una red.',true);
   const users=consUsers.value.split(/[\n,;]+/).map(x=>x.trim()).filter(Boolean);
-  const body={name:consName.value.trim(),adminUser:consAdmin.value.trim()||undefined,seats:Number(consSeats.value||1),expiresAt:consExpires.value?new Date(consExpires.value+'T23:59:59').toISOString():null,modules,products:{daily:prodDaily.checked,live:prodLive.checked}};
+  const body={name:consName.value.trim(),adminUser:consAdmin.value.trim()||undefined,seats:Number(consSeats.value||1),expiresAt:consExpires.value?new Date(consExpires.value+'T23:59:59').toISOString():null,modules,networks,products:{daily:prodDaily.checked,live:prodLive.checked}};
   const editing=!!consId.value;
   if(editing)body.addUsers=users;else body.users=users;
   if(!modules.length&&!prodDaily.checked&&!prodLive.checked)return show('consMessage','Marcá al menos un módulo o una solución.',true);
@@ -97,5 +107,5 @@ consForm.onsubmit=async e=>{e.preventDefault();
   resetForm();loadCons();load();
 };
 courseForm.onsubmit=async e=>{e.preventDefault();const body={courseName:courseName.value,groupName:groupName.value,startsAt:new Date(startsAt.value).toISOString(),liveAt:liveAt.value?new Date(liveAt.value).toISOString():null,seatLimit:Number(seatLimit.value),productId:productId.value};const r=await fetch('/api/admin/course-package',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});if(r.ok){const d=await r.json();show('courseMessage','Curso creado. La licencia y el foro vencen el '+new Date(d.expiresAt).toLocaleDateString('es-AR'));courseForm.reset();load()}else show('courseMessage','No se pudo crear el curso.',true)};
-renderChecks(MODULES);load();loadCons();
+renderChecks(MODULES);renderNetworks(['visa','mastercard','amex','domestic']);load();loadCons();
 </script></body></html>

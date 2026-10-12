@@ -1,0 +1,126 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Informe de evaluaciones · OSC Payment Academy</title><link rel="icon" type="image/svg+xml" href="/favicon.svg"><link rel="stylesheet" href="css/saas.css">
+<style>
+.filters{display:grid;grid-template-columns:2fr 2fr auto auto;gap:10px;align-items:end}.filters .field{margin:0}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:15px 0}
+.kpi{border:1px solid var(--line);border-radius:12px;background:#091827;padding:14px 16px}
+.kpi span{display:block;color:var(--muted);font-size:11px;letter-spacing:.06em;text-transform:uppercase}
+.kpi strong{display:block;font-size:28px;margin-top:6px;font-variant-numeric:tabular-nums}.kpi small{color:var(--muted);font-size:12px}
+.table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:980px}
+th,td{padding:10px 12px;border-bottom:1px solid #17354b;text-align:left;vertical-align:top}
+th{color:#9eb6c9;font-size:11px;letter-spacing:.05em;text-transform:uppercase;background:#0a1a29}
+.sc{font-weight:800;font-size:16px;font-variant-numeric:tabular-nums}.sub{color:var(--muted);font-size:12px}
+.ok{color:#7be3ae}.bad{color:#ffabb0}.warn{color:#ffd577}
+.delta{font-size:12px;font-weight:700}
+.att{font-size:12px;white-space:nowrap}
+.bar{height:6px;border-radius:99px;background:#13283b;overflow:hidden;margin-top:4px;width:110px}.bar i{display:block;height:100%;background:#2f83ff}
+.groups{display:grid;gap:8px}
+.grow{display:grid;grid-template-columns:2fr repeat(3,1fr);gap:10px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:#091827}
+.grow label{display:flex;gap:6px;align-items:center;font-size:13px}
+.empty{padding:28px;text-align:center;color:var(--muted)}
+.hidden{display:none!important}
+@media(max-width:900px){.filters{grid-template-columns:1fr 1fr}.kpis{grid-template-columns:1fr 1fr}.grow{grid-template-columns:1fr 1fr}}
+@media print{body{background:#fff;color:#111}.tabs,.filters,#adminPanel,.no-print{display:none!important}.panel,.kpi,.table-wrap{background:#fff!important;border-color:#bbb!important}th{background:#eee!important;color:#333!important}td,th{border-color:#ddd!important}.sub,.kpi span,.kpi small{color:#555!important}.ok{color:#127a45!important}.bad{color:#b3261e!important}}
+</style></head><body><main class="shell">
+<header class="top"><div><div class="brand"><span>OSC</span> PAYMENT ACADEMY</div><h1>Informe de evaluaciones</h1><p class="muted" id="subtitle">Evolución de cada alumno: inicial → intermedia → final.</p></div>
+<nav class="tabs"><a class="btn" id="backLink" href="index.html">← Plataforma</a><button class="btn" type="button" onclick="window.print()">🖨 Imprimir / PDF</button></nav></header>
+
+<section class="panel hidden" id="adminPanel">
+  <p class="eyebrow">ADMINISTRACIÓN OSC</p><h2 style="margin-top:0">Habilitar evaluaciones por grupo</h2>
+  <p class="muted" style="margin-top:0">Los alumnos del grupo ven la etapa en <b>Evaluaciones</b> cuando la habilitás. Las respuestas no se pueden cambiar después de guardadas.</p>
+  <div class="groups" id="groupToggles"><p class="muted">Cargando…</p></div>
+  <div id="adminMsg" class="message"></div>
+</section>
+
+<section class="panel">
+  <div class="filters">
+    <div class="field"><label for="groupSel">Empresa / grupo</label><select id="groupSel"></select></div>
+    <div class="field"><label for="search">Buscar alumno</label><input id="search" placeholder="Nombre o correo"></div>
+    <button class="btn" id="exportCsv" type="button">⬇ Exportar CSV</button>
+    <button class="btn" id="reload" type="button">↻ Actualizar</button>
+  </div>
+  <div class="kpis">
+    <div class="kpi"><span>Promedio inicial</span><strong id="kIni">—</strong><small id="kIniN"></small></div>
+    <div class="kpi"><span>Promedio intermedia</span><strong id="kMid">—</strong><small id="kMidN"></small></div>
+    <div class="kpi"><span>Promedio final</span><strong id="kFin">—</strong><small id="kFinN"></small></div>
+    <div class="kpi"><span>Aprobaron la final</span><strong id="kPass">—</strong><small id="kPassN"></small></div>
+  </div>
+  <div class="table-wrap"><table><thead><tr><th>Alumno</th><th>Inicial</th><th>Intermedia</th><th>Final</th><th>Intentos del final</th><th>Evolución</th></tr></thead><tbody id="rows"><tr><td colspan="6" class="empty">Cargando…</td></tr></tbody></table></div>
+  <p class="sub" style="margin-top:10px">Cada etapa muestra el puntaje total (0 a 100) y sus dos partes: <b>Dec</b> = decodificar (fin de MTI, nibbles a bits, extracción de campos) e <b>Int</b> = interpretar (DE 3). La final aprueba con 70/100; se muestran todos los intentos.</p>
+</section>
+</main>
+<script src="js/saas-session.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]);
+let DATA=null;
+const fmtDate=d=>d?new Date(d).toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric'}):'';
+function cell(st){
+  if(!st?.last) return st?.inProgress?'<span class="warn">En curso</span>':'<span class="sub">—</span>';
+  const l=st.last;
+  return `<div class="sc">${l.score}</div><div class="sub">Dec ${l.decode??'—'} · Int ${l.interpret??'—'}</div><div class="bar"><i style="width:${l.score}%"></i></div><div class="sub">${fmtDate(l.validatedAt)}</div>`;
+}
+function finalCell(st){
+  if(!st?.attempts?.length) return '<span class="sub">—</span>';
+  const best=st.attempts.filter(a=>a.score!=null).sort((a,b)=>b.score-a.score)[0];
+  const head=st.passedAt?`<b class="ok">✓ Aprobada en el intento ${st.passedAt}</b>`:st.attempts.length>=5?'<b class="bad">✗ Sin aprobar (5 intentos)</b>':'<span class="warn">Sin aprobar todavía</span>';
+  return `${head}${best?`<div class="sub">Mejor puntaje ${best.score} · Dec ${best.decode??'—'} · Int ${best.interpret??'—'}</div>`:''}`;
+}
+function attemptsCell(st){
+  if(!st?.attempts?.length) return '<span class="sub">—</span>';
+  return st.attempts.map(a=>`<div class="att">#${a.n} ${a.status==='IN_PROGRESS'?'<span class="warn">en curso</span>':`${a.score} ${a.passed?'<span class="ok">✓</span>':'<span class="bad">✗</span>'}${a.status==='EXPIRED'?' <span class="sub">(tiempo)</span>':''}`} <span class="sub">${fmtDate(a.validatedAt||a.startedAt)}</span></div>`).join('');
+}
+function evo(u){
+  const ini=u.stages.inicial?.last?.score, mid=u.stages.intermedia?.last?.score;
+  const fin=u.stages.final?.attempts?.length?(u.stages.final.attempts.find(a=>a.passed)?.score??Math.max(...u.stages.final.attempts.filter(a=>a.score!=null).map(a=>a.score))):undefined;
+  const last=[fin,mid].find(x=>x!=null&&isFinite(x));
+  if(ini==null||last==null) return '<span class="sub">—</span>';
+  const d=last-ini;
+  const note=ini>=100?'ya partía de 100':d>0?`cubrió el ${Math.round((d/(100-ini))*100)}% de lo que le faltaba`:d<0?'bajó respecto del inicio':'sin cambios';
+  return `<div class="delta ${d>=0?'ok':'bad'}">${d>0?'+':''}${d} puntos</div><div class="sub">${ini} → ${last} · ${note}</div>`;
+}
+const avg=a=>a.length?Math.round(a.reduce((x,y)=>x+y,0)/a.length):null;
+function filtered(){const q=$('search').value.trim().toLowerCase();return (DATA?.users||[]).filter(u=>!q||(u.full_name+' '+u.email).toLowerCase().includes(q));}
+function render(){
+  const list=filtered();
+  const ini=list.map(u=>u.stages.inicial?.last?.score).filter(x=>x!=null), mid=list.map(u=>u.stages.intermedia?.last?.score).filter(x=>x!=null);
+  const finTried=list.filter(u=>u.stages.final?.attempts?.some(a=>a.score!=null));
+  const fin=finTried.map(u=>u.stages.final.attempts.find(a=>a.passed)?.score??u.stages.final.last?.score).filter(x=>x!=null);
+  const passed=list.filter(u=>u.stages.final?.passedAt);
+  $('kIni').textContent=avg(ini)??'—';$('kIniN').textContent=`${ini.length} de ${list.length} alumnos`;
+  $('kMid').textContent=avg(mid)??'—';$('kMidN').textContent=`${mid.length} de ${list.length} alumnos`;
+  $('kFin').textContent=avg(fin)??'—';$('kFinN').textContent=`${fin.length} rindieron`;
+  $('kPass').textContent=finTried.length?`${passed.length} de ${finTried.length}`:'—';
+  $('kPassN').textContent=passed.length?`promedio ${(passed.reduce((a,u)=>a+u.stages.final.passedAt,0)/passed.length).toFixed(1)} intentos para aprobar`:'';
+  $('rows').innerHTML=list.length?list.map(u=>`<tr><td><b>${esc(u.full_name)}</b><br><span class="sub">${esc(u.email)}</span><br><span class="sub">${esc(u.tenant_name)}</span></td><td>${cell(u.stages.inicial)}</td><td>${cell(u.stages.intermedia)}</td><td>${finalCell(u.stages.final)}</td><td>${attemptsCell(u.stages.final)}</td><td>${evo(u)}</td></tr>`).join(''):'<tr><td colspan="6" class="empty">No hay alumnos para este filtro.</td></tr>';
+}
+async function load(){
+  const g=$('groupSel').value||new URLSearchParams(location.search).get('tenantId')||'';
+  const r=await fetch('/api/assessments/report'+(g?'?tenantId='+encodeURIComponent(g):''));
+  if(r.status===401)return location.href='/login.html';
+  if(r.status===403){$('rows').innerHTML='<tr><td colspan="6" class="empty">Este informe es para la administración de OSC y el administrador de la cuenta.</td></tr>';return;}
+  DATA=await r.json();
+  const sel=$('groupSel');
+  if(sel.options.length===0){sel.innerHTML=(DATA.groups.length>1?'<option value="">Todos</option>':'')+DATA.groups.map(x=>`<option value="${esc(x.id)}">${esc(x.name)} · ${x.type==='CONSULTANCY'?'Consultora':'Curso'}</option>`).join('');if(g)sel.value=g;}
+  $('subtitle').textContent=DATA.isAdmin?'Administración OSC: evolución de los alumnos de todos los grupos.':'Evolución de los alumnos de tu empresa: inicial → intermedia → final.';
+  if(DATA.isAdmin){$('backLink').href='saas-admin.html';$('backLink').textContent='← Panel OSC';loadGroups();}
+  render();
+}
+async function loadGroups(){
+  const r=await fetch('/api/assessments/admin/groups'); if(!r.ok)return;
+  const d=await r.json(); $('adminPanel').classList.remove('hidden');
+  $('groupToggles').innerHTML=d.groups.length?d.groups.map(g=>`<div class="grow"><div><b>${esc(g.name)}</b><div class="sub">${g.type==='CONSULTANCY'?'Consultora':'Edición del curso'}</div></div>${d.stages.map(s=>`<label><input type="checkbox" data-g="${esc(g.id)}" data-s="${s.key}" ${g.stages[s.key]?'checked':''}> ${esc(s.label.replace('Evaluación ',''))}</label>`).join('')}</div>`).join(''):'<p class="muted">Todavía no hay grupos.</p>';
+  $('groupToggles').querySelectorAll('input[data-g]').forEach(i=>i.onchange=async()=>{
+    const r=await fetch('/api/assessments/admin/groups/'+encodeURIComponent(i.dataset.g),{method:'PUT',headers:{'content-type':'application/json'},body:JSON.stringify({stages:{[i.dataset.s]:i.checked}})});
+    const m=$('adminMsg'); m.textContent=r.ok?'Guardado. Los alumnos lo ven al recargar Evaluaciones.':'No se pudo guardar.'; m.className='message show '+(r.ok?'ok':'error');
+  });
+}
+$('exportCsv').onclick=()=>{
+  const head=['Nombre','Correo','Grupo','Inicial','Inicial Dec','Inicial Int','Intermedia','Intermedia Dec','Intermedia Int','Final aprobada en intento','Intentos final','Puntajes final'];
+  const rows=filtered().map(u=>{const i=u.stages.inicial?.last||{},m=u.stages.intermedia?.last||{},f=u.stages.final||{};return [u.full_name,u.email,u.tenant_name,i.score??'',i.decode??'',i.interpret??'',m.score??'',m.decode??'',m.interpret??'',f.passedAt??'',(f.attempts||[]).length,(f.attempts||[]).map(a=>`#${a.n}:${a.score??'-'}${a.passed?'(aprobado)':''}`).join(' ')];});
+  const csv=[head,...rows].map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(';')).join('\r\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8'}));a.download='evaluaciones-'+new Date().toISOString().slice(0,10)+'.csv';a.click();
+};
+$('groupSel').onchange=load;$('search').oninput=()=>DATA&&render();$('reload').onclick=load;
+load();
+</script></body></html>

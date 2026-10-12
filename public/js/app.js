@@ -44,7 +44,9 @@
     'mc-credit':{id:'mc-credit',label:'Mastercard Crédito',network:'mastercard',product:'Crédito',pan:'5555555555554444',expiry:'2912',track2:'5555555555554444=29122011234567890',aid:'A0000000041010'},
     'mc-debit':{id:'mc-debit',label:'Mastercard Débito',network:'mastercard',product:'Débito',pan:'2223000048408210',expiry:'2912',track2:'2223000048408210=29122011234567890',aid:'A0000000043060'},
     'amex-credit':{id:'amex-credit',label:'American Express Crédito',network:'amex',product:'Crédito',pan:'371449635398431',expiry:'2912',track2:'371449635398431=29122011234567890',aid:'A00000002501'},
-    'amex-debit':{id:'amex-debit',label:'American Express Débito',network:'amex',product:'Débito',pan:'341234567890127',expiry:'2912',track2:'341234567890127=29122011234567890',aid:'A00000002501',onlinePin:true}
+    'amex-debit':{id:'amex-debit',label:'American Express Débito',network:'amex',product:'Débito',pan:'341234567890127',expiry:'2912',track2:'341234567890127=29122011234567890',aid:'A00000002501',onlinePin:true},
+    // rc.1.24 · Red LINK (Host to Host BASE24). PAN didáctico, BIN de práctica 990002.
+    'link-debit':{id:'link-debit',label:'LINK Débito',network:'link',product:'Débito',pan:'9900020000000018',expiry:'2912',track2:'9900020000000018=29121200000000000',aid:''}
   };
   const QR_PROFILES = {
     'mastercard-qr':{label:'Mastercard QR',network:'mastercard',card:'mc-credit',mode:'Merchant Presented'},
@@ -52,6 +54,9 @@
   };
   const selectedCard = () => TEST_CARDS[state.testCard] || TEST_CARDS['visa-credit'];
   const isDomesticCard = () => selectedCard()?.network==='domestic';
+  const isLink = () => state.paymentMethod==='card' && selectedCard()?.network==='link';
+  state.linkTx='purchase';
+  const LINK_NO_AMOUNT=['balance','pos_balance'], LINK_AUTO_AMOUNT=['void','refund_void','cashback_void'];
   const isAmexDebit = () => profile().id==='amex' && selectedCard().product==='Débito';
   const amexDebitOnlinePinRequired = () => isAmexDebit() && ['chip','magstripe'].includes(state.entryMode);
 
@@ -61,22 +66,23 @@
     state.pan=card.pan; state.network=card.network;
   }
 
+  // rc.1.24 · Una sola tarjeta Doméstica fija (después de Amex). Usa la tarjeta de débito más reciente emitida en Banco simulado.
   async function loadDomesticCards(){
-    const grid=$('testCardGrid'); if(!grid) return;
+    const tile=document.querySelector('[data-test-card="domestic"]'); if(!tile) return;
     try{
       const r=await fetch('/api/bank/pos/cards'); if(!r.ok) return;
-      const d=await r.json();
-      (d.cards||[]).forEach((c,i)=>{
-        const key=`domestic-${c.id}`;
-        TEST_CARDS[key]={id:key,label:'OSC Doméstica Débito',network:'domestic',product:'Débito',pan:c.card_number,expiry:String(c.expires_at||'').slice(2,7).replace('-',''),track2:`${c.card_number}=31122011234567890`,aid:'A0000000000001',bankCardId:c.id,accountNumber:c.account_number,balance:Number(c.balance||0)};
-        if(grid.querySelector(`[data-test-card="${key}"]`)) return;
-        const b=document.createElement('button');b.type='button';b.className='test-card domestic';b.dataset.testCard=key;
-        b.innerHTML=`<span class="card-network">OSC</span><strong>DÉBITO DOMÉSTICA</strong><small>${c.masked_card_number} · ${c.account_number}</small>`;
-        grid.appendChild(b);
-      });
+      const d=await r.json(); const c=(d.cards||[])[0]; if(!c) return;
+      TEST_CARDS.domestic={id:'domestic',label:'OSC Doméstica Débito',network:'domestic',product:'Débito',pan:c.card_number,expiry:String(c.expires_at||'').slice(2,7).replace('-',''),track2:`${c.card_number}=31122011234567890`,aid:'A0000000000001',bankCardId:c.id,accountNumber:c.account_number,balance:Number(c.balance||0)};
+      tile.classList.remove('no-card');
+      const sm=tile.querySelector('small'); if(sm) sm.textContent=`${c.masked_card_number} · ${c.account_number}`;
     }catch(e){console.warn('Banco Virtual no disponible para POS',e)}
   }
   function selectTestCard(cardId,{resetFlow=true}={}){
+    if(cardId==='domestic'&&!TEST_CARDS.domestic){
+      const summary=$('selectedTestCardSummary');
+      if(summary) summary.textContent='Doméstica: primero emití una tarjeta de débito en Banco simulado → SOLICITUDES. Después vuelve a aparecer acá con su cuenta vinculada.';
+      return;
+    }
     if(!TEST_CARDS[cardId]) return;
     state.testCard=cardId;
     const card=TEST_CARDS[cardId];
@@ -90,6 +96,7 @@
     const summary=$('selectedTestCardSummary');
     if(summary) summary.textContent=`${card.label} · PAN asignado automáticamente · •••• ${card.pan.slice(-4)} · BIN ${card.pan.slice(0,6)}`;
     refreshNetworkProfile();
+    refreshInstallmentUi();
     if(resetFlow) reset();
     return card;
   }
@@ -1052,6 +1059,7 @@
     state.selectedMessageId=message.id;
     $('mti').textContent=message.mti;
     $('messageSubtitle').textContent=`${message.mti} - ${message.operation} ${message.direction==='SALIENTE'?'Request':'Response'}`;
+    if(message.linkLabel) $('messageSubtitle').textContent=message.linkLabel;
     renderFields(message.fields);
     $('bitmap').textContent=message.bitmap;
     document.querySelectorAll('#historyBody tr').forEach(tr=>tr.classList.toggle('selected',tr.dataset.id===message.id));
@@ -1187,6 +1195,7 @@
     const el=$('screenAmount');if(el)el.textContent=amount;
     $('flowAmount').textContent=amount;
     const isAmex=profile().id==='amex';
+    if(isLink()){renderFields(state.amountDigits||state.linkTx==='balance'?linkPreviewRows().filter(r=>['3','4'].includes(r[0])):[]);return;}
     renderFields(state.amountDigits?[field(3,'Processing Code',isAmex?'004000':'000000','6','FIXED',isAmex?'AMEX Card Authorization Request':'Aplicación POS'),amountField()]:[]);
   }
 
@@ -1199,6 +1208,7 @@
       state.pinBlock=createPinBlock(); // rc.1.22: PIN Block ISO 0 real, recalculado con cada dígito
       screen('PIN',`<small>Ingrese PIN</small><strong>${'•'.repeat(state.pinDigits.length)}</strong><span>Presione VERDE para continuar</span>`);
       $('flowPin').textContent='•'.repeat(state.pinDigits.length);
+      if(isLink()){renderFields(linkPreviewRows(true));return;}
       const f=entryFields();
       f.push(field(52,profile().id==='amex'?'Personal Identification Number (PIN)':'PIN Data (Encrypted PIN Block)',state.pinBlock,'8 bytes','B64',profile().id==='amex'?'AMEX Bit 52 · PIN cifrado':'PIN cifrado'));
       if(profile().id!=='amex'&&!(profile().id==='mastercard'&&posMessageProfile().request==='0200')) f.push(field(53,'Security-Related Control Information',de53For(profile().id),'16','FIXED',de53Origin(profile().id)));
@@ -1208,6 +1218,30 @@
 
   function accept(){
     if(state.currentOperation!=='purchase')return;
+    if(state.step==='amount'&&isLink()){
+      const kind=state.linkTx;
+      const needsOriginal=!!window.OSCLinkHth?.OPS?.[kind]?.original, orig=selectedLinkOriginal();
+      if(needsOriginal&&!orig){screen('SIN OPERACIÓN ORIGINAL','<small>LINK</small><strong>ELEGÍ LA ORIGINAL</strong><span>Hacé primero la operación a referenciar</span>');return;}
+      if(LINK_AUTO_AMOUNT.includes(kind)) state.amountDigits=String(orig.linkPurchaseCents??orig.amountCents);
+      if(!LINK_NO_AMOUNT.includes(kind)&&(!state.amountDigits||Number(state.amountDigits)===0))return;
+      if(kind==='refund'&&Number(state.amountDigits)>Number(orig.linkPurchaseCents??orig.amountCents)){screen('IMPORTE INVÁLIDO','<small>Devolución</small><strong>SUPERA LA COMPRA</strong><span>Corregí el importe</span>');setTimeout(reset,1600);return;}
+      if(LINK_NO_AMOUNT.includes(kind)) state.amountDigits='';
+      $('time1').textContent=timeNow();
+      if(kind==='debin'){
+        // DEBIN: no hay captura de tarjeta ni PIN. El comprador acepta la solicitud en su banco/billetera y COELSA la cursa.
+        state.step='debin';setStep(2);
+        document.querySelector('#step2 strong').textContent='Aceptación del DEBIN';
+        document.querySelector('#step2 small').textContent='El comprador acepta en su home banking';
+        screen('DEBIN',`<small>Solicitud enviada al comprador</small><strong>${formatAmount(state.amountDigits)}</strong><span>Esperando aceptación…</span>`);
+        setTimeout(()=>{$('time2').textContent=timeNow();$('flowPin').textContent='No requerido';$('time3').textContent=timeNow();sendLinkTransaction();},1400);
+        return;
+      }
+      state.step='entry';
+      $('entryModePanel').classList.remove('hidden');
+      screen('FORMA DE CAPTURA','<small>LINK · Track 2</small><strong>TIPO DE ENTRADA</strong><span>Chip o banda magnética</span>');
+      setStep(2);
+      return;
+    }
     if(state.step==='amount'){
       if(!state.amountDigits||Number(state.amountDigits)===0)return;
       $('time1').textContent=timeNow();
@@ -1258,10 +1292,11 @@
     setTimeout(()=>{
       stage.classList.add('success');$('captureStatusText').textContent='Lectura completada';
       const mode=entryModes[modeKey];$('time2').textContent=timeNow();document.querySelector('#step2 small').textContent=`${profile().name} · ${mode.label}`;
-      renderFields(entryFields().sort((a,b)=>Number(a[0])-Number(b[0])));
+      renderFields(isLink()?linkPreviewRows():entryFields().sort((a,b)=>Number(a[0])-Number(b[0])));
       setTimeout(()=>{
         stage.classList.add('hidden');
-        if(profile().id==='amex' && amexDebitOnlinePinRequired()){
+        if(isLink()){state.step='pin';setStep(3);screen('PIN','<small>LINK · Ingrese PIN</small><strong></strong><span>Presione VERDE para continuar</span>');}
+        else if(profile().id==='amex' && amexDebitOnlinePinRequired()){
           state.step='pin';setStep(3);
           $('flowPin').textContent='AMEX Débito · Online PIN';
           screen('PIN','<small>American Express Débito</small><strong></strong><span>PIN online · Bit 52 en 1100</span>');
@@ -1274,6 +1309,7 @@
   }
 
   function sendPurchase0200(){
+    if(isLink()) return sendLinkTransaction();
     state.step='processing';state.currentStan=random6();state.currentAuth='';setStep(4);
     const op=createOperation('purchase');
     const isAmex=profile().id==='amex';
@@ -1670,6 +1706,10 @@
     ['captureChip','captureContactless','captureMagstripe','captureManual'].forEach(id=>$(id).classList.add('hidden'));
     $('receiptPaper').classList.remove('printing');$('receiptPaper').textContent='';
     screen('COMPRA','<small>Ingrese Importe</small><strong id="screenAmount">$ 0,00</strong><span>Presione VERDE para continuar</span>');
+    if(isLink()&&window.OSCLinkHth){const k=state.linkTx,orig=selectedLinkOriginal();
+      if(LINK_NO_AMOUNT.includes(k)) screen(OSCLinkHth.TX[k].short,'<small>LINK · Consulta</small><strong>SIN IMPORTE</strong><span>Presione VERDE para continuar</span>');
+      else if(LINK_AUTO_AMOUNT.includes(k)) screen(OSCLinkHth.TX[k].short,orig?`<small>Importe de la operación original</small><strong>${formatCents(orig.linkPurchaseCents??orig.amountCents)}</strong><span>Presione VERDE para continuar</span>`:'<small>LINK</small><strong>SIN ORIGINAL</strong><span>Elegí la operación original</span>');
+      else screen(OSCLinkHth.TX[k].short,`<small>LINK · ${k==='refund'?'Importe a devolver':k==='preauth_complete'?'Importe final':'Ingrese importe'}</small><strong id="screenAmount">$ 0,00</strong><span>Presione VERDE para continuar</span>`);}
     setStep(1);['time1','time2','time3','time4','time5','time6'].forEach(id=>$(id).textContent='—');
     $('flowAmount').textContent='$ 0,00';$('flowPin').textContent='••••';$('flowResponse').textContent='Pendiente';
     $('resultText').textContent='EN ESPERA';$('resultCode').textContent='--';$('resultDetail').textContent='Ingrese una compra para comenzar.';$('authCode').textContent='------';
@@ -1685,8 +1725,8 @@
     if(f==='LLLVAR')return String(v.length).padStart(3,'0')+v;
     return v;
   }
-  function annotatedMessage(message){return`${message.mti}|${message.bitmap}|${message.fields.map(r=>`${r[0]}=${r[2]}`).join('|')}`}
-  function rawMessage(message){return message.mti+message.bitmap+message.fields.map(serializeField).join('')}
+  function annotatedMessage(message){if(message.linkAnnotated)return message.linkAnnotated;return`${message.mti}|${message.bitmap}|${message.fields.map(r=>`${r[0]}=${r[2]}`).join('|')}`}
+  function rawMessage(message){if(message.raw)return message.raw;return message.mti+message.bitmap+message.fields.map(serializeField).join('')}
   function copySelectedMessage(){
     const msg=state.messages.find(m=>m.id===state.selectedMessageId);if(!msg)return;
     const payload=`TRAMA DIDÁCTICA - CON POSICIONES Y SEPARADORES
@@ -1784,6 +1824,132 @@ ${rawMessage(msg)}`;
 
   applyTerminalModel('ingenico');reset();clearTechnicalMessagePanel();
   (window.OSCSwitchStore?.ready||Promise.resolve()).then(()=>restoreWorkspaceHistory());
+  /* ===================== rc.1.24 · Red LINK (Host to Host BASE24) ===================== */
+  function posTech(text){
+    const ev=document.getElementById('posTechEvents'); if(!ev) return;
+    const d=document.createElement('div'); d.textContent=new Date().toLocaleTimeString('es-AR')+' · '+text; ev.prepend(d);
+    while(ev.children.length>12) ev.lastElementChild.remove();
+  }
+  function linkProc(){
+    const p=window.OSCLinkHth?.readPanel()||{accountType:'10'}; const t=p.accountType||'10';
+    const o=window.OSCLinkHth?.OPS?.[state.linkTx]; if(o) return o.proc({accountType:t});
+    return {withdrawal:'01'+t+'00',balance:'31'+t+'00',transfer:'09'+t+'00',debin:'F3'+t+'00'}[state.linkTx]||'01'+t+'00';
+  }
+  function linkPreviewRows(withPin=false){
+    const card=selectedCard(), amt=state.linkTx==='balance'?0:Number(state.amountDigits||0);
+    const rows=[
+      field(3,'proc-cde · Código de transacción',linkProc(),'6','g 9(6)','C-X-5 · LINK'),
+      field(4,'tran-amt · Monto de la transacción',String(amt).padStart(12,'0'),'12','9(12)','10 enteros + 2 decimales')
+    ];
+    if(state.entryMode){
+      const t2=(card.track2||'').padEnd(37,' ');
+      rows.push(field(35,'track 2','37'+window.OSCLinkHth.displayValue(t2),'39','LLVAR ..X(37)',`Leído por ${(entryModes[state.entryMode]||entryModes.chip).label}`));
+      rows.push(field(41,'term-id · Terminal',window.OSCLinkHth.displayValue('POSOSC0001'.padEnd(16,' ')),'16','X(16)','Configuración terminal'));
+      rows.push(field(49,'crncy-cde · Moneda','032','3','9(3)','032 = Pesos'));
+    }
+    if(withPin&&state.pinBlock) rows.push(field(52,'pin · PIN cifrado',String(state.pinBlock).slice(0,16),'16','X(16)','PIN Block ISO 9564 formato 0 (ZPK de práctica)'));
+    return rows.sort((a,b)=>Number(a[0])-Number(b[0]));
+  }
+  function refreshLinkUi(){
+    const panel=$('linkPanel'); const on=isLink();
+    if(panel){
+      panel.classList.toggle('hidden',!on);
+      if(on&&!panel.dataset.ready&&window.OSCLinkHth){
+        OSCLinkHth.css();
+        panel.innerHTML=OSCLinkHth.panelHtml({mode:'pos'});
+        panel.dataset.ready='1';
+        const sel=$('linkTxSelect'); if(sel){sel.value=state.linkTx; sel.addEventListener('change',()=>{state.linkTx=sel.value;OSCLinkHth.syncPanel(state.linkTx);fillLinkOriginals();reset();});}
+        $('linkOriginal')?.addEventListener('change',()=>{if(state.step==='amount')reset();});
+        $('linkAccountType')?.addEventListener('change',()=>{if(state.step==='amount')updateAmount();});
+        OSCLinkHth.syncPanel(state.linkTx);
+      }
+      if(on) fillLinkOriginals();
+    }
+    // LINK HTH viaja con Track 2 (campo 35): sin datos EMV en el mensaje. Se ocultan Contactless y Manual.
+    document.querySelectorAll('[data-entry="contactless"],[data-entry="manual"]').forEach(b=>b.style.display=on?'none':'');
+    // Los escenarios de respuesta de LINK se eligen en el panel (códigos C-X-6); se ocultan los de Visa/Mastercard/Amex.
+    document.querySelectorAll('.pos-scenario-full').forEach(sec=>sec.style.display=on?'none':'');
+  }
+  // Operaciones LINK aprobadas que pueden referenciarse (anulación, devolución, finalización de preautorización).
+  function linkOriginalCandidates(kind=state.linkTx){
+    const need=window.OSCLinkHth?.OPS?.[kind]?.original; if(!need) return [];
+    return state.operations.filter(o=>o.network==='link'&&o.linkKind===need&&o.status==='APROBADA'&&!o.linkClosed).reverse();
+  }
+  function fillLinkOriginals(){
+    const sel=$('linkOriginal'); if(!sel) return;
+    const list=linkOriginalCandidates();
+    sel.innerHTML=list.length?list.map(o=>`<option value="${o.id}">${OSCLinkHth.TX[o.linkKind].short} · ${formatCents(o.amountCents)} · RRN ${o.rrn} · ${new Date(o.createdAt).toLocaleTimeString('es-AR')}</option>`).join(''):'<option value="">— No hay operaciones aprobadas para referenciar —</option>';
+  }
+  function selectedLinkOriginal(){const idv=$('linkOriginal')?.value;return idv?state.operations.find(o=>o.id===idv):null;}
+  function linkTicketHtml(op,out){
+    const T=window.OSCLinkHth, kind=op.linkKind, ok=out.code==='00';
+    const money=c=>formatCents(Number(c||0));
+    const lines=[
+      ['RED','LINK · BASE24 HTH'],['OPERACIÓN',T.TX[kind].short],['CUENTA',T.accountLabel(out.ctx.accountType)],
+      LINK_NO_AMOUNT.includes(kind)?null:['IMPORTE',money(out.amountCents??out.ctx.amountCents)],
+      out.ctx.cashbackCents&&T.OPS[kind]?.cashback?['EFECTIVO (CASH-BACK)',money(out.ctx.cashbackCents)]:null,
+      out.ctx.original?['OPERACIÓN ORIGINAL','RRN '+out.ctx.original.rrn]:null,
+      kind==='purchase'&&out.ctx.installments>1?['CUOTAS',String(out.ctx.installments)]:null,
+      out.reversal?['REVERSA 0420',`${out.reversal.reason} · ${out.reversal.text}`]:null,
+      kind==='transfer'?['CBU DESTINO',String(out.ctx.destination?.cbu||'').replace(/\D/g,'').slice(0,22)]:null,
+      kind==='debin'?['ID DEBIN',out.debinId]:null,
+      ['TARJETA','•••• '+String(out.ctx.pan).slice(-4)],['TERMINAL','POSOSC0001'],['STAN',out.ctx.stan],['RECIBO (DE37)',out.ctx.rrn],
+      ok&&out.auth?['AUTORIZACIÓN',out.auth]:null,
+      ['RESPUESTA',`${out.code} · ${out.resultText}`],
+      ok&&!out.reversal&&kind!=='debin'?['SALDO DISPONIBLE',money(out.balanceCents)]:null
+    ].filter(Boolean);
+    return `<div class="ticket-head"><strong>OSC PAYMENT ACADEMY</strong><small>${new Date().toLocaleString('es-AR')}</small></div>`+
+      lines.map(([k,v])=>`<div style="display:flex;justify-content:space-between;gap:8px;font-size:11px"><span>${k}</span><b>${v}</b></div>`).join('')+
+      `<div style="text-align:center;margin-top:8px;font-weight:800">${out.reversal?'REVERSADA':ok?'APROBADA':'RECHAZADA'}</div>`;
+  }
+  function sendLinkTransaction(){
+    if(!window.OSCLinkHth){alert('Falta el módulo LINK.');return;}
+    state.step='processing';state.currentStan=random6();state.currentAuth='';setStep(4);
+    const kind=state.linkTx, p=OSCLinkHth.readPanel();
+    const op=createOperation('link-'+kind); op.network='link'; op.linkKind=kind; op.status='EN PROCESO';
+    const orig=selectedLinkOriginal();
+    const original=orig&&OSCLinkHth.OPS[kind]?.original?{id:orig.id,amountCents:orig.linkPurchaseCents??orig.amountCents,rrn:orig.rrn,mmdd:orig.linkMmdd}:null;
+    const cashbackCents=kind==='cashback'?p.cashbackCents:kind==='cashback_void'&&orig?Number(orig.linkCashCents||0):0;
+    const out=OSCLinkHth.build(kind,{terminal:'POS',amountCents:LINK_NO_AMOUNT.includes(kind)?0:Number(state.amountDigits||0),accountType:p.accountType,scenario:p.scenario,after:p.after,
+      installments:kind==='purchase'?p.installments:1,cashbackCents,original,
+      pinBlock:state.pinBlock,pinOk:kind==='debin'?undefined:state.pinDigits==='1234',stan:state.currentStan,destination:p.destination,debin:p.debin,termId:'POSOSC0001',merchantName:'COMERCIO OSC'});
+    op.rrn=out.ctx.rrn; op.amountCents=out.amountCents??out.ctx.amountCents; op.linkMmdd=out.ctx.clock.mmdd; op.linkPurchaseCents=Number(state.amountDigits||0); op.linkCashCents=cashbackCents;
+    document.querySelector('#step4 small').textContent='LINK · 0200 OUTPUT B24';
+    screen('PROCESANDO',`<small>LINK · BASE24</small><strong>0200</strong><span>${OSCLinkHth.TX[kind].short}</span>`);
+    posTech(`LINK · ${OSCLinkHth.TX[kind].label} · DE3=${out.messages[0].fields.find(r=>r.de===3)?.value}`);
+    const toRows=m=>m.fields.map(r=>field(r.de,r.name,OSCLinkHth.displayValue(r.value),String(r.value.length),r.attr,r.ref));
+    let i=0;
+    const next=()=>{
+      const m=out.messages[i++];
+      if(!m) return finish();
+      if(m.direction==='ENTRANTE'){setStep(5);$('time5').textContent=timeNow();}else{$('time4').textContent=timeNow();}
+      addMessage({id:`MSG-${Date.now()}-${i}-${m.mti}`,operationId:op.id,mti:m.mti,operation:`LINK ${OSCLinkHth.TX[kind].short}`,direction:m.direction,dateTime:dateTimeNow(),responseCode:m.responseCode,
+        fields:toRows(m),bitmap:m.bitmap,raw:m.raw,linkAnnotated:OSCLinkHth.annotated(m),linkLabel:m.label,amountCents:op.amountCents,stan:op.stan,batch:op.batch});
+      renderMessage(state.messages[0]);
+      posTech(`${m.label}${m.responseCode?' · DE39='+m.responseCode:''}`);
+      setTimeout(next,650);
+    };
+    const finish=()=>{
+      const ok=out.code==='00'&&!out.reversal;
+      op.status=out.reversal?'REVERSADA':ok?'APROBADA':'RECHAZADA'; op.responseCode=out.code;
+      if(ok&&original){const o=state.operations.find(x=>x.id===original.id); if(o){o.linkClosed=true; o.status=({void:'ANULADA',cashback_void:'ANULADA',refund_void:'ANULADA',refund:'DEVUELTA',preauth_complete:'FINALIZADA'})[kind]||o.status;}}
+      fillLinkOriginals(); op.auth=out.auth||(ok?random6():'-'); state.currentAuth=op.auth;
+      $('flowResponse').textContent=`${out.code} - ${out.resultText}`;
+      $('resultText').textContent=out.reversal?(out.timeout?'SIN RESPUESTA · REVERSADA':'REVERSADA'):ok?'APROBADA':'RECHAZADA';$('resultCode').textContent=out.reversal?out.reversal.reason:out.code;
+      $('resultDetail').textContent=`LINK · ${out.summary}${!out.timeout&&kind!=='debin'?` · Saldo ${formatCents(out.balanceCents)}`:''}`;
+      $('authCode').textContent=ok?op.auth:'------';
+      screen(out.reversal?'REVERSADA':ok?'APROBADA':'RECHAZADA',`<small>${out.resultText}</small><strong>${out.reversal?out.reversal.reason:out.code}</strong><span>${LINK_NO_AMOUNT.includes(kind)&&ok?'Saldo '+formatCents(out.balanceCents):out.reversal?'Reversa 0420 confirmada con 0430':ok?'Operación finalizada':'Operación rechazada'}</span>`);
+      if(out.summary) posTech(out.summary);
+      refreshHistoryStatuses();
+      setStep(6);
+      setTimeout(()=>{
+        $('time6').textContent=timeNow();
+        const paper=$('receiptPaper'); paper.innerHTML=linkTicketHtml(op,out); paper.classList.remove('printing'); requestAnimationFrame(()=>paper.classList.add('printing'));
+        state.transactions++; const st=$('sessionTx'); if(st) st.textContent=state.transactions; state.step='done';
+      },500);
+    };
+    setTimeout(next,700);
+  }
   function refreshNetworkProfile(){
     if(!window.OSCNetworks) return;
     syncPaymentProfile();
@@ -1808,6 +1974,7 @@ ${rawMessage(msg)}`;
         (p.id==='amex' && state.entryMode==='contactless'?`${p.name} · Expresspay`:
         (p.id==='amex' && state.entryMode==='chip'?`${p.name} · AEIPS Chip`:`${p.name} · ${cap}`));
     }
+    refreshLinkUi();
     const sendBtn=$('sendResponse');
     if(sendBtn){
       sendBtn.disabled=false;

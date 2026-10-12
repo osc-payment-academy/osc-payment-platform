@@ -56,8 +56,8 @@ async function persistTransaction(){
 }
 pay.onclick=()=>{pay.disabled=true;steps.forEach(s=>s.classList.remove('done','run'));let i=0;const t=setInterval(async()=>{if(i>0)steps[i-1].classList.add('done');if(i<steps.length){steps[i].classList.add('run');i++}else{clearInterval(t);await persistTransaction();pay.disabled=false}},260)};
 (window.OSCSwitchStore?.ready||Promise.resolve()).then(restoreD1History);
-</script><script src="js/navigation.js?v=4.0.0-rc1.22"></script><script>
-(()=>{let cards=[...document.querySelectorAll('.wallet-card')],ci=0;function showCard(n){ci=(n+cards.length)%cards.length;cards.forEach((c,i)=>c.hidden=i!==ci)};document.getElementById('prevCard')?.addEventListener('click',()=>showCard(ci-1));document.getElementById('nextCard')?.addEventListener('click',()=>showCard(ci+1));
+</script><script src="js/network-access.js?v=4.0.0-rc1.24"></script><script src="js/navigation.js?v=4.0.0-rc1.24"></script><script>
+(()=>{let ci=0;function showCard(n){const cards=[...document.querySelectorAll('.wallet-card')];if(!cards.length)return;ci=(n+cards.length)%cards.length;cards.forEach((c,i)=>c.hidden=i!==ci)};window.OSCWalletShowCard=showCard;document.getElementById('prevCard')?.addEventListener('click',()=>showCard(ci-1));document.getElementById('nextCard')?.addEventListener('click',()=>showCard(ci+1));
 const modal=document.getElementById('walletEdu');document.getElementById('walletFlowBtn')?.addEventListener('click',()=>modal.classList.add('show'));document.getElementById('walletEduClose')?.addEventListener('click',()=>modal.classList.remove('show'));
 const oldPay=document.getElementById('pay');oldPay?.addEventListener('click',()=>{const st=document.getElementById('nfcStage');st.classList.add('show');setTimeout(()=>st.classList.remove('show'),2600)},true);
 })();</script><script src="js/modern-payment-messages.js?v=4.0.0-rc1.22"></script><style id="osc-flow41">
