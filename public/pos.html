@@ -447,7 +447,7 @@
 <script src="js/emv-crypto.js?v=4.0.0-rc1.22"></script>
 <script src="js/iso-network-spec.js?v=4.0.0-rc1.22"></script>
 <script src="js/security-edu.js?v=4.0.0-rc1.26"></script>
-<script src="js/link-hth.js?v=4.0.0-rc1.27"></script>
+<script src="js/link-hth.js?v=4.0.0-rc1.28"></script>
 <script src="js/app.js?v=4.0.0-rc1.27"></script><script src="js/pos-validations.js?v=4.0.0-rc1.27"></script>
 <script>document.addEventListener('DOMContentLoaded',()=>{document.querySelectorAll('.pos-scenario-mini button').forEach((b,i)=>b.onclick=()=>{document.querySelectorAll('.pos-scenario-mini button').forEach(x=>x.classList.remove('active'));b.classList.add('active');const original=document.querySelectorAll('#scenarioGrid button')[i];if(original)original.click()});const log=document.getElementById('posTechEvents');const status=document.getElementById('flowResponse');if(log&&status)new MutationObserver(()=>{const d=document.createElement('div');d.textContent=new Date().toLocaleTimeString('es-AR')+' · '+status.textContent;log.prepend(d);while(log.children.length>8)log.lastChild.remove()}).observe(status,{childList:true,subtree:true,characterData:true})});</script>
 <script src="js/permissions.js"></script>

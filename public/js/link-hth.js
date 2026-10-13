@@ -629,7 +629,7 @@
   function css() {
     if (document.getElementById('osc-link-css')) return;
     const s = document.createElement('style'); s.id = 'osc-link-css';
-    s.textContent = `.lk-sp{color:#4f6b85;font-style:normal;opacity:.7}
+    s.textContent = `.lk-sp{color:#4f6b85;font-style:normal;opacity:.7}.link-net{margin:6px 0;border:1px solid #23415c;border-radius:8px;padding:6px 8px}.link-net summary{font-size:12px!important;font-weight:700;cursor:pointer;color:#9fd8ff;list-style-position:inside}.link-net .btn{margin-top:6px;font-size:12px}
 .test-card.link .card-network,.test-card.domestic .card-network{font-size:0!important;color:transparent!important}
 .test-card.link .card-network::before{content:"";display:block;width:30px;height:30px;border-radius:50%;background:url('assets/brand-link.png?v=4.0.0-rc1.26') center/contain no-repeat;box-shadow:0 0 0 1.5px #fff}
 .test-card.link.active{border-color:#9fd18b!important;box-shadow:0 0 0 3px rgba(159,209,139,.22)!important}
@@ -664,12 +664,15 @@
   function panelHtml(opts = {}) {
     const pos = opts.mode === 'pos' || opts.withTxButtons;
     const code = k => (OPS[k] ? OPS[k].proc({ accountType: 'XX', toAccount: 'YY', destination: { toTyp: 'YY' } }) : { withdrawal: '01XX00', balance: '31XX00', transfer: '09XX00 + 2900YY', debin: 'F3XX00 + F400XX' }[k]);
+    // rc.1.27 · ATM: el alumno elige primero la operación (igual que en el POS) y el panel muestra solo los datos que esa operación usa.
+    const ATM_GROUPS = [['Cuenta', ['withdrawal', 'withdrawal_usd', 'cash_advance', 'balance', 'movements', 'deposit', 'deposit_third', 'card_payment', 'card_payment_cash', 'fx_rate', 'pin_change']], ['Transferencias', ['own_transfer', 'transfer', 'debin']], ['Pago de servicios', Object.keys(OPS).filter(k => OPS[k].group === 'services')], ['Plazo fijo', Object.keys(OPS).filter(k => OPS[k].group === 'investments')], ['Gestiones', Object.keys(OPS).filter(k => OPS[k].group === 'admin')], ['Solicitudes a la institución', Object.keys(OPS).filter(k => OPS[k].group === 'requests')]];
+    const atmSel = pos ? '' : `<label>Operación LINK<select id="linkAtmTxSelect"><option value="">— Elegir en la pantalla del cajero —</option>${ATM_GROUPS.map(([g, ks]) => `<optgroup label="${g}">${ks.filter(k => TX[k]).map(k => `<option value="${k}">${TX[k].label} · ${code(k)}</option>`).join('')}</optgroup>`).join('')}</select></label>`;
     const txSel = pos ? `<label>Operación LINK<select id="linkTxSelect">${POS_GROUPS.map(([g, ks]) => `<optgroup label="${g}">${ks.map(k => `<option value="${k}">${TX[k].label} · ${code(k)}</option>`).join('')}</optgroup>`).join('')}</select></label>
 <div id="linkOriginalBox" style="display:none"><label>Operación original<select id="linkOriginal"><option value="">— No hay operaciones aprobadas para referenciar —</option></select></label></div>
 <div id="linkCashbackBox" style="display:none"><label>Efectivo a retirar (cash-back)<input id="linkCashback" inputmode="numeric" value="5000" placeholder="Importe en pesos"></label></div>
 <div id="linkCuotasBox" style="display:none"><label>Cuotas (Maestro · campo 48)<select id="linkCuotas"><option value="1">1 pago</option><option value="3">3 cuotas</option><option value="6">6 cuotas</option></select></label></div>` : '';
     const afterOpts = pos ? [['none', 'Ninguno'], ['cancel', 'Reversa total · 17 · el cliente cancela'], ['timeout', 'Reversa por timeout · 68 · el host no responde'], ['saf', 'Host no disponible · STAND-IN + forzada 0220 / 0230']] : [['none', 'Ninguno'], ['cancel', 'Reversa total · 17 · el cliente cancela'], ['partial', 'Reversa parcial · 32 · el cajero entrega el 80% (solo extracción)'], ['timeout', 'Reversa por timeout · 68 · el host no responde'], ['saf', 'Host no disponible · STAND-IN + forzada 0220 / 0230']];
-    return `<h4><img src="assets/brand-link.png?v=4.0.0-rc1.26" alt="">Red LINK · Host to Host ISO 8583</h4>${txSel}
+    return `<h4><img src="assets/brand-link.png?v=4.0.0-rc1.26" alt="">Red LINK · Host to Host ISO 8583</h4>${txSel}${atmSel}
 <div class="link-row" style="grid-template-columns:1fr"><label>Cuenta<select id="linkAccountType"><option value="10">Caja de ahorros $ (10)</option><option value="20">Cuenta corriente $ (20)</option>${pos ? '' : '<option value="15">Caja de ahorros U$S (15)</option><option value="07">Cuenta corriente U$S (07)</option>'}</select></label>
 </div>
 <label>Escenario de prueba<select id="linkScenario"><optgroup label="Respuesta del host (0210)">${SCENARIOS.map(c => `<option value="${c}">${c} · ${RESULT[c].toLowerCase()}</option>`).join('')}</optgroup><optgroup label="Aprobada y luego reversada (0420 / 0430)">${afterOpts.filter(([v]) => v !== 'none').map(([v, l]) => `<option value="00|${v}">${l}</option>`).join('')}</optgroup></select></label>
@@ -723,7 +726,7 @@ ${pos ? '' : `<details class="link-net"><summary>Gestión de red · 0800 / 0810<
   };
   function syncPanel(kind) {
     const show = (id, on) => { const e = document.getElementById(id); if (e) { e.classList.toggle('hidden', !on); e.style.display = on ? (id === 'linkTransferBox' || id === 'linkDebinBox' ? 'grid' : '') : 'none'; } };
-    show('linkTransferBox', kind === 'transfer');
+    show('linkTransferBox', kind === 'transfer' || kind === 'deposit_third' || kind === 'verify_credit');
     show('linkDebinBox', kind === 'debin');
     show('linkOriginalBox', !!OPS[kind]?.original);
     show('linkCashbackBox', !!OPS[kind]?.cashback && kind === 'cashback');

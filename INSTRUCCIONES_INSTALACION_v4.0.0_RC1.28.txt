@@ -1,0 +1,13 @@
+OSC Payment Academy v4.0.0-rc.1.28 (acumulativa: incluye rc.1.22 a rc.1.27)
+ATM LINK: primero se elige la operación y el panel muestra solo sus datos.
+
+INSTALACIÓN (paquete INCREMENTAL · sirve si hoy tenés instalada la rc.1.21 a rc.1.27):
+1. Descomprimir el ZIP incremental y copiar su contenido sobre la raíz del repositorio en GitHub, reemplazando archivos.
+2. Si todavía existe, BORRAR 03-Analisis-Horario-TCPHandler.ps1 (el ZIP no puede borrar archivos).
+3. No hay migración nueva.
+4. Despliegue habitual.
+
+Pruebas mínimas:
+1. ATM → tarjeta LINK: el panel muestra "Operación LINK" arriba y ningún dato de transferencia, DEBIN, servicios ni plazo fijo.
+2. Elegir "Constitución de plazo fijo (18)": aparecen solo plazo, tipo y renovación. Insertar tarjeta, PIN 1234: el cajero va directo a "Tipo de cuenta".
+3. Dejar "Elegir en la pantalla del cajero", PIN 1234 → menú RED LINK → Transferencias → A terceros: el panel cambia a esa operación y muestra los datos de la transferencia.

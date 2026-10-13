@@ -1,4 +1,8 @@
-# OSC Payment Academy — v4.0.0-rc.1.27
+# OSC Payment Academy — v4.0.0-rc.1.28
+
+ATM LINK: primero se elige la operación y el panel muestra solo sus datos. Ver RELEASE_NOTES_v4.0.0-rc.1.28.md.
+
+## v4.0.0-rc.1.27
 
 Red LINK completa (pago de servicios, plazo fijo, gestiones, 0220/0230, 0800/0810), pestaña Validaciones del POS por caso de uso, Soporte Online para consultoras con capturas, Tutor LINK con desglose y visor del manual. Ver RELEASE_NOTES_v4.0.0-rc.1.27.md.
 

@@ -3312,7 +3312,7 @@
     </div>
 
     <script src="js/network-profiles.js?v=4.0.0-rc1.26"></script>
-    <script src="js/link-hth.js?v=4.0.0-rc1.27"></script>
+    <script src="js/link-hth.js?v=4.0.0-rc1.28"></script>
     <script src="js/emv-crypto.js?v=4.0.0-rc1.22"></script>
     <script src="js/iso-network-spec.js?v=4.0.0-rc1.22"></script>
     <script src="js/security-edu.js?v=4.0.0-rc1.26"></script>
@@ -5101,7 +5101,7 @@
               "PIN capturado en forma cifrada · DE52/DE53 activos",
               "done",
             );
-            if (state.brand === "link") { linkMenu("main"); return; }
+            if (state.brand === "link") { const pre = $("linkAtmTxSelect")?.value; if (pre && handleLinkOption("link:" + pre)) return; linkMenu("main"); return; }
             setScreen(
               "PANTALLA TÁCTIL",
               '<small>Toque la operación deseada</small><div class="touch-hint">La selección se realiza directamente sobre la pantalla.</div>',
@@ -6019,6 +6019,7 @@
           if (value.startsWith("linkmenu:")) { linkMenu(value.slice(9)); return true; }
           if (value.startsWith("link:")) {
             state.linkKind = value.slice(5); state.operation = "link"; state.linkTo = null; state.linkDepType = "E";
+            { const sel = $("linkAtmTxSelect"); if (sel && sel.value !== state.linkKind) { sel.value = state.linkKind; T.syncPanel(state.linkKind); } }
             addTechEvent(`LINK · operación seleccionada: ${T.TX[state.linkKind].label}`, "done");
             const lo = T.OPS[state.linkKind], lcode = lo ? lo.proc({ accountType: "XX", toAccount: "YY" }) : "";
             const accts = LINK_ACCOUNTS[state.linkKind] || (lo && !lo.noAccount && /XX/.test(lcode) ? ["10", "20"] : null);
@@ -6123,15 +6124,16 @@
             if (on && !panel.dataset.ready && window.OSCLinkHth) {
               OSCLinkHth.css();
               panel.innerHTML = OSCLinkHth.panelHtml({ mode: "atm" }) +
-                '<div class="link-note">La operación y la cuenta se eligen en la pantalla del cajero después del PIN. Acá se definen el escenario de prueba (respuesta del host, reversas y forzada 0220/0230), los datos de transferencia, DEBIN, pago de servicios (PAS) y plazo fijo, y los mensajes de control 0800/0810.</div>';
+                '<div class="link-note">Orden: 1) elegí la operación, 2) el escenario de prueba, 3) completá los datos que aparezcan, 4) insertá la tarjeta y PIN 1234. Si no elegís la operación acá, el cajero te muestra el menú después del PIN.</div>';
               panel.dataset.ready = "1";
-              const tb = $("linkTransferBox"), db = $("linkDebinBox");
-              if (tb) { tb.classList.remove("hidden"); tb.style.display = "grid"; }
-              if (db) { db.classList.remove("hidden"); db.style.display = "grid"; }
-              ["linkPasBox", "linkPfBox"].forEach((id) => { const e = $(id); if (e) { e.classList.remove("hidden"); e.style.display = ""; } });
+              // rc.1.27 · Primero la operación: el panel muestra solo los datos que esa operación usa.
+              const atmSel = $("linkAtmTxSelect");
+              const syncAtm = () => { OSCLinkHth.syncPanel(atmSel?.value || ""); const n = $("linkNote"); if (n && !atmSel?.value) n.textContent = "Elegí la operación acá (o en la pantalla del cajero después del PIN). Debajo aparecen solo los datos que esa operación usa."; };
+              if (atmSel) atmSel.onchange = () => { syncAtm(); if (atmSel.value) addTechEvent(`LINK · operación elegida en el panel: ${OSCLinkHth.TX[atmSel.value]?.label || atmSel.value} · después del PIN va directo`, "done"); };
+              syncAtm();
               const ns = $("linkNetSend");
               if (ns) ns.onclick = () => { const out = OSCLinkHth.buildNetwork($("linkNetFn").value, $("linkNetRes").value); out.amountCents = 0; addTechEvent(`LINK · Gestión de red · ${OSCLinkHth.NET_FN[$("linkNetFn").value]}`, "done"); showLinkMessages(out, out.messages, () => addTechEvent(out.summary, out.code === "00" ? "done" : "warn")); };
-              const n = $("linkNote"); if (n) n.textContent = "Transferencia a terceros: débito 09XX00 y orden de acreditación 2900YY (el CBU también se usa en el depósito a terceros 2200YY). DEBIN: F3XX00 y F400XX.";
+
             }
           }
           // LINK HTH viaja con Track 2 (campo 35) y no lleva datos EMV: se oculta Contactless.
