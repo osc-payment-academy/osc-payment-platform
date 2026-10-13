@@ -1,11 +1,20 @@
 <!doctype html>
 <html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Consulta · Soporte Online</title><link rel="icon" type="image/svg+xml" href="/favicon.svg"><link rel="stylesheet" href="css/saas.css"></head>
 <body><main class="shell">
-  <header class="top"><div><div class="brand"><span>OSC</span> PAYMENT ACADEMY</div><h1>Respuesta del grupo</h1></div><nav class="tabs"><a class="btn" href="support.html">← Soporte Online</a><button class="btn" id="logout">Cerrar sesión</button></nav></header>
-  <section class="panel"><div id="replies"><p class="muted">Cargando conversación…</p></div></section>
-  <section class="panel"><h2>Agregar respuesta</h2><form id="replyForm"><div class="field"><label>Respuesta</label><textarea id="replyBody" required></textarea></div><button class="btn primary">Responder a todo el grupo</button></form><div id="message" class="message"></div></section>
-</main><script src="js/saas-session.js"></script><script>
-const topicId=new URLSearchParams(location.search).get('id'),esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-async function load(){const r=await fetch(`/api/topics/${topicId}/replies`);if(!r.ok)return location.href='support.html';const d=await r.json();replies.innerHTML=d.replies.map(x=>`<article class="topic"><div class="topic-head"><strong>${esc(x.author_name)}</strong>${x.instructor_answer?'<span class="pill">Respuesta del instructor</span>':''}</div><p>${esc(x.body)}</p><small class="muted">${new Date(x.created_at).toLocaleString('es-AR')}</small></article>`).join('')||'<p class="muted">Todavía no hay respuestas.</p>'}
-replyForm.onsubmit=async e=>{e.preventDefault();const r=await fetch(`/api/topics/${topicId}/replies`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({body:replyBody.value})});if(r.ok){replyForm.reset();message.textContent='Respuesta publicada para todo el grupo.';message.className='message show ok';load()}else{message.textContent='El foro está cerrado o no tenés acceso.';message.className='message show error'}};load();
+  <header class="top"><div><div class="brand"><span>OSC</span> PAYMENT ACADEMY</div><h1>Consulta</h1></div><nav class="tabs"><a class="btn" href="support.html">← Soporte Online</a><button class="btn" id="logout">Cerrar sesión</button></nav></header>
+  <section class="panel" id="question"></section>
+  <section class="panel"><h2>Respuestas</h2><div id="replies"><p class="muted">Cargando conversación…</p></div></section>
+  <section class="panel"><h2>Agregar respuesta</h2><form id="replyForm"><div class="field"><label>Respuesta</label><textarea id="replyBody" required></textarea></div><button class="btn primary">Responder</button></form><div id="message" class="message"></div></section>
+</main><script src="js/saas-session.js"></script><script src="js/support-images.js?v=4.0.0-rc1.27"></script><script>
+const q=new URLSearchParams(location.search),topicId=q.get('id'),kind=q.get('kind')==='tenant'?'tenant':'cohort',back=q.get('g'),esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+// rc.1.27 · Consultas de ediciones del curso y de consultoras.
+const url=kind==='tenant'?`/api/support/topics/${encodeURIComponent(topicId)}/replies`:`/api/topics/${encodeURIComponent(topicId)}/replies`;
+if(back)document.querySelectorAll('a[href="support.html"]').forEach(a=>a.href='support.html?g='+encodeURIComponent(back));
+const br=s=>esc(s).replace(/\n/g,'<br>');const ATT=OSCSupportImages.attach(document.getElementById('replyBody'));
+async function load(){const r=await fetch(url);if(!r.ok)return location.href='support.html';const d=await r.json();
+  if(d.topic)question.innerHTML=`<div class="topic-head"><span class="pill">${esc(d.topic.module_key)}</span>${d.topic.status==='OPEN'?'<span class="pill" style="background:#5a4a12;color:#ffe08a">Pendiente de respuesta</span>':'<span class="pill">Respondida</span>'}<span class="muted">${new Date(d.topic.created_at).toLocaleString('es-AR')}</span></div><h2 style="margin:8px 0">${esc(d.topic.title)}</h2><p>${br(d.topic.body)}</p>${OSCSupportImages.gallery(d.images?.topic)}<small class="muted">${esc(d.topic.author_name)}</small>`;
+  else question.style.display='none';
+  replyForm.closest('section').style.display=d.open===false?'none':'';
+  replies.innerHTML=d.replies.map(x=>`<article class="topic"><div class="topic-head"><strong>${esc(x.author_name)}</strong>${x.instructor_answer?'<span class="pill">Respuesta de OSC Payment Academy</span>':''}</div><p>${br(x.body)}</p>${OSCSupportImages.gallery(d.images?.replies?.[x.id])}<small class="muted">${new Date(x.created_at).toLocaleString('es-AR')}</small></article>`).join('')||'<p class="muted">Todavía no hay respuestas.</p>'}
+replyForm.onsubmit=async e=>{e.preventDefault();const r=await fetch(url,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({body:replyBody.value,images:ATT.list()})});if(r.ok){replyForm.reset();ATT.clear();message.textContent='Respuesta publicada.';message.className='message show ok';load()}else{message.textContent='El foro está cerrado o no tenés acceso.';message.className='message show error'}};load();
 </script></body></html>

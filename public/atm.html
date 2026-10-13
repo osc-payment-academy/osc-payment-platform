@@ -1013,6 +1013,7 @@
         content: "RETIRE LOS DÓLARES";
         color: #4de69b;
       }
+      .cash-door.open.link-cash::after { content: "RETIRE SU DINERO"; }
       .cash-animation {
         height: 118px;
         pointer-events: none;
@@ -3311,7 +3312,7 @@
     </div>
 
     <script src="js/network-profiles.js?v=4.0.0-rc1.26"></script>
-    <script src="js/link-hth.js?v=4.0.0-rc1.26"></script>
+    <script src="js/link-hth.js?v=4.0.0-rc1.27"></script>
     <script src="js/emv-crypto.js?v=4.0.0-rc1.22"></script>
     <script src="js/iso-network-spec.js?v=4.0.0-rc1.22"></script>
     <script src="js/security-edu.js?v=4.0.0-rc1.26"></script>
@@ -5316,6 +5317,7 @@
             actions = $("cashActions");
           cashOutcomeHandled = false;
           notes.classList.remove("retract");
+          door.classList.toggle("link-cash", state.brand === "link");
           door.classList.add("open");
           counter.classList.add("show");
           actions.classList.add("show");
@@ -5968,12 +5970,23 @@
         function linkMoney(cents, cur) {
           return (Number(cents || 0) / 100).toLocaleString("es-AR", { style: "currency", currency: (cur || linkCur()) === "840" ? "USD" : "ARS" });
         }
+        // Botones de operaciones LINK: nombre corto + código C-X-5.
+        function opsBtn(keys) { const T = window.OSCLinkHth; return keys.filter((k) => T?.OPS[k]).map((k) => { const o = T.OPS[k]; const c = o.proc({ accountType: "XX", toAccount: "YY" }); return ["link:" + k, `${o.short.charAt(0) + o.short.slice(1).toLowerCase()} (${/XX/.test(c) ? c.slice(0, 2) : c})`]; }); }
         function linkMenu(page) {
           const menus = {
-            main: ["RED LINK", [["link:withdrawal", "💵 Extracción en pesos"], ["link:withdrawal_usd", "💵 Extracción en dólares"], ["link:balance", "📄 Consulta de saldo"], ["link:movements", "☷ Últimos movimientos"], ["linkmenu:transfers", "↔ Transferencias ▸"], ["linkmenu:more", "➕ Más operaciones ▸"], ["finish", "↪ Fin de operación"]]],
+            main: ["RED LINK", [["link:withdrawal", "💵 Extracción en pesos"], ["link:withdrawal_usd", "💵 Extracción en dólares"], ["link:balance", "📄 Consulta de saldo"], ["link:movements", "☷ Últimos movimientos"], ["linkmenu:transfers", "↔ Transferencias ▸"], ["linkmenu:more", "➕ Más operaciones ▸"], ["linkmenu:services", "🧾 Pago de servicios ▸"], ["linkmenu:investments", "📈 Plazo fijo ▸"], ["finish", "↪ Fin de operación"]]],
             transfers: ["TRANSFERENCIAS", [["link:own_transfer", "Entre cuentas propias (40)"], ["link:transfer", "A terceros (09 / 29)"], ["link:debin", "DEBIN pendiente (F3 / F4)"], ["linkmenu:main", "← Volver"]]],
-            more: ["MÁS OPERACIONES", [["link:deposit", "Depósito (21)"], ["link:deposit_third", "Depósito a terceros (22)"], ["linkmenu:card", "Pago de resumen de tarjeta ▸"], ["link:cash_advance", "Adelanto de efectivo (013000)"], ["link:fx_rate", "Tipo de cambio (35)"], ["link:pin_change", "Cambio de PIN (32)"], ["linkmenu:main", "← Volver"]]],
+            more: ["MÁS OPERACIONES", [["link:deposit", "Depósito (21)"], ["link:deposit_third", "Depósito a terceros (22)"], ["linkmenu:card", "Pago de resumen de tarjeta ▸"], ["link:cash_advance", "Adelanto de efectivo (013000)"], ["link:fx_rate", "Tipo de cambio (35)"], ["link:pin_change", "Cambio de PIN (32)"], ["linkmenu:admin", "🗂 Gestiones ▸"], ["linkmenu:requests", "✉ Solicitudes ▸"], ["linkmenu:main", "← Volver"]]],
             card: ["PAGO DE RESUMEN", [["link:card_payment", "Con débito en cuenta (50XX30)"], ["link:card_payment_cash", "En efectivo (500030)"], ["linkmenu:more", "← Volver"]]],
+            // rc.1.27 · Pago de servicios (PAS), plazo fijo, gestiones y mensajes a la institución (C-X-5).
+            services: ["PAGO DE SERVICIOS", [...opsBtn(["service_inquiry", "service_pay", "service_quick", "service_cash", "card_payment_pas", "service_order", "service_debit"]), ["linkmenu:services2", "Más ▸"], ["linkmenu:main", "← Volver"]]],
+            services2: ["PAGO DE SERVICIOS", [...opsBtn(["service_check", "service_codes", "service_last", "service_pending", "service_unlink", "pas_inquiry"]), ["linkmenu:services3", "Más ▸"], ["linkmenu:services", "← Volver"]]],
+            services3: ["PAGO DE SERVICIOS · PAS", [...opsBtn(["pas_categories", "pas_companies", "pas_adhesions", "pas_unsubscribe"]), ["linkmenu:services2", "← Volver"]]],
+            investments: ["PLAZO FIJO", [...opsBtn(["pf_rates", "pf_invest", "pf_balance", "pf_account", "pf_renewal"]), ["linkmenu:main", "← Volver"]]],
+            admin: ["GESTIONES", [...opsBtn(["covisur", "atm_purchase", "top_up", "cit_change", "homebanking", "verify_credit"]), ["linkmenu:admin2", "Más ▸"], ["linkmenu:more", "← Volver"]]],
+            admin2: ["GESTIONES", [...opsBtn(["status_inquiry", "prizes", "certificates", "base_change"]), ["linkmenu:admin", "← Volver"]]],
+            requests: ["SOLICITUDES A LA INSTITUCIÓN", [...opsBtn(["checkbook_usd", "checkbook_deferred", "deposit_slips", "statement_request", "address_change", "other_requests"]), ["linkmenu:requests2", "Más ▸"], ["linkmenu:more", "← Volver"]]],
+            requests2: ["SOLICITUDES A LA INSTITUCIÓN", [...opsBtn(["insurance_params", "insurance_join", "auto_debits", "online_payment_inquiry"]), ["linkmenu:requests", "← Volver"]]],
           };
           const [title, opts] = menus[page] || menus.main;
           state.step = "operation";
@@ -5996,7 +6009,7 @@
             return;
           }
           if (k === "deposit" || k === "deposit_third") { setScreen("TIPO DE DEPÓSITO", "<small>Seleccione cómo deposita</small>", [{ value: "linkdep:E", label: "💵 Efectivo" }, { value: "linkdep:C", label: "🧾 Cheque" }]); return; }
-          if (["balance", "movements", "fx_rate"].includes(k)) { state.amount = "0"; sendLinkAtm(); return; }
+          if (["balance", "movements", "fx_rate"].includes(k) || (window.OSCLinkHth?.OPS[k]?.noAmount && k !== "pin_change")) { state.amount = "0"; sendLinkAtm(); return; }
           if (k === "pin_change") { state.step = "linkPinNew"; state.linkNewPin = ""; state.linkPinConfirm = ""; setScreen("NUEVO PIN", '<strong id="linkPinDisplay">____</strong><small>Ingrese 4 dígitos y presione ACEPTAR</small>'); return; }
           if (k === "card_payment_cash") state.linkDepType = "E";
           linkAskAmount();
@@ -6007,7 +6020,8 @@
           if (value.startsWith("link:")) {
             state.linkKind = value.slice(5); state.operation = "link"; state.linkTo = null; state.linkDepType = "E";
             addTechEvent(`LINK · operación seleccionada: ${T.TX[state.linkKind].label}`, "done");
-            const accts = LINK_ACCOUNTS[state.linkKind];
+            const lo = T.OPS[state.linkKind], lcode = lo ? lo.proc({ accountType: "XX", toAccount: "YY" }) : "";
+            const accts = LINK_ACCOUNTS[state.linkKind] || (lo && !lo.noAccount && /XX/.test(lcode) ? ["10", "20"] : null);
             if (accts) { setScreen("TIPO DE CUENTA", state.linkKind === "deposit" ? "<small>Seleccione la cuenta donde deposita</small>" : "<small>Seleccione la cuenta</small>", accts.map((t) => ({ value: "linkacct:" + t, label: LINK_ACCT_LABEL[t] }))); return true; }
             linkProceed(); return true;
           }
@@ -6032,13 +6046,28 @@
             if (m.direction === "ENTRANTE") setFlow(5);
             if (m.mti === "0420") setFlow(7);
             const rows = m.fields.map((r) => [String(r.de), r.name, T.displayValue(r.value), r.attr, r.ref, r.value.length]);
-            const extra = { bitmap: m.bitmap, raw: m.raw, linkAnnotated: T.annotated(m), linkLabel: m.label, brand: "LINK", amount: String(out.amountCents ?? out.ctx.amountCents) };
+            const extra = { bitmap: m.bitmap, raw: m.raw, linkAnnotated: T.annotated(m), linkLabel: m.label, brand: "LINK", amount: String(out.amountCents ?? out.ctx?.amountCents ?? 0) };
             if (m.mti === "0420" || m.mti === "0430") extra.status = "Reversada";
-            addMessage(m.mti, `LINK ${T.TX[kind].short}`, m.responseCode || " ", rows, extra);
+            addMessage(m.mti, `LINK ${T.TX[kind]?.short || "GESTIÓN DE RED"}`, m.responseCode || " ", rows, extra);
             addTechEvent(`${m.label}${m.responseCode ? " · DE39=" + m.responseCode : ""}`, m.mti.startsWith("04") ? "warn" : "done");
             setTimeout(step, 650);
           };
           step();
+        }
+        // rc.1.26 · Animación del dispensador sin botones (escenario elegido en el selector): entrega parcial o retracto.
+        function linkDispenseShow(mode, out) {
+          const notes = $("banknotes"), door = $("cashDoor"), counter = $("dispenseCountdown"), actions = $("cashActions");
+          if (!notes || !door) return;
+          clearInterval(cashTimer); cashTimer = null; cashOutcomeHandled = true;
+          actions?.classList.remove("show"); counter?.classList.remove("show");
+          notes.classList.remove("retract", "dispense"); door.classList.add("open", "link-cash");
+          requestAnimationFrame(() => notes.classList.add("dispense"));
+          addTechEvent(mode === "partial" ? `Dispensador · entrega ${linkMoney(out.reversal.dispensedCents, out.currency)} (80%) de ${linkMoney(out.amountCents, out.currency)}` : "Dispensador · billetes presentados", "done");
+          setTimeout(() => {
+            if (mode === "partial") { notes.classList.remove("dispense"); addTechEvent("Billetes retirados por el cliente · el faltante se reversa con 0420 (32)", "done"); }
+            else { notes.classList.remove("dispense"); notes.classList.add("retract"); addTechEvent("Billetes retractados · reversa total 0420", "warn"); }
+            setTimeout(() => { door.classList.remove("open"); $("deviceStatus").textContent = mode === "partial" ? "Entrega parcial · dispensador cerrado" : "Efectivo retractado · dispensador cerrado"; }, 900);
+          }, 3200);
         }
         // rc.1.26 · Resultado del dispensador en extracciones LINK.
         function linkCashOutcome(ev) {
@@ -6094,11 +6123,14 @@
             if (on && !panel.dataset.ready && window.OSCLinkHth) {
               OSCLinkHth.css();
               panel.innerHTML = OSCLinkHth.panelHtml({ mode: "atm" }) +
-                '<div class="link-note">La operación y la cuenta se eligen en la pantalla del cajero después del PIN. Acá se definen la respuesta del host, el evento posterior (reversa 0420/0430) y los datos de transferencia, depósito a terceros y DEBIN.</div>';
+                '<div class="link-note">La operación y la cuenta se eligen en la pantalla del cajero después del PIN. Acá se definen el escenario de prueba (respuesta del host, reversas y forzada 0220/0230), los datos de transferencia, DEBIN, pago de servicios (PAS) y plazo fijo, y los mensajes de control 0800/0810.</div>';
               panel.dataset.ready = "1";
               const tb = $("linkTransferBox"), db = $("linkDebinBox");
               if (tb) { tb.classList.remove("hidden"); tb.style.display = "grid"; }
               if (db) { db.classList.remove("hidden"); db.style.display = "grid"; }
+              ["linkPasBox", "linkPfBox"].forEach((id) => { const e = $(id); if (e) { e.classList.remove("hidden"); e.style.display = ""; } });
+              const ns = $("linkNetSend");
+              if (ns) ns.onclick = () => { const out = OSCLinkHth.buildNetwork($("linkNetFn").value, $("linkNetRes").value); out.amountCents = 0; addTechEvent(`LINK · Gestión de red · ${OSCLinkHth.NET_FN[$("linkNetFn").value]}`, "done"); showLinkMessages(out, out.messages, () => addTechEvent(out.summary, out.code === "00" ? "done" : "warn")); };
               const n = $("linkNote"); if (n) n.textContent = "Transferencia a terceros: débito 09XX00 y orden de acreditación 2900YY (el CBU también se usa en el depósito a terceros 2200YY). DEBIN: F3XX00 y F400XX.";
             }
           }
@@ -6114,7 +6146,7 @@
           const p = T.readPanel();
           const cur = linkCur();
           state.step = "processing"; state.stan = random6(); setFlow(4);
-          const noAmount = ["balance", "movements", "fx_rate", "pin_change"].includes(kind);
+          const noAmount = ["balance", "movements", "fx_rate", "pin_change"].includes(kind) || !!T.OPS[kind]?.noAmount;
           // rc.1.26 · El HSM del emisor simulado descifra el campo 52 y verifica el PIN (queda en «PIN Block y HSM · Tu transacción»).
           const linkBlock = pinBlock();
           const linkHsm = kind === "debin" ? null : hsmVerifyAtmPin(linkBlock);
@@ -6122,7 +6154,7 @@
             terminal: "ATM", amountCents: noAmount ? 0 : Number(state.amount || 0), accountType: p.accountType, scenario: p.scenario, after: p.after,
             toAccount: state.linkTo, depositType: state.linkDepType,
             pinBlock: linkBlock, pinOk: kind === "debin" ? undefined : (linkHsm ? linkHsm.match : state.pin === linkPin()), stan: state.stan,
-            destination: p.destination, debin: p.debin, termId: "S1AXOSC0001",
+            destination: p.destination, debin: p.debin, termId: "S1AXOSC0001", pas: p.pas, pf: p.pf,
           });
           // rc.1.26 · Verificación de PIN: el host compara el PIN del bloque DE52 contra el PIN de prueba 1234.
           const linkPinOk = linkHsm ? linkHsm.match : state.pin === linkPin();
@@ -6140,7 +6172,7 @@
             if (out.timeout) { setScreen("SIN RESPUESTA DEL BANCO", `<strong>Operación cancelada</strong><small>Timeout · reversa 0420 (68) confirmada con 0430. No se debitó su cuenta.</small>`); return; }
             if (!ok) { setScreen("OPERACIÓN RECHAZADA", `<strong>${out.code}</strong><small>${out.resultText}</small>`); return; }
             setFlow(out.reversal ? 7 : 6);
-            if (out.reversal?.reason === "32") { $("deviceStatus").textContent = "Entrega parcial"; setScreen("ENTREGA PARCIAL", `<strong>${linkMoney(out.reversal.dispensedCents, out.currency)}</strong><small>Se solicitaron ${amt}. Reversa parcial 0420 (32): el banco devuelve ${linkMoney(out.reversal.returnedCents, out.currency)} a la cuenta.</small>`); return; }
+            if (out.reversal?.reason === "32") { $("deviceStatus").textContent = "Entrega parcial"; linkDispenseShow("partial", out); setScreen("ENTREGA PARCIAL", `<strong>${linkMoney(out.reversal.dispensedCents, out.currency)}</strong><small>Se solicitaron ${amt}. Reversa parcial 0420 (32): el banco devuelve ${linkMoney(out.reversal.returnedCents, out.currency)} a la cuenta.</small>`); return; }
             if (out.reversal) { setScreen("OPERACIÓN CANCELADA", `<strong>${amt}</strong><small>Reversa 0420 (17) confirmada con 0430 · el importe vuelve a la cuenta</small>`); return; }
             const lines = (out.statement || []).map((h) => `<div style="display:flex;justify-content:space-between;gap:8px;font-size:12px"><span>${h.date} ${h.concept}</span><b>${h.sign < 0 ? "-" : "+"}${linkMoney(h.cents, out.currency)}</b></div>`).join("");
             const screens = {
@@ -6159,7 +6191,9 @@
               fx_rate: ["TIPO DE CAMBIO", out.fx ? `<strong>U$S 1 = $ ${out.fx.sell.toLocaleString("es-AR")}</strong><small>Comprador $ ${out.fx.buy.toLocaleString("es-AR")} · Vendedor $ ${out.fx.sell.toLocaleString("es-AR")} · Campo 127 del 0210</small>` : "<strong>—</strong>"],
               pin_change: ["PIN ACTUALIZADO", "<strong>Operación exitosa</strong><small>El nuevo PIN offset viajó en el campo 54 (nunca el PIN en claro). En el simulador el PIN de prueba sigue siendo 1234.</small>"],
             };
-            const [title, html] = screens[kind] || ["OPERACIÓN APROBADA", `<strong>${amt}</strong><small>${out.summary || ""}</small>`];
+            const ticketHtml = out.ticket?.length ? `<div style="display:grid;gap:3px;width:100%;font:12px Consolas,monospace;text-align:left">${out.ticket.map((l) => `<div>${l.replace(/</g, "&lt;")}</div>`).join("")}</div><small>Ticket del campo 125 · ${T.TX[kind].label}</small>` : null;
+            if (out.saf) { setScreen("OPERACIÓN APROBADA", `<strong>${amt}</strong><small>Autorizada en STAND-IN · forzada 0220 / 0230 informada al host</small>`); if (T.CASH_KINDS.includes(kind)) { state.linkOut = out; state.linkCash = true; dispenseCash(); } return; }
+            const [title, html] = screens[kind] || [T.TX[kind]?.short || "OPERACIÓN APROBADA", ticketHtml || `<strong>${Number(out.amountCents) ? amt : "Operación exitosa"}</strong><small>${out.summary || ""}</small>`];
             setScreen(title, html);
             // rc.1.26 · Extracciones aprobadas: el dispensador presenta los billetes (retirar / parcial 80% / no retirar → retracto).
             if (T.CASH_KINDS.includes(kind)) { state.linkOut = out; state.linkCash = true; setFlow(6); $("deviceStatus").textContent = "Billetes presentados · esperando retiro"; dispenseCash(); }
@@ -6525,12 +6559,12 @@ ${raw(m)}`;
     </div>
     <script src="js/help-catalog.js"></script>
     <script src="js/module-guide.js"></script>
-    <script src="js/network-access.js?v=4.0.0-rc1.26"></script><script src="js/navigation.js?v=4.0.0-rc1.24"></script>
+    <script src="js/network-access.js?v=4.0.0-rc1.26"></script><script src="js/navigation.js?v=4.0.0-rc1.27"></script>
   
 <style id="osc-atm-v51">
 .atm-history-wide{min-height:360px}.atm-history-wide .history{max-height:330px;overflow:auto}
 .osc-know-btn{width:100%;margin:12px 0 24px;padding:14px;border:1px solid #2f83ff;border-radius:10px;background:#0b2238;color:#fff;font-weight:800;font-size:16px;cursor:pointer}
 .osc-know-modal{position:fixed;inset:0;background:#000a;z-index:100000;display:none;align-items:center;justify-content:center}.osc-know-modal.open{display:flex}.osc-know-card{width:min(820px,92vw);max-height:82vh;overflow:auto;background:#091a2a;border:1px solid #2f83ff;border-radius:16px;padding:24px;color:#fff}.osc-know-card h2{margin-top:0}.osc-know-card li{margin:10px 0;color:#c9dced}.osc-know-close{float:right;background:#17324b;color:#fff;border:1px solid #456;padding:8px 12px;border-radius:8px}
 </style>
-<script src="js/osc-learning.js?v=4.0.0-rc1.19" data-module="atm"></script><script src="js/tutor-osc.js?v=4.0.0-rc1.26" data-module="atm"></script></body>
+<script src="js/osc-learning.js?v=4.0.0-rc1.19" data-module="atm"></script><script src="js/tutor-osc.js?v=4.0.0-rc1.27" data-module="atm"></script></body>
 </html>

@@ -1064,8 +1064,18 @@
     $('bitmap').textContent=message.bitmap;
     document.querySelectorAll('#historyBody tr').forEach(tr=>tr.classList.toggle('selected',tr.dataset.id===message.id));
     updateDualBitmaps();
+    window.OSCPosTabs?.refresh();
   }
 
+  // rc.1.27 · Datos del mensaje seleccionado para las pestañas Vista TLV / Explicación / Validaciones (js/pos-validations.js).
+  window.OSCPosInspect=function(){
+    const message=state.messages.find(m=>m.id===state.selectedMessageId)||null;
+    if(!message)return null;
+    const related=state.messages.filter(m=>m.operationId&&m.operationId===message.operationId);
+    const op=state.operations.find(o=>o.id===message.operationId)||null;
+    const card=TEST_CARDS[op?.cardId||state.testCard]||selectedCard();
+    return {message,related,op,card,installments:op?.installments||(Number(state.installments?.count||1)>1?{count:Number(state.installments.count),interest:state.installments.plan==='issuer'}:null)};
+  };
   function networkLogo(network,size=''){
     const id=String(network||'visa').toLowerCase();
     const p=window.OSCNetworks?.profiles?.[id]||window.OSCNetworks?.profiles?.visa;
@@ -1331,6 +1341,8 @@
     const r37=fields.find(r=>r[0]==='37'); if(r37&&!isAmex) op.rrn=r37[2];
     renderFields(fields);
     screen('PROCESANDO',`<small>${state.paymentMethod==='qr'?'Procesador envía':'Enviando'} ${requestMti}</small><strong>...</strong><span>${isAmex?'American Express GNS':state.paymentMethod==='qr'?'Hacia la red y el emisor':'Aguarde'}</span>`);
+    // rc.1.27 · El paso 4 del flujo muestra el MTI real (0100 / 0200 / 1100), no siempre 0200.
+    { const st4=document.querySelector('#step4 small'); if(st4) st4.textContent=`Enviando ${requestMti}`; }
     setTimeout(()=>{
       $('time4').textContent=timeNow();
       addMessage({

@@ -60,13 +60,53 @@ const tutorDEAnswer=n=>`El DE${n} se identifica de forma general como “${DE_NA
 const tutorMTIAnswer=mti=>{const d=mti.split('');return `El MTI ${mti} se interpreta por sus cuatro posiciones: 1) versión: ${MTI_DIGITS.version[d[0]]||'valor reservado o específico'}; 2) clase: ${MTI_DIGITS.class[d[1]]||'valor reservado o específico'}; 3) función: ${MTI_DIGITS.fn[d[2]]||'valor reservado o específico'}; 4) origen: ${MTI_DIGITS.origin[d[3]]||'valor reservado o específico'}. La utilización exacta debe confirmarse en el manual aprobado de la marca o interfaz.`};
 const VISA_POS_FIELD_PAGES={2:173,3:177,4:186,5:201,6:203,7:206,9:208,10:210,11:212,12:215,13:217,14:219,15:222,16:224,17:226,18:227,19:231,20:233,22:235,23:241,25:244,26:249,28:250,32:255,33:258,34:261,35:279,37:284,38:288,39:292,41:310,42:313,43:318,45:364,46:369,48:374,49:445,50:448,51:450,52:452,53:455,54:464,55:480,56:491,59:500,60:510,61:525,62:530,63:601,66:676,68:678,69:679,70:680,73:685,74:688,75:689,76:690,77:691,86:692,87:693,88:694,89:695,90:696,91:699,92:702,95:704,96:706,97:707,99:708,100:710,101:713,102:716,103:719,104:721,105:823,108:824,110:827,111:832,114:844,115:853,116:855,117:862,118:872,119:890,120:912,121:919,125:946,126:966,127:1013};
 const MASTERCARD_MDS_FIELD_PAGES={1:201,2:202,3:203,4:206,5:207,6:209,7:210,8:211,9:212,10:213,11:214,12:215,13:216,14:217,15:218,16:219,17:220,18:221,19:223,20:224,21:225,22:226,23:228,24:229,25:230,26:231,27:232,28:233,29:234,30:235,31:236,32:237,33:238,34:239,35:240,36:242,37:243,38:244,39:245,40:250,41:251,42:252,43:253,44:255,45:257,46:259,47:260,48:261,49:273,50:274,51:275,52:276,53:277,54:278,55:280,56:284,57:285,58:286,59:287,60:288,61:295,62:298,63:299,64:302,65:303,66:304,67:305,68:306,69:307,70:308,71:309,72:310,73:311,74:312,75:313,76:314,77:315,78:316,79:317,80:318,81:319,82:320,83:321,84:322,85:323,86:324,87:325,88:326,89:327,90:328,91:329,92:331,93:332,94:333,95:334,96:336,97:337,98:339,99:340,100:341,101:342,102:343,103:344,104:345,112:347,120:353,121:359,122:360,126:362,127:363,128:364};
+// rc.1.27 · Soporte Online para consultoras.
+async function ensureSupportSchema(env){
+  await env.DB.batch([
+    env.DB.prepare(`CREATE TABLE IF NOT EXISTS support_topics(id TEXT PRIMARY KEY,tenant_id TEXT NOT NULL,author_user_id TEXT NOT NULL,module_key TEXT NOT NULL DEFAULT 'GENERAL',title TEXT NOT NULL,body TEXT NOT NULL,status TEXT NOT NULL DEFAULT 'OPEN',created_at TEXT NOT NULL,updated_at TEXT NOT NULL)`),
+    env.DB.prepare(`CREATE TABLE IF NOT EXISTS support_replies(id TEXT PRIMARY KEY,topic_id TEXT NOT NULL,author_user_id TEXT NOT NULL,body TEXT NOT NULL,instructor_answer INTEGER NOT NULL DEFAULT 0,created_at TEXT NOT NULL,updated_at TEXT NOT NULL)`),
+    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_support_topics_tenant ON support_topics(tenant_id,status,updated_at)`),
+    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_support_replies_topic ON support_replies(topic_id,created_at)`),
+    env.DB.prepare(`CREATE TABLE IF NOT EXISTS support_images(id TEXT PRIMARY KEY,kind TEXT NOT NULL,topic_id TEXT NOT NULL,reply_id TEXT,uploader_user_id TEXT NOT NULL,mime TEXT NOT NULL,size INTEGER NOT NULL,data BLOB NOT NULL,created_at TEXT NOT NULL)`),
+    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_support_images_topic ON support_images(kind,topic_id)`)
+  ]);
+}
+// rc.1.27 · Capturas adjuntas (hasta 3 por mensaje, máx. 900 KB cada una, JPEG/PNG/WebP). Se guardan en D1 como BLOB.
+function decodeSupportImages(list){
+  if(!Array.isArray(list))return [];
+  return list.slice(0,3).map(u=>{const m=/^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/.exec(String(u||''));if(!m)return null;
+    const bin=atob(m[2]);if(bin.length>900*1024)return null;const bytes=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);return {mime:m[1],bytes};}).filter(Boolean);
+}
+async function saveSupportImages(env,kind,topicId,replyId,userId,list){
+  const imgs=decodeSupportImages(list); if(!imgs.length)return 0;
+  const ts=now();
+  await env.DB.batch(imgs.map(x=>env.DB.prepare('INSERT INTO support_images(id,kind,topic_id,reply_id,uploader_user_id,mime,size,data,created_at) VALUES(?,?,?,?,?,?,?,?,?)').bind(id('simg'),kind,topicId,replyId||null,userId,x.mime,x.bytes.length,x.bytes,ts)));
+  return imgs.length;
+}
+async function supportImageIndex(env,kind,topicId){
+  const rows=(await env.DB.prepare('SELECT id,reply_id FROM support_images WHERE kind=? AND topic_id=? ORDER BY created_at,id').bind(kind,topicId).all()).results;
+  const map={topic:[],replies:{}};rows.forEach(r=>{if(r.reply_id)(map.replies[r.reply_id]=map.replies[r.reply_id]||[]).push(r.id);else map.topic.push(r.id);});
+  return map;
+}
+async function supportTenantAccess(env,user,tenantId){
+  if(user.platform_role==='OSC_ADMIN')return env.DB.prepare(`SELECT id,name FROM tenants WHERE id=? AND tenant_type='CONSULTANCY'`).bind(tenantId).first();
+  return env.DB.prepare(`SELECT t.id,t.name FROM memberships m JOIN tenants t ON t.id=m.tenant_id WHERE m.user_id=? AND m.tenant_id=? AND m.status='ACTIVE' AND t.tenant_type='CONSULTANCY' AND t.status='ACTIVE'`).bind(user.id,tenantId).first();
+}
+async function supportPendingCount(env){
+  await ensureSupportSchema(env);
+  const a=await env.DB.prepare(`SELECT COUNT(*) n FROM support_topics s JOIN tenants t ON t.id=s.tenant_id WHERE s.status='OPEN' AND t.status='ACTIVE'`).first();
+  const b=await env.DB.prepare(`SELECT COUNT(*) n FROM forum_topics f JOIN cohorts c ON c.id=f.cohort_id WHERE f.status='OPEN' AND c.status='ACTIVE'`).first().catch(()=>({n:0}));
+  return Number(a?.n||0)+Number(b?.n||0);
+}
 const LINK_TUTOR_FIELDS={"1": ["secndry-bit-map", "X(16)", "Controla la presencia o ausencia de los campos 65 a 128. Su presencia la indica el bit 1 del bitmap primario."], "2": ["pan", "LLVAR ..9(19)", "Número de tarjeta."], "3": ["proc-cde", "g 9(6)", "Código de transacción: posiciones 1-2 código (C-X-5), 3-4 tipo de cuenta desde y 5-6 tipo de cuenta hacia (C-X-7)."], "4": ["tran-amt", "9(12)", "Monto de la transacción."], "7": ["xmit-dat-tim", "9(10) mmddhhmmss", "Fecha y hora del mensaje."], "11": ["trace-num", "9(6)", "Número fijado por quien origina el mensaje y repetido por el receptor; sirve para chequear la respuesta. Un reverso puede no tener el número de la transacción original."], "12": ["tran-tim", "9(6) hhmmss", "Hora local en que comenzó la transacción."], "13": ["tran-dat", "9(4)", "Fecha local en que comenzó la transacción."], "15": ["setl-dat", "9(4) mmdd", "Fecha de negocios de una transacción realizada en otra red; si no, ceros."], "17": ["cap-dat", "9(4) mmdd", "Fecha de negocios de la transacción."], "22": ["entry-mde", "9(3)", "Modo de ingreso."], "32": ["acq-inst-id", "LLVAR ..9(11)", "Código interno de la institución pagadora."], "35": ["track 2", "LLVAR ..X(37)", "Datos del track 2 de la tarjeta, alineado a izquierda y relleno con blancos."], "37": ["retrvl-ref-num", "g X(12)", "Número de recibo, alineado a izquierda y relleno con blancos."], "38": ["auth-id-resp", "X(6)", "Código de autorización de la respuesta."], "39": ["resp-cde", "X(2)", "Código de respuesta que indica el estado del mensaje (C-X-6). En 0420/0430 lleva el código de reverso (C-X-8)."], "41": ["term-id", "X(16)", "Número de terminal, alineado a izquierda y relleno con blancos."], "42": ["crd-accpt-id-cde", "X(15)", "Siempre blancos. En dispositivos que no son cajeros se informa CIT: se valida clave telefónica en lugar de PIN de cajero."], "43": ["crd-accpt-name-loc", "g X(40)", "Nombre y localidad del dueño del ATM: 1-22 institución, 23-35 localidad, 36-38 provincia, 39-40 país. En reversos por timeout lleva la leyenda ** REVERSAL FOR LATE/UNSOL RESPONSE **."], "44": ["resp-data", "LLVAR ..X(25)", "Datos adicionales de la respuesta según el tipo de mensaje (por ejemplo, saldos)."], "48": ["add-data-prvt", "LLLVAR g..100", "Datos adicionales de la transacción; depende de si se originó en ATM o POS."], "49": ["crncy-cde", "9(3)", "Código de moneda: 032 pesos, 840 dólares, 076 reales, 858 pesos uruguayos."], "52": ["pin", "X(16)", "Número de PIN en forma encriptada (cifrado con la clave de comunicación)."], "53": ["sec-cntrl-info", "g 16", "Figura en la tabla de bits de BASE24; LINK no lo describe para su implementación."], "54": ["add-amts", "LLLVAR g..120", "Datos adicionales según el tipo de mensaje y el código de transacción (depósitos, cambio de PIN, cash-back, pagos)."], "55": ["pri-rsrvd1-iso", "LLLVAR g..360", "Datos para transacciones interbancarias, datos del pago (PAS) o cuentas relacionadas a la tarjeta, según el tipo de mensaje. No lleva datos EMV del chip."], "60": ["pri-rsrvd1-prvt", "LLLVAR g..100", "Datos de la terminal que originó la transacción: institución dueña, red y diferencia horaria."], "61": ["pri-rsrvd2-prvt", "LLLVAR g..100", "Datos de la institución emisora de la tarjeta: institución, red, tipos de cuenta e indicador."], "63": ["pri-rsrvd4-prvt", "LLLVAR g..597", "Campo de PIN offset."], "70": ["netw-mgmt-cde", "9(3)", "Código para manejar el estado de procesamiento on-line entre BASE24 y el host (mensajes 0800/0810)."], "90": ["orig-info", "g 42", "Datos de la transacción original (reversos): tipo de mensaje, secuencia, fecha, hora y fecha de negocio."], "95": ["replacement", "g 42", "Monto realmente dispensado en una reversa parcial."], "100": ["rcv-inst", "LLVAR ..9(11)", "Código interno que identifica a la institución emisora."], "102": ["acct1", "LLVAR ..X(28)", "Número de cuenta desde."], "103": ["acct2", "LLVAR ..X(28)", "Número de cuenta hacia."], "120": ["secndry-rsrvd1-prvt", "LLLVAR g..150", "Dirección del ATM, según el tipo de mensaje."], "122": ["secndry-rsrvd3-prvt", "LLLVAR g..150", "Código interno de la institución emisora, según el tipo de mensaje."], "123": ["secndry-rsrvd4-prvt", "LLLVAR g..455", "Monto del depósito que se suma al saldo disponible."], "124": ["secndry-rsrvd5-prvt", "LLLVAR g..684", "Tipo de depositorio."], "125": ["secndry-rsrvd6-prvt", "LLLVAR g..680", "Indicador de cuenta a procesar en transacciones con dos cuentas, o datos para impresión del extracto (últimos movimientos)."], "126": ["secndry-rsrvd7-prvt", "LLLVAR g..680", "Área de tokens (por ejemplo PE y Q7 en transferencias, QS en DEBIN), según los anexos técnicos."], "127": ["secndry-rsrvd8-prvt", "LLLVAR g..X(200)", "Datos adicionales de la transacción según el tipo de mensaje (por ejemplo, tipo de cambio)."]};
 const tutorManualReference=(brand,de,channel='POS',isAdmin=false)=>{
   const fieldName=DE_NAMES[de]||`Data Element ${de}`;
   // rc.1.26 · Red LINK: se responde con la definición de los manuales LINK (Host to Host BASE24). Manual confidencial: el enlace solo para administración OSC.
   if(brand==='LINK'){
     const f=LINK_TUTOR_FIELDS[de];
-    const manual=isAdmin?{manualUrl:'/manuals/link/texto/c-x-1-2-3-conex-htoh-iso8583-tipo-de-msje-fto-de-msje.md',manualLabel:`Abrir manual LINK C-X-1-2-3 · campo ${de}`}:{};
+    // Visor con formato y el campo resaltado. Campos de reversa (90, 95): registro 0420 (C-X-4-11); el resto: C-X-1-2-3.
+    const rev=[90,95].includes(Number(de)),doc=rev?'c-x-4-11-msje-0420-output-conex-htoh-iso8583-fto-de-rtro':'c-x-1-2-3-conex-htoh-iso8583-tipo-de-msje-fto-de-msje';
+    const manual=isAdmin?{manualUrl:`/manual-link.html?doc=${doc}&campo=${de}`,manualLabel:`Abrir manual LINK ${rev?'C-X-4-11 (0420)':'C-X-1-2-3'} · campo ${de}`}:{};
     if(!f)return {fieldName:`Campo ${de}`,answer:`El campo ${de} no está entre los que LINK describe para su implementación Host to Host. Para otra regla, consultá el manual LINK con tu administrador.`,reference:`Red LINK · C-X-1-2-3 Tipo y formato de mensajes · campo ${de}`,...manual};
     return {fieldName:`${f[0]}`,answer:`Campo ${de} — ${f[0]} (${f[1]}) en la Red LINK.\n\n${f[2]}\n\nEl detalle por tipo de mensaje y código de transacción está en los registros C-X-4 (0200, 0210, 0420…).`,reference:`Red LINK · Conexión Host to Host ISO 8583 (BASE24) · C-X-1-2-3 Tipo y formato de mensajes · campo ${de}`,...manual};
   }
@@ -583,8 +623,13 @@ async function api(request,env,path){
     const networks=await networkAccess(env,auth.user);
     let assessments=false;
     try{await ensureAssessmentSchema();assessments=(await assessmentGroups(auth.user)).some(g=>g.stages.length);}catch(_){}
+    // rc.1.27 · Soporte Online: ediciones del curso (foro de la cohorte) y consultoras (canal propio). Responde la administración OSC.
+    const isOscAdmin=auth.user.platform_role==='OSC_ADMIN';
+    const support=isOscAdmin||cohorts.length>0||memberships.some(m=>m.tenant_type==='CONSULTANCY');
+    let supportPending=0;
+    if(isOscAdmin){try{supportPending=await supportPendingCount(env);}catch(_){}}
     return json({user:auth.user,memberships,cohorts,networks,
-      entitlements:{authorizationAnalytics:!!analytics,liveMonitoring:!!live,assessments,usagePanel:auth.user.platform_role==='OSC_ADMIN'||!!adminTenants?.length},
+      entitlements:{authorizationAnalytics:!!analytics,liveMonitoring:!!live,assessments,usagePanel:isOscAdmin||!!adminTenants?.length,support,supportPending},
       moduleAccess:modules});
   }
 
@@ -1206,6 +1251,75 @@ async function api(request,env,path){
     return json({ok:true,students:created});
   }
 
+  // rc.1.27 · Soporte Online · canales disponibles (cohortes + consultoras) y consultas de consultoras.
+  if(path==='/api/support/channels'&&request.method==='GET'){
+    const auth=await requireUser(request,env); if(auth.error)return auth.error;
+    await ensureSupportSchema(env);
+    const admin=auth.user.platform_role==='OSC_ADMIN', ts=now();
+    const cohorts=admin
+      ?(await env.DB.prepare(`SELECT c.id,c.name,c.expires_at,c.forum_status,co.name course_name,(SELECT COUNT(*) FROM forum_topics t WHERE t.cohort_id=c.id AND t.status='OPEN') pending FROM cohorts c JOIN courses co ON co.id=c.course_id WHERE c.status='ACTIVE' ORDER BY c.starts_at DESC`).all()).results
+      :(await env.DB.prepare(`SELECT c.id,c.name,c.expires_at,c.forum_status,co.name course_name,0 pending FROM cohort_enrollments e JOIN cohorts c ON c.id=e.cohort_id JOIN courses co ON co.id=c.course_id WHERE e.user_id=? AND e.status='ACTIVE' ORDER BY c.starts_at DESC`).bind(auth.user.id).all()).results;
+    const tenants=admin
+      ?(await env.DB.prepare(`SELECT t.id,t.name,(SELECT COUNT(*) FROM support_topics s WHERE s.tenant_id=t.id AND s.status='OPEN') pending FROM tenants t WHERE t.tenant_type='CONSULTANCY' AND t.status='ACTIVE' ORDER BY t.name`).all()).results
+      :(await env.DB.prepare(`SELECT DISTINCT t.id,t.name,0 pending FROM memberships m JOIN tenants t ON t.id=m.tenant_id WHERE m.user_id=? AND m.status='ACTIVE' AND t.tenant_type='CONSULTANCY' AND t.status='ACTIVE' ORDER BY t.name`).bind(auth.user.id).all()).results;
+    return json({admin,channels:[
+      ...cohorts.map(c=>({kind:'cohort',id:c.id,label:`${c.course_name} · ${c.name}`,group:'Ediciones del curso',open:c.forum_status==='OPEN'&&c.expires_at>ts,expiresAt:c.expires_at,pending:Number(c.pending||0)})),
+      ...tenants.map(t=>({kind:'tenant',id:t.id,label:t.name,group:'Consultoras',open:true,expiresAt:null,pending:Number(t.pending||0)}))
+    ]});
+  }
+  const supImgMatch=path.match(/^\/api\/support\/images\/([^/]+)$/);
+  if(supImgMatch&&request.method==='GET'){
+    const auth=await requireUser(request,env); if(auth.error)return auth.error;
+    await ensureSupportSchema(env);
+    const img=await env.DB.prepare('SELECT id,kind,topic_id,mime,data FROM support_images WHERE id=?').bind(supImgMatch[1]).first();
+    if(!img)return json({error:'NOT_FOUND'},404);
+    let ok=auth.user.platform_role==='OSC_ADMIN';
+    if(!ok&&img.kind==='tenant'){const t=await env.DB.prepare('SELECT tenant_id FROM support_topics WHERE id=?').bind(img.topic_id).first();ok=!!(t&&await supportTenantAccess(env,auth.user,t.tenant_id));}
+    if(!ok&&img.kind==='cohort'){const t=await env.DB.prepare(`SELECT e.status FROM forum_topics f JOIN cohort_enrollments e ON e.cohort_id=f.cohort_id AND e.user_id=? WHERE f.id=?`).bind(auth.user.id,img.topic_id).first();ok=t?.status==='ACTIVE';}
+    if(!ok)return json({error:'FORBIDDEN'},403);
+    const body=img.data instanceof ArrayBuffer?img.data:new Uint8Array(img.data);
+    return new Response(body,{headers:{'content-type':img.mime,'cache-control':'private, max-age=86400','x-content-type-options':'nosniff','content-disposition':'inline'}});
+  }
+  const supTenantMatch=path.match(/^\/api\/support\/tenants\/([^/]+)\/topics$/);
+  if(supTenantMatch){
+    const auth=await requireUser(request,env); if(auth.error)return auth.error;
+    await ensureSupportSchema(env);
+    const tenantId=supTenantMatch[1];
+    const tenant=await supportTenantAccess(env,auth.user,tenantId); if(!tenant)return json({error:'FORBIDDEN'},403);
+    if(request.method==='GET'){
+      const rows=(await env.DB.prepare(`SELECT t.*,u.full_name author_name,(SELECT COUNT(*) FROM support_replies r WHERE r.topic_id=t.id) reply_count,(SELECT COUNT(*) FROM support_images i WHERE i.kind='tenant' AND i.topic_id=t.id) image_count FROM support_topics t JOIN users u ON u.id=t.author_user_id WHERE t.tenant_id=? ORDER BY CASE t.status WHEN 'OPEN' THEN 0 ELSE 1 END,t.updated_at DESC`).bind(tenantId).all()).results;
+      return json({channel:{kind:'tenant',id:tenant.id,name:tenant.name,open:true},topics:rows});
+    }
+    if(request.method==='POST'){
+      const b=await readBody(request); if(!b.title||!b.body)return json({error:'INVALID_DATA'},400);
+      const topicId=id('stopic'),ts=now();
+      await env.DB.prepare('INSERT INTO support_topics(id,tenant_id,author_user_id,module_key,title,body,status,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?)').bind(topicId,tenantId,auth.user.id,String(b.moduleKey||'GENERAL').slice(0,40),String(b.title).slice(0,200),String(b.body).slice(0,5000),'OPEN',ts,ts).run();
+      await saveSupportImages(env,'tenant',topicId,null,auth.user.id,b.images);
+      await audit(env,auth.user.id,'SUPPORT_TOPIC','TENANT',tenantId,{topicId});
+      return json({ok:true,topicId});
+    }
+  }
+  const supReplyMatch=path.match(/^\/api\/support\/topics\/([^/]+)\/replies$/);
+  if(supReplyMatch){
+    const auth=await requireUser(request,env); if(auth.error)return auth.error;
+    await ensureSupportSchema(env);
+    const topic=await env.DB.prepare(`SELECT t.*,u.full_name author_name FROM support_topics t JOIN users u ON u.id=t.author_user_id WHERE t.id=?`).bind(supReplyMatch[1]).first();
+    if(!topic||!(await supportTenantAccess(env,auth.user,topic.tenant_id)))return json({error:'FORBIDDEN'},403);
+    if(request.method==='GET'){
+      const rows=(await env.DB.prepare(`SELECT r.*,u.full_name author_name FROM support_replies r JOIN users u ON u.id=r.author_user_id WHERE r.topic_id=? ORDER BY r.created_at`).bind(topic.id).all()).results;
+      return json({topic:{id:topic.id,title:topic.title,body:topic.body,module_key:topic.module_key,author_name:topic.author_name,created_at:topic.created_at,status:topic.status},replies:rows,open:true,images:await supportImageIndex(env,'tenant',topic.id)});
+    }
+    if(request.method==='POST'){
+      const b=await readBody(request); if(!b.body)return json({error:'INVALID_DATA'},400);
+      const ts=now(),replyId=id('sreply'),instructor=auth.user.platform_role==='OSC_ADMIN'?1:0;
+      await env.DB.prepare('INSERT INTO support_replies(id,topic_id,author_user_id,body,instructor_answer,created_at,updated_at) VALUES(?,?,?,?,?,?,?)').bind(replyId,topic.id,auth.user.id,String(b.body).slice(0,5000),instructor,ts,ts).run();
+      await saveSupportImages(env,'tenant',topic.id,replyId,auth.user.id,b.images);
+      // Respuesta de OSC → ANSWERED. Si el usuario vuelve a escribir, la consulta vuelve a quedar pendiente para OSC.
+      await env.DB.prepare('UPDATE support_topics SET status=?,updated_at=? WHERE id=?').bind(instructor?'ANSWERED':'OPEN',ts,topic.id).run();
+      return json({ok:true,replyId,instructorAnswer:!!instructor});
+    }
+  }
+
   const replyMatch=path.match(/^\/api\/topics\/([^/]+)\/replies$/);
   if(replyMatch){
     const auth=await requireUser(request,env); if(auth.error)return auth.error;
@@ -1214,13 +1328,16 @@ async function api(request,env,path){
     if(!topic||(auth.user.platform_role!=='OSC_ADMIN'&&topic.enrollment_status!=='ACTIVE'))return json({error:'FORBIDDEN'},403);
     if(request.method==='GET'){
       const rows=(await env.DB.prepare(`SELECT r.*,u.full_name author_name FROM forum_replies r JOIN users u ON u.id=r.author_user_id WHERE r.topic_id=? ORDER BY r.created_at`).bind(topic.id).all()).results;
-      return json({replies:rows});
+      const head=await env.DB.prepare(`SELECT t.id,t.title,t.body,t.module_key,t.created_at,t.status,u.full_name author_name FROM forum_topics t JOIN users u ON u.id=t.author_user_id WHERE t.id=?`).bind(topic.id).first();
+      await ensureSupportSchema(env);
+      return json({topic:head,replies:rows,open:topic.forum_status==='OPEN'&&topic.expires_at>now(),images:await supportImageIndex(env,'cohort',topic.id)});
     }
     if(request.method==='POST'){
       if(topic.forum_status!=='OPEN'||topic.expires_at<=now())return json({error:'FORUM_CLOSED'},403);
       const b=await readBody(request);if(!b.body)return json({error:'INVALID_DATA'},400);
       const ts=now(),replyId=id('reply'),instructor=auth.user.platform_role==='OSC_ADMIN'?1:0;
       await env.DB.prepare('INSERT INTO forum_replies(id,topic_id,author_user_id,body,instructor_answer,created_at,updated_at) VALUES(?,?,?,?,?,?,?)').bind(replyId,topic.id,auth.user.id,b.body,instructor,ts,ts).run();
+      if(b.images){await ensureSupportSchema(env);await saveSupportImages(env,'cohort',topic.id,replyId,auth.user.id,b.images);}
       if(instructor)await env.DB.prepare("UPDATE forum_topics SET status='ANSWERED',updated_at=? WHERE id=?").bind(ts,topic.id).run();
       return json({ok:true,replyId,instructorAnswer:!!instructor});
     }
@@ -1241,6 +1358,7 @@ async function api(request,env,path){
       const b=await readBody(request); if(!b.title||!b.body)return json({error:'INVALID_DATA'},400);
       const topicId=id('topic'),ts=now();
       await env.DB.prepare('INSERT INTO forum_topics(id,cohort_id,author_user_id,module_key,title,body,status,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?)').bind(topicId,cohortId,auth.user.id,b.moduleKey||'GENERAL',b.title,b.body,'OPEN',ts,ts).run();
+      if(b.images){await ensureSupportSchema(env);await saveSupportImages(env,'cohort',topicId,null,auth.user.id,b.images);}
       return json({ok:true,topicId});
     }
   }

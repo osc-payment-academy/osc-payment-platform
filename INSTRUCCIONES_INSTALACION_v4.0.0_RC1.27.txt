@@ -1,0 +1,18 @@
+OSC Payment Academy v4.0.0-rc.1.27 (acumulativa: incluye rc.1.22 a rc.1.26)
+Red LINK completa (servicios, plazo fijo, gestiones, 0220/0230, 0800/0810), pestaña Validaciones del POS, Soporte Online para consultoras con capturas.
+
+INSTALACIÓN (paquete INCREMENTAL · sirve si hoy tenés instalada la rc.1.21 a rc.1.26):
+1. Descomprimir el ZIP incremental y copiar su contenido sobre la raíz del repositorio en GitHub, reemplazando archivos.
+2. Si todavía existe, BORRAR 03-Analisis-Horario-TCPHandler.ps1 (el ZIP no puede borrar archivos).
+3. No hay migración nueva. Las tablas del Soporte (support_topics, support_replies, support_images) se crean solas la primera vez.
+4. Despliegue habitual.
+
+Pruebas mínimas:
+1. ATM con LINK → PIN 1234 → "Pago de servicios" → "Pago de servicio (81)" → cuenta → importe: la pantalla muestra el ticket y el 0200 lleva el campo 54 con ente + cliente.
+2. ATM → "Plazo fijo" → "Plazo fijo (18)": el 0200 lleva el campo 55 (120) y la 0210 el campo 54 (120) y el comprobante en el 125.
+3. Panel LINK → Escenario "Host no disponible · STAND-IN + forzada 0220 / 0230" → Extracción: aparecen 0200, 0220 y 0230, y el cajero entrega los billetes.
+4. Panel LINK → "Gestión de red · 0800 / 0810" → ECHO-TEST → Enviar 0800: 0800 y 0810 en el historial.
+5. ATM → "Reversa parcial 32" en el selector → Extracción: se ve la animación de billetes.
+6. POS → compra Visa crédito con chip → pestaña VALIDACIONES: caso C01 detectado y checklist en verde. VISTA TLV muestra los tags del DE 55.
+7. Usuario de una consultora → menú "Soporte Online" → consulta con una captura pegada (Ctrl+V). Admin OSC → "Soporte Online (1)" → responder.
+8. Tutor con tarjeta LINK → campo 90 de una reversa: muestra el desglose; "Abrir manual LINK" abre el visor con el campo resaltado (solo admin).

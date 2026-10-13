@@ -38,6 +38,7 @@
     { href: "documentacion.html", icon: "📚", label: "Documentación Técnica", adminOnly: true },
     { href: "research.html", icon: "🧪", label: "Investigación", adminOnly: true },
     { section: "Cuenta" },
+    { href: "support.html", icon: "💬", label: "Soporte Online", support: true },
     { href: "account.html", icon: "🔐", label: "Mi cuenta" },
     { href: "ondemand_lab.html", icon: "🧩", label: "Laboratorio de Nuevas Funcionalidades", visible: false },
     { href: "production_diagnostic.html", icon: "🔎", label: "Diagnóstico de Procesos Productivos", visible: false },
@@ -61,6 +62,7 @@
     if (item.adminOnly) return isAdmin ? "on" : "hidden";
     if (item.usage) return isAdmin || ent.usagePanel ? "on" : "hidden";
     if (item.assess) return isAdmin || ent.assessments ? "on" : "hidden";
+    if (item.support) return isAdmin || ent.support ? "on" : "hidden";
     if (item.product) return isAdmin || ent[item.product] ? "on" : "hidden";
     if (!item.key || isAdmin) return "on";
     if (enabled.has(item.key)) return "on";
@@ -137,6 +139,8 @@
     link.className = "nav" + (current === item.href.toLowerCase() ? " active" : "") + (isLocked ? " locked" : "");
     link.href = target.href;
     link.textContent = `${isLocked ? "🔒" : item.icon} ${item.label}${isLocked && item.day ? ` · Día ${item.day}` : ""}`;
+    // rc.1.27 · Consultas pendientes de respuesta (solo administración OSC).
+    if (item.support && isAdmin && ent.supportPending) link.textContent += ` (${ent.supportPending})`;
     nav.appendChild(link);
   });
   const brand = sidebar.querySelector(".brand,.osc-brand");

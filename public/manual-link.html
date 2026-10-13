@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow">
+<title>Manual LINK · Visor</title>
+<style>
+:root{--bg:#07131f;--panel:#0c1d2e;--line:#1f3a52;--ink:#dce9f4;--muted:#8fa8bd;--hit:#5a4a12;--hitink:#ffe08a}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.6 Inter,Segoe UI,Arial,sans-serif}
+header{position:sticky;top:0;z-index:2;display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;padding:12px 16px;background:#0a1826;border-bottom:1px solid var(--line)}
+header b{font-size:15px}.warn{font-size:12px;color:#ffd68a}
+.nav{display:flex;gap:8px;align-items:center}.nav button{border:1px solid #2f6f9f;background:#0d2a44;color:#e6f2fb;border-radius:999px;padding:6px 12px;font-weight:700;cursor:pointer}
+main{max-width:980px;margin:0 auto;padding:16px}
+.doc{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px 20px;white-space:pre-wrap;word-break:break-word;font-family:Consolas,Menlo,monospace;font-size:13px}
+.doc h1,.doc h2{font-family:Inter,Segoe UI,Arial,sans-serif;white-space:normal;margin:4px 0 10px;font-size:18px}
+.doc .q{display:block;color:#ffd68a;font-family:Inter,Segoe UI,Arial,sans-serif;white-space:normal;margin-bottom:8px}
+mark{background:var(--hit);color:var(--hitink);border-radius:3px;padding:0 2px}mark.cur{outline:2px solid #ffe08a}
+.err{padding:24px;text-align:center;color:var(--muted)}
+</style></head><body>
+<header><div><b id="title">Manual LINK</b><div class="warn">CONFIDENCIAL — Red LINK. Uso interno exclusivo. No compartir con terceros.</div></div>
+<div class="nav"><span id="count" style="font-size:12px;color:var(--muted)"></span><button id="prev" type="button">◀</button><button id="next" type="button">▶</button></div></header>
+<main><div class="doc" id="doc"><div class="err">Cargando…</div></div></main>
+<script>
+// rc.1.26 · Visor de los manuales LINK (texto). El acceso lo controla el servidor: solo administración OSC.
+(async()=>{
+  const q=new URLSearchParams(location.search), doc=(q.get('doc')||'').replace(/[^a-z0-9\-]/gi,''), campo=(q.get('campo')||'').replace(/\D/g,'');
+  const esc=s=>s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]);
+  const el=document.getElementById('doc');
+  if(!doc){el.innerHTML='<div class="err">Documento no indicado.</div>';return;}
+  const r=await fetch(`/manuals/link/texto/${doc}.md`,{credentials:'same-origin'});
+  if(!r.ok){el.innerHTML='<div class="err">El manual LINK es confidencial y solo lo puede abrir la administración OSC.</div>';return;}
+  const lines=(await r.text()).replace(/\r/g,'').split('\n');
+  let first=lines.findIndex(l=>/^#\s/.test(l));
+  if(first>=0){document.getElementById('title').textContent=lines[first].replace(/^#\s*/,'');document.title=lines[first].replace(/^#\s*/,'')+' · Manual LINK';}
+  const out=lines.map((l,i)=>{
+    if(/^>\s/.test(l))return `<span class="q">${esc(l.replace(/^>\s*/,''))}</span>`;
+    if(/^#{1,3}\s/.test(l))return `<h2>${esc(l.replace(/^#+\s*/,''))}</h2>`;
+    let h=esc(l);
+    if(campo){
+      // Fila de tabla (número solo en la línea), "Campo N" o "Bit N".
+      if(l.trim()===campo||new RegExp(`^(Campo|Bit|P-0*|S-)\\s*0*${campo}\\b`,'i').test(l.trim()))h=`<mark>${h}</mark>`;
+    }
+    return h;
+  });
+  el.innerHTML=out.join('\n');
+  const hits=[...el.querySelectorAll('mark')];let k=hits.length-1;
+  const go=i=>{if(!hits.length)return;hits.forEach(m=>m.classList.remove('cur'));k=(i+hits.length)%hits.length;hits[k].classList.add('cur');hits[k].scrollIntoView({block:'center'});document.getElementById('count').textContent=`Campo ${campo} · ${k+1} de ${hits.length}`;};
+  document.getElementById('prev').onclick=()=>go(k-1);document.getElementById('next').onclick=()=>go(k+1);
+  if(hits.length)go(k);else if(campo)document.getElementById('count').textContent=`Campo ${campo} sin coincidencias en este documento`;
+})();
+</script></body></html>

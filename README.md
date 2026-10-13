@@ -1,4 +1,8 @@
-# OSC Payment Academy — v4.0.0-rc.1.26
+# OSC Payment Academy — v4.0.0-rc.1.27
+
+Red LINK completa (pago de servicios, plazo fijo, gestiones, 0220/0230, 0800/0810), pestaña Validaciones del POS por caso de uso, Soporte Online para consultoras con capturas, Tutor LINK con desglose y visor del manual. Ver RELEASE_NOTES_v4.0.0-rc.1.27.md.
+
+## v4.0.0-rc.1.26
 
 Ajustes LINK (entrega de billetes con reversa parcial/total, trama al Parser, logo nuevo), PIN fijo 1234 en todas las redes, Tutor y ayudas de PIN/chip según la red, sin parpadeo de redes y vista previa de evaluaciones. Ver RELEASE_NOTES_v4.0.0-rc.1.26.md.
 

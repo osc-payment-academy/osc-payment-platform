@@ -47,9 +47,10 @@
     '00': 'TRANSACCIÓN APROBADA', '05': 'DECLINACIÓN EXTERNA', '12': 'TRANSACCIÓN INVÁLIDA', '13': 'MONTO INVÁLIDO',
     '14': 'TARJETA INVÁLIDA', '51': 'FONDOS INSUFICIENTES', '53': 'SIN CAJA DE AHORROS', '52': 'SIN CUENTA CORRIENTE',
     '54': 'TARJETA VENCIDA', '55': 'PIN INCORRECTO', '57': 'TRANSACCIÓN INVÁLIDA PARA LA TARJETA', '61': 'EXCEDE EL MONTO MÁXIMO DE EXTRACCIÓN DIARIO',
-    '65': 'EXCEDE LA CANTIDAD MÁXIMA DE EXTRACCIONES DIARIAS', '76': 'CUENTA INVÁLIDA', '91': 'PROCESO AUTORIZADOR NO DISPONIBLE', '96': 'FALLA DEL SISTEMA'
+    '65': 'EXCEDE LA CANTIDAD MÁXIMA DE EXTRACCIONES DIARIAS', '76': 'CUENTA INVÁLIDA', '91': 'PROCESO AUTORIZADOR NO DISPONIBLE', '96': 'FALLA DEL SISTEMA',
+    '01': 'REFERIRSE A EMISOR DE TARJETA', '46': 'PLAZO FIJO: RANGO HORARIO NO PERMITIDO / SISTEMA DE INVERSIONES NO ACTIVO', '68': 'EL PLAZO EN DÍAS PARA EL PLAZO FIJO ES INVÁLIDO', '74': 'NO SE ENCONTRÓ LA TRANSACCIÓN ORIGINAL (CONSULTA DE PAGO ON LINE)', '80': 'CÓDIGO DE SERVICIO / NÚMERO DE USUARIO INVÁLIDO', '81': 'PARTIDA YA PAGADA, DEUDA YA CANCELADA EN PAS', '82': 'USUARIO NO ENCONTRADO EN PAS', '83': 'DATOS INVÁLIDOS EN INPUT', '86': 'SIN INFORMACIÓN PARA LA DEUDA / CUENTA SOLICITADA', '89': 'PROBLEMAS EN LA BASE DE DATOS (OPERACIÓN NO HABILITADA / SIN ADHESIÓN EN PAS)'
   };
-  const SCENARIOS = ['00', '51', '55', '61', '65', '76', '91'];
+  const SCENARIOS = ['00', '51', '55', '61', '65', '76', '91', '80', '81', '82', '86', '68'];
   const MOTIVOS = { VAR: 'Varios', ALQ: 'Alquileres', CUO: 'Cuotas', EXP: 'Expensas', FAC: 'Facturas', HAB: 'Haberes', HON: 'Honorarios', PRE: 'Préstamos', SEG: 'Seguros' };
   // Tipo de cuenta destino del token PE (codificación propia del anexo: 01 CC$, 07 CCU$S, 11 CA$, 15 CAU$S).
   const PE_TYP = { '10': '11', '20': '01', '15': '15', '07': '07' };
@@ -62,7 +63,7 @@
     41: 'term-id · Terminal', 42: 'crd-accpt-id-cde', 43: 'crd-accpt-name-loc · Dueño y localidad', 44: 'resp-data · Saldos',
     45: 'track 1', 48: 'add-data-prvt · Datos POS', 49: 'crncy-cde · Moneda', 52: 'pin · PIN cifrado', 54: 'add-amts · Montos adicionales',
     55: 'pri-rsrvd1-iso · Datos interbancarios', 60: 'pri-rsrvd1-prvt · Datos de la terminal', 61: 'pri-rsrvd2-prvt · Datos del emisor',
-    63: 'pri-rsrvd4-prvt · PIN offset', 90: 'orig-info · Datos originales', 95: 'replacement · Monto real (reversa parcial)', 100: 'rcv-inst · Institución receptora', 102: 'acct1 · Cuenta desde',
+    62: 'pri-rsrvd3-prvt · Tipo de terminal', 63: 'pri-rsrvd4-prvt · PIN offset', 70: 'netw-mgmt-cde · Código de gestión de red', 90: 'orig-info · Datos originales', 95: 'replacement · Monto real (reversa parcial)', 100: 'rcv-inst · Institución receptora', 102: 'acct1 · Cuenta desde',
     103: 'acct2 · Cuenta hacia', 120: 'secndry-rsrvd1-prvt · Dirección del ATM', 122: 'secndry-rsrvd3-prvt · Código institución emisora',
     123: 'secndry-rsrvd4-prvt · Monto de depósito', 124: 'secndry-rsrvd5-prvt · Tipo de depositorio', 125: 'secndry-rsrvd6-prvt · Indicador de cuenta',
     126: 'secndry-rsrvd7-prvt · Área de tokens', 127: 'secndry-rsrvd8-prvt · Datos adicionales'
@@ -332,6 +333,70 @@
     preauth: { label: 'Preautorización', short: 'PREAUTORIZACIÓN', proc: c => '78' + c.accountType + '00', hold: true, pos: true },
     preauth_complete: { label: 'Preautorización finalizada', short: 'PREAUTORIZACIÓN FINALIZADA', proc: c => '79' + c.accountType + '00', complete: true, pos: true, original: 'preauth' }
   };
+  /* ===================== rc.1.27 · Pago de servicios (PAS), plazo fijo, gestiones y mensajes a la institución ===================== */
+  // Campo 54 de PAS (C-X-4-01): longitud 023 + CDE-ENTE X(3) + CDE-CUSTOM X(19) + NRO-OPC 9(1).
+  const pas54 = c => f(54, '023' + pad(c.pas?.ente || '002', 3) + pad(c.pas?.cliente || '0001234567', 19) + num(c.pas?.opcion || 1, 1), 'LLLVAR g..120', 'Pago automático de servicios: longitud 023 + código de ente 3 + código de cliente 19 + opción de la deuda 1');
+  // Respuesta PAS (C-X-4-03): longitud 100 + ente + cliente (iguales al 0200) + CTA-ANIO 9(5) + blancos 73.
+  const pas54res = c => f(54, '100' + pad(c.pas?.ente || '002', 3) + pad(c.pas?.cliente || '0001234567', 19) + num((new Date().getMonth() + 1) * 1000 + new Date().getFullYear() % 100, 5) + pad('', 73), 'LLLVAR g..120', 'PAS: longitud 100 + ente + cliente (iguales al 0200) + cuota y año 9(5) + blancos');
+  // Plazo fijo (C-X-4-01 campo 55 / C-X-4-03 campo 54): longitud 120 + plazo 3 + importe 10 + renovación 1 + auto-renovación 1 + tipo 1 + opción 28 + blancos 76.
+  const pfData = (c, withAmountDecimals) => pad(num(c.pf?.plazo || 30, 3), 3) + num(withAmountDecimals ? Number(c.amountCents || 0) : Math.floor(Number(c.amountCents || 0) / 100), 10) + pad(c.pf?.renovacion || 'N', 1) + pad(c.pf?.auto || ' ', 1) + pad(c.pf?.tipo || 'T', 1) + pad(c.pf?.opcion || '', 28) + pad('', 76);
+  const pf55 = c => f(55, '120' + pfData(c, false), 'LLLVAR g..360', 'Plazo fijo: longitud 120 + plazo en días 3 + importe sin decimales 10 + forma de renovación (N/T/P) + auto-renovación (S/A) + tipo (T/P/V/B/C) + opción 28 + blancos');
+  const pf54res = c => f(54, '120' + pfData(c, true), 'LLLVAR g..120', 'Plazo fijo: longitud 120 + plazo + importe (con 2 decimales) + renovación + auto-renovación + tipo + opción + blancos');
+  // Pay Key / compra en ATM (código 17): longitud 038 + empresa 3 + producto 3 + artículo 32.
+  const payKey55 = c => f(55, '038' + pad(c.payKey?.empresa || '001', 3) + pad(c.payKey?.producto || '001', 3) + pad(c.payKey?.articulo || 'RECARGA CELULAR', 32), 'LLLVAR g..360', 'Pay Key (17): longitud 038 + código de empresa 3 + producto 3 + artículo 32');
+  // Consulta de pago on line (69): longitud 199 + DATA-TYPE 01 + datos generales de la transacción original.
+  const online69 = c => { const k = c.clock, o = c.original || {}; return f(55, '199' + '01' + pad(LINK.network, 4) + LINK.atmFiid + pad(c.termId || 'S1AXOSC0001', 16) + LINK.issuerFiid + pad(c.pan, 19) + num(String(o.rrn || c.rrn).replace(/\D/g, ''), 12) + k.yymmdd + k.hhmmss + '00' + k.yymmdd + pad(o.proc || '01' + (c.accountType || '10') + '00', 6) + num(LINK.accounts[c.accountType || '10'].number, 19) + amt12(o.amountCents || 0) + pad('', 2) + pad('', 79), 'LLLVAR g..360', 'Consulta de pago on line: longitud 199 + DATA-TYPE 01 + línea, FIID y terminal + FIID emisor + PAN + secuencia + fecha/hora/fecha de negocio + código + cuenta + importe + tipo de terminal + datos específicos'); };
+  // Ticket (campo 125 de la 0210): misma estructura que Últimos movimientos (C-X-4-03).
+  const ticket125 = (c, lines) => { const body = lines.map(l => pad(l, 40)).join('').padEnd(360, ' ').slice(0, 360); return f(125, '372' + '1P' + c.clock.yymmdd + '02' + '40' + body, 'LLLVAR', 'Información para imprimir en el ticket: misma estructura que Últimos movimientos (página + fecha + cabecera + líneas de 40)'); };
+  const ENTES = { '002': 'EDENOR', '003': 'METROGAS', '004': 'AYSA', '005': 'TELECOM', '006': 'ABL CABA' };
+  const pasLines = c => { const e = c.pas?.ente || '002'; return [`SERVICIO ${e} ${ENTES[e] || 'ENTE ' + e}`, `CLIENTE ${c.pas?.cliente || '0001234567'}`]; };
+  Object.assign(OPS, {
+    // Pago de servicios (C-X-5: 80 a 90, 8K a 8P)
+    service_inquiry: { group: 'services', label: 'Consulta / adhesión de vencimiento de servicio', short: 'CONSULTA DE SERVICIO', proc: () => '800000', noAmount: true, noAccount: true, req54: pas54, res54: pas54res, res125: c => [...pasLines(c), 'VENCIMIENTO 1: 10/11  $   18.540,00', 'VENCIMIENTO 2: 20/11  $   19.467,00', 'ADHESION REGISTRADA'] },
+    service_pay: { group: 'services', label: 'Pago de servicio con consulta previa (débito en cuenta)', short: 'PAGO DE SERVICIO', proc: c => '81' + c.accountType + '00', debit: true, req54: pas54, res54: pas54res, res125: c => [...pasLines(c), `PAGADO $ ${(Number(c.amountCents) / 100).toLocaleString('es-AR', { minimumFractionDigits: 2 })}`, 'GUARDE ESTE COMPROBANTE'] },
+    service_codes: { group: 'services', label: 'Consulta de códigos abreviados de la tarjeta', short: 'CÓDIGOS ABREVIADOS', proc: () => '820000', noAmount: true, noAccount: true, req54: pas54, res54: pas54res, res125: () => ['CODIGOS ABREVIADOS ASOCIADOS', '01 EDENOR      0001234567', '02 METROGAS    0009876543', '03 TELECOM     0005551234'] },
+    service_last: { group: 'services', label: 'Consulta de últimos pagos de un servicio', short: 'ÚLTIMOS PAGOS', proc: () => '830000', noAmount: true, noAccount: true, req54: pas54, res54: pas54res, res125: c => [...pasLines(c), '10/09  $   17.320,00', '10/08  $   16.904,00', '10/07  $   15.880,00'] },
+    service_pending: { group: 'services', label: 'Consulta de vencimientos pendientes', short: 'VENCIMIENTOS PENDIENTES', proc: () => '840000', noAmount: true, noAccount: true, req54: pas54, res54: pas54res, res125: () => ['VENCIMIENTOS PENDIENTES', 'EDENOR    10/11  $   18.540,00', 'METROGAS  15/11  $    9.210,00'] },
+    service_unlink: { group: 'services', label: 'Baja de asociación del servicio a la tarjeta', short: 'BAJA DE SERVICIO', proc: () => '850000', noAmount: true, noAccount: true, req54: pas54, res54: pas54res, res125: c => [...pasLines(c), 'BAJA DE ASOCIACION REGISTRADA'] },
+    service_quick: { group: 'services', label: 'Pago rápido sin consulta previa (86)', short: 'PAGO RÁPIDO', proc: () => '860000', debit: true, req54: pas54, res54: pas54res, res125: c => [...pasLines(c), 'PAGO RAPIDO REGISTRADO'] },
+    service_cash: { group: 'services', label: 'Pago de servicio en efectivo (87)', short: 'PAGO EN EFECTIVO', proc: () => '870000', cashIn: true, noAccount: true, req54: pas54, res54: pas54res, res125: c => [...pasLines(c), 'PAGO EN EFECTIVO REGISTRADO'] },
+    card_payment_pas: { group: 'services', label: 'Pago de resumen de tarjeta con débito (88)', short: 'PAGO DE RESUMEN PAS', proc: c => '88' + c.accountType + '00', debit: true, card: true, req54: pas54, res54: pas54res, res125: () => ['PAGO DE RESUMEN DE TARJETA', 'IMPUTADO EN LA CUENTA TARJETA'] },
+    pas_inquiry: { group: 'services', label: 'Consulta / adhesión de vencimiento (solo PAS · 89)', short: 'CONSULTA PAS', proc: () => '890000', noAmount: true, noAccount: true, req54: pas54, res54: pas54res, res125: c => [...pasLines(c), 'VENCIMIENTO 10/11  $   18.540,00'] },
+    pas_categories: { group: 'services', label: 'Consulta de rubros (8K)', short: 'CONSULTA DE RUBROS', proc: () => '8K0000', noAmount: true, noAccount: true, res125: () => ['RUBROS', '01 ELECTRICIDAD', '02 GAS', '03 AGUA', '04 TELEFONIA', '05 IMPUESTOS'] },
+    pas_companies: { group: 'services', label: 'Consulta de empresas (8L)', short: 'CONSULTA DE EMPRESAS', proc: () => '8L0000', noAmount: true, noAccount: true, res125: () => ['EMPRESAS DEL RUBRO', '002 EDENOR', '003 METROGAS', '004 AYSA', '005 TELECOM'] },
+    pas_adhesions: { group: 'services', label: 'Consulta de adhesiones (8M)', short: 'CONSULTA DE ADHESIONES', proc: () => '8M0000', noAmount: true, noAccount: true, res125: () => ['ADHESIONES VIGENTES', '002 EDENOR    0001234567', '003 METROGAS  0009876543'] },
+    pas_unsubscribe: { group: 'services', label: 'Baja de adhesión (8P)', short: 'BAJA DE ADHESIÓN', proc: () => '8P0000', noAmount: true, noAccount: true, req54: pas54, res125: c => [...pasLines(c), 'BAJA DE ADHESION REGISTRADA'] },
+    service_check: { group: 'services', label: 'Pago de servicios con cheque (90)', short: 'PAGO CON CHEQUE', proc: () => '900000', cashIn: true, noAccount: true, res125: () => ['PAGO DE SERVICIOS CON CHEQUE', 'SUJETO A ACREDITACION DEL CHEQUE'] },
+    service_debit: { group: 'services', label: 'Pago de servicios con débito en cuenta (90XX20)', short: 'PAGO CON DÉBITO', proc: c => '90' + c.accountType + '20', debit: true, res125: () => ['PAGO DE SERVICIOS CON DEBITO'] },
+    service_order: { group: 'services', label: 'Pago de servicios con orden de débito (90XX00)', short: 'ORDEN DE DÉBITO', proc: c => '90' + c.accountType + '00', debit: true, req54: c => f(54, '023' + pad('', 13) + num(c.pas?.comprobantes || 1, 2) + pad('', 8), 'LLLVAR g..120', 'Orden de débito: longitud 023 + blancos 13 + cantidad de comprobantes 9(2) + blancos 8'), res125: () => ['ORDEN DE DEBITO REGISTRADA'] },
+    // Plazo fijo (C-X-5: 18, 37, 38, 63, 68)
+    pf_rates: { group: 'investments', label: 'Consulta publicitaria de plazos y tasas (37)', short: 'PLAZOS Y TASAS', proc: () => '370000', noAmount: true, noAccount: true, req55: pf55, res54: pf54res, res125: () => ['PLAZO FIJO TRADICIONAL', ' 30 DIAS  TNA 32,00%', ' 60 DIAS  TNA 33,50%', ' 90 DIAS  TNA 34,00%', '180 DIAS  TNA 35,25%'] },
+    pf_invest: { group: 'investments', label: 'Constitución de plazo fijo (18)', short: 'PLAZO FIJO', proc: c => '18' + c.accountType + '00', debit: true, req55: pf55, res54: pf54res, res125: c => ['CONSTITUCION DE PLAZO FIJO', `CAPITAL $ ${(Number(c.amountCents) / 100).toLocaleString('es-AR', { minimumFractionDigits: 2 })}`, `PLAZO ${c.pf?.plazo || 30} DIAS  TNA 32,00%`, `RENOVACION ${{ N: 'NO RENOVABLE', T: 'TOTAL', P: 'PARCIAL' }[c.pf?.renovacion || 'N']}`, 'CERTIFICADO 000123456'] },
+    pf_balance: { group: 'investments', label: 'Consulta de saldo de plazo fijo (38)', short: 'SALDO PLAZO FIJO', proc: c => '38' + c.accountType + '00', noAmount: true, req55: pf55, res54: pf54res, res125: () => ['PLAZOS FIJOS VIGENTES', 'CERT 000123456  VTO 12/11', 'CAPITAL $   500.000,00', 'INTERES $    13.150,68'] },
+    pf_account: { group: 'investments', label: 'Cambio de cuenta asociada al plazo fijo (63)', short: 'CUENTA DEL PLAZO FIJO', proc: c => '63' + c.accountType + (c.accountType === '10' ? '20' : '10'), noAmount: true, req55: pf55, res54: pf54res, res125: () => ['CAMBIO DE CUENTA ASOCIADA', 'REGISTRADO PARA EL VENCIMIENTO'] },
+    pf_renewal: { group: 'investments', label: 'Suspensión / activación de renovación automática (68)', short: 'RENOVACIÓN AUTOMÁTICA', proc: c => '68' + c.accountType + '00', noAmount: true, req55: pf55, res54: pf54res, res125: c => [c.pf?.auto === 'S' ? 'RENOVACION AUTOMATICA SUSPENDIDA' : 'RENOVACION AUTOMATICA ACTIVADA'] },
+    // Gestiones y mensajes a la institución
+    covisur: { group: 'admin', label: 'Efectivo rápido COVISUR (11)', short: 'EFECTIVO RÁPIDO', proc: c => '11' + c.accountType + '00', debit: true },
+    atm_purchase: { group: 'admin', label: 'Compra en ATM · Pay Key (17)', short: 'COMPRA EN ATM', proc: c => '17' + c.accountType + '00', debit: true, req55: payKey55, res125: c => ['COMPRA EN ATM', `ARTICULO ${c.payKey?.articulo || 'RECARGA CELULAR'}`] },
+    top_up: { group: 'admin', label: 'Carga (1C)', short: 'CARGA', proc: () => '1C0000', debit: true },
+    cit_change: { group: 'admin', label: 'Cambio de CIT · clave telefónica (33)', short: 'CAMBIO DE CIT', proc: () => '330000', noAmount: true, noAccount: true, req54: () => f(54, '023' + (num(Math.floor(Math.random() * 9999), 4) + 'FFFFFFFFFFFF') + pad('', 7), 'LLLVAR g..120', 'Cambio de CIT: nuevo PIN offset X(16) + blancos (formato de cambio de PIN / CIT del registro 0220)') },
+    homebanking: { group: 'admin', label: 'Asignación de usuario, clave y PIN de Home Banking (34)', short: 'HOME BANKING', proc: () => '340000', noAmount: true, noAccount: true, res127: () => f(127, '043' + pad('HBNET/0001234', 28) + pad('K7M2Q9X4', 8) + num(Math.floor(100000 + Math.random() * 899999), 6) + ' ', 'LLLVAR g..X(200)', 'Asignación de usuario Home Banking: usuario de acceso 28 + clave de ingreso 8 + PIN de Home Banking 9(6) + blanco') },
+    verify_credit: { group: 'admin', label: 'Verificación de cuenta de crédito por transferencia (39)', short: 'VERIFICACIÓN DE CUENTA', proc: c => '39' + c.accountType + '00', noAmount: true, transfer55: true, res125: () => ['CUENTA DE CREDITO VERIFICADA'] },
+    status_inquiry: { group: 'admin', label: 'Consulta de estado (3A)', short: 'CONSULTA DE ESTADO', proc: () => '3A0000', noAmount: true, noAccount: true, res125: () => ['CONSULTA DE ESTADO', 'SIN NOVEDADES'] },
+    prizes: { group: 'admin', label: 'Consulta de premios (3B)', short: 'CONSULTA DE PREMIOS', proc: () => '3B0000', noAmount: true, noAccount: true, res125: () => ['PUNTOS ACUMULADOS 1.250'] },
+    certificates: { group: 'admin', label: 'Emisión de certificados (3C)', short: 'CERTIFICADOS', proc: () => '3C0000', noAmount: true, noAccount: true, res125: () => ['CERTIFICADO EMITIDO', 'RETIRAR EN SUCURSAL'] },
+    base_change: { group: 'admin', label: 'Cambio de número de base (3D)', short: 'CAMBIO DE BASE', proc: () => '3D0000', noAmount: true, noAccount: true, res125: () => ['CAMBIO DE NUMERO DE BASE REGISTRADO'] },
+    checkbook_usd: { group: 'requests', label: 'Solicitud de chequera cta. cte. U$S (610207)', short: 'CHEQUERA U$S', proc: () => '610207', noAmount: true, noAccount: true, res125: () => ['SOLICITUD DE CHEQUERA REGISTRADA'] },
+    checkbook_deferred: { group: 'requests', label: 'Solicitud de chequera de pago diferido (610210)', short: 'CHEQUERA DIFERIDA', proc: () => '610210', noAmount: true, noAccount: true, res125: () => ['SOLICITUD DE CHEQUERA REGISTRADA'] },
+    deposit_slips: { group: 'requests', label: 'Solicitud de boletas de depósito CA $ (610310)', short: 'BOLETAS DE DEPÓSITO', proc: () => '610310', noAmount: true, noAccount: true, res125: () => ['SOLICITUD DE BOLETAS REGISTRADA'] },
+    insurance_params: { group: 'requests', label: 'Consulta de seguro contra robo en ATM (62)', short: 'SEGURO ATM', proc: () => '620000', noAmount: true, noAccount: true, res125: () => ['SEGURO CONTRA ROBO EN ATM', 'COBERTURA $ 300.000', 'COSTO MENSUAL $ 1.200,00'] },
+    insurance_join: { group: 'requests', label: 'Adhesión al seguro contra robo en ATM (64)', short: 'ADHESIÓN SEGURO', proc: c => '64' + c.accountType + '00', noAmount: true, res125: () => ['ADHESION AL SEGURO REGISTRADA'] },
+    auto_debits: { group: 'requests', label: 'Consulta de últimos débitos automáticos (66)', short: 'DÉBITOS AUTOMÁTICOS', proc: () => '660000', noAmount: true, noAccount: true, res125: () => ['ULTIMOS DEBITOS AUTOMATICOS', '05/10 TELECOM   $  12.400,00', '03/10 SEGURO    $   1.200,00'] },
+    online_payment_inquiry: { group: 'requests', label: 'Consulta de pago on line (69)', short: 'CONSULTA PAGO ON LINE', proc: c => '69' + c.accountType + '00', noAmount: true, req55: online69, res55: online69 },
+    other_requests: { group: 'requests', label: 'Mensajes a la institución · otras solicitudes (91)', short: 'OTRAS SOLICITUDES', proc: () => '910000', noAmount: true, noAccount: true, res125: () => ['SOLICITUD RECIBIDA POR LA INSTITUCION'] },
+    address_change: { group: 'requests', label: 'Mensajes a la institución · cambio de domicilio (912000)', short: 'CAMBIO DE DOMICILIO', proc: () => '912000', noAmount: true, noAccount: true, res125: () => ['CAMBIO DE DOMICILIO SOLICITADO'] },
+    statement_request: { group: 'requests', label: 'Solicitud de extracto (93)', short: 'SOLICITUD DE EXTRACTO', proc: c => '9301' + ({ '20': '01', '10': '11', '07': '07', '15': '15' }[c.accountType] || '11'), noAmount: true, res125: () => ['SOLICITUD DE EXTRACTO REGISTRADA'] }
+  });
   Object.entries(OPS).forEach(([k, o]) => { TX[k] = { code: o.proc({ accountType: 'XX', toAccount: 'YY', destination: { toTyp: 'YY' } }).slice(0, 2), label: o.label, short: o.short }; });
   const REVERSAL = { '17': 'REVERSADA POR TRANSACCIÓN CANCELADA', '32': 'REVERSADA POR PAGO PARCIAL', '68': 'REVERSADA POR TIMEOUT', '21': 'REVERSADA POR ERROR DE HARDWARE', '20': 'REVERSADA POR COMANDO RECHAZADO', '22': 'REVERSADA POR TRANSACCIÓN SOSPECHOSA', '82': 'REVERSADA POR DESTINO NO DISPONIBLE' };
   const money = (cents, cur = '032') => (Number(cents || 0) / 100).toLocaleString('es-AR', { style: 'currency', currency: cur === '840' ? 'USD' : 'ARS' });
@@ -387,6 +452,10 @@
     if (o.cashback) m[54] = f(54, '023' + num(cash, 12) + pad('', 11), 'LLLVAR g..120', 'Cash-back: importe del retiro en efectivo 9(10)v99 + blancos');
     if (['withdrawal_usd', 'own_transfer'].includes(kind) || cur === '840') m[127] = fxField127Request(b);
     const list = [3, 4, 7, 11, 12, 13, 15, 17, 32, 35, 37, 41, 42, 43, 49, 52, 54, 60, 61, 63, 100, 102, 103, 120, 124, 125, 127];
+    // rc.1.27 · Campos propios de PAS / plazo fijo / Pay Key / consulta de pago on line (C-X-4-01).
+    if (o.req54) m[54] = o.req54(ctx);
+    if (o.req55) { m[55] = o.req55(ctx); list.push(55); }
+    if (o.transfer55) { const dest = destination(ctx); m[55] = field55Transfer(ctx, dest, t, dest.toTyp); m[103] = f(103, '28' + pad(dest.account, 28), 'LLVAR ..X(28)', 'Cuenta de crédito a verificar'); list.push(55); }
     if (ctx.terminal === 'POS') { m[48] = posField48(ctx, o.origRef ? ctx.original : null); list.push(48); }
     const req = message({ mti: '0200', header: reqHeader, rows: pick(m, list), label: `0200 ${o.short} · LINK → Host emisor`, leg: 'Requerimiento (0200 OUTPUT B24)', direction: 'SALIENTE' });
 
@@ -394,6 +463,8 @@
     let code = SCENARIOS.includes(ctx.scenario) ? ctx.scenario : '00';
     if (ctx.pinOk === false && code === '00') code = '55';
     if (code === '00' && (o.debit || o.hold) && amount > Number(b[t] || 0)) code = '51';
+    if (['80', '81', '82', '86'].includes(code) && o.group !== 'services') code = '00';
+    if (code === '68' && o.group !== 'investments') code = '00';
     if (code === '00' && o.original && !ctx.original) code = '12';
     if (code === '00' && o.complete && ctx.original && amount > Number(ctx.original.amountCents || 0) * 1.2) code = '13';
     // Efecto en saldos
@@ -409,6 +480,8 @@
       if (o.complete) { const held = Number(ctx.original?.amountCents || 0); b[t] += held; b.holds = Math.max(0, (b.holds || 0) - held); b[t] -= amount; addHistory(b, t, 'PREAUT. FINALIZADA', amount, -1); note = `Se libera la retención de ${money(held)} y se debita el importe final ${money(amount)}.`; }
       if (kind === 'fx_rate') { const buy = 1180 + Math.round(Math.random() * 40), sell = buy + 40 + Math.round(Math.random() * 10); b.fx = { buy, sell, at: Date.now() }; note = `Comprador ${buy.toLocaleString('es-AR')} / vendedor ${sell.toLocaleString('es-AR')}. Si en el próximo minuto se opera en dólares, el 0200 lleva estos valores en el campo 127.`; }
       if (kind === 'pin_change') note = 'El host guarda el nuevo PIN offset recibido en el campo 54.';
+      if (o.card && kind === 'card_payment_pas') note = 'Pago de resumen 88: débito en la cuenta e imputación en la cuenta tarjeta.';
+      if (o.res125) note = note || (o.label + ' aprobada · el ticket viaja en el campo 125');
     }
     const bal = Number(b[t] || 0);
     const { header, map } = response0210(req, ctx, code);
@@ -421,9 +494,13 @@
     const fx = b.fx; const r8 = v => num(Math.round(v * 1000), 8);
     map[127] = f(127, '043' + (kind === 'fx_rate' && code === '00' ? '1' + r8(fx.buy) + r8(fx.sell) + r8(fx.sell) + r8(1) : '0' + '0'.repeat(32)) + pad('', 10), 'LLLVAR g..X(200)', kind === 'fx_rate' ? 'Tipo de cambio aplicado + comprador + vendedor (9(05)v999) + blancos' : 'Tipo de cambio aplicado + tipos de cambio + blancos');
     const resList = [3, 4, 7, 11, 12, 13, 15, 17, 32, 35, 37, 39, 41, 42, 44, 49, 54, 60, 61, 100, 102, 103, 122, 123, 124, 125, 127];
+    if (o.res54) map[54] = o.res54(ctx, code, b);
+    if (o.res55 || o.transfer55) { map[55] = o.res55 ? o.res55(ctx) : { ...m[55], ref: 'Eco del 0200' }; resList.push(55); resList.sort((a, b2) => a - b2); }
+    if (o.res125 && code === '00') map[125] = ticket125(ctx, o.res125(ctx));
+    if (o.res127 && code === '00') map[127] = o.res127(ctx);
     const res = message({ mti: '0210', header, rows: pick(map, resList), label: `0210 ${o.short} · Host emisor → LINK`, leg: 'Respuesta (0210 INPUT B24)', direction: 'ENTRANTE', responseCode: code });
     const summaries = { movements: 'Movimientos impresos desde el campo 125 (statement print data)', fx_rate: note, pin_change: note, deposit: note || 'Depósito acreditado (campo 123)', preauth: `Se retienen ${money(amount)} hasta la finalización (79)`, preauth_complete: note, own_transfer: `${money(amount, cur)} de ${LINK.accounts[t].label} a ${LINK.accounts[ctx.toAccount]?.label || ''}` };
-    return { messages: [req, res], code, balanceCents: bal, currency: cur, amountCents: amount, summary: code === '00' ? (summaries[kind] || o.label + ' aprobada') : 'Rechazada por el host emisor', statement: kind === 'movements' ? (b.history || []).filter(h => h.acct === t).slice(-7).reverse() : null, fx: kind === 'fx_rate' ? b.fx : null, debitAccount: t };
+    return { messages: [req, res], code, balanceCents: bal, currency: cur, amountCents: amount, summary: code === '00' ? (summaries[kind] || o.label + ' aprobada') : 'Rechazada por el host emisor', statement: kind === 'movements' ? (b.history || []).filter(h => h.acct === t).slice(-7).reverse() : null, fx: kind === 'fx_rate' ? b.fx : null, debitAccount: t, ticket: o.res125 && code === '00' ? o.res125(ctx) : null };
   }
 
   // Reversas: 0420 OUTPUT B24 (C-X-4-11) y 0430 INPUT B24 (C-X-4-12). Clave: terminal + fecha + hora + secuencia (campo 90).
@@ -475,14 +552,47 @@
       : 'El cliente canceló después de la aprobación: reversa total 0420 (17) y confirmación 0430.';
     return rev;
   }
+  // rc.1.27 · Store-and-forward (C-X-1-2-3): el host no está disponible, BASE24 autoriza en STAND-IN y después envía la 0220 (C-X-4-08); el host contesta 0230 (C-X-4-09).
+  function storeAndForward(out, ctx) {
+    const req = out.messages[0];
+    const map = Object.fromEntries(req.fields.filter(r => r.de !== 1).map(r => [r.de, { ...r, ref: 'Igual al 0200 original' }]));
+    map[39] = f(39, '00', 'X(2)', 'Autorizada por BASE24 en STAND-IN (host inoperable)');
+    const c = ctx.clock;
+    map[90] = f(90, '0200' + num(String(ctx.rrn).replace(/\D/g, ''), 12) + c.mmdd + pad(c.hhmmss, 8) + c.mmdd + '0'.repeat(10), 'g 42', 'Datos de la transacción original: 0200 + secuencia + fecha + hora + fecha de negocio + ceros');
+    if (!map[122]) map[122] = f(122, '011' + pad(LINK.issuerFiid, 11), 'LLLVAR g..150', 'Código interno de la institución emisora');
+    if (!map[123]) map[123] = f(123, '012' + amt12(0), 'LLLVAR g..455', 'Monto de depósito: ceros');
+    const has = de => !!map[de];
+    const list = [3, 4, 7, 11, 12, 13, 15, 17, 32, 35, 37, 39, 41, 42, 43, 48, 49, 54, 55, 60, 61, 62, 63, 90, 100, 102, 103, 122, 123, 124, 125, 127].filter(has);
+    const header = ctx.terminal === 'ATM' ? '014000015' : '014000055';
+    const r0220 = message({ mti: '0220', header, rows: pick(map, list), label: '0220 FORZADA · BASE24 informa la transacción autorizada en STAND-IN', leg: 'Transacción forzada (0220 OUTPUT B24)', direction: 'SALIENTE', responseCode: '00' });
+    const m2 = Object.fromEntries([3, 4, 7, 11, 32, 35, 37, 41, 49, 102, 103].filter(has).map(n => [n, { ...map[n], ref: 'Eco del 0220' }]));
+    m2[39] = f(39, '00', 'X(2)', 'El host registró la forzada');
+    if (!m2[102]) m2[102] = f(102, '28' + pad('', 28), 'LLVAR ..X(28)', 'Cuenta desde');
+    if (!m2[103]) m2[103] = f(103, '28' + pad('', 28), 'LLVAR ..X(28)', 'Cuenta hacia');
+    const r0230 = message({ mti: '0230', header: '014000005', rows: pick(m2, [3, 4, 7, 11, 32, 35, 37, 39, 41, 49, 102, 103]), label: '0230 · El host confirma la forzada', leg: 'Respuesta a la forzada (0230)', direction: 'ENTRANTE', responseCode: '00' });
+    out.messages = [req, r0220, r0230];
+    out.saf = true;
+    out.summary = 'Host no disponible: BASE24 autorizó en STAND-IN, guardó la transacción en el archivo STORE-AND-FORWARD y, cuando el host volvió, la informó con 0220. El host la registró con 0230.';
+    return out;
+  }
   function applyAfter(out, ctx, b) {
     const ev = ctx.after;
+    if (ev === 'saf') return out.code === '00' && out.messages.length >= 2 ? storeAndForward(out, ctx) : out;
     if (ev === 'retract') return out; // el retracto lo decide el dispensador del ATM después de presentar los billetes
     const rev = reverseOut(out, ctx, b, ev);
     if (!rev) return out;
     if (ev === 'timeout') { out.messages = [out.messages[0], ...rev]; out.timeout = true; }
     else out.messages = [...out.messages, ...rev];
     return out;
+  }
+  // rc.1.27 · Mensajes de control 0800 / 0810 (C-X-4-14 / C-X-4-15): LOGON 001, LOGOFF 002, ECHO-TEST 301. Header 004000040.
+  const NET_FN = { '001': 'LOGON', '002': 'LOGOFF', '301': 'ECHO-TEST' };
+  function buildNetwork(fn = '301', result = '00') {
+    const c = clock(), stan = num(Math.floor(100000 + Math.random() * 899999), 6);
+    fn = NET_FN[fn] ? fn : '301';
+    const req = message({ mti: '0800', header: '004000040', rows: [f(7, c.mmdd + c.hhmmss, 'mmddhhmmss 9(10)', 'C-X-4-14'), f(11, stan, '9(6)', 'Número de traza'), f(70, fn, '9(3)', `Código de gestión de red: ${fn} = ${NET_FN[fn]}`)], label: `0800 ${NET_FN[fn]} · Mensaje de control`, leg: 'Requerimiento de control (0800)', direction: 'SALIENTE' });
+    const res = message({ mti: '0810', header: '004000040', rows: [f(7, c.mmdd + c.hhmmss, 'mmddhhmmss 9(10)', 'Eco del 0800'), f(11, stan, '9(6)', 'Eco del 0800'), f(39, result, 'X(2)', { '00': '00 · APROBADO', '01': '01 · DENEGADO', '91': '91 · HOST DOWN' }[result] || result), f(70, fn, '9(3)', 'Eco del código de gestión de red')], label: `0810 ${NET_FN[fn]} · Respuesta de control`, leg: 'Respuesta de control (0810)', direction: 'ENTRANTE', responseCode: result });
+    return { kind: 'network', messages: [req, res], code: result, summary: `${NET_FN[fn]}: ${result === '00' ? 'el host respondió APROBADO' : result === '91' ? 'HOST DOWN' : 'DENEGADO'} (0810, campo 39 = ${result}).` };
   }
   // rc.1.26 · Reversa decidida en el dispositivo (ATM): billetes no retirados o entrega parcial. Devuelve solo el 0420 / 0430.
   function reverseLater(out, ev) {
@@ -558,7 +668,7 @@
 <div id="linkOriginalBox" style="display:none"><label>Operación original<select id="linkOriginal"><option value="">— No hay operaciones aprobadas para referenciar —</option></select></label></div>
 <div id="linkCashbackBox" style="display:none"><label>Efectivo a retirar (cash-back)<input id="linkCashback" inputmode="numeric" value="5000" placeholder="Importe en pesos"></label></div>
 <div id="linkCuotasBox" style="display:none"><label>Cuotas (Maestro · campo 48)<select id="linkCuotas"><option value="1">1 pago</option><option value="3">3 cuotas</option><option value="6">6 cuotas</option></select></label></div>` : '';
-    const afterOpts = pos ? [['none', 'Ninguno'], ['cancel', 'Reversa total · 17 · el cliente cancela'], ['timeout', 'Reversa por timeout · 68 · el host no responde']] : [['none', 'Ninguno'], ['cancel', 'Reversa total · 17 · el cliente cancela'], ['partial', 'Reversa parcial · 32 · el cajero entrega el 80% (solo extracción)'], ['timeout', 'Reversa por timeout · 68 · el host no responde']];
+    const afterOpts = pos ? [['none', 'Ninguno'], ['cancel', 'Reversa total · 17 · el cliente cancela'], ['timeout', 'Reversa por timeout · 68 · el host no responde'], ['saf', 'Host no disponible · STAND-IN + forzada 0220 / 0230']] : [['none', 'Ninguno'], ['cancel', 'Reversa total · 17 · el cliente cancela'], ['partial', 'Reversa parcial · 32 · el cajero entrega el 80% (solo extracción)'], ['timeout', 'Reversa por timeout · 68 · el host no responde'], ['saf', 'Host no disponible · STAND-IN + forzada 0220 / 0230']];
     return `<h4><img src="assets/brand-link.png?v=4.0.0-rc1.26" alt="">Red LINK · Host to Host ISO 8583</h4>${txSel}
 <div class="link-row" style="grid-template-columns:1fr"><label>Cuenta<select id="linkAccountType"><option value="10">Caja de ahorros $ (10)</option><option value="20">Cuenta corriente $ (20)</option>${pos ? '' : '<option value="15">Caja de ahorros U$S (15)</option><option value="07">Cuenta corriente U$S (07)</option>'}</select></label>
 </div>
@@ -574,6 +684,14 @@
 <div class="link-row"><label>CUIT vendedor<input id="linkSellerCuit" inputmode="numeric" maxlength="11" value="30712345679"></label>
 <label>Concepto<select id="linkDebinConcepto">${Object.entries(MOTIVOS).map(([k, v]) => `<option value="${k}">${k} · ${v}</option>`).join('')}</select></label></div>
 <label>CBU vendedor (22 dígitos)<input id="linkSellerCbu" inputmode="numeric" maxlength="22" value="0720999988000098765432"></label></div>
+<div id="linkPasBox" style="display:none"><div class="link-row"><label>Ente (PAS)<select id="linkPasEnte">${Object.entries(ENTES).map(([k, v]) => `<option value="${k}">${k} · ${v}</option>`).join('')}</select></label>
+<label>Código de cliente<input id="linkPasCliente" maxlength="19" value="0001234567"></label></div></div>
+<div id="linkPfBox" style="display:none"><div class="link-row"><label>Plazo (días)<select id="linkPfPlazo"><option>30</option><option>60</option><option>90</option><option>180</option><option>365</option></select></label>
+<label>Tipo de plazo fijo<select id="linkPfTipo"><option value="T">T · Tradicional</option><option value="P">P · Precancelable</option><option value="V">V · Tasa variable encuesta</option><option value="B">B · Tasa variable BAIBOR</option><option value="C">C · Ajustable por CER</option></select></label></div>
+<div class="link-row"><label>Renovación<select id="linkPfRen"><option value="N">N · No renovable</option><option value="T">T · Renovación total</option><option value="P">P · Renovación parcial</option></select></label>
+<label>Renovación automática (68)<select id="linkPfAuto"><option value="A">A · Activar</option><option value="S">S · Suspender</option></select></label></div></div>
+${pos ? '' : `<details class="link-net"><summary>Gestión de red · 0800 / 0810</summary><div class="link-row"><label>Mensaje de control<select id="linkNetFn"><option value="001">001 · LOGON</option><option value="002">002 · LOGOFF</option><option value="301" selected>301 · ECHO-TEST</option></select></label>
+<label>Respuesta del host<select id="linkNetRes"><option value="00">00 · Aprobado</option><option value="01">01 · Denegado</option><option value="91">91 · Host down</option></select></label></div><button type="button" class="btn" id="linkNetSend">Enviar 0800</button></details>`}
 <div class="link-note" id="linkNote"></div>`;
   }
   function readPanel() {
@@ -583,7 +701,9 @@
       cashbackCents: Math.round(Number(String(v('linkCashback')).replace(/\./g, '').replace(',', '.')) * 100) || 0,
       installments: Number(v('linkCuotas') || 1), originalId: v('linkOriginal'),
       destination: { cbu: v('linkCbu'), network: v('linkDestNetwork'), toTyp: v('linkToTyp'), mismoTitular: v('linkMismoTitular'), motivo: v('linkMotivo'), name: v('linkDestName') },
-      debin: { sellerCuit: v('linkSellerCuit'), sellerCbu: v('linkSellerCbu'), concepto: v('linkDebinConcepto') }
+      debin: { sellerCuit: v('linkSellerCuit'), sellerCbu: v('linkSellerCbu'), concepto: v('linkDebinConcepto') },
+      pas: { ente: v('linkPasEnte') || '002', cliente: v('linkPasCliente') || '0001234567', opcion: 1 },
+      pf: { plazo: Number(v('linkPfPlazo') || 30), tipo: v('linkPfTipo') || 'T', renovacion: v('linkPfRen') || 'N', auto: v('linkPfAuto') || 'A' }
     };
   }
   const NOTES = {
@@ -608,7 +728,10 @@
     show('linkOriginalBox', !!OPS[kind]?.original);
     show('linkCashbackBox', !!OPS[kind]?.cashback && kind === 'cashback');
     show('linkCuotasBox', kind === 'purchase');
-    const n = document.getElementById('linkNote'); if (n) n.textContent = NOTES[kind] || '';
+    show('linkPasBox', !!OPS[kind]?.req54 && OPS[kind]?.group === 'services' && kind !== 'service_order');
+    show('linkPfBox', OPS[kind]?.group === 'investments');
+    const GROUP_NOTES = { services: 'Pago de servicios (PAS): el campo 54 del 0200 lleva ente (3) + código de cliente (19) + opción de deuda; la 0210 repite ente y cliente y suma cuota/año. El ticket vuelve en el campo 125.', investments: 'Plazo fijo: el 0200 lleva en el campo 55 (120) plazo, importe, renovación, auto-renovación y tipo; la 0210 los devuelve en el campo 54 (120) y el comprobante en el 125.', admin: 'Gestión: código C-X-5 en el campo 3; la respuesta trae lo que se imprime en el ticket (campo 125).', requests: 'Mensaje a la institución: código C-X-5 en el campo 3; la confirmación viaja en el campo 125.' };
+    const n = document.getElementById('linkNote'); if (n) n.textContent = NOTES[kind] || GROUP_NOTES[OPS[kind]?.group] || '';
   }
 
 
@@ -629,8 +752,8 @@
     for (let n = 104; n <= 127; n++) lll(n); fx(128, 16);
     return d;
   })();
-  const HEADERS = { '014000005': 'Reversa (0420 / 0430)', '014000010': 'Requerimiento originado en ATM (0200 OUTPUT B24)', '014000050': 'Requerimiento originado en HOST', '014000070': 'Requerimiento originado en INTERCHANGE', '014000015': 'Respuesta del host a requerimiento de ATM', '014000055': 'Respuesta del host a requerimiento de HOST', '014000075': 'Respuesta del host a requerimiento de INTERCHANGE' };
-  const TCODE = { '01': 'Extracción', '09': 'Débito por transferencia interbancaria', '29': 'Orden de acreditación por transferencia interbancaria', '31': 'Consulta de saldos', '39': 'Verificación de cuenta crédito (transferencias)', '40': 'Transferencia entre cuentas', '71': 'Compra con débito (Maestro)', '72': 'Anulación de compra', '73': 'Consulta de saldos (Maestro)', '76': 'Compra con cash-back', 'F3': 'Débito DEBIN', 'F4': 'Crédito DEBIN', '32': 'Cambio de PIN', '94': 'Últimos movimientos' };
+  const HEADERS = { '004000040': 'Mensaje de control (0800 / 0810)', '014000005': 'Reversa / forzada (0420 / 0430 / 0230)', '014000010': 'Requerimiento originado en ATM (0200 OUTPUT B24)', '014000050': 'Requerimiento originado en HOST', '014000070': 'Requerimiento originado en INTERCHANGE', '014000015': 'Respuesta del host a requerimiento de ATM', '014000055': 'Respuesta del host a requerimiento de HOST', '014000075': 'Respuesta del host a requerimiento de INTERCHANGE' };
+  const TCODE = { '11': 'Efectivo rápido COVISUR', '17': 'Compra en ATM (Pay Key)', '18': 'Inversión en plazo fijo', '1C': 'Carga', '21': 'Depósito', '22': 'Depósito a terceros', '33': 'Cambio de CIT', '34': 'Asignación de usuario Home Banking', '35': 'Consulta de tipo de cambio', '37': 'Consulta publicitaria de plazos y tasas', '38': 'Consulta de saldo de plazo fijo', '3A': 'Consulta de estado', '3B': 'Consulta de premios', '3C': 'Emisión de certificados', '3D': 'Cambio de número de base', '50': 'Pago de resumen de tarjeta', '61': 'Mensaje a la institución (solicitudes)', '62': 'Consulta de seguro contra robo en ATM', '63': 'Cambio de cuenta asociada al plazo fijo', '64': 'Adhesión al seguro contra robo en ATM', '66': 'Consulta de últimos débitos automáticos', '68': 'Suspensión / activación de renovación automática', '69': 'Consulta de pago on line', '74': 'Devolución de compra', '75': 'Anulación de devolución', '77': 'Anulación de cash-back', '78': 'Preautorización', '79': 'Preautorización finalizada', '80': 'Consulta / adhesión de vencimiento de servicio', '81': 'Pago automático de servicios con consulta previa', '82': 'Consulta de códigos abreviados', '83': 'Consulta de últimos pagos', '84': 'Consulta de vencimientos pendientes', '85': 'Baja de asociación del servicio', '86': 'Pago rápido sin consulta previa', '87': 'Pago automático de servicios en efectivo', '88': 'Pago de resumen de tarjeta (PAS)', '89': 'Consulta / adhesión de vencimiento (PAS)', '8K': 'Consulta de rubros', '8L': 'Consulta de empresas', '8M': 'Consulta de adhesiones', '8P': 'Baja de adhesión', '90': 'Pago de servicios', '91': 'Mensajes a la institución', '93': 'Mensaje a la institución (extractos, chequeras, boletas)', '01': 'Extracción', '09': 'Débito por transferencia interbancaria', '29': 'Orden de acreditación por transferencia interbancaria', '31': 'Consulta de saldos', '39': 'Verificación de cuenta crédito (transferencias)', '40': 'Transferencia entre cuentas', '71': 'Compra con débito (Maestro)', '72': 'Anulación de compra', '73': 'Consulta de saldos (Maestro)', '76': 'Compra con cash-back', 'F3': 'Débito DEBIN', 'F4': 'Crédito DEBIN', '32': 'Cambio de PIN', '94': 'Últimos movimientos' };
   const ACCT = { '00': 'sin cuenta', '07': 'Cuenta corriente U$S', '10': 'Caja de ahorros $', '15': 'Caja de ahorros U$S', '20': 'Cuenta corriente $', '30': 'Cuenta tarjeta de crédito $' };
   function parts(v, spec) { let i = 0; return spec.map(([name, n]) => { const x = v.slice(i, i + n); i += n; return [name, x]; }); }
   function partsHtml(list) { return '<div style="margin-top:4px;font-size:11px;line-height:1.5;color:#9fb6cb">' + list.map(([k, v]) => `<div><b style="color:#cfe3f5">${esc(k)}</b> ${displayValue(v)}</div>`).join('') + '</div>'; }
@@ -645,7 +768,11 @@
       case 49: return { text: { '032': 'Pesos', '840': 'Dólares', '076': 'Reales', '858': 'Pesos uruguayos', '000': 'Rechazo' }[data] || data };
       case 60: return { html: partsHtml(parts(data, [['Institución dueña de la terminal', 4], ['Red', 4], ['Diferencia horaria', 4]])) };
       case 61: return { html: partsHtml(parts(data, [['Institución emisora', 4], ['Red', 4], ['Tipos de cuenta', 4], ['Indicador', 1]])) };
+      case 70: return { text: { '001': 'LOGON', '002': 'LOGOFF', '301': 'ECHO-TEST' }[data] || 'Código de gestión de red' };
       case 55:
+        if (data.length === 120 && /^(18|37|38|63|68)/.test(proc)) return { html: partsHtml(parts(data, [['Plazo (días)', 3], ['Importe', 10], ['Forma de renovación (N/T/P)', 1], ['Auto-renovación (S/A)', 1], ['Tipo de plazo fijo', 1], ['Opción', 28], ['Filler', 76]])) };
+        if (data.length === 38) return { html: partsHtml(parts(data, [['Código de empresa', 3], ['Código de producto', 3], ['Código de artículo', 32]])) };
+        if (data.length === 199) return { html: partsHtml(parts(data, [['DATA-TYPE', 2], ['Línea de la terminal', 4], ['FIID de la terminal', 4], ['Terminal', 16], ['FIID de la tarjeta', 4], ['PAN', 19], ['Secuencia', 12], ['Fecha AAMMDD', 6], ['Hora hhmmssll', 8], ['Fecha de negocio', 6], ['Código de transacción', 6], ['Cuenta', 19], ['Importe', 12], ['Tipo de terminal', 2], ['Datos específicos', 79]])) };
         if (data.length === 120) return { html: partsHtml(parts(data, [['TRACK2', 40], ['MISMO-TITULAR', 1], ['FILLER', 1], ['FR FIID', 4], ['FR TYP', 2], ['FR ACCT', 19], ['TO FIID', 4], ['TO TYP', 2], ['TO ACCT', 19], ['FIID-DESC', 13], ['FR-ACCT-TYP', 1], ['TO-ACCT-TYP', 1], ['TIPO-TRAN', 1], ['MOTIVO', 3], ['FILLER', 9]])) };
         if (data.length === 247) return { html: partsHtml(parts(data, [['ID DEBIN', 32], ['CONCEPTO', 3], ['FIID-C', 4], ['CUIT-C', 11], ['CBU-C', 22], ['NRO-CTA-C', 19], ['FIID-V', 4], ['CUIT-V', 11], ['CBU-V', 22], ['NRO-CTA-V', 19], ['PAN', 19], ['PAGADOR', 40], ['MISMO-TITULAR', 1], ['PREAUTORIZACIÓN', 1], ['ORIGEN', 1], ['SCORING', 3], ['ID-CONTRACARGO', 32], ['MOTIVO', 3]])) };
         return null;
@@ -656,16 +783,20 @@
         while (i < data.length && data.slice(i, i + 2) === '! ') { const id = data.slice(i + 2, i + 4), n = Number(data.slice(i + 4, i + 9)); out.push([`Token ${id} (${n})`, data.slice(i + 10, i + 10 + n)]); i += 10 + n; }
         return { html: partsHtml(out) };
       }
-      case 90: return { html: partsHtml(parts(data, [['Tipo de mensaje original', 4], ['Secuencia original (37)', 12], ['Fecha original (13)', 4], ['Hora original (12)', 8], ['Fecha de negocio (17)', 4], ['Ceros', 10]])) };
+      case 90: return { html: partsHtml(parts(data, [['Tipo de mensaje original', 4], ['Número de secuencia original', 12], ['Fecha de la transacción original (mmdd)', 4], ['Hora de la transacción original', 8], ['Fecha de negocios original (mmdd)', 4], ['Ceros', 10]])) };
       case 95: return { html: partsHtml([['Monto real', money(data.slice(0, 12))], ['Ceros', data.slice(12)]]) };
       case 125: if (data.length !== 372) return null; return { html: partsHtml([['Página', data.slice(0, 2)], ['Fecha AAMMDD', data.slice(2, 8)], ['Líneas de cabecera', data.slice(8, 10)], ['Caracteres por línea', data.slice(10, 12)], ...(data.slice(12).match(/.{1,40}/g) || []).filter(l => l.trim()).map((l, i) => ['Línea ' + (i + 1), l])]) };
       case 54:
+        if (/^(8[0-9])/.test(proc) && data.length === 23) return { html: partsHtml(parts(data, [['Código de ente', 3], ['Código de cliente', 19], ['Opción de la deuda', 1]])) };
+        if (/^(8[0-9])/.test(proc) && data.length === 100) return { html: partsHtml(parts(data, [['Código de ente', 3], ['Código de cliente', 19], ['Cuota y año', 5], ['Filler', 73]])) };
+        if (/^(18|37|38|63|68)/.test(proc) && data.length === 120) return { html: partsHtml(parts(data, [['Plazo (días)', 3], ['Importe (2 decimales)', 10], ['Forma de renovación', 1], ['Auto-renovación', 1], ['Tipo de plazo fijo', 1], ['Opción', 28], ['Filler', 76]])) };
+        if (/^90/.test(proc) && data.length === 23) return { html: partsHtml(parts(data, [['Filler', 13], ['Cantidad de comprobantes', 2], ['Filler', 8]])) };
         if (data.length === 100) return { html: partsHtml(parts(data, [['Filler', 12], ['Extracciones disponibles', 2], ['Disponible compras', 12], ['Efectivo disponible', 12], ['Pago mínimo', 12], ['Fecha AAMMDD', 6], ['Tasa', 6], ['Saldo U$S', 10], ['Pago mínimo U$S', 10], ['Compras U$S', 10], ['Arancel', 8]])) };
         if (/^(21|22|50)/.test(proc)) return { text: `TIPO-DEP "${data.slice(12, 13)}" · ${({ E: 'efectivo en $', U: 'efectivo en U$S', C: 'cheque en $', W: 'cheque en U$S' })[data.slice(12, 13)] || ''}` };
         if (/^(76|77)/.test(proc)) return { text: `Efectivo (cash-back): ${money(data.slice(0, 12))}` };
         if (/^32/.test(proc)) return { text: `Nuevo PIN offset: ${data.slice(0, 16)}` };
         return null;
-      case 127: return raw === 'req' ? { html: partsHtml(parts(data, [['Región', 4], ['TC comprador', 8], ['TC vendedor', 8], ['TC moneda/$', 8], ['TC moneda/U$S', 8], ['Ceros', 7]])) } : null;
+      case 127: if (/^34/.test(proc) && raw === 'res') return { html: partsHtml(parts(data, [['Usuario de acceso', 28], ['Clave de ingreso', 8], ['PIN de Home Banking', 6], ['Blanco', 1]])) }; return raw === 'req' ? { html: partsHtml(parts(data, [['Región', 4], ['TC comprador', 8], ['TC vendedor', 8], ['TC moneda/$', 8], ['TC moneda/U$S', 8], ['Ceros', 7]])) } : null;
       default: return null;
     }
   }
@@ -716,5 +847,7 @@
     return { mti, primaryHex, secondaryHex, allBits, fields, errors, warnings, consumed: pos, total: raw.length, linkHeader: header, linkHeaderText: HEADERS[header] || 'Header no reconocido', link: true };
   }
   if (document.readyState !== 'loading') css(); else document.addEventListener('DOMContentLoaded', css);
-  window.OSCLinkHth = { LINK, TX, RESULT, SCENARIOS, build, balances, displayValue, annotated, css, panelHtml, readPanel, syncPanel, accountLabel: t => LINK.accounts[t]?.label || t, parse, OPS, REVERSAL, money, unhtml, rawFromRows, reverseLater, partialCents, CASH_KINDS };
+  window.OSCLinkHth = { LINK, TX, RESULT, SCENARIOS, build, balances, displayValue, annotated, css, panelHtml, readPanel, syncPanel, accountLabel: t => LINK.accounts[t]?.label || t, parse, OPS, REVERSAL, money, unhtml, rawFromRows, reverseLater, partialCents, CASH_KINDS, buildNetwork, NET_FN,
+    // rc.1.26 · Desglose de un campo LINK (lo usa el Tutor): mismo criterio que el Parser.
+    explainField: (de, value, mti = '', proc = '') => explain(Number(de), unhtml(value), /10$|30$/.test(String(mti)) ? 'res' : 'req', Number(de) === 39 && /^04/.test(String(mti)) ? 'REV' : proc) };
 })();
