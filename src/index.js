@@ -378,7 +378,13 @@ async function api(request,env,path){
     const deMatch=normalized.match(/\b(?:de|campo|data element)\s*0*(\d{1,3})\b/),deNumber=deMatch?Number(deMatch[1]):0;
     if(deNumber>=1&&deNumber<=128&&!brand)return json({kind:'NEED_BRAND',answer:`Para estudiar DE${deNumber} necesito primero la marca. No voy a completar la definición con un catálogo ISO genérico porque puede variar según la implementación.`,deNumber,brands:['VISA','MASTERCARD','AMEX','LINK'],moduleKey});
     if(deNumber>=1&&deNumber<=128&&brand){
-      const manual=tutorManualReference(brand,deNumber,channel,auth.user.platform_role==='OSC_ADMIN');
+      const isAdminTutor=auth.user.platform_role==='OSC_ADMIN';
+      const manual=tutorManualReference(brand,deNumber,channel,isAdminTutor);
+      // rc.1.29 · Manuales de marca de uso restringido: el alumno recibe la Ficha del campo; el PDF solo la administración OSC.
+      if(['VISA','MASTERCARD','AMEX'].includes(brand)){
+        manual.fieldCard={de:deNumber,network:brand.toLowerCase()};
+        if(!isAdminTutor){delete manual.manualUrl;delete manual.manualLabel;delete manual.manualRequired;manual.answer=`DE${deNumber} — ${manual.fieldName}. Abrí la Ficha del campo: explica en español, con los términos en inglés, cómo se arma según el manual de la marca.`;}
+      }
       return json({kind:'REFERENCIAR',...manual,deNumber,brand,moduleKey});
     }
     const mtiMatch=normalized.match(/\bmti\s*([0-9]{4})\b/);
@@ -1450,6 +1456,8 @@ export default {async fetch(request,env,ctx){
       return response;
     }
     if(/^\/+manuals\//i.test(path)){
+      // rc.1.29 · Manuales de las marcas: uso restringido (confidenciales). Solo OSC_ADMIN; el alumno usa la Ficha del campo.
+      if(user.platform_role!=='OSC_ADMIN')return new Response('Not found',{status:404,headers:{'cache-control':'no-store','x-robots-tag':'noindex, nofollow'}});
       const response=await env.ASSETS.fetch(request);
       const headers=new Headers(response.headers);
       headers.set('cache-control','private, no-store');

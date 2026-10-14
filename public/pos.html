@@ -98,44 +98,9 @@
         <div><h1>POS VIRTUAL</h1><p>Simulador de Terminal de Pago</p></div>
       </div>
       <div class="top-actions">
-        <button type="button" id="operationMenuButton">▤ Operaciones</button>
+        <a class="btn-switch-link" href="switch.html" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px;border:1px solid #2f6f9f;background:#0d2a44;color:#e6f2fb;border-radius:10px;padding:8px 14px;font-weight:700">🏦 Switch del Adquirente</a>
       </div>
     </header>
-
-    
-    <section id="operationDrawer" class="operation-drawer hidden">
-      <div class="operation-drawer-head">
-        <div>
-          <h2>OPERACIONES DEL POS</h2>
-          <p>Seleccioná la operación que querés simular.</p>
-        </div>
-        <button id="closeOperationDrawer" type="button">✕</button>
-      </div>
-
-      <div class="operation-cards">
-        <button class="operation-card" data-operation="refund">
-          <span>↩</span><div><strong>Devolución</strong><small>Crédito total o parcial</small></div>
-        </button>
-        <button class="operation-card" data-operation="void">
-          <span>⊘</span><div><strong>Anulación</strong><small>Sobre compra aprobada</small></div>
-        </button>
-        <button class="operation-card" data-operation="query">
-          <span>⌕</span><div><strong>Consulta</strong><small>Estado del lote y terminal</small></div>
-        </button>
-        <button class="operation-card" data-operation="batch">
-          <span>▤</span><div><strong>Cierre de lote</strong><small>0500 → 0510</small></div>
-        </button>
-        <button class="operation-card" data-operation="reprint">
-          <span>▧</span><div><strong>Reimpresión</strong><small>Elegir ticket del historial</small></div>
-        </button>
-        <button class="operation-card" data-operation="lastTicket">
-          <span>▤</span><div><strong>Último ticket</strong><small>Abrir último comprobante</small></div>
-        </button>
-        <a class="operation-card" href="switch.html" style="text-decoration:none;color:inherit">
-          <span>🏦</span><div><strong>Switch del Adquirente</strong><small>Lotes, clearing y settlement</small></div>
-        </a>
-      </div>
-    </section>
 
     <section class="workspace">
       <div class="terminal-column">
@@ -176,6 +141,17 @@
     </div>
     <div class="selected-test-card" id="selectedTestCardSummary">Visa Crédito · PAN de prueba asignado automáticamente</div>
     <div class="selected-test-card osc-test-pin">PIN de prueba de todas las tarjetas: <b>1234</b></div>
+    <!-- rc.1.29 · Operación del POS (reemplaza al botón "Operaciones"). Con la tarjeta LINK se usa el selector del panel LINK. -->
+    <div id="posOperationBox" class="installment-config">
+      <div class="test-card-heading">OPERACIÓN</div>
+      <select id="posOperationSelect" style="width:100%">
+        <optgroup label="Compras"><option value="purchase" selected>Compra</option></optgroup>
+        <optgroup label="Anulaciones y devoluciones"><option value="void">Anulación de una compra aprobada</option><option value="refund">Devolución total o parcial</option></optgroup>
+        <optgroup label="Consultas y cierre"><option value="query">Consulta del lote y la terminal</option><option value="batch">Cierre de lote (0500 → 0510)</option></optgroup>
+        <optgroup label="Comprobantes"><option value="reprint">Reimpresión de un ticket</option><option value="lastTicket">Último ticket</option></optgroup>
+      </select>
+      <small id="posOperationHint">Compra: ingresá el importe en el POS y elegí la forma de lectura.</small>
+    </div>
     <div id="installmentConfig" class="installment-config">
       <div class="test-card-heading">CUOTAS · SOLO CRÉDITO <button id="installmentHelp" class="qr-education-help" type="button" aria-label="Cómo viajan las cuotas en cada red">☝️</button></div>
       <div class="installment-row">
@@ -359,7 +335,7 @@
         <div class="atm-like-summary"><div><span>MTI</span><strong id="mti">----</strong></div><div><span>BITMAP</span><strong id="bitmap">0000000000000000</strong></div><div><span>CAMPOS</span><strong id="fieldCount">0</strong></div></div>
         <section class="atm-like-bitmaps"><div class="atm-like-section-title"><h3>BITMAPS ISO8583</h3><p>Las posiciones presentes se resaltan en verde.</p></div><div class="bitmap-title"><span>BITMAP PRIMARIO (1–64)</span><span id="selectedBitmapPrimaryHex">0000000000000000</span></div><div class="bitmap-64 atm-grid" id="selectedBitmapPrimaryBits"></div><div class="bitmap-title"><span>BITMAP SECUNDARIO (65–128)</span><span id="selectedBitmapSecondaryHex">0000000000000000</span></div><div class="bitmap-64 atm-grid" id="selectedBitmapSecondaryBits"></div><span id="selectedBitmapFields" class="hidden"></span><div id="selectedBitmapSecondaryWrap" class="hidden"></div></section>
         <div class="atm-like-section-title data-title"><h3>DATA ELEMENTS</h3><p>Detalle completo de cada dato que compone el mensaje seleccionado.</p></div>
-        <div class="osc-edu-buttons" aria-label="Ayudas de seguridad y cuotas"><button id="eduArqc" type="button">🔐 ARQC / ARPC</button><button id="eduPin" type="button">🔑 PIN Block y HSM</button><button id="eduCuotas" type="button">💳 Cuotas</button></div>
+        <div class="osc-edu-buttons" aria-label="Ayudas de cuotas"><button id="eduCuotas" type="button">💳 Cuotas</button><span class="edu-moved-hint">🔐 ARQC / ARPC está en el DE 55 y 🔑 PIN Block y HSM en el DE 52 de la tabla.</span></div><style>.de-edu-chip{display:inline-block;margin:6px 0 0 6px;border:1px solid #2f6f9f;background:#0d2a44;color:#e6f2fb;border-radius:999px;padding:3px 9px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap}.de-edu-chip:hover{background:#13406a}.edu-moved-hint{align-self:center;font-size:11.5px;color:#8fa8bd}</style>
         <div class="tabs">
           <button class="active">DATA ELEMENTS</button><button>VISTA TLV</button><button>EXPLICACIÓN</button><button>VALIDACIONES</button>
         </div>
@@ -443,16 +419,16 @@
 </div>
 
 <script src="js/network-profiles.js?v=4.0.0-rc1.26"></script>
-<script src="js/switch-store.js?v=4.0.0-rc1.6"></script>
+<script src="js/switch-store.js?v=4.0.0-rc1.29"></script>
 <script src="js/emv-crypto.js?v=4.0.0-rc1.22"></script>
 <script src="js/iso-network-spec.js?v=4.0.0-rc1.22"></script>
 <script src="js/security-edu.js?v=4.0.0-rc1.26"></script>
 <script src="js/link-hth.js?v=4.0.0-rc1.28"></script>
-<script src="js/app.js?v=4.0.0-rc1.27"></script><script src="js/pos-validations.js?v=4.0.0-rc1.27"></script>
+<script src="js/app.js?v=4.0.0-rc1.29"></script><script src="js/pos-validations.js?v=4.0.0-rc1.27"></script>
 <script>document.addEventListener('DOMContentLoaded',()=>{document.querySelectorAll('.pos-scenario-mini button').forEach((b,i)=>b.onclick=()=>{document.querySelectorAll('.pos-scenario-mini button').forEach(x=>x.classList.remove('active'));b.classList.add('active');const original=document.querySelectorAll('#scenarioGrid button')[i];if(original)original.click()});const log=document.getElementById('posTechEvents');const status=document.getElementById('flowResponse');if(log&&status)new MutationObserver(()=>{const d=document.createElement('div');d.textContent=new Date().toLocaleTimeString('es-AR')+' · '+status.textContent;log.prepend(d);while(log.children.length>8)log.lastChild.remove()}).observe(status,{childList:true,subtree:true,characterData:true})});</script>
 <script src="js/permissions.js"></script>
 
 
-<script src="js/help-catalog.js"></script>
-<script src="js/module-guide.js"></script><script src="js/network-access.js?v=4.0.0-rc1.26"></script><script src="js/navigation.js?v=4.0.0-rc1.27"></script><script src="js/osc-learning.js?v=4.0.0-rc1.19" data-module="pos"></script><script src="js/tutor-osc.js?v=4.0.0-rc1.27" data-module="pos"></script></body>
+<script src="js/help-catalog.js?v=4.0.0-rc1.29"></script><script src="js/field-cards.js?v=4.0.0-rc1.29"></script>
+<script src="js/module-guide.js"></script><script src="js/network-access.js?v=4.0.0-rc1.26"></script><script src="js/navigation.js?v=4.0.0-rc1.27"></script><script src="js/osc-learning.js?v=4.0.0-rc1.19" data-module="pos"></script><script src="js/tutor-osc.js?v=4.0.0-rc1.29" data-module="pos"></script></body>
 </html>

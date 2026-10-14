@@ -884,7 +884,7 @@
 
   function activeBits(fields){return new Set(fields.map(r=>Number(r[0])))}
   function bitmapHex(fields){
-    document.querySelectorAll('#deTable .de-learning-row').forEach(row=>row.addEventListener('click',()=>openConceptDiscovery(row.dataset.de)));
+    document.querySelectorAll('#deTable .de-learning-row').forEach(row=>{if(row.dataset.eduBound)return;row.dataset.eduBound='1';row.addEventListener('click',e=>{if(e.target.closest('.osc-de-help'))return;openFieldLearning(row.dataset.de)})});
     const bits=activeBits(fields);
     const hasSecondary=[...bits].some(bit=>bit>64);
     if(hasSecondary) bits.add(1);
@@ -1037,6 +1037,24 @@
     modal.innerHTML=`<div class="concept-dialog"><button class="concept-close" type="button">✕</button><span class="concept-kicker">🔬 NUEVO CONCEPTO DESCUBIERTO</span><h2 id="conceptTitle"></h2><p id="conceptSummary"></p><div class="concept-lab"><span>Próximo nivel</span><strong id="conceptLab"></strong><small>Este tema forma parte del Laboratorio de Investigación.</small></div><div class="concept-actions"><button id="conceptInterest" type="button">👍 Me interesa</button><a href="research.html">Ver investigación →</a></div></div>`;
     document.body.appendChild(modal);modal.querySelector('.concept-close').onclick=()=>modal.classList.add('hidden');modal.onclick=e=>{if(e.target===modal)modal.classList.add('hidden')};return modal;
   }
+  // rc.1.29 · ARQC/ARPC y PIN Block/HSM viven en su campo (DE 55 / DE 23 y DE 52 / DE 53) y muestran los datos
+  // de la operación del mensaje seleccionado (también después de recargar: la traza se guarda con la operación).
+  const EDU_FIELDS={'55':'arqc','23':'arqc','52':'pin','53':'pin'};
+  function traceFor(kind){
+    const msg=state.messages.find(m=>m.id===state.selectedMessageId);
+    const op=msg&&state.operations.find(o=>o.id===msg.operationId);
+    if(op) return kind==='pin'?(op.pinTrace||null):(op.arqcTrace||null);
+    return kind==='pin'?state.pinTrace:state.lastArqc;
+  }
+  function openSecurityEdu(kind){const t=traceFor(kind);window.OSCSecurityEdu?.open(kind,t,t?'trace':'simple');}
+  function openFieldLearning(de){const k=EDU_FIELDS[String(de)];if(k&&window.OSCSecurityEdu)return openSecurityEdu(k);openConceptDiscovery(de);}
+  function decorateEduRows(){
+    document.querySelectorAll('#deTable .de-learning-row').forEach(row=>{
+      const k=EDU_FIELDS[row.dataset.de],cell=row.cells[1];if(!k||!cell||cell.querySelector('.de-edu-chip'))return;
+      const b=document.createElement('button');b.type='button';b.className='de-edu-chip';b.textContent=k==='pin'?'🔑 PIN Block y HSM':'🔐 ARQC / ARPC';
+      b.onclick=e=>{e.stopPropagation();openSecurityEdu(k)};cell.appendChild(b);
+    });
+  }
   function openConceptDiscovery(de){
     const concept=discoveryConcepts[String(de)];if(!concept)return;
     const modal=ensureDiscoveryModal();modal.querySelector('#conceptTitle').textContent=concept.title;modal.querySelector('#conceptSummary').textContent=concept.summary;modal.querySelector('#conceptLab').textContent=concept.lab;
@@ -1047,6 +1065,7 @@
     $('deTable').innerHTML=fields.length
       ?fields.map(r=>`<tr data-de="${String(r[0]).replace('DE','')}" class="de-learning-row">${r.map(c=>`<td>${c}</td>`).join('')}</tr>`).join('')
       :`<tr><td colspan="6" style="text-align:center;color:#7f93a8;padding:22px">Los campos se activarán paso a paso durante la operación.</td></tr>`;
+    decorateEduRows();
     $('deCount').textContent=fields.length; const fc=document.getElementById('fieldCount'); if(fc) fc.textContent=fields.length;
     $('totalLength').textContent=fields.length?`${fields.reduce((a,r)=>a+(parseInt(r[3])||8),0)} bytes`:'0 bytes';
     const bits=activeBits(fields);
@@ -1086,6 +1105,11 @@
     const tr=document.createElement('tr');
     tr.dataset.id=message.id;
     const op=state.operations.find(o=>o.id===message.operationId);
+    if(op&&message.direction==='SALIENTE'&&!String(message.id).startsWith('REST-')){
+      const has=(n)=>(message.fields||[]).some(r=>String(r[0]).replace('DE','')===n);
+      if(has('55')&&state.lastArqc) op.arqcTrace=state.lastArqc;
+      if(has('52')&&state.pinTrace) op.pinTrace=state.pinTrace;
+    }
     tr.innerHTML=`
       <td>${message.dateTime}</td>
       <td>${networkLogo(op?.network||'visa')}</td>
@@ -1125,7 +1149,7 @@
     const network=(op.network||detected?.id||detected?.key||profile().id||'visa').toUpperCase();
     const req=state.messages.find(m=>m.operationId===op.id && /00$/.test(m.mti));
     const res=state.messages.find(m=>m.operationId===op.id && /10$/.test(m.mti));
-    window.OSCSwitchStore.addTransaction({id:op.id,channel:'POS',network,type:op.type,amountCents:op.amountCents,status:op.status||'APPROVED',responseCode:op.responseCode||state.responseCode||'00',stan:op.stan,rrn:op.rrn,auth:op.auth,batch:op.batch,closed:op.closed,clearingStatus:op.closed?'READY':'PENDING',mtiRequest:req?.mti||'0200',mtiResponse:res?.mti||'0210',panLast4:(op.pan||state.pan||'').slice(-4),cardId:op.cardId||state.testCard,product:(TEST_CARDS[op.cardId||state.testCard]?.product)||'',raw:req?rawMessage(req):null,requestFields:req?.fields||null,responseFields:res?.fields||null,operationLabel:op.type||'purchase',dateTime:op.createdAt||new Date().toISOString()});
+    window.OSCSwitchStore.addTransaction({id:op.id,channel:'POS',network,type:op.type,amountCents:op.amountCents,status:op.status||'APPROVED',responseCode:op.responseCode||state.responseCode||'00',stan:op.stan,rrn:op.rrn,auth:op.auth,batch:op.batch,closed:op.closed,clearingStatus:op.closed?'READY':'PENDING',mtiRequest:req?.mti||'0200',mtiResponse:res?.mti||'0210',panLast4:(op.pan||state.pan||'').slice(-4),cardId:op.cardId||state.testCard,product:(TEST_CARDS[op.cardId||state.testCard]?.product)||'',raw:req?rawMessage(req):null,requestFields:req?.fields||null,responseFields:res?.fields||null,operationLabel:op.type||'purchase',dateTime:op.createdAt||new Date().toISOString(),arqcTrace:op.arqcTrace||null,pinTrace:op.pinTrace||null});
   }
   function restoreWorkspaceHistory(){
     if(!window.OSCSwitchStore) return;
@@ -1140,7 +1164,7 @@
         status:tx.status==='APPROVED'?'APROBADA':(tx.status||'APROBADA'),closed:Boolean(tx.closed),
         createdAt:tx.createdAt||tx.dateTime||new Date().toISOString(),responseCode:tx.responseCode||'00',
         network:String(tx.network||'visa').toLowerCase(),pan:tx.panLast4?`00000000000${tx.panLast4}`:'',
-        cardId:tx.cardId||null,product:tx.product||''
+        cardId:tx.cardId||null,product:tx.product||'',arqcTrace:tx.arqcTrace||null,pinTrace:tx.pinTrace||null
       };
       state.operations.unshift(op);
       const reqFields=Array.isArray(tx.requestFields)?tx.requestFields:[
@@ -1713,6 +1737,7 @@
   }
 
   function reset(){
+    { const sel=document.getElementById('posOperationSelect'); if(sel){ sel.value='purchase'; const h=document.getElementById('posOperationHint'); if(h) h.textContent='Compra: ingresá el importe en el POS y elegí la forma de lectura.'; } }
     state.currentOperation='purchase';state.step='amount';state.amountDigits='';state.pinDigits='';state.pinBlock=null;state.pinTrace=null;state.emvUn=null;state.emvAtc=null;state.entryMode=null;state.currentStan=null;state.currentAuth=null;state.selectedMessageId=null;state.selectedSourceOperationId=null;
     $('entryModePanel').classList.add('hidden');$('qrStage')?.classList.add('hidden');$('captureStage').classList.add('hidden');$('captureStage').classList.remove('success');
     ['captureChip','captureContactless','captureMagstripe','captureManual'].forEach(id=>$(id).classList.add('hidden'));
@@ -1761,17 +1786,23 @@ ${rawMessage(msg)}`;
     $('terminalBrand').textContent=terminalModels[key].brand;document.querySelector('.model').textContent=terminalModels[key].model;
   }
 
+  const OP_HINTS={purchase:'Compra: ingresá el importe en el POS y elegí la forma de lectura.',void:'Anulación: elegí la compra aprobada a anular.',refund:'Devolución: elegí la compra original y el importe (total o parcial).',query:'Consulta: estado del lote abierto y de la terminal.',batch:'Cierre de lote: el POS envía el 0500 con los totales y recibe el 0510.',reprint:'Reimpresión: elegí el ticket del historial.',lastTicket:'Último ticket: abre el último comprobante emitido.'};
   function selectOperation(type){
-    $('operationDrawer').classList.add('hidden');
+    $('operationDrawer')?.classList.add('hidden');
+    const sel=$('posOperationSelect'); if(sel&&sel.value!==type) sel.value=type;
+    if($('posOperationHint')) $('posOperationHint').textContent=OP_HINTS[type]||'';
     document.querySelectorAll('.operation-card').forEach(b=>b.classList.toggle('active',b.dataset.operation===type));
     if(type==='purchase')reset();
     else if(type==='refund')openTransactionModal('refund');
     else if(type==='void')openTransactionModal('void');
     else if(type==='batch')openBatchModal();
-    else if(type==='query'){alert(`Lote actual ${state.batchNumber} · ${state.operations.filter(o=>o.batch===state.batchNumber).length} operaciones registradas.`)}
+    else if(type==='query'){alert(`Lote actual ${state.batchNumber} · ${state.operations.filter(o=>o.batch===state.batchNumber).length} operaciones registradas.`);backToPurchase();}
     else if(type==='reprint')openTransactionModal('reprint');
-    else if(type==='lastTicket'){const op=state.operations.find(o=>o.type!=='batch');if(op)printReceipt(op);else alert('Todavía no hay tickets.');}
+    else if(type==='lastTicket'){const op=state.operations.find(o=>o.type!=='batch');if(op)printReceipt(op);else alert('Todavía no hay tickets.');backToPurchase();}
   }
+  // Las acciones inmediatas (consulta, último ticket) dejan el selector otra vez en Compra.
+  function backToPurchase(){setTimeout(()=>{const sel=$('posOperationSelect');if(sel){sel.value='purchase';if($('posOperationHint'))$('posOperationHint').textContent=OP_HINTS.purchase;}},300);}
+  $('posOperationSelect')?.addEventListener('change',e=>selectOperation(e.target.value));
 
   document.querySelectorAll('[data-key]').forEach(btn=>btn.addEventListener('click',()=>{if(/^\d$/.test(btn.dataset.key))pressNumber(btn.dataset.key)}));
   document.querySelector('[data-action="accept"]').addEventListener('click',accept);
@@ -1803,8 +1834,8 @@ ${rawMessage(msg)}`;
   setTimeout(refreshInstallmentUi,0);
   $('tamperInTransit')?.addEventListener('change',e=>{state.tamperInTransit=e.target.checked;});
   $('installmentHelp')?.addEventListener('click',()=>window.OSCSecurityEdu?.open('cuotas'));
-  $('eduArqc')?.addEventListener('click',()=>window.OSCSecurityEdu?.open('arqc',state.lastArqc,state.lastArqc?'trace':'simple'));
-  $('eduPin')?.addEventListener('click',()=>window.OSCSecurityEdu?.open('pin',state.pinTrace,state.pinTrace?'trace':'simple'));
+  $('eduArqc')?.addEventListener('click',()=>openSecurityEdu('arqc'));
+  $('eduPin')?.addEventListener('click',()=>openSecurityEdu('pin'));
   $('eduCuotas')?.addEventListener('click',()=>{
     const op=[...state.operations].reverse().find(o=>o.installments);
     const inst=op?.installments;
@@ -1818,11 +1849,11 @@ ${rawMessage(msg)}`;
   $('operationMenuButton')?.addEventListener('click',()=>{const d=$('operationDrawer');if(d)d.classList.toggle('hidden')});
   $('closeOperationDrawer')?.addEventListener('click',()=>$('operationDrawer')?.classList.add('hidden'));
   document.querySelectorAll('[data-operation]').forEach(btn=>btn.addEventListener('click',()=>selectOperation(btn.dataset.operation)));
-  $('closeTransactionModal').addEventListener('click',()=>$('transactionModal').classList.add('hidden'));
-  $('cancelTransactionSelection').addEventListener('click',()=>$('transactionModal').classList.add('hidden'));
+  $('closeTransactionModal').addEventListener('click',()=>{$('transactionModal').classList.add('hidden');backToPurchase();});
+  $('cancelTransactionSelection').addEventListener('click',()=>{$('transactionModal').classList.add('hidden');backToPurchase();});
   $('confirmTransactionSelection').addEventListener('click',confirmSelectedOperation);
   $('refundMode')?.addEventListener('change',e=>$('refundAmountWrap')?.classList.toggle('hidden',e.target.value!=='partial'));
-  $('closeBatchModal').addEventListener('click',()=>$('batchModal').classList.add('hidden'));
+  $('closeBatchModal').addEventListener('click',()=>{$('batchModal').classList.add('hidden');backToPurchase();});
   $('cancelBatchClose').addEventListener('click',()=>$('batchModal').classList.add('hidden'));
   $('confirmBatchClose').addEventListener('click',closeBatch);
   document.getElementById('compareMessagesBtn')?.addEventListener('click',()=>document.getElementById('comparePanel')?.classList.toggle('hidden'));
@@ -1864,6 +1895,7 @@ ${rawMessage(msg)}`;
   }
   function refreshLinkUi(){
     const panel=$('linkPanel'); const on=isLink();
+    $('posOperationBox')?.classList.toggle('hidden',on);
     if(panel){
       panel.classList.toggle('hidden',!on);
       if(on&&!panel.dataset.ready&&window.OSCLinkHth){

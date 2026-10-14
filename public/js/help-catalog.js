@@ -267,35 +267,28 @@
     const ctx=(document.getElementById('mti')?.textContent||'')+' '+(document.body?.dataset?.mcManual||'');
     return /\b02[0-9]0\b|MDS/.test(ctx)?'mds':'cis';
   }
-  function openTechnical(de, network){
-    const net=(network||selectedNetwork()).toLowerCase();
-    const number=Number(de);
-    if(net==='amex'){
-      const page=amexPages[number];
-      if(!page) return false;
-      window.open(`manuals/amex-network-specifications-authorization-oct2023.pdf#page=${page}`,'_blank','noopener');
-      return true;
-    }
-    if(net==='visa'){
-      const page=refs.visa[number]?.page;
-      if(!page) return false;
-      window.open(`manuals/full-service-pos-online-messages-tech-specs.pdf#page=${page}`,'_blank','noopener');
-      return true;
-    }
+  // rc.1.29: los manuales de las marcas son de uso restringido. La manito abre la Ficha del campo (js/field-cards.js);
+  // el PDF original queda como botón solo para administración OSC (el servidor también lo restringe).
+  function manualUrl(de, network){
+    const net=(network||selectedNetwork()).toLowerCase(), number=Number(de);
+    if(net==='amex') return amexPages[number]?`manuals/amex-network-specifications-authorization-oct2023.pdf#page=${amexPages[number]}`:'';
+    if(net==='visa') return refs.visa[number]?.page?`manuals/full-service-pos-online-messages-tech-specs.pdf#page=${refs.visa[number].page}`:'';
     if(net==='mastercard'){
-      if(mastercardManual()==='cis'&&mastercardCisPages[number]){
-        window.open(`manuals/mastercard-customer-interface-specification-feb2025.pdf#page=${mastercardCisPages[number]}`,'_blank','noopener');
-        return true;
-      }
-      const page=mastercardPages[number];
-      if(!page) return false;
-      window.open(`manuals/mastercard-debit-switch-online-specifications-jun03.pdf#page=${page}`,'_blank','noopener');
-      return true;
+      if(mastercardManual()==='cis'&&mastercardCisPages[number]) return `manuals/mastercard-customer-interface-specification-feb2025.pdf#page=${mastercardCisPages[number]}`;
+      return mastercardPages[number]?`manuals/mastercard-debit-switch-online-specifications-jun03.pdf#page=${mastercardPages[number]}`:'';
+    }
+    return '';
+  }
+  function openTechnical(de, network, opts={}){
+    const net=(network||selectedNetwork()).toLowerCase(), url=manualUrl(de, net);
+    if(window.OSCFieldCards && ['visa','mastercard','amex'].includes(net) && (url || window.OSCFieldCards.has(de, net))){
+      return window.OSCFieldCards.open(de, net, { ...opts, manualUrl: url });
     }
     return false;
   }
   function hasTechnical(de,network){
     const net=String(network||'').toLowerCase(),number=Number(de);
+    if(window.OSCFieldCards?.has(number, net)) return true;
     return net==='visa' ? Boolean(refs.visa[number]?.page) : net==='mastercard' ? Boolean(mastercardCisPages[number]||mastercardPages[number]) : net==='amex' ? Boolean(amexPages[number]) : false;
   }
   function showNetworkRequired(de){
@@ -359,6 +352,6 @@
     attachHelpAfter(document.getElementById('reconcileAtm'),'reconcile');
     attachHelpAfter(document.querySelector('[data-scenario="dispenserFail"]'),'dispenserFail');
   }
-  window.OSCHelp={contextual,refs,mastercardPages,mastercardCisPages,amexPages,openContext,openTechnical,hasTechnical,showNetworkRequired,decorateContext,selectedNetwork};
+  window.OSCHelp={contextual,refs,mastercardPages,mastercardCisPages,amexPages,openContext,openTechnical,hasTechnical,manualUrl,showNetworkRequired,decorateContext,selectedNetwork};
   document.addEventListener('DOMContentLoaded',()=>{ensureModal();decorateContext()});
 })();

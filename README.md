@@ -1,6 +1,6 @@
-# OSC Payment Academy — v4.0.0-rc.1.28
+# OSC Payment Academy — v4.0.0-rc.1.29
 
-ATM LINK: primero se elige la operación y el panel muestra solo sus datos. Ver RELEASE_NOTES_v4.0.0-rc.1.28.md.
+Fichas de campo (manuales de marca de uso restringido), selector de operación del POS y ARQC / PIN en su campo. Ver RELEASE_NOTES_v4.0.0-rc.1.29.md.
 
 ## v4.0.0-rc.1.27
 
