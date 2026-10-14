@@ -271,8 +271,14 @@
   // el PDF original queda como botón solo para administración OSC (el servidor también lo restringe).
   function manualUrl(de, network){
     const net=(network||selectedNetwork()).toLowerCase(), number=Number(de);
+    if(net==='link'){ // Visor LINK con el campo resaltado (solo admin; el servidor lo restringe).
+      const rev=[90,95].includes(number);
+      return `/manual-link.html?doc=${rev?'c-x-4-11-msje-0420-output-conex-htoh-iso8583-fto-de-rtro':'c-x-1-2-3-conex-htoh-iso8583-tipo-de-msje-fto-de-msje'}&campo=${number}`;
+    }
     if(net==='amex') return amexPages[number]?`manuals/amex-network-specifications-authorization-oct2023.pdf#page=${amexPages[number]}`:'';
-    if(net==='visa') return refs.visa[number]?.page?`manuals/full-service-pos-online-messages-tech-specs.pdf#page=${refs.visa[number].page}`:'';
+    // rc.1.30: páginas verificadas de los campos ampliados (44, 54, 60, 62, 63, 90, 95) en Full Service POS (abr 2025).
+    const visaPage={44:326,54:464,60:510,62:530,63:601,90:696,95:704}[number]||refs.visa[number]?.page;
+    if(net==='visa') return visaPage?`manuals/full-service-pos-online-messages-tech-specs.pdf#page=${visaPage}`:'';
     if(net==='mastercard'){
       if(mastercardManual()==='cis'&&mastercardCisPages[number]) return `manuals/mastercard-customer-interface-specification-feb2025.pdf#page=${mastercardCisPages[number]}`;
       return mastercardPages[number]?`manuals/mastercard-debit-switch-online-specifications-jun03.pdf#page=${mastercardPages[number]}`:'';
@@ -281,7 +287,7 @@
   }
   function openTechnical(de, network, opts={}){
     const net=(network||selectedNetwork()).toLowerCase(), url=manualUrl(de, net);
-    if(window.OSCFieldCards && ['visa','mastercard','amex'].includes(net) && (url || window.OSCFieldCards.has(de, net))){
+    if(window.OSCFieldCards && ['visa','mastercard','amex','link'].includes(net) && (url || window.OSCFieldCards.has(de, net))){
       return window.OSCFieldCards.open(de, net, { ...opts, manualUrl: url });
     }
     return false;

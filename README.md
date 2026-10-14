@@ -1,6 +1,6 @@
-# OSC Payment Academy — v4.0.0-rc.1.29
+# OSC Payment Academy — v4.0.0-rc.1.30
 
-Fichas de campo (manuales de marca de uso restringido), selector de operación del POS y ARQC / PIN en su campo. Ver RELEASE_NOTES_v4.0.0-rc.1.29.md.
+Fichas de campo para Red LINK y campos ampliados de Visa, Mastercard y Amex. Ver RELEASE_NOTES_v4.0.0-rc.1.30.md.
 
 ## v4.0.0-rc.1.27
 

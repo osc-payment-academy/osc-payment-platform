@@ -872,7 +872,7 @@
 
           <script src="js/network-profiles.js?v=4.0.0-rc1.26"></script>
           <script src="js/link-hth.js?v=4.0.0-rc1.28"></script>
-          <script src="js/help-catalog.js?v=4.0.0-rc1.29"></script><script src="js/field-cards.js?v=4.0.0-rc1.29"></script>
+          <script src="js/help-catalog.js?v=4.0.0-rc1.30"></script><script src="js/field-cards.js?v=4.0.0-rc1.30"></script>
           <script src="js/iso-network-spec.js?v=4.0.0-rc1.22"></script>
           <script src="js/security-edu.js?v=4.0.0-rc1.26"></script>
           <script>
@@ -3314,7 +3314,8 @@
                   .map((f) => {
                     if (result.link) {
                       // LINK: valores con blancos visibles y desglose de subcampos según los manuales LINK.
-                      return `<tr><td class="fnum">${f.num}</td><td>${f.name}</td><td class="flen mono">${f.fmt}</td><td class="flen mono">${f.len}</td><td class="flen mono">${f.prefixDisplay || "—"}</td><td class="fval mono">${f.num === 35 ? maskTrack2(f.value) : f.num === 2 ? maskPAN(f.value) : f.valueHtml}</td><td class="fdesc">${f.desc || ""}</td></tr>`;
+                      const linkCard = OSCHelp.hasTechnical?.(f.num, "link"); // rc.1.29: Ficha del campo LINK
+                      return `<tr class="${linkCard ? "manual-hover-row" : ""}"><td class="fnum">${f.num}</td><td>${f.name}</td><td class="flen mono">${f.fmt}</td><td class="flen mono">${f.len}</td><td class="flen mono">${f.prefixDisplay || "—"}</td><td class="fval mono">${f.num === 35 ? maskTrack2(f.value) : f.num === 2 ? maskPAN(f.value) : f.valueHtml}</td><td class="fdesc">${f.desc || ""}${linkCard ? ` <button type="button" class="study-manual-btn" data-manual-de="${f.num}" data-manual-net="link" title="Ficha del campo ${f.num} · Red LINK" aria-label="Ficha del campo ${f.num} · Red LINK">☝</button>` : ""}</td></tr>`;
                     }
                     const manualEnabled =
                       OSCHelp.hasTechnical?.(f.num, manualNetwork); // rc.1.22: también Amex
@@ -3396,6 +3397,7 @@
                 if (!btn) return;
                 e.preventDefault();
                 const network =
+                  btn.dataset.manualNet ||
                   document.getElementById("parserNetworkSelect")?.value || "";
                 if (!network) {
                   OSCHelp.showNetworkRequired?.(Number(btn.dataset.manualDe));

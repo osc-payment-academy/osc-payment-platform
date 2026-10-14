@@ -83,7 +83,7 @@
   function showApi(j){
     const cite=j.reference?`<div class="tutor-cite"><span>📖</span><span>Según: <b>${esc(j.reference)}</b></span></div>`:'';
     const d=msg(`${cite}<div>${esc(j.answer||'No fue posible responder.')}</div>`,j.kind==='CONSULTORIA'?'consultoria':'bot');
-    if(j.fieldCard){const b=document.createElement('button');b.type='button';b.className='tutor-osc-manual';b.textContent='☝ Ver ficha del campo (español / inglés)';b.onclick=()=>{const go=()=>OSCFieldCards.open(j.fieldCard.de,j.fieldCard.network,{manualUrl:j.manualUrl});if(window.OSCFieldCards)return go();const sc=document.createElement('script');sc.src='/js/field-cards.js?v=4.0.0-rc1.29';sc.onload=go;document.head.appendChild(sc)};d.appendChild(b)}
+    if(j.fieldCard){const b=document.createElement('button');b.type='button';b.className='tutor-osc-manual';b.textContent=j.fieldCard.network==='link'?'☝ Ver ficha del campo LINK':'☝ Ver ficha del campo (español / inglés)';b.onclick=()=>{const go=()=>OSCFieldCards.open(j.fieldCard.de,j.fieldCard.network,{manualUrl:j.manualUrl});if(window.OSCFieldCards)return go();const sc=document.createElement('script');sc.src='/js/field-cards.js?v=4.0.0-rc1.30';sc.onload=go;document.head.appendChild(sc)};d.appendChild(b)}
     else if(j.manualUrl){const a=document.createElement('a');a.className='tutor-osc-manual';a.href=j.manualUrl;a.target='_blank';a.rel='noopener';a.textContent=`📖 ${j.manualLabel||'Abrir manual oficial'}`;d.appendChild(a)}
     if(j.brand==='MASTERCARD'||/junio de 2003|jun03/i.test(j.reference||''))msg('⚠️ <b>Documento antiguo.</b> Esta explicación corresponde a la especificación disponible de junio de 2003 y no debe asumirse como comportamiento vigente sin documentación actual que lo confirme.','warning');
   }

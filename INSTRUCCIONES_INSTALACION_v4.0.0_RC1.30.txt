@@ -1,0 +1,13 @@
+OSC Payment Academy v4.0.0-rc.1.30
+Fichas de campo LINK y campos ampliados de Visa, Mastercard y Amex.
+
+INSTALACIÓN (paquete INCREMENTAL · requiere tener instalada la rc.1.29):
+1. Descomprimir el ZIP y copiar su contenido sobre la raíz del repositorio en GitHub, reemplazando archivos.
+2. No hay migración nueva. La carpeta public/manuals no viene en el ZIP.
+3. Despliegue habitual.
+
+Pruebas mínimas:
+1. Alumno → Parser con una trama LINK → manito ☝ del campo 54: ficha con "Según el código de transacción".
+2. Alumno → Parser con trama Visa → manito del Field 60 o 44: ficha nueva.
+3. Tutor en ATM con tarjeta LINK → "campo 54" → botón "Ver ficha del campo LINK".
+4. Admin OSC → misma ficha: botón "Abrir manual original".

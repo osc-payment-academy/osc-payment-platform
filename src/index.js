@@ -381,6 +381,7 @@ async function api(request,env,path){
       const isAdminTutor=auth.user.platform_role==='OSC_ADMIN';
       const manual=tutorManualReference(brand,deNumber,channel,isAdminTutor);
       // rc.1.29 · Manuales de marca de uso restringido: el alumno recibe la Ficha del campo; el PDF solo la administración OSC.
+      if(brand==='LINK') manual.fieldCard={de:deNumber,network:'link'}; // rc.1.30: Ficha del campo LINK
       if(['VISA','MASTERCARD','AMEX'].includes(brand)){
         manual.fieldCard={de:deNumber,network:brand.toLowerCase()};
         if(!isAdminTutor){delete manual.manualUrl;delete manual.manualLabel;delete manual.manualRequired;manual.answer=`DE${deNumber} — ${manual.fieldName}. Abrí la Ficha del campo: explica en español, con los términos en inglés, cómo se arma según el manual de la marca.`;}

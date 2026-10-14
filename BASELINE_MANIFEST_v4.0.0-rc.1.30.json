@@ -1,0 +1,78 @@
+{
+ "product": "OSC-ACADEMY",
+ "version": "4.0.0-rc.1.30",
+ "title": "Incremental sobre rc.1.29: fichas de campo LINK y campos ampliados",
+ "parent_baseline": "OSC-ACADEMY v4.0.0-rc.1.29",
+ "generated_at": "2026-10-14T17:15:53.065432+00:00",
+ "deleted_files": [],
+ "policy": {
+  "no_silent_file_deletion": true,
+  "sha256_inventory": true,
+  "incremental_install_package": true,
+  "complete_backup_package": true,
+  "manuals_excluded": true
+ },
+ "incremental_files": [
+  {
+   "path": "INSTRUCCIONES_INSTALACION_v4.0.0_RC1.30.txt",
+   "sha256": "0ce814ef8db008ad45e714067c56cedd218d059b80517972ec310e527beb85c2"
+  },
+  {
+   "path": "README.md",
+   "sha256": "3218081ed39cae194f2c8da4e63d671380163f8f076194262ecb26cfce7c1f7f"
+  },
+  {
+   "path": "RELEASE_NOTES_v4.0.0-rc.1.30.md",
+   "sha256": "c9121ee3884237d42cb8c86a692e4e42b7a1a6991c35c466e838eea8d7dd1c97"
+  },
+  {
+   "path": "package.json",
+   "sha256": "54acfede506b1d02d35c0fa3047d813bd4ddce5f045fe03be6c3b898e9c54f1b"
+  },
+  {
+   "path": "public/atm.html",
+   "sha256": "3f3334af5f0faaeb42edf832c69100b6b1802533d96b0fe441a746fa7fdfd135"
+  },
+  {
+   "path": "public/constructor.html",
+   "sha256": "b03a24e702d56c55efb4838f048f2d60ac362e96d9a3fbe57fd275de3c7d5d63"
+  },
+  {
+   "path": "public/curso_interactivo.html",
+   "sha256": "434d9190fedd857b305140e767d6df986497cd7f5ffce992e06fae209f15519f"
+  },
+  {
+   "path": "public/ecommerce.html",
+   "sha256": "96af99d2b4bbeb3d20f21df33e4fa56bfda456274a5f3570f78f774a542a04b9"
+  },
+  {
+   "path": "public/js/field-cards.js",
+   "sha256": "839c946efc8bb49cafabfd38dc843fe7013838e764848dd34534dd50f8031fba"
+  },
+  {
+   "path": "public/js/help-catalog.js",
+   "sha256": "bb8143ccbccce3bcd1fc6ecfd6cb54114b162a9964d0127492513037c2f98789"
+  },
+  {
+   "path": "public/js/tutor-osc.js",
+   "sha256": "dbd1f8ced7f2d898db1742201788ad0fb7411aa34f3e220cce5d245738705b50"
+  },
+  {
+   "path": "public/parser.html",
+   "sha256": "caf7313a35bfa56c843ad78595e876fd24299e4bb93b69e6d5327988c9ab16a5"
+  },
+  {
+   "path": "public/pos.html",
+   "sha256": "f273477fecff1a5e4b6323084ccb8d38c726ff0c3e453582609ec5700e23a58b"
+  },
+  {
+   "path": "public/wallet.html",
+   "sha256": "abb9f98a072e6d2fb8c677b0497ed78def9cced1f4f150324d4756eae00395ca"
+  },
+  {
+   "path": "src/index.js",
+   "sha256": "cc362fe17326c89f538f245d97124ffca2d4b3e0a6cf2a599a7f2a5000c3f57c"
+  }
+ ],
+ "complete_file_count": 363
+}
