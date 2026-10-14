@@ -1,0 +1,44 @@
+OSC · Monitoreo de Fraude como PRODUCTO INDEPENDIENTE
+=====================================================
+Ahora Fraude y Autorizaciones son dos productos separados: dos ejecutables,
+dos configs, dos puertos y dos licencias. A cada banco le entregas solo el que
+compro. Los dos leen el MISMO log del banco (cada uno con su propio lector).
+
+------------------------------------------------------------------
+PRODUCTO A — Monitoreo en Vivo de AUTORIZACIONES (ya lo tenias)
+------------------------------------------------------------------
+motor-autorizaciones/OSC_Monitoreo_En_Vivo.exe  rt-v2.1
+  - Igual que antes, pero ya NO incluye el motor de fraude (se vende aparte).
+  - Correr:  .\OSC_Monitoreo_En_Vivo.exe -config config-rt.txt   (puerto 8080)
+  - Pagina: "Monitoreo en Vivo de Autorizaciones" (sin cambios).
+
+------------------------------------------------------------------
+PRODUCTO B — Monitoreo en Vivo de FRAUDE (nuevo, independiente)
+------------------------------------------------------------------
+motor-fraude/OSC_Monitoreo_Fraude.exe  fraude-v1.0
+  - Corre SOLO el motor de fraude (F01 F02 F03 F04 F05 F06 F10).
+  - Correr:  .\OSC_Monitoreo_Fraude.exe -config config-fraude.txt  (puerto 8081)
+  - Pagina nueva: "Monitoreo en Vivo de Fraude".
+
+WEB (GitHub) — subir al public/ :
+  public/index.html            -> menu con "🛡️ Monitoreo en Vivo de Fraude"
+                                  bajo un flag de licencia PROPIO: FRAUD_MONITOR
+  public/monitoreo-fraude.html -> apunta al agente de fraude (puerto 8081)
+  Hard refresh (Ctrl+F5).
+
+LICENCIA SEPARADA (importante)
+------------------------------
+- Autorizaciones usa el flag  AUTHORIZATION_ANALYTICS
+- Fraude usa el flag          FRAUD_MONITOR   <-- NUEVO
+Para licenciar Fraude por separado a cada banco, da de alta el producto/flag
+FRAUD_MONITOR en tu plataforma (admin). Como OSC_ADMIN vos ves ambos siempre.
+
+CONVIVENCIA
+-----------
+- Un banco que compra SOLO fraude: corre OSC_Monitoreo_Fraude.exe (8081).
+- Un banco que compra SOLO autorizaciones: corre OSC_Monitoreo_En_Vivo.exe (8080).
+- Un banco que compra LOS DOS: corre ambos exes a la vez (8080 y 8081); los dos
+  leen el mismo log sin molestarse.
+
+Umbrales de fraude: en config-fraude.txt. Calibrar con datos reales.
+Agrupado por tarjeta con identificador enmascarado; nunca PAN completo.
