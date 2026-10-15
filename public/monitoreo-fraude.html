@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>OSC · Monitoreo en Vivo de Fraude</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+<style>
+:root{--bg:#06111d;--panel:#0b1928;--panel2:#081624;--line:#23435f;--text:#f4f8fc;--muted:#98aec2;--blue:#42a5ff;--green:#21d187;--amber:#f7b51c;--orange:#ff8a3d;--red:#ff6670}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(circle at 84% 5%,#3a1030 0,transparent 30%),var(--bg);color:var(--text);font-family:Inter,Segoe UI,Arial,sans-serif}
+.shell{max-width:1320px;margin:auto;padding:22px}
+.top{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap}
+.eyebrow{color:var(--blue);font-size:11px;letter-spacing:.08em;margin:0}
+h1{margin:.3rem 0;display:flex;align-items:center;gap:12px}
+h2{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin:0 0 12px}
+.muted{color:var(--muted);line-height:1.5}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.btn{border:1px solid #3979a8;border-radius:9px;background:#113a5d;color:#fff;padding:9px 13px;text-decoration:none;font-weight:700;cursor:pointer;font-size:13px}
+input[type=text]{background:#061522;border:1px solid var(--line);border-radius:8px;color:var(--text);padding:8px 10px;font-size:13px}
+.live{display:inline-flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);font-weight:600}
+.dot{width:12px;height:12px;border-radius:50%;background:var(--green);box-shadow:0 0 10px var(--green);animation:pulse 1.4s infinite}
+.dot.off{background:var(--red);box-shadow:0 0 10px var(--red);animation:none}
+@keyframes pulse{0%{opacity:1}50%{opacity:.3}100%{opacity:1}}
+.reloj{font-size:26px;font-weight:800;font-variant-numeric:tabular-nums}
+.kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin:18px 0}
+@media(max-width:1000px){.kpis{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:620px){.kpis{grid-template-columns:repeat(2,1fr)}}
+.kpi,.panel{border:1px solid var(--line);border-radius:14px;background:linear-gradient(180deg,var(--panel),var(--panel2));padding:16px}
+.kpi .lbl{color:var(--muted);font-size:10px;letter-spacing:.06em;text-transform:uppercase}
+.kpi .val{font-size:27px;font-weight:800;margin-top:6px;font-variant-numeric:tabular-nums}
+.kpi.crit .val{color:var(--red)}.kpi.alto .val{color:var(--orange)}.kpi.medio .val{color:var(--amber)}
+.panel{margin-bottom:16px}
+.sem{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-bottom:14px}
+.sem span{display:inline-flex;align-items:center;gap:6px}
+.chip{display:inline-block;font-size:10px;padding:2px 7px;border-radius:20px;background:#13324c;color:var(--blue);margin:1px 3px 1px 0}
+.reglas{display:flex;flex-wrap:wrap;gap:8px}
+.rpill{border:1px solid var(--line);border-radius:9px;padding:7px 11px;font-size:12px;background:#081a2b}
+.rpill b{color:var(--text)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:8px 11px;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+th:first-child,td:first-child,th.l,td.l{text-align:left}
+thead th{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--panel)}
+tbody tr{border-bottom:1px solid #12293d;cursor:pointer}tbody tr:hover{background:#0f2238}
+.tablewrap{max-height:520px;overflow:auto;border:1px solid var(--line);border-radius:10px}
+.score{display:inline-block;min-width:38px;text-align:center;font-weight:800;border-radius:7px;padding:3px 8px;color:#06111d}
+.s-crit{background:var(--red)}.s-alto{background:var(--orange)}.s-medio{background:var(--amber)}.s-bajo{background:#43607c;color:#fff}
+.count{color:var(--muted);font-size:12px;margin:8px 0 2px}
+.foot{color:#4d6076;font-size:12px;margin-top:10px}
+.cfg{display:none;margin-top:10px;gap:8px;align-items:center;flex-wrap:wrap}.cfg.open{display:flex}
+.modal{position:fixed;inset:0;background:#000b;display:none;align-items:flex-start;justify-content:center;padding:40px 16px;z-index:10}
+.modal.open{display:flex}
+.modal .box{background:var(--panel);border:1px solid var(--line);border-radius:14px;max-width:1000px;width:100%;max-height:85vh;overflow:auto;padding:20px}
+.modal .x{float:right;cursor:pointer;color:var(--muted);font-size:20px}
+.res-ap{color:var(--green)}.res-re{color:var(--red)}
+</style>
+</head>
+<body>
+<main class="shell">
+  <header class="top">
+    <div>
+      <p class="eyebrow">OSC · AUTHORIZATION ANALYTICS <span id="rtRed" style="color:var(--muted)"></span></p>
+      <h1>Monitoreo en Vivo de Fraude
+        <span class="live"><span class="dot off" id="dot"></span><span id="estadoTxt">conectando…</span></span>
+      </h1>
+      <p class="muted">Patrones transaccionales de riesgo en tiempo real. Reglas F01–F10, Risk Score 0–100 y semáforo. No bloquea: alerta y prioriza para el analista.</p>
+      <div class="cfg" id="cfg">
+        <label class="muted" style="font-size:12px">URL del agente</label>
+        <input id="base" type="text" size="30" placeholder="http://localhost:8080">
+        <button class="btn" id="saveBase">Guardar</button>
+        <span class="muted" style="font-size:12px">Agente OSC_Monitoreo_Fraude (por defecto puerto 8081).</span>
+      </div>
+    </div>
+    <div class="row">
+      <div class="reloj" id="reloj">--:--:--</div>
+      <button class="btn" id="gear" title="Configurar URL del agente">⚙ Agente</button>
+      <a class="btn" href="index.html">← Plataforma</a>
+    </div>
+  </header>
+
+  <section class="kpis" id="kpis"></section>
+
+  <div class="panel">
+    <h2>Reglas activas (tarjetas afectadas)</h2>
+    <div class="sem">
+      <span><span class="score s-bajo">0</span> 0–29 Bajo</span>
+      <span><span class="score s-medio">30</span> 30–59 Medio</span>
+      <span><span class="score s-alto">60</span> 60–79 Alto</span>
+      <span><span class="score s-crit">80</span> 80–100 Crítico</span>
+    </div>
+    <div class="reglas" id="reglas"></div>
+  </div>
+
+  <div class="panel">
+    <h2>Tarjetas en riesgo <span class="muted" style="font-size:12px;text-transform:none">· clic en una fila para ver el detalle</span></h2>
+    <div class="tablewrap">
+      <table id="tabla"><thead><tr>
+        <th>Score</th><th class="l">Nivel</th><th class="l">Tarjeta</th><th class="l">Reglas</th>
+        <th>Ops</th><th>Rech.</th><th>Aprob.</th><th>Monto aprob.</th><th class="l">Canal</th><th class="l">Última</th>
+      </tr></thead><tbody></tbody></table>
+    </div>
+    <p class="count" id="cnt"></p>
+  </div>
+  <p class="foot" id="foot"></p>
+</main>
+
+<div class="modal" id="modal"><div class="box">
+  <span class="x" onclick="cerrar()">✕</span>
+  <h2 id="mtit">Detalle de la tarjeta</h2>
+  <p class="muted" id="msub" style="font-size:13px"></p>
+  <div class="tablewrap" style="max-height:60vh">
+    <table><thead><tr><th class="l">Hora</th><th>MTI</th><th class="l">Canal</th><th>Monto</th><th>DE39</th><th class="l">Resultado</th><th class="l">Terminal</th><th class="l">Comercio</th></tr></thead>
+    <tbody id="mbody"></tbody></table>
+  </div>
+  <div class="foot">Seguimiento: la agrupación usa un identificador de tarjeta enmascarado; nunca PAN completo.</div>
+</div></div>
+
+<script>
+const $=id=>document.getElementById(id);
+const fmt=n=>new Intl.NumberFormat('es-AR').format(Number(n||0));
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let BASE='http://localhost:8081';try{BASE=localStorage.getItem('osc_fraude_base')||BASE;}catch(e){}
+$('base').value=BASE;
+$('gear').onclick=()=>$('cfg').classList.toggle('open');
+$('saveBase').onclick=()=>{BASE=$('base').value.trim().replace(/\/$/,'');try{localStorage.setItem('osc_fraude_base',BASE);}catch(e){}$('cfg').classList.remove('open');tick();};
+
+const claseScore=n=>n>=80?'s-crit':n>=60?'s-alto':n>=30?'s-medio':'s-bajo';
+const nivelTxt=n=>n>=80?'Crítico':n>=60?'Alto':n>=30?'Medio':'Bajo';
+let DATA=null;
+
+function conexion(ok){$('dot').className='dot'+(ok?'':' off');$('estadoTxt').textContent=ok?'en vivo':'sin conexión';}
+
+async function tick(){
+ try{
+  const r=await fetch(BASE+'/api/fraude/estado',{cache:'no-store'});const e=await r.json();
+  conexion(true);DATA=e;
+  $('rtRed').textContent=e.red?('· Red '+String(e.red).replace('_ISO8583','')):'';
+  $('reloj').textContent=e.reloj||'--:--:--';
+  const kpi=(lbl,val,cls)=>'<div class="kpi '+(cls||'')+'"><div class="lbl">'+lbl+'</div><div class="val">'+val+'</div></div>';
+  $('kpis').innerHTML=
+    kpi('Tarjetas monitoreadas',fmt(e.tarjetas_monitoreadas))+
+    kpi('En riesgo',fmt(e.en_riesgo))+
+    kpi('Críticas',fmt(e.criticas),'crit')+
+    kpi('Altas',fmt(e.altas),'alto')+
+    kpi('Medias',fmt(e.medias),'medio')+
+    kpi('Score máx.',fmt(e.score_max),e.score_max>=80?'crit':e.score_max>=60?'alto':e.score_max>=30?'medio':'');
+  $('reglas').innerHTML=(e.reglas||[]).length?(e.reglas||[]).map(x=>'<div class="rpill"><b>'+esc(x.texto)+'</b> · '+fmt(x.tarjetas)+' tarjeta(s)</div>').join(''):'<span class="muted">Sin reglas disparadas en este momento.</span>';
+  const t=e.tarjetas||[];
+  $('tabla').tBodies[0].innerHTML=t.length?t.map((x,i)=>'<tr onclick="ver('+i+')"><td><span class="score '+claseScore(x.score)+'">'+x.score+'</span></td><td class="l">'+nivelTxt(x.score)+'</td><td class="l">'+esc(x.pan)+'</td><td class="l">'+(x.reglas||[]).map(r=>'<span class="chip">'+esc(r)+'</span>').join('')+'</td><td>'+fmt(x.ops)+'</td><td class="res-re">'+fmt(x.rechazos)+'</td><td class="res-ap">'+fmt(x.aprobadas)+'</td><td>'+fmt(x.monto_aprobado)+'</td><td class="l">'+esc(x.canal)+'</td><td class="l">'+esc(x.ultima_hora)+'</td></tr>').join(''):'<tr><td colspan="10" style="text-align:center;color:var(--muted);padding:26px">Sin tarjetas en riesgo en este momento ✓</td></tr>';
+  $('cnt').textContent=fmt(t.length)+' tarjeta(s) en riesgo (score ≥ umbral)';
+  $('foot').textContent='Actualiza cada 3s · '+BASE+' · El agrupado usa identificador enmascarado, sin PAN completo.';
+ }catch(err){conexion(false);$('foot').textContent='No se pudo conectar con el agente en '+BASE+' — revisá que OSC_Monitoreo_Fraude esté corriendo y la URL (⚙ Agente).';}
+}
+function ver(i){
+  const x=(DATA&&DATA.tarjetas&&DATA.tarjetas[i]);if(!x)return;
+  $('mtit').textContent='Tarjeta '+x.pan+' — Score '+x.score+' ('+nivelTxt(x.score)+')';
+  $('msub').innerHTML='Reglas: '+(x.reglas_texto||x.reglas||[]).map(esc).join(' · ')+' — '+fmt(x.ops)+' ops / '+fmt(x.rechazos)+' rech / '+fmt(x.aprobadas)+' aprob · monto aprobado '+fmt(x.monto_aprobado);
+  $('mbody').innerHTML=(x.detalle||[]).map(o=>'<tr><td class="l">'+esc(o.hora)+'</td><td>'+esc(o.mti)+'</td><td class="l">'+esc(o.canal)+'</td><td>'+fmt(o.monto)+'</td><td>'+esc(o.de39)+'</td><td class="l '+(o.resultado==='APROBADA'?'res-ap':'res-re')+'">'+esc(o.resultado)+'</td><td class="l">'+esc(o.terminal)+'</td><td class="l">'+esc(o.comercio)+'</td></tr>').join('')||'<tr><td colspan="8" style="text-align:center;color:var(--muted)">Sin detalle</td></tr>';
+  $('modal').classList.add('open');
+}
+function cerrar(){$('modal').classList.remove('open');}
+$('modal').addEventListener('click',e=>{if(e.target.id==='modal')cerrar();});
+tick();setInterval(tick,3000);
+</script>
+</body>
+</html>
