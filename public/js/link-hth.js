@@ -822,10 +822,22 @@ ${pos ? '' : `<details class="link-net"><summary>Gestión de red · 0800 / 0810<
     return 'ISO' + header + mti + hex(bits.slice(0, 64)) + (hasSec ? hex(bits.slice(64)) : '') + body;
   }
   function parse(input) {
-    const raw = unhtml(input).replace(/[\r\n]+/g, '');
-    const start = raw.indexOf('ISO');
+    let raw = unhtml(input).replace(/[\r\n]+/g, '');
     const errors = [], warnings = [], fields = [];
-    if (start < 0 || !/^ISO\d{9}\d{4}[0-9A-Fa-f]{16}/.test(raw.slice(start))) return { errors: ['No se reconoce el formato LINK: se espera "ISO" + header de 9 dígitos + MTI + bitmap.'], warnings, fields };
+    let start = raw.indexOf('ISO');
+    if (start < 0 || !/^ISO\d{9}\d{4}[0-9A-Fa-f]{16}/.test(raw.slice(start))) {
+      // Tolerancia: trama pegada sin el encabezado "ISO" + header (arranca en el
+      // MTI + bitmap primario, como suele copiarse del log). Se sintetiza un
+      // encabezado para interpretarla igual.
+      const mm = raw.match(/\d{4}[0-9A-Fa-f]{16}/);
+      if (mm && /^\d{4}[0-9A-Fa-f]{16}/.test(raw.slice(raw.indexOf(mm[0])))) {
+        raw = 'ISO014000053' + raw.slice(raw.indexOf(mm[0]));
+        start = 0;
+        warnings.push('La trama no incluía el encabezado "ISO" + header de 9 dígitos; se interpretó desde el MTI.');
+      } else {
+        return { errors: ['No se reconoce el formato LINK: se espera "ISO" + header de 9 dígitos + MTI + bitmap.'], warnings, fields };
+      }
+    }
     let pos = start + 3;
     const header = raw.slice(pos, pos + 9); pos += 9;
     const mti = raw.slice(pos, pos + 4); pos += 4;

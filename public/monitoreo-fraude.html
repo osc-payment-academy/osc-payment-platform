@@ -191,15 +191,23 @@ function cerrar(){$('modal').classList.remove('open');}
 $('modal').addEventListener('click',e=>{if(e.target.id==='modal')cerrar();});
 
 // --- Pestañas En vivo / Historial ---
+let HIST=[];
 function fechaHora(ts){try{const d=new Date(ts);if(isNaN(d))return esc(ts||'');return d.toLocaleString('es-AR',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit'});}catch(e){return esc(ts||'');}}
 async function cargarHist(){
  const dias=$('hDias').value,nivel=$('hNivel').value;
  try{
   const r=await fetch(BASE+'/api/fraude/historial?dias='+dias+(nivel?'&nivel='+nivel:'')+'&limit=2000',{cache:'no-store'});
-  const e=await r.json();const al=e.alertas||[];
-  $('htabla').tBodies[0].innerHTML=al.length?al.map(a=>'<tr><td class="l">'+fechaHora(a.ts)+'</td><td><span class="score '+claseScore(a.score)+'">'+a.score+'</span></td><td class="l">'+nivelTxt(a.score)+'</td><td class="l">'+esc(a.pan)+'</td><td class="l">'+(a.reglas||[]).map(r=>'<span class="chip">'+esc(r)+'</span>').join('')+'</td><td>'+fmt(a.ops)+'</td><td class="res-re">'+fmt(a.rechazos)+'</td><td class="res-ap">'+fmt(a.aprobadas)+'</td><td>'+fmt(a.monto_aprobado)+'</td><td class="l">'+esc(a.canal)+'</td><td class="l">'+esc(a.hora_log)+'</td></tr>').join(''):'<tr><td colspan="11" style="text-align:center;color:var(--muted);padding:26px">Sin alertas registradas en este período</td></tr>';
-  $('hcnt').textContent=fmt(al.length)+' alerta(s) · '+fmt(e.total||0)+' en total guardadas';
+  const e=await r.json();const al=e.alertas||[];HIST=al;
+  $('htabla').tBodies[0].innerHTML=al.length?al.map((a,i)=>'<tr onclick="verHist('+i+')" style="cursor:pointer"><td class="l">'+fechaHora(a.ts)+'</td><td><span class="score '+claseScore(a.score)+'">'+a.score+'</span></td><td class="l">'+nivelTxt(a.score)+'</td><td class="l">'+esc(a.pan)+'</td><td class="l">'+(a.reglas||[]).map(r=>'<span class="chip">'+esc(r)+'</span>').join('')+'</td><td>'+fmt(a.ops)+'</td><td class="res-re">'+fmt(a.rechazos)+'</td><td class="res-ap">'+fmt(a.aprobadas)+'</td><td>'+fmt(a.monto_aprobado)+'</td><td class="l">'+esc(a.canal)+'</td><td class="l">'+esc(a.hora_log)+'</td></tr>').join(''):'<tr><td colspan="11" style="text-align:center;color:var(--muted);padding:26px">Sin alertas registradas en este período</td></tr>';
+  $('hcnt').textContent=fmt(al.length)+' alerta(s) · '+fmt(e.total||0)+' en total guardadas · clic en una fila para ver el detalle';
  }catch(err){$('hcnt').textContent='No se pudo leer el historial del agente en '+BASE+'.';}
+}
+function verHist(i){
+  const a=HIST[i];if(!a)return;
+  $('mtit').textContent='Tarjeta '+a.pan+' — Score '+a.score+' ('+nivelTxt(a.score)+')';
+  $('msub').innerHTML='Alerta del '+fechaHora(a.ts)+' · Reglas: '+(a.reglas_texto||a.reglas||[]).map(esc).join(' · ')+' — '+fmt(a.ops)+' ops / '+fmt(a.rechazos)+' rech / '+fmt(a.aprobadas)+' aprob · monto aprobado '+fmt(a.monto_aprobado);
+  $('mbody').innerHTML=(a.detalle||[]).map(o=>'<tr><td class="l">'+esc(o.hora)+'</td><td>'+esc(o.mti)+'</td><td class="l">'+esc(o.tipo)+'</td><td class="l">'+esc(o.canal)+'</td><td>'+fmt(o.monto)+'</td><td>'+esc(o.de39)+'</td><td class="l '+(o.resultado==='APROBADA'?'res-ap':'res-re')+'">'+esc(o.resultado)+'</td><td class="l">'+esc(o.terminal)+'</td><td class="l">'+esc(o.comercio)+'</td></tr>').join('')||'<tr><td colspan="9" style="text-align:center;color:var(--muted)">Esta alerta no guardó detalle de operaciones</td></tr>';
+  $('modal').classList.add('open');
 }
 function mostrar(v){
  const live=v==='live';
