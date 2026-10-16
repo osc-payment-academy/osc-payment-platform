@@ -78,6 +78,12 @@ tbody tr{border-bottom:1px solid #12293d;cursor:pointer}tbody tr:hover{backgroun
     </div>
   </header>
 
+  <div class="row" style="gap:8px;margin:4px 0 16px">
+    <button class="btn" id="tabLive" style="background:rgba(47,131,255,.16)">● En vivo</button>
+    <button class="btn" id="tabHist">🗂️ Historial</button>
+  </div>
+
+  <div id="viewLive">
   <section class="kpis" id="kpis"></section>
 
   <div class="panel">
@@ -102,6 +108,29 @@ tbody tr{border-bottom:1px solid #12293d;cursor:pointer}tbody tr:hover{backgroun
     <p class="count" id="cnt"></p>
   </div>
   <p class="foot" id="foot"></p>
+  </div><!-- /viewLive -->
+
+  <div id="viewHist" style="display:none">
+    <div class="panel">
+      <h2>Historial de alertas <span class="muted" style="font-size:12px;text-transform:none">· persistente en el agente · retención 90 días</span></h2>
+      <div class="row" style="gap:14px;margin:8px 0 14px;flex-wrap:wrap">
+        <label class="muted" style="font-size:12px">Período
+          <select id="hDias"><option value="1">Hoy</option><option value="7" selected>7 días</option><option value="30">30 días</option><option value="90">90 días</option></select>
+        </label>
+        <label class="muted" style="font-size:12px">Nivel
+          <select id="hNivel"><option value="">Todos</option><option value="CRITICO">Crítico</option><option value="ALTO">Alto</option><option value="MEDIO">Medio</option></select>
+        </label>
+        <button class="btn" id="hRefrescar">↻ Actualizar</button>
+      </div>
+      <div class="tablewrap">
+        <table id="htabla"><thead><tr>
+          <th class="l">Fecha / Hora</th><th>Score</th><th class="l">Nivel</th><th class="l">Tarjeta</th><th class="l">Reglas</th>
+          <th>Ops</th><th>Rech.</th><th>Aprob.</th><th>Monto aprob.</th><th class="l">Canal</th><th class="l">Hora log</th>
+        </tr></thead><tbody></tbody></table>
+      </div>
+      <p class="count" id="hcnt"></p>
+    </div>
+  </div>
 </main>
 
 <div class="modal" id="modal"><div class="box">
@@ -160,6 +189,31 @@ function ver(i){
 }
 function cerrar(){$('modal').classList.remove('open');}
 $('modal').addEventListener('click',e=>{if(e.target.id==='modal')cerrar();});
+
+// --- Pestañas En vivo / Historial ---
+function fechaHora(ts){try{const d=new Date(ts);if(isNaN(d))return esc(ts||'');return d.toLocaleString('es-AR',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit'});}catch(e){return esc(ts||'');}}
+async function cargarHist(){
+ const dias=$('hDias').value,nivel=$('hNivel').value;
+ try{
+  const r=await fetch(BASE+'/api/fraude/historial?dias='+dias+(nivel?'&nivel='+nivel:'')+'&limit=2000',{cache:'no-store'});
+  const e=await r.json();const al=e.alertas||[];
+  $('htabla').tBodies[0].innerHTML=al.length?al.map(a=>'<tr><td class="l">'+fechaHora(a.ts)+'</td><td><span class="score '+claseScore(a.score)+'">'+a.score+'</span></td><td class="l">'+nivelTxt(a.score)+'</td><td class="l">'+esc(a.pan)+'</td><td class="l">'+(a.reglas||[]).map(r=>'<span class="chip">'+esc(r)+'</span>').join('')+'</td><td>'+fmt(a.ops)+'</td><td class="res-re">'+fmt(a.rechazos)+'</td><td class="res-ap">'+fmt(a.aprobadas)+'</td><td>'+fmt(a.monto_aprobado)+'</td><td class="l">'+esc(a.canal)+'</td><td class="l">'+esc(a.hora_log)+'</td></tr>').join(''):'<tr><td colspan="11" style="text-align:center;color:var(--muted);padding:26px">Sin alertas registradas en este período</td></tr>';
+  $('hcnt').textContent=fmt(al.length)+' alerta(s) · '+fmt(e.total||0)+' en total guardadas';
+ }catch(err){$('hcnt').textContent='No se pudo leer el historial del agente en '+BASE+'.';}
+}
+function mostrar(v){
+ const live=v==='live';
+ $('viewLive').style.display=live?'':'none';
+ $('viewHist').style.display=live?'none':'';
+ $('tabLive').style.background=live?'rgba(47,131,255,.16)':'';
+ $('tabHist').style.background=live?'':'rgba(47,131,255,.16)';
+ if(!live)cargarHist();
+}
+$('tabLive').onclick=()=>mostrar('live');
+$('tabHist').onclick=()=>mostrar('hist');
+$('hRefrescar').onclick=cargarHist;
+$('hDias').onchange=cargarHist;$('hNivel').onchange=cargarHist;
+
 tick();setInterval(tick,3000);
 </script>
 </body>
