@@ -109,7 +109,7 @@ tbody tr{border-bottom:1px solid #12293d;cursor:pointer}tbody tr:hover{backgroun
   <h2 id="mtit">Detalle de la tarjeta</h2>
   <p class="muted" id="msub" style="font-size:13px"></p>
   <div class="tablewrap" style="max-height:60vh">
-    <table><thead><tr><th class="l">Hora</th><th>MTI</th><th class="l">Canal</th><th>Monto</th><th>DE39</th><th class="l">Resultado</th><th class="l">Terminal</th><th class="l">Comercio</th></tr></thead>
+    <table><thead><tr><th class="l">Hora</th><th>MTI</th><th class="l">Tipo</th><th class="l">Canal</th><th>Monto</th><th>DE39</th><th class="l">Resultado</th><th class="l">Terminal</th><th class="l">Comercio</th></tr></thead>
     <tbody id="mbody"></tbody></table>
   </div>
   <div class="foot">Seguimiento: la agrupación usa un identificador de tarjeta enmascarado; nunca PAN completo.</div>
@@ -136,9 +136,9 @@ async function tick(){
   conexion(true);DATA=e;
   $('rtRed').textContent=e.red?('· Red '+String(e.red).replace('_ISO8583','')):'';
   $('reloj').textContent=e.reloj||'--:--:--';
-  const kpi=(lbl,val,cls)=>'<div class="kpi '+(cls||'')+'"><div class="lbl">'+lbl+'</div><div class="val">'+val+'</div></div>';
+  const kpi=(lbl,val,cls,sub)=>'<div class="kpi '+(cls||'')+'"><div class="lbl">'+lbl+(sub?' <span style="opacity:.55;font-weight:600;text-transform:none">· '+sub+'</span>':'')+'</div><div class="val">'+val+'</div></div>';
   $('kpis').innerHTML=
-    kpi('Tarjetas monitoreadas',fmt(e.tarjetas_monitoreadas))+
+    kpi('Tarjetas monitoreadas',fmt(e.tarjetas_monitoreadas),'','ventana 30 min')+
     kpi('En riesgo',fmt(e.en_riesgo))+
     kpi('Críticas',fmt(e.criticas),'crit')+
     kpi('Altas',fmt(e.altas),'alto')+
@@ -155,7 +155,7 @@ function ver(i){
   const x=(DATA&&DATA.tarjetas&&DATA.tarjetas[i]);if(!x)return;
   $('mtit').textContent='Tarjeta '+x.pan+' — Score '+x.score+' ('+nivelTxt(x.score)+')';
   $('msub').innerHTML='Reglas: '+(x.reglas_texto||x.reglas||[]).map(esc).join(' · ')+' — '+fmt(x.ops)+' ops / '+fmt(x.rechazos)+' rech / '+fmt(x.aprobadas)+' aprob · monto aprobado '+fmt(x.monto_aprobado);
-  $('mbody').innerHTML=(x.detalle||[]).map(o=>'<tr><td class="l">'+esc(o.hora)+'</td><td>'+esc(o.mti)+'</td><td class="l">'+esc(o.canal)+'</td><td>'+fmt(o.monto)+'</td><td>'+esc(o.de39)+'</td><td class="l '+(o.resultado==='APROBADA'?'res-ap':'res-re')+'">'+esc(o.resultado)+'</td><td class="l">'+esc(o.terminal)+'</td><td class="l">'+esc(o.comercio)+'</td></tr>').join('')||'<tr><td colspan="8" style="text-align:center;color:var(--muted)">Sin detalle</td></tr>';
+  $('mbody').innerHTML=(x.detalle||[]).map(o=>'<tr><td class="l">'+esc(o.hora)+'</td><td>'+esc(o.mti)+'</td><td class="l">'+esc(o.tipo)+'</td><td class="l">'+esc(o.canal)+'</td><td>'+fmt(o.monto)+'</td><td>'+esc(o.de39)+'</td><td class="l '+(o.resultado==='APROBADA'?'res-ap':'res-re')+'">'+esc(o.resultado)+'</td><td class="l">'+esc(o.terminal)+'</td><td class="l">'+esc(o.comercio)+'</td></tr>').join('')||'<tr><td colspan="9" style="text-align:center;color:var(--muted)">Sin detalle</td></tr>';
   $('modal').classList.add('open');
 }
 function cerrar(){$('modal').classList.remove('open');}
