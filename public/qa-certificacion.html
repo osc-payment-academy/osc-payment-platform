@@ -87,6 +87,8 @@ textarea{width:100%;min-height:90px;background:#07131f;border:1px solid var(--li
       <h2 style="margin:0">Batería de certificación</h2>
       <div class="row">
         <button class="btn" id="agregar">+ Caso</button>
+        <button class="btn" id="importar">Importar</button>
+        <input id="fileImport" type="file" accept=".json,application/json" style="display:none">
         <button class="btn" id="exportar">Exportar</button>
         <button class="btn primary" id="correr">▶ Correr batería</button>
       </div>
@@ -233,6 +235,22 @@ $('eGuardar').onclick=()=>{
 };
 function numlist(s){return (s||'').split(',').map(x=>parseInt(x.trim(),10)).filter(x=>!isNaN(x))}
 
+$('importar').onclick=()=>$('fileImport').click();
+$('fileImport').onchange=(e)=>{
+  const f=e.target.files[0];if(!f)return;const rd=new FileReader();
+  rd.onload=()=>{
+    try{
+      const j=JSON.parse(rd.result);
+      const casos=Array.isArray(j)?j:(j.casos||j.escenarios||[]);
+      if(!casos.length){alert('El archivo no tiene casos.');return}
+      BAT=casos.map(c=>({nombre:c.nombre||c.id||'Caso',trama:c.trama||'',
+        esperado:c.esperado?{de39:c.esperado.de39||'',obligatorios:c.esperado.obligatorios||[],prohibidos:c.esperado.prohibidos||[],de22:c.esperado.de22||c.de22Prefijo||''}:{de39:'',obligatorios:[],prohibidos:[]}}));
+      RES=[];guardarBat();pintarTabla();
+      $('foot').textContent='Importados '+BAT.length+' casos. Cargá las tramas (o generalas con el Constructor) y corré la batería.';
+    }catch(err){alert('JSON invalido: '+err.message)}
+  };
+  rd.readAsText(f);e.target.value='';
+};
 $('correr').onclick=correr;
 $('exportar').onclick=()=>{
   const filas=[['caso','estado','de39_esperado','de39_obtenido','ok','fallas','ms','error']];
