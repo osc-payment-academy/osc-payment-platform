@@ -89,6 +89,7 @@ textarea{width:100%;min-height:90px;background:#07131f;border:1px solid var(--li
         <button class="btn" id="agregar">+ Caso</button>
         <button class="btn" id="importar">Importar</button>
         <input id="fileImport" type="file" accept=".json,application/json" style="display:none">
+        <button class="btn" id="generar">⚙ Generar tramas</button>
         <button class="btn" id="exportar">Exportar</button>
         <button class="btn primary" id="correr">▶ Correr batería</button>
       </div>
@@ -171,9 +172,21 @@ function comparar(esp,p){
   return {checks,de39}
 }
 
+// Genera la trama de pedido desde el Constructor (link-hth) si el caso trae `gen`.
+function generarTrama(c){
+  if(!c.gen||!window.OSCLinkHth)return '';
+  try{
+    const o=OSCLinkHth.build(c.gen.kind,c.gen.ctx||{});
+    const req=(o.messages||[]).find(m=>/00$/.test(String(m.mti)))||(o.messages||[])[0];
+    return (req&&req.raw)||'';
+  }catch(e){return ''}
+}
 async function correrCaso(c){
   const inicio=Date.now();
-  if(!c.trama||c.trama.indexOf('ISO')<0){return {nombre:c.nombre,estado:'FAIL',err:'Trama vacía o sin ISO',checks:[],de39:'',ms:0,resp:''}}
+  let trama=c.trama;
+  if(!trama||trama.indexOf('ISO')<0){trama=generarTrama(c)}
+  if(!trama||trama.indexOf('ISO')<0){return {nombre:c.nombre,estado:'FAIL',err:'Sin trama: cargala a mano o usá un caso con generación (gen)',checks:[],de39:'',ms:0,resp:''}}
+  c=Object.assign({},c,{trama});
   let d;
   try{
     const body=JSON.stringify({host:CFG.host,puerto:Number(CFG.puerto),trama:c.trama,framing:CFG.framing,timeout_ms:8000});
@@ -243,13 +256,18 @@ $('fileImport').onchange=(e)=>{
       const j=JSON.parse(rd.result);
       const casos=Array.isArray(j)?j:(j.casos||j.escenarios||[]);
       if(!casos.length){alert('El archivo no tiene casos.');return}
-      BAT=casos.map(c=>({nombre:c.nombre||c.id||'Caso',trama:c.trama||'',
+      BAT=casos.map(c=>({nombre:c.nombre||c.id||'Caso',trama:c.trama||'',gen:c.gen||null,
         esperado:c.esperado?{de39:c.esperado.de39||'',obligatorios:c.esperado.obligatorios||[],prohibidos:c.esperado.prohibidos||[],de22:c.esperado.de22||c.de22Prefijo||''}:{de39:'',obligatorios:[],prohibidos:[]}}));
       RES=[];guardarBat();pintarTabla();
       $('foot').textContent='Importados '+BAT.length+' casos. Cargá las tramas (o generalas con el Constructor) y corré la batería.';
     }catch(err){alert('JSON invalido: '+err.message)}
   };
   rd.readAsText(f);e.target.value='';
+};
+$('generar').onclick=()=>{
+  let n=0;BAT.forEach(c=>{if((!c.trama||c.trama.indexOf('ISO')<0)&&c.gen){const t=generarTrama(c);if(t){c.trama=t;n++}}});
+  guardarBat();pintarTabla();
+  $('foot').textContent=n?('Tramas generadas con el Constructor: '+n+' caso(s).'):'No hay casos con generación (gen) pendientes. Los que tienen trama propia o no traen gen quedan como están.';
 };
 $('correr').onclick=correr;
 $('exportar').onclick=()=>{
