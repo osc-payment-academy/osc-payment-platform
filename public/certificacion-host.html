@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OSC · Certificación de Terminales (Simulador de Host)</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<style>
+:root{--bg:#06111d;--panel:#0b1827;--panel2:#0a1726;--line:#173149;--text:#f5f8fc;--muted:#9dafc2;--blue:#2f83ff;--green:#18d17e;--red:#ff5d6c;--amber:#f7b51c}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,Segoe UI,Arial,sans-serif;font-size:14px}
+.shell{max-width:1200px;margin:0 auto;padding:22px 18px 60px}
+a{color:var(--blue)}
+.top{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap}
+.eyebrow{color:var(--blue);font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin:0 0 2px}
+h1{margin:0;font-size:1.7rem}
+.muted{color:var(--muted)}
+.btn{background:#0d2238;border:1px solid var(--line);color:var(--text);border-radius:9px;padding:9px 14px;cursor:pointer;font:inherit}
+.btn:hover{background:#12304c}
+.btn.primary{background:var(--blue);border-color:var(--blue)}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;margin:16px 0}
+.cfg{display:none;gap:10px;flex-wrap:wrap;align-items:center;margin-top:10px}
+.cfg.open{display:flex}
+input,select{background:#07131f;border:1px solid var(--line);color:var(--text);border-radius:8px;padding:8px 10px;font:inherit}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:16px 0}
+@media(max-width:700px){.kpis{grid-template-columns:repeat(2,1fr)}}
+.kpi{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:14px}
+.kpi .lbl{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.06em}
+.kpi .val{font-size:1.9rem;font-weight:800;margin-top:4px}
+.kpi.ok .val{color:var(--green)}.kpi.fail .val{color:var(--red)}
+table{width:100%;border-collapse:collapse}
+th,td{padding:10px 12px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+th.l,td.l{text-align:left}
+thead th{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.05em}
+tbody tr{cursor:pointer}
+tbody tr:hover{background:rgba(255,255,255,.03)}
+.badge{display:inline-block;padding:3px 10px;border-radius:999px;font-weight:800;font-size:12px}
+.b-ok{background:rgba(24,209,126,.16);color:var(--green)}
+.b-fail{background:rgba(255,93,108,.16);color:var(--red)}
+.b-wait{background:rgba(157,175,194,.16);color:var(--muted)}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--green);display:inline-block}
+.dot.off{background:var(--red)}
+.chip{display:inline-block;background:#0d2238;border:1px solid var(--line);border-radius:6px;padding:1px 7px;margin:1px;font-size:12px}
+.chip.bad{background:rgba(255,93,108,.16);color:var(--red);border-color:transparent}
+.modal{position:fixed;inset:0;background:#000b;display:none;align-items:flex-start;justify-content:center;padding:40px 16px;z-index:10}
+.modal.open{display:flex}
+.modal .box{background:var(--panel);border:1px solid var(--line);border-radius:14px;max-width:1000px;width:100%;max-height:85vh;overflow:auto;padding:20px}
+.modal .x{float:right;cursor:pointer;color:var(--muted);font-size:20px}
+.ok{color:var(--green)}.bad{color:var(--red)}.warn{color:var(--amber)}
+.foot{color:var(--muted);font-size:12px;margin-top:14px}
+textarea{width:100%;min-height:70px;background:#07131f;border:1px solid var(--line);color:var(--text);border-radius:8px;padding:10px;font-family:ui-monospace,Consolas,monospace;font-size:12px}
+.fld{display:grid;grid-template-columns:70px 90px 1fr;gap:8px;padding:6px 8px;border-bottom:1px solid var(--line);align-items:center}
+.fld .de{font-weight:700}
+.fld .val{font-family:ui-monospace,Consolas,monospace;font-size:12px;color:var(--muted);word-break:break-all}
+</style>
+</head>
+<body>
+<main class="shell">
+  <header class="top">
+    <div>
+      <p class="eyebrow">OSC · CERTIFICACIÓN DE TERMINALES · Red LINK</p>
+      <h1>Simulador de Host <span class="row" style="display:inline-flex;font-size:12px;font-weight:400"><span class="dot off" id="dot"></span><span id="estadoTxt" class="muted">agente sin verificar</span></span></h1>
+      <p class="muted">La terminal (POS/ATM del comercio o integrador) genera la trama ISO 8583 y la envía al agente, que actúa como host: la valida contra el manual oficial LINK, arma la respuesta 0210 y emite un veredicto de cumplimiento campo a campo.</p>
+    </div>
+    <div class="row">
+      <button class="btn" id="btnCfg">⚙ Configurar</button>
+      <button class="btn" id="btnRefrescar">↻ Refrescar</button>
+      <button class="btn" id="btnAuto">⏱ Auto: OFF</button>
+    </div>
+  </header>
+
+  <div class="cfg panel" id="cfgPanel">
+    <label class="muted">Agente (reporte HTTP)</label>
+    <input id="cfgAgente" size="34" placeholder="http://localhost:8083">
+    <button class="btn" id="btnPing">Verificar</button>
+    <span class="muted" id="cfgHint"></span>
+  </div>
+
+  <section class="kpis">
+    <div class="kpi"><div class="lbl">Tramas recibidas</div><div class="val" id="kTotal">—</div></div>
+    <div class="kpi ok"><div class="lbl">Cumplen el manual</div><div class="val" id="kOk">—</div></div>
+    <div class="kpi fail"><div class="lbl">No cumplen</div><div class="val" id="kFail">—</div></div>
+    <div class="kpi"><div class="lbl">% cumplimiento</div><div class="val" id="kPct">—</div></div>
+  </section>
+
+  <div class="panel">
+    <div class="row" style="justify-content:space-between">
+      <strong>Intercambios recibidos</strong>
+      <span class="muted" id="verLbl"></span>
+    </div>
+    <div style="overflow:auto;margin-top:10px">
+      <table>
+        <thead><tr>
+          <th class="l">Hora</th><th class="l">Origen</th><th class="l">MTI</th>
+          <th class="l">DE3</th><th class="l">Tipo</th><th class="l">Veredicto</th>
+          <th>Faltan</th><th class="l">Resp.</th>
+        </tr></thead>
+        <tbody id="tbody"><tr><td class="l muted" colspan="8">Sin datos. Verificá el agente y enviá una trama desde la terminal.</td></tr></tbody>
+      </table>
+    </div>
+    <p class="foot">El agente escucha como host (puerto configurable, p. ej. 9200) y publica este reporte en <code>http://localhost:8083/api/certif/estado</code>. Nada sale del equipo.</p>
+  </div>
+</main>
+
+<div class="modal" id="modal"><div class="box">
+  <span class="x" id="modalX">✕</span>
+  <h2 id="mTit" style="margin:0 0 4px">Detalle</h2>
+  <p class="muted" id="mSub" style="margin:0 0 14px"></p>
+  <div class="row" style="margin-bottom:12px">
+    <button class="btn" id="btnReporte">⬇ Descargar reporte</button>
+  </div>
+  <h3 style="margin:10px 0 6px">Validación campo a campo</h3>
+  <div id="mCampos"></div>
+  <h3 style="margin:16px 0 6px">Trama recibida (0200)</h3>
+  <textarea id="mIn" readonly></textarea>
+  <h3 style="margin:16px 0 6px">Respuesta enviada (0210)</h3>
+  <textarea id="mOut" readonly></textarea>
+</div></div>
+
+<script>
+const CFG_KEY='osc_certif_cfg';
+const cfg=Object.assign({agente:'http://localhost:8083'},JSON.parse(localStorage.getItem(CFG_KEY)||'{}'));
+const $=s=>document.querySelector(s);
+let datos=[],autoT=null;
+
+function guardar(){localStorage.setItem(CFG_KEY,JSON.stringify(cfg));}
+$('#cfgAgente').value=cfg.agente;
+$('#btnCfg').onclick=()=>$('#cfgPanel').classList.toggle('open');
+$('#cfgAgente').oninput=e=>{cfg.agente=e.target.value.trim();guardar();};
+
+$('#btnPing').onclick=async()=>{
+  $('#cfgHint').textContent='verificando…';
+  try{const r=await fetch(cfg.agente.replace(/\/$/,'')+'/api/certif/ping');const j=await r.json();
+    $('#cfgHint').innerHTML=j.ok?`<span class="ok">OK · ${j.version||''}</span>`:'<span class="bad">sin respuesta</span>';
+    setDot(!!j.ok);}catch(e){$('#cfgHint').innerHTML='<span class="bad">no se pudo conectar</span>';setDot(false);}
+};
+function setDot(on){$('#dot').classList.toggle('off',!on);$('#estadoTxt').textContent=on?'agente en línea':'agente sin conexión';}
+
+async function refrescar(){
+  try{
+    const r=await fetch(cfg.agente.replace(/\/$/,'')+'/api/certif/estado?limit=300');
+    const j=await r.json();setDot(true);
+    datos=j.veredictos||[];
+    pintarKPIs(j);pintarTabla();
+    $('#verLbl').textContent=`${datos.length} de ${j.total||datos.length}`;
+  }catch(e){setDot(false);$('#verLbl').textContent='sin conexión con el agente';}
+}
+
+function pintarKPIs(j){
+  const tot=j.total||datos.length, ok=datos.filter(v=>v.cumple).length, fail=datos.length-ok;
+  $('#kTotal').textContent=tot;$('#kOk').textContent=ok;$('#kFail').textContent=fail;
+  $('#kPct').textContent=datos.length?Math.round(ok/datos.length*100)+'%':'—';
+}
+
+function pintarTabla(){
+  const tb=$('#tbody');
+  if(!datos.length){tb.innerHTML='<tr><td class="l muted" colspan="8">Sin datos todavía.</td></tr>';return;}
+  tb.innerHTML='';
+  datos.forEach((v,i)=>{
+    const tr=document.createElement('tr');tr.onclick=()=>abrir(i);
+    const faltan=(v.faltantes||[]).concat(v.vacios||[]).concat(v.presentes_prohibidos||[]);
+    const bad=v.error?`<span class="badge b-wait">ERROR</span>`:(v.cumple?'<span class="badge b-ok">CUMPLE</span>':'<span class="badge b-fail">NO CUMPLE</span>');
+    tr.innerHTML=`<td class="l">${v.hora||''}</td><td class="l muted">${(v.remoto||'').split(':')[0]}</td>
+      <td class="l">${v.mti||''}</td><td class="l">${v.de3||''}</td><td class="l">${v.tipo_desc||''}</td>
+      <td class="l">${bad}</td><td>${faltan.length?faltan.join(', '):'—'}</td><td class="l">${v.mti_resp||'—'}</td>`;
+    tb.appendChild(tr);
+  });
+}
+
+function abrir(i){
+  const v=datos[i];
+  $('#mTit').textContent=`${v.mti} · DE3 ${v.de3} · ${v.tipo_desc}`;
+  $('#mSub').innerHTML=(v.error?`<span class="bad">${v.error}</span> · `:'')+
+    (v.cumple?'<span class="ok">Cumple el manual</span>':'<span class="bad">No cumple el manual</span>')+
+    ` · ${v.fecha} ${v.hora} · origen ${v.remoto||'—'}`;
+  const c=$('#mCampos');c.innerHTML='';
+  (v.campos||[]).forEach(f=>{
+    const mapa={ok:['✔ OK','ok'],falta:['✖ FALTA','bad'],vacio:['✖ VACÍO','bad'],prohibido:['✖ PROHIBIDO','bad']};
+    const [tx,cls]=mapa[f.estado]||[f.estado,'warn'];
+    const row=document.createElement('div');row.className='fld';
+    row.innerHTML=`<span class="de">DE${f.de}</span><span class="${cls}">${tx}</span><span class="val">${f.valor?escapar(f.valor):(f.obligatorio?'(obligatorio)':'')}</span>`;
+    c.appendChild(row);
+  });
+  if(!(v.campos||[]).length)c.innerHTML='<p class="muted">Sin campos (revisá el error).</p>';
+  $('#mIn').value=v.trama_in||'';
+  $('#mOut').value=v.respuesta||'(sin respuesta)';
+  $('#btnReporte').onclick=()=>descargarReporte(v);
+  $('#modal').classList.add('open');
+}
+function escapar(s){return String(s).replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]));}
+$('#modalX').onclick=()=>$('#modal').classList.remove('open');
+$('#modal').onclick=e=>{if(e.target.id==='modal')$('#modal').classList.remove('open');};
+
+function descargarReporte(v){
+  const L=[];
+  L.push('OSC PAYMENT ACADEMY — REPORTE DE CERTIFICACIÓN DE TERMINAL (Red LINK)');
+  L.push('='.repeat(68));
+  L.push(`Fecha/hora   : ${v.fecha} ${v.hora}`);
+  L.push(`Origen       : ${v.remoto||'—'}`);
+  L.push(`MTI recibido : ${v.mti}   →   MTI respuesta: ${v.mti_resp||'—'}`);
+  L.push(`DE3          : ${v.de3} (${v.tipo_desc})`);
+  L.push(`Veredicto    : ${v.error?'ERROR — '+v.error:(v.cumple?'CUMPLE EL MANUAL':'NO CUMPLE EL MANUAL')}`);
+  L.push('');
+  L.push('Validación campo a campo:');
+  (v.campos||[]).forEach(f=>{
+    const e={ok:'OK',falta:'FALTA',vacio:'VACÍO',prohibido:'PROHIBIDO'}[f.estado]||f.estado;
+    L.push(`  DE${String(f.de).padEnd(4)} ${e.padEnd(10)} ${f.valor||''}`);
+  });
+  if((v.faltantes||[]).length)L.push('\nFaltantes: '+v.faltantes.join(', '));
+  if((v.vacios||[]).length)L.push('Vacíos: '+v.vacios.join(', '));
+  if((v.presentes_prohibidos||[]).length)L.push('Prohibidos presentes: '+v.presentes_prohibidos.join(', '));
+  L.push('');
+  L.push('Trama recibida (0200):');L.push(v.trama_in||'');
+  L.push('');L.push('Respuesta enviada (0210):');L.push(v.respuesta||'');
+  const blob=new Blob([L.join('\n')],{type:'text/plain'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download=`certif_${v.de3}_${(v.hora||'').replace(/:/g,'')}.txt`;a.click();
+}
+
+$('#btnRefrescar').onclick=refrescar;
+$('#btnAuto').onclick=function(){
+  if(autoT){clearInterval(autoT);autoT=null;this.textContent='⏱ Auto: OFF';}
+  else{autoT=setInterval(refrescar,3000);this.textContent='⏱ Auto: ON';refrescar();}
+};
+$('#btnPing').click();
+refrescar();
+</script>
+</body>
+</html>
