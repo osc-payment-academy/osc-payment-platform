@@ -33,6 +33,7 @@
     { href: "authorization-analytics.html", icon: "📊", label: "Análisis Diario de Autorizaciones", product: "authorizationAnalytics" },
     { href: "monitoreo-vivo.html", icon: "🔴", label: "Monitoreo en Vivo de Autorizaciones", product: "liveMonitoring" },
     { href: "monitoreo-fraude.html", icon: "🛡️", label: "Monitoreo en Vivo de Fraude", product: "fraudMonitor" },
+    { href: "qa-certificacion.html", icon: "🧪", label: "QA / Certificación LINK", product: "qaCertificacion" },
     { section: "Administración", adminSection: true },
     { href: "uso-licencias.html", icon: "📈", label: "Uso de licencias", usage: true },
     { href: "evaluaciones-informe.html", icon: "📊", label: "Informe de evaluaciones", usage: true },

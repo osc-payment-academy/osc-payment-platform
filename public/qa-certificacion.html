@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OSC · QA / Certificación LINK</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<style>
+:root{--bg:#06111d;--panel:#0b1827;--panel2:#0a1726;--line:#173149;--text:#f5f8fc;--muted:#9dafc2;--blue:#2f83ff;--green:#18d17e;--red:#ff5d6c;--amber:#f7b51c}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,Segoe UI,Arial,sans-serif;font-size:14px}
+.shell{max-width:1200px;margin:0 auto;padding:22px 18px 60px}
+a{color:var(--blue)}
+.top{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap}
+.eyebrow{color:var(--blue);font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin:0 0 2px}
+h1{margin:0;font-size:1.7rem}
+.muted{color:var(--muted)}
+.btn{background:#0d2238;border:1px solid var(--line);color:var(--text);border-radius:9px;padding:9px 14px;cursor:pointer;font:inherit}
+.btn:hover{background:#12304c}
+.btn.primary{background:var(--blue);border-color:var(--blue)}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;margin:16px 0}
+.cfg{display:none;gap:10px;flex-wrap:wrap;align-items:center;margin-top:10px}
+.cfg.open{display:flex}
+input,select{background:#07131f;border:1px solid var(--line);color:var(--text);border-radius:8px;padding:8px 10px;font:inherit}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:16px 0}
+@media(max-width:700px){.kpis{grid-template-columns:repeat(2,1fr)}}
+.kpi{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:14px}
+.kpi .lbl{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.06em}
+.kpi .val{font-size:1.9rem;font-weight:800;margin-top:4px}
+.kpi.ok .val{color:var(--green)}.kpi.fail .val{color:var(--red)}
+table{width:100%;border-collapse:collapse}
+th,td{padding:10px 12px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+th.l,td.l{text-align:left}
+thead th{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.05em}
+tbody tr{cursor:pointer}
+tbody tr:hover{background:rgba(255,255,255,.03)}
+.badge{display:inline-block;padding:3px 10px;border-radius:999px;font-weight:800;font-size:12px}
+.b-ok{background:rgba(24,209,126,.16);color:var(--green)}
+.b-fail{background:rgba(255,93,108,.16);color:var(--red)}
+.b-wait{background:rgba(157,175,194,.16);color:var(--muted)}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--green);display:inline-block}
+.dot.off{background:var(--red)}
+.chip{display:inline-block;background:#0d2238;border:1px solid var(--line);border-radius:6px;padding:1px 7px;margin:1px;font-size:12px}
+.modal{position:fixed;inset:0;background:#000b;display:none;align-items:flex-start;justify-content:center;padding:40px 16px;z-index:10}
+.modal.open{display:flex}
+.modal .box{background:var(--panel);border:1px solid var(--line);border-radius:14px;max-width:1000px;width:100%;max-height:85vh;overflow:auto;padding:20px}
+.modal .x{float:right;cursor:pointer;color:var(--muted);font-size:20px}
+.ok{color:var(--green)}.bad{color:var(--red)}
+.foot{color:var(--muted);font-size:12px;margin-top:14px}
+textarea{width:100%;min-height:90px;background:#07131f;border:1px solid var(--line);color:var(--text);border-radius:8px;padding:10px;font-family:ui-monospace,Consolas,monospace;font-size:12px}
+</style>
+</head>
+<body>
+<main class="shell">
+  <header class="top">
+    <div>
+      <p class="eyebrow">OSC · QA / CERTIFICACIÓN · Red LINK</p>
+      <h1>QA / Certificación LINK <span class="row" style="display:inline-flex;font-size:12px;font-weight:400"><span class="dot off" id="dot"></span><span id="estadoTxt" class="muted">agente sin verificar</span></span></h1>
+      <p class="muted">Corre la batería contra el ambiente de QA del banco (vía el Agente QA), interpreta la respuesta y compara campo a campo contra el manual.</p>
+      <div class="cfg" id="cfg">
+        <label class="muted" style="font-size:12px">Agente <input id="agente" size="22" placeholder="http://localhost:8082"></label>
+        <label class="muted" style="font-size:12px">Host QA <input id="host" size="14" placeholder="10.0.0.5"></label>
+        <label class="muted" style="font-size:12px">Puerto <input id="puerto" size="6" placeholder="7000"></label>
+        <label class="muted" style="font-size:12px">Framing
+          <select id="framing"><option value="none">none</option><option value="2bin">2bin</option><option value="4ascii">4ascii</option></select>
+        </label>
+        <button class="btn" id="guardar">Guardar</button>
+        <button class="btn" id="probar">Probar agente</button>
+      </div>
+    </div>
+    <div class="row">
+      <button class="btn" id="gear" title="Configurar">⚙ Config</button>
+      <a class="btn" href="index.html">← Plataforma</a>
+    </div>
+  </header>
+
+  <section class="kpis">
+    <div class="kpi"><div class="lbl">Casos</div><div class="val" id="kTot">0</div></div>
+    <div class="kpi ok"><div class="lbl">PASS</div><div class="val" id="kPass">0</div></div>
+    <div class="kpi fail"><div class="lbl">FAIL</div><div class="val" id="kFail">0</div></div>
+    <div class="kpi"><div class="lbl">Pendientes</div><div class="val" id="kPend">0</div></div>
+  </section>
+
+  <div class="panel">
+    <div class="row" style="justify-content:space-between">
+      <h2 style="margin:0">Batería de certificación</h2>
+      <div class="row">
+        <button class="btn" id="agregar">+ Caso</button>
+        <button class="btn" id="exportar">Exportar</button>
+        <button class="btn primary" id="correr">▶ Correr batería</button>
+      </div>
+    </div>
+    <div class="row" id="editor" style="display:none;margin-top:12px;align-items:flex-start">
+      <div style="flex:1;min-width:280px">
+        <label class="muted" style="font-size:12px">Nombre</label>
+        <input id="eNombre" style="width:100%" placeholder="C01 Compra chip">
+        <label class="muted" style="font-size:12px;margin-top:8px;display:block">Trama a enviar (desde ISO)</label>
+        <textarea id="eTrama" placeholder="ISO0160000130200..."></textarea>
+      </div>
+      <div style="flex:1;min-width:240px">
+        <label class="muted" style="font-size:12px">DE39 esperado</label>
+        <input id="eDe39" style="width:100%" placeholder="00">
+        <label class="muted" style="font-size:12px;margin-top:8px;display:block">Obligatorios (DE, coma)</label>
+        <input id="eObl" style="width:100%" placeholder="3,4,11,37,39,41">
+        <label class="muted" style="font-size:12px;margin-top:8px;display:block">Prohibidos (DE, coma)</label>
+        <input id="eProh" style="width:100%" placeholder="">
+        <label class="muted" style="font-size:12px;margin-top:8px;display:block">DE22 prefijo (opcional)</label>
+        <input id="eDe22" style="width:100%" placeholder="">
+        <div class="row" style="margin-top:10px"><button class="btn primary" id="eGuardar">Guardar caso</button><button class="btn" id="eCancelar">Cancelar</button></div>
+      </div>
+    </div>
+    <div style="overflow:auto;margin-top:12px">
+      <table id="tabla"><thead><tr>
+        <th class="l">Caso</th><th class="l">Estado</th><th>DE39 esp.</th><th>DE39 obt.</th><th>Campos OK</th><th>Fallas</th><th>ms</th><th class="l">Detalle</th>
+      </tr></thead><tbody></tbody></table>
+    </div>
+    <p class="foot" id="foot"></p>
+  </div>
+</main>
+
+<div class="modal" id="modal"><div class="box">
+  <span class="x" onclick="cerrar()">✕</span>
+  <h2 id="mtit">Detalle del caso</h2>
+  <p class="muted" id="msub" style="font-size:13px"></p>
+  <div style="overflow:auto;max-height:50vh">
+    <table><thead><tr><th class="l">Verificación</th><th class="l">Esperado</th><th class="l">Obtenido</th><th class="l">Resultado</th></tr></thead>
+    <tbody id="mbody"></tbody></table>
+  </div>
+  <h3 style="margin:16px 0 6px;font-size:14px">Campos de la respuesta</h3>
+  <div style="overflow:auto;max-height:40vh">
+    <table><thead><tr><th>DE</th><th class="l">Nombre</th><th class="l">Valor</th></tr></thead><tbody id="mcampos"></tbody></table>
+  </div>
+</div></div>
+
+<script src="js/link-hth.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let CFG={agente:'http://localhost:8082',host:'',puerto:'',framing:'none'};
+try{CFG=Object.assign(CFG,JSON.parse(localStorage.getItem('osc_qa_cfg')||'{}'))}catch(e){}
+function pintarCfg(){$('agente').value=CFG.agente;$('host').value=CFG.host;$('puerto').value=CFG.puerto;$('framing').value=CFG.framing}
+pintarCfg();
+$('gear').onclick=()=>$('cfg').classList.toggle('open');
+$('guardar').onclick=()=>{CFG={agente:$('agente').value.trim().replace(/\/$/,''),host:$('host').value.trim(),puerto:$('puerto').value.trim(),framing:$('framing').value};try{localStorage.setItem('osc_qa_cfg',JSON.stringify(CFG))}catch(e){}$('cfg').classList.remove('open')};
+$('probar').onclick=async()=>{try{const r=await fetch(CFG.agente+'/api/qa/ping',{cache:'no-store'});const d=await r.json();conexion(!!d.ok,d.version||'')}catch(e){conexion(false)}};
+function conexion(ok,v){$('dot').className='dot'+(ok?'':' off');$('estadoTxt').textContent=ok?('agente OK '+(v||'')):'agente no responde'}
+
+// --- Batería (editable, persistida en localStorage) ---
+const BATERIA_DEFAULT=[
+ {nombre:'C-DEBIN F3 (cashout)',trama:'ISO0160000130200',esperado:{de39:'00',obligatorios:[3,4,11,37,39,41],prohibidos:[],de22:''},nota:'Pegá tu trama completa desde ISO en el editor.'}
+];
+let BAT=[];try{BAT=JSON.parse(localStorage.getItem('osc_qa_bateria')||'null')||BATERIA_DEFAULT}catch(e){BAT=BATERIA_DEFAULT}
+let RES=[]; // resultados por caso
+function guardarBat(){try{localStorage.setItem('osc_qa_bateria',JSON.stringify(BAT))}catch(e){}}
+
+const MTIresp=t=>{const i=t.indexOf('ISO');return i>=0&&t.length>=i+16?t.slice(i+12,i+16):''};
+function parseTrama(t){try{return OSCLinkHth.parse(t)}catch(e){return{errors:[String(e)],fields:[]}}}
+function mapaCampos(p){const m={};(p.fields||[]).forEach(f=>{m[f.num!==undefined?f.num:f.de]=f});return m}
+
+// Compara la respuesta parseada contra lo esperado -> lista de checks
+function comparar(esp,p){
+  const m=mapaCampos(p),checks=[];
+  const de39=(m[39]&&(m[39].value||'').trim())||'';
+  if(esp.de39){checks.push({k:'DE39 (código de respuesta)',esp:esp.de39,obt:de39||'(ausente)',ok:de39===esp.de39})}
+  (esp.obligatorios||[]).forEach(de=>{const pres=!!m[de]&&String(m[de].value).trim()!=='';checks.push({k:'DE'+de+' presente',esp:'presente',obt:pres?'presente':'ausente',ok:pres})});
+  (esp.prohibidos||[]).forEach(de=>{const pres=!!m[de];checks.push({k:'DE'+de+' NO debe venir',esp:'ausente',obt:pres?'presente':'ausente',ok:!pres})});
+  if(esp.de22){const v=(m[22]&&(m[22].value||'').trim())||'';checks.push({k:'DE22 prefijo',esp:esp.de22,obt:v||'(ausente)',ok:v.startsWith(esp.de22)})}
+  return {checks,de39}
+}
+
+async function correrCaso(c){
+  const inicio=Date.now();
+  if(!c.trama||c.trama.indexOf('ISO')<0){return {nombre:c.nombre,estado:'FAIL',err:'Trama vacía o sin ISO',checks:[],de39:'',ms:0,resp:''}}
+  let d;
+  try{
+    const body=JSON.stringify({host:CFG.host,puerto:Number(CFG.puerto),trama:c.trama,framing:CFG.framing,timeout_ms:8000});
+    const r=await fetch(CFG.agente+'/api/qa/enviar',{method:'POST',headers:{'Content-Type':'application/json'},body});
+    d=await r.json();
+  }catch(e){return {nombre:c.nombre,estado:'FAIL',err:'No se pudo hablar con el agente ('+CFG.agente+')',checks:[],de39:'',ms:Date.now()-inicio,resp:''}}
+  if(!d.ok||!d.respuesta){return {nombre:c.nombre,estado:'FAIL',err:d.error||'sin respuesta del host',checks:[],de39:'',ms:d.ms||0,resp:d.respuesta||''}}
+  const p=parseTrama(d.respuesta);
+  const {checks,de39}=comparar(c.esperado||{},p);
+  const pass=checks.length>0&&checks.every(x=>x.ok);
+  return {nombre:c.nombre,estado:pass?'PASS':'FAIL',checks,de39,ms:d.ms||0,resp:d.respuesta,parsed:p,esperado:c.esperado};
+}
+
+async function correr(){
+  RES=[];pintarTabla();$('foot').textContent='Corriendo...';
+  for(let i=0;i<BAT.length;i++){RES[i]=await correrCaso(BAT[i]);pintarTabla()}
+  $('foot').textContent='Batería finalizada · '+new Date().toLocaleString('es-AR');
+}
+
+function pintarTabla(){
+  let pass=0,fail=0,pend=0;
+  $('tabla').tBodies[0].innerHTML=BAT.map((c,i)=>{
+    const r=RES[i];
+    let estado='<span class="badge b-wait">pendiente</span>',de39='',ok='',fallas='',ms='';
+    if(r){
+      if(r.estado==='PASS'){pass++;estado='<span class="badge b-ok">PASS</span>'}else{fail++;estado='<span class="badge b-fail">FAIL</span>'}
+      de39=esc(r.de39||'');
+      const okN=(r.checks||[]).filter(x=>x.ok).length,fN=(r.checks||[]).filter(x=>!x.ok).length;
+      ok=okN;fallas=fN?('<span class="bad">'+fN+'</span>'):'0';ms=r.ms;
+      if(r.err)fallas='<span class="bad" title="'+esc(r.err)+'">error</span>';
+    }else{pend++}
+    return '<tr onclick="ver('+i+')"><td class="l">'+esc(c.nombre)+'</td><td class="l">'+estado+'</td><td>'+esc((c.esperado&&c.esperado.de39)||'')+'</td><td>'+de39+'</td><td>'+ok+'</td><td>'+fallas+'</td><td>'+ms+'</td><td class="l muted">ver →</td></tr>';
+  }).join('')||'<tr><td colspan="8" class="muted" style="text-align:center;padding:24px">Sin casos. Agregá uno con "+ Caso".</td></tr>';
+  $('kTot').textContent=BAT.length;$('kPass').textContent=pass;$('kFail').textContent=fail;$('kPend').textContent=pend;
+}
+
+function ver(i){
+  const c=BAT[i],r=RES[i];
+  $('mtit').textContent=c.nombre;
+  if(!r){$('msub').textContent='Caso no ejecutado todavía. Corré la batería.';$('mbody').innerHTML='';$('mcampos').innerHTML='';$('modal').classList.add('open');return}
+  $('msub').innerHTML=(r.err?'<span class="bad">'+esc(r.err)+'</span> · ':'')+'MTI respuesta '+esc(MTIresp(r.resp||''))+' · '+r.ms+' ms';
+  $('mbody').innerHTML=(r.checks||[]).map(x=>'<tr><td class="l">'+esc(x.k)+'</td><td class="l">'+esc(x.esp)+'</td><td class="l">'+esc(x.obt)+'</td><td class="l '+(x.ok?'ok':'bad')+'">'+(x.ok?'✔ OK':'✖ FALLA')+'</td></tr>').join('')||'<tr><td colspan="4" class="muted">Sin verificaciones (definí obligatorios/DE39 esperado en el caso).</td></tr>';
+  const p=r.parsed||{};
+  $('mcampos').innerHTML=(p.fields||[]).map(f=>'<tr><td>'+esc(f.num!==undefined?f.num:f.de)+'</td><td class="l">'+esc(f.name||'')+'</td><td class="l">'+esc(String(f.value||'').trim().slice(0,60))+'</td></tr>').join('')||'<tr><td colspan="3" class="muted">La respuesta no se pudo parsear.</td></tr>';
+  $('modal').classList.add('open');
+}
+function cerrar(){$('modal').classList.remove('open')}
+$('modal').addEventListener('click',e=>{if(e.target.id==='modal')cerrar()});
+
+// Editor de casos
+let editIdx=-1;
+$('agregar').onclick=()=>{editIdx=-1;$('eNombre').value='';$('eTrama').value='';$('eDe39').value='00';$('eObl').value='3,4,11,37,39,41';$('eProh').value='';$('eDe22').value='';$('editor').style.display='flex'};
+$('eCancelar').onclick=()=>{$('editor').style.display='none'};
+$('eGuardar').onclick=()=>{
+  const caso={nombre:$('eNombre').value.trim()||('Caso '+(BAT.length+1)),trama:$('eTrama').value.trim(),
+    esperado:{de39:$('eDe39').value.trim(),obligatorios:numlist($('eObl').value),prohibidos:numlist($('eProh').value),de22:$('eDe22').value.trim()}};
+  if(editIdx>=0)BAT[editIdx]=caso;else BAT.push(caso);
+  guardarBat();$('editor').style.display='none';pintarTabla();
+};
+function numlist(s){return (s||'').split(',').map(x=>parseInt(x.trim(),10)).filter(x=>!isNaN(x))}
+
+$('correr').onclick=correr;
+$('exportar').onclick=()=>{
+  const filas=[['caso','estado','de39_esperado','de39_obtenido','ok','fallas','ms','error']];
+  BAT.forEach((c,i)=>{const r=RES[i]||{};filas.push([c.nombre,r.estado||'pendiente',(c.esperado&&c.esperado.de39)||'',r.de39||'',(r.checks||[]).filter(x=>x.ok).length,(r.checks||[]).filter(x=>!x.ok).length,r.ms||'',r.err||''])});
+  const csv=filas.map(f=>f.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='qa-certificacion.csv';a.click();
+};
+pintarTabla();$('probar').onclick();
+</script>
+</body>
+</html>
