@@ -1,0 +1,17 @@
+# OSC - Analisis Diario de Fraude (config propio del agente, independiente del en-vivo)
+Formato=LINK_ISO8583
+CarpetaEntrada=C:\OSC\logs
+PatronNombre=trx-{fecha}.log
+FormatoFecha=yyyy-MM-dd
+# Fecha=2026-10-19   ; vacio = hoy (se puede pisar con --fecha o desde el dashboard)
+
+# Puerto propio del dashboard (distinto del en-vivo 8081)
+PuertoDashboard=8090
+
+# Umbral para listar tarjetas (score minimo del pico del dia)
+FraudeScoreMinListar=30
+
+# Parametria de reglas (si se omite, usa los defaults del motor; mismas claves que el en-vivo)
+FraudeGeoVentanaMin=30
+FraudeGeoCiudadesN=2
+FraudeGeoPaisesN=2
