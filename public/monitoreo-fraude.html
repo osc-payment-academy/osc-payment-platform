@@ -63,7 +63,7 @@ tbody tr{border-bottom:1px solid #12293d;cursor:pointer}tbody tr:hover{backgroun
       <h1>Monitoreo en Vivo de Fraude
         <span class="live"><span class="dot off" id="dot"></span><span id="estadoTxt">conectando…</span></span>
       </h1>
-      <p class="muted">Patrones transaccionales de riesgo en tiempo real. Reglas F01–F10, Risk Score 0–100 y semáforo. No bloquea: alerta y prioriza para el analista.</p>
+      <p class="muted">Patrones transaccionales de riesgo en tiempo real. Reglas F01–F12, Risk Score 0–100 y semáforo. No bloquea: alerta y prioriza para el analista.</p>
       <div class="cfg" id="cfg">
         <label class="muted" style="font-size:12px">URL del agente</label>
         <input id="base" type="text" size="30" placeholder="http://localhost:8080">
@@ -138,7 +138,7 @@ tbody tr{border-bottom:1px solid #12293d;cursor:pointer}tbody tr:hover{backgroun
   <h2 id="mtit">Detalle de la tarjeta</h2>
   <p class="muted" id="msub" style="font-size:13px"></p>
   <div class="tablewrap" style="max-height:60vh">
-    <table><thead><tr><th class="l">Hora</th><th>MTI</th><th class="l">Tipo</th><th class="l">Canal</th><th>Monto</th><th>DE39</th><th class="l">Resultado</th><th class="l">Terminal</th><th class="l">Comercio</th></tr></thead>
+    <table><thead><tr><th class="l">Hora</th><th>MTI</th><th class="l">DE3</th><th class="l">Tipo</th><th class="l">Canal</th><th>Monto</th><th>DE39</th><th class="l">Resultado</th><th class="l">Terminal</th><th class="l">Comercio</th><th class="l">Ubicación</th></tr></thead>
     <tbody id="mbody"></tbody></table>
   </div>
   <div class="foot">Seguimiento: la agrupación usa un identificador de tarjeta enmascarado; nunca PAN completo.</div>
@@ -148,6 +148,7 @@ tbody tr{border-bottom:1px solid #12293d;cursor:pointer}tbody tr:hover{backgroun
 const $=id=>document.getElementById(id);
 const fmt=n=>new Intl.NumberFormat('es-AR').format(Number(n||0));
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const ubic=o=>{const c=(o.ciudad||'').trim(),p=(o.pais||'').trim();return c?(p?c+' · '+p:c):(p||'—');};
 let BASE='http://localhost:8081';try{BASE=localStorage.getItem('osc_fraude_base')||BASE;}catch(e){}
 $('base').value=BASE;
 $('gear').onclick=()=>$('cfg').classList.toggle('open');
@@ -184,7 +185,7 @@ function ver(i){
   const x=(DATA&&DATA.tarjetas&&DATA.tarjetas[i]);if(!x)return;
   $('mtit').textContent='Tarjeta '+x.pan+' — Score '+x.score+' ('+nivelTxt(x.score)+')';
   $('msub').innerHTML='Reglas: '+(x.reglas_texto||x.reglas||[]).map(esc).join(' · ')+' — '+fmt(x.ops)+' ops / '+fmt(x.rechazos)+' rech / '+fmt(x.aprobadas)+' aprob · monto aprobado '+fmt(x.monto_aprobado);
-  $('mbody').innerHTML=(x.detalle||[]).map(o=>'<tr><td class="l">'+esc(o.hora)+'</td><td>'+esc(o.mti)+'</td><td class="l">'+esc(o.tipo)+'</td><td class="l">'+esc(o.canal)+'</td><td>'+fmt(o.monto)+'</td><td>'+esc(o.de39)+'</td><td class="l '+(o.resultado==='APROBADA'?'res-ap':'res-re')+'">'+esc(o.resultado)+'</td><td class="l">'+esc(o.terminal)+'</td><td class="l">'+esc(o.comercio)+'</td></tr>').join('')||'<tr><td colspan="9" style="text-align:center;color:var(--muted)">Sin detalle</td></tr>';
+  $('mbody').innerHTML=(x.detalle||[]).map(o=>'<tr><td class="l">'+esc(o.hora)+'</td><td>'+esc(o.mti)+'</td><td class="l">'+esc(o.de3)+'</td><td class="l">'+esc(o.tipo)+'</td><td class="l">'+esc(o.canal)+'</td><td>'+fmt(o.monto)+'</td><td>'+esc(o.de39)+'</td><td class="l '+(o.resultado==='APROBADA'?'res-ap':'res-re')+'">'+esc(o.resultado)+'</td><td class="l">'+esc(o.terminal)+'</td><td class="l">'+esc(o.comercio)+'</td><td class="l">'+esc(ubic(o))+'</td></tr>').join('')||'<tr><td colspan="11" style="text-align:center;color:var(--muted)">Sin detalle</td></tr>';
   $('modal').classList.add('open');
 }
 function cerrar(){$('modal').classList.remove('open');}
@@ -198,7 +199,7 @@ async function cargarHist(){
  try{
   const r=await fetch(BASE+'/api/fraude/historial?dias='+dias+(nivel?'&nivel='+nivel:'')+'&limit=2000',{cache:'no-store'});
   const e=await r.json();const al=e.alertas||[];HIST=al;
-  $('htabla').tBodies[0].innerHTML=al.length?al.map((a,i)=>'<tr onclick="verHist('+i+')" style="cursor:pointer"><td class="l">'+fechaHora(a.ts)+'</td><td><span class="score '+claseScore(a.score)+'">'+a.score+'</span></td><td class="l">'+nivelTxt(a.score)+'</td><td class="l">'+esc(a.pan)+'</td><td class="l">'+(a.reglas||[]).map(r=>'<span class="chip">'+esc(r)+'</span>').join('')+'</td><td>'+fmt(a.ops)+'</td><td class="res-re">'+fmt(a.rechazos)+'</td><td class="res-ap">'+fmt(a.aprobadas)+'</td><td>'+fmt(a.monto_aprobado)+'</td><td class="l">'+esc(a.canal)+'</td><td class="l">'+esc(a.hora_log)+'</td></tr>').join(''):'<tr><td colspan="11" style="text-align:center;color:var(--muted);padding:26px">Sin alertas registradas en este período</td></tr>';
+  $('htabla').tBodies[0].innerHTML=al.length?al.map((a,i)=>'<tr onclick="verHist('+i+')" style="cursor:pointer"><td class="l">'+fechaHora(a.ts)+'</td><td><span class="score '+claseScore(a.score)+'">'+a.score+'</span></td><td class="l">'+nivelTxt(a.score)+'</td><td class="l">'+esc(a.pan)+'</td><td class="l">'+(a.reglas||[]).map(r=>'<span class="chip">'+esc(r)+'</span>').join('')+'</td><td>'+fmt(a.ops)+'</td><td class="res-re">'+fmt(a.rechazos)+'</td><td class="res-ap">'+fmt(a.aprobadas)+'</td><td>'+fmt(a.monto_aprobado)+'</td><td class="l">'+esc(a.canal)+'</td><td class="l">'+esc(a.hora_log)+'</td></tr>').join(''):'<tr><td colspan="10" style="text-align:center;color:var(--muted);padding:26px">Sin alertas registradas en este período</td></tr>';
   $('hcnt').textContent=fmt(al.length)+' alerta(s) · '+fmt(e.total||0)+' en total guardadas · clic en una fila para ver el detalle';
  }catch(err){$('hcnt').textContent='No se pudo leer el historial del agente en '+BASE+'.';}
 }
@@ -206,7 +207,7 @@ function verHist(i){
   const a=HIST[i];if(!a)return;
   $('mtit').textContent='Tarjeta '+a.pan+' — Score '+a.score+' ('+nivelTxt(a.score)+')';
   $('msub').innerHTML='Alerta del '+fechaHora(a.ts)+' · Reglas: '+(a.reglas_texto||a.reglas||[]).map(esc).join(' · ')+' — '+fmt(a.ops)+' ops / '+fmt(a.rechazos)+' rech / '+fmt(a.aprobadas)+' aprob · monto aprobado '+fmt(a.monto_aprobado);
-  $('mbody').innerHTML=(a.detalle||[]).map(o=>'<tr><td class="l">'+esc(o.hora)+'</td><td>'+esc(o.mti)+'</td><td class="l">'+esc(o.tipo)+'</td><td class="l">'+esc(o.canal)+'</td><td>'+fmt(o.monto)+'</td><td>'+esc(o.de39)+'</td><td class="l '+(o.resultado==='APROBADA'?'res-ap':'res-re')+'">'+esc(o.resultado)+'</td><td class="l">'+esc(o.terminal)+'</td><td class="l">'+esc(o.comercio)+'</td></tr>').join('')||'<tr><td colspan="9" style="text-align:center;color:var(--muted)">Esta alerta no guardó detalle de operaciones</td></tr>';
+  $('mbody').innerHTML=(a.detalle||[]).map(o=>'<tr><td class="l">'+esc(o.hora)+'</td><td>'+esc(o.mti)+'</td><td class="l">'+esc(o.de3)+'</td><td class="l">'+esc(o.tipo)+'</td><td class="l">'+esc(o.canal)+'</td><td>'+fmt(o.monto)+'</td><td>'+esc(o.de39)+'</td><td class="l '+(o.resultado==='APROBADA'?'res-ap':'res-re')+'">'+esc(o.resultado)+'</td><td class="l">'+esc(o.terminal)+'</td><td class="l">'+esc(o.comercio)+'</td><td class="l">'+esc(ubic(o))+'</td></tr>').join('')||'<tr><td colspan="11" style="text-align:center;color:var(--muted)">Esta alerta no guardó detalle de operaciones</td></tr>';
   $('modal').classList.add('open');
 }
 function mostrar(v){

@@ -136,7 +136,7 @@ tbody tr{border-bottom:1px solid #12293d;cursor:pointer}tbody tr:hover{backgroun
   <h2 id="mtit" style="color:var(--text);text-transform:none;font-size:18px">Detalle de la tarjeta</h2>
   <p class="muted" id="msub" style="font-size:13px"></p>
   <div class="tablewrap" style="max-height:60vh">
-    <table><thead><tr><th class="l">Hora</th><th>MTI</th><th class="l">Tipo</th><th class="l">Canal</th><th>Monto</th><th>DE39</th><th class="l">Resultado</th><th class="l">Terminal</th><th class="l">Comercio</th><th class="l">Ubicación</th></tr></thead>
+    <table><thead><tr><th class="l">Hora</th><th>MTI</th><th class="l">DE3</th><th class="l">Tipo</th><th class="l">Canal</th><th>Monto</th><th>DE39</th><th class="l">Resultado</th><th class="l">Terminal</th><th class="l">Comercio</th><th class="l">Ubicación</th></tr></thead>
     <tbody id="mbody"></tbody></table>
   </div>
 </div></div>
@@ -238,7 +238,7 @@ function verDet(i){
   const x=(VISTA||[])[i];if(!x)return;
   $('mtit').textContent='Tarjeta '+x.pan+' · score pico '+x.score_max+' ('+x.nivel+')';
   $('msub').innerHTML='Reglas: '+(x.reglas_texto||x.reglas||[]).map(esc).join(' · ')+' · pico '+esc(x.hora_pico);
-  $('mbody').innerHTML=(x.detalle||[]).map(o=>'<tr><td class="l">'+esc(o.hora)+'</td><td>'+esc(o.mti)+'</td><td class="l">'+esc(o.tipo)+'</td><td class="l">'+esc(o.canal)+'</td><td>'+money(o.monto)+'</td><td>'+esc(o.de39)+'</td><td class="l '+(o.resultado==='APROBADA'?'res-ap':'res-re')+'">'+esc(o.resultado)+'</td><td class="l">'+esc(o.terminal)+'</td><td class="l">'+esc(o.comercio)+'</td><td class="l">'+esc(ubic(o))+'</td></tr>').join('')||'<tr><td colspan="10" style="text-align:center;color:var(--muted)">Sin detalle de operaciones</td></tr>';
+  $('mbody').innerHTML=(x.detalle||[]).map(o=>'<tr><td class="l">'+esc(o.hora)+'</td><td>'+esc(o.mti)+'</td><td class="l">'+esc(o.de3)+'</td><td class="l">'+esc(o.tipo)+'</td><td class="l">'+esc(o.canal)+'</td><td>'+money(o.monto)+'</td><td>'+esc(o.de39)+'</td><td class="l '+(o.resultado==='APROBADA'?'res-ap':'res-re')+'">'+esc(o.resultado)+'</td><td class="l">'+esc(o.terminal)+'</td><td class="l">'+esc(o.comercio)+'</td><td class="l">'+esc(ubic(o))+'</td></tr>').join('')||'<tr><td colspan="11" style="text-align:center;color:var(--muted)">Sin detalle de operaciones</td></tr>';
   $('modal').classList.add('open');
 }
 
