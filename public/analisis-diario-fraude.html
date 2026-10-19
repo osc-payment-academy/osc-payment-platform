@@ -17,7 +17,7 @@ h2{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.05
 .muted{color:var(--muted);line-height:1.5}
 .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .btn{border:1px solid #3979a8;border-radius:9px;background:#113a5d;color:#fff;padding:9px 13px;text-decoration:none;font-weight:700;cursor:pointer;font-size:13px}
-input[type=text],input[type=date]{background:#061522;border:1px solid var(--line);border-radius:8px;color:var(--text);padding:8px 10px;font-size:13px}
+input[type=text],input[type=date],select{background:#061522;border:1px solid var(--line);border-radius:8px;color:var(--text);padding:8px 10px;font-size:13px}
 .live{display:inline-flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);font-weight:600}
 .dot{width:12px;height:12px;border-radius:50%;background:var(--green);box-shadow:0 0 10px var(--green)}
 .dot.off{background:var(--red);box-shadow:0 0 10px var(--red)}
@@ -75,6 +75,7 @@ tbody tr{border-bottom:1px solid #12293d;cursor:pointer}tbody tr:hover{backgroun
       <label class="muted" style="font-size:12px">Fecha</label>
       <input id="fecha" type="date">
       <button class="btn" id="btnCargar">Analizar</button>
+      <button class="btn" id="btnReproc" title="Vuelve a leer el archivo completo (tarda en archivos grandes)">↻ Reprocesar</button>
       <button class="btn" id="gear" title="Configurar URL del agente">⚙ Agente</button>
       <a class="btn" href="index.html">← Plataforma</a>
     </div>
@@ -102,7 +103,20 @@ tbody tr{border-bottom:1px solid #12293d;cursor:pointer}tbody tr:hover{backgroun
   </div>
 
   <div class="panel">
-    <h2>Tarjetas alertadas en el día · clic para ver el detalle</h2>
+    <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:12px">
+      <h2 style="margin:0">Tarjetas alertadas en el día · clic para ver el detalle</h2>
+      <div class="row" style="gap:10px">
+        <label class="muted" style="font-size:12px">Nivel</label>
+        <select id="fNivel">
+          <option value="">Todos</option>
+          <option value="CRITICO">Crítico</option>
+          <option value="ALTO">Alto</option>
+          <option value="MEDIO">Medio</option>
+        </select>
+        <label class="muted" style="font-size:12px">Regla</label>
+        <select id="fRegla"><option value="">Todas</option></select>
+      </div>
+    </div>
     <div class="tablewrap">
       <table>
         <thead><tr>
@@ -136,23 +150,24 @@ const ubic=o=>{const c=(o.ciudad||'').trim(),p=(o.pais||'').trim();return c?(p?c
 const fmt=n=>new Intl.NumberFormat('es-AR').format(n||0);
 const money=c=>'$'+new Intl.NumberFormat('es-AR',{minimumFractionDigits:2,maximumFractionDigits:2}).format((c||0)/100);
 const claseScore=s=>s>=80?'s-crit':s>=60?'s-alto':s>=30?'s-medio':'s-bajo';
-let DATOS=null;
+let DATOS=null,VISTA=[];
 
 $('base').value=BASE;
 $('fecha').value=new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD local
 $('gear').onclick=()=>$('cfg').classList.toggle('open');
 $('saveBase').onclick=()=>{BASE=$('base').value.trim().replace(/\/$/,'');try{localStorage.setItem(CFG,BASE);}catch(e){}cargar();};
-$('btnCargar').onclick=cargar;
+$('btnCargar').onclick=()=>cargar(false);
+$('btnReproc').onclick=()=>cargar(true);
 $('modalX').onclick=()=>$('modal').classList.remove('open');
 $('modal').onclick=e=>{if(e.target.id==='modal')$('modal').classList.remove('open');};
 
 function setDot(on,txt){$('dot').classList.toggle('off',!on);$('estadoTxt').textContent=txt;}
 
-async function cargar(){
+async function cargar(recargar){
   const fecha=$('fecha').value;
-  setDot(false,'analizando…');
+  setDot(false,recargar?'reprocesando el archivo completo…':'cargando…');
   try{
-    const r=await fetch(BASE+'/api/analisis-fraude/estado?fecha='+encodeURIComponent(fecha)+'&recargar=1');
+    const r=await fetch(BASE+'/api/analisis-fraude/estado?fecha='+encodeURIComponent(fecha)+(recargar?'&recargar=1':''));
     const e=await r.json();DATOS=e;setDot(true,'agente en línea');
     $('rtRed').textContent=e.red?('· '+e.red):'';
     pintar(e);
@@ -183,9 +198,25 @@ function pintar(e){
   // reglas
   $('reglas').innerHTML=(e.reglas||[]).length?(e.reglas.map(r=>`<div class="rpill"><b>${esc(r.id)}</b> ${esc(r.texto)} · ${fmt(r.tarjetas)}</div>`).join('')):'<span class="muted">Sin reglas disparadas en el día.</span>';
 
-  // tabla
-  const t=e.tarjetas||[];
-  $('tbody').innerHTML=t.length?t.map((x,i)=>`<tr onclick="verDet(${i})">
+  // poblar combo de reglas con las que aparecen en el día (conservando la seleccion)
+  const sel=$('fRegla'), prev=sel.value;
+  const ids=(e.reglas||[]).map(r=>r.id);
+  sel.innerHTML='<option value="">Todas</option>'+ids.map(id=>`<option value="${esc(id)}">${esc(id)} — ${esc((ReglaTxt[id]||id))}</option>`).join('');
+  if(ids.includes(prev))sel.value=prev;
+
+  aplicarFiltros();
+}
+
+// nombres legibles por regla (para el combo), tomados del propio dataset
+let ReglaTxt={};
+function aplicarFiltros(){
+  if(!DATOS)return;
+  (DATOS.reglas||[]).forEach(r=>{ReglaTxt[r.id]=r.texto.replace(/^F\d+\s*/,'');});
+  const nivel=$('fNivel').value, regla=$('fRegla').value;
+  VISTA=(DATOS.tarjetas||[]).filter(x=>
+    (!nivel||x.nivel===nivel) && (!regla||(x.reglas||[]).includes(regla))
+  );
+  $('tbody').innerHTML=VISTA.length?VISTA.map((x,i)=>`<tr onclick="verDet(${i})">
     <td class="l">${esc(x.pan)}</td>
     <td><span class="score ${claseScore(x.score_max)}">${x.score_max}</span></td>
     <td class="l">${esc(x.nivel)}</td>
@@ -195,13 +226,16 @@ function pintar(e){
     <td class="res-ap">${fmt(x.aprobadas)}</td>
     <td class="res-re">${fmt(x.rechazos)}</td>
     <td>${money(x.monto_aprobado)}</td>
-  </tr>`).join(''):'<tr><td class="l muted" colspan="9">Sin tarjetas alertadas para esta fecha.</td></tr>';
-
-  $('foot').textContent=`${fmt(t.length)} tarjeta(s) alertada(s) · ${fmt(e.lineas_leidas)} líneas leídas · fecha ${e.fecha}`;
+  </tr>`).join(''):'<tr><td class="l muted" colspan="9">Ninguna tarjeta cumple el filtro.</td></tr>';
+  const tot=(DATOS.tarjetas||[]).length;
+  const filtro=(nivel||regla)?` · mostrando ${fmt(VISTA.length)} de ${fmt(tot)}`:'';
+  $('foot').textContent=`${fmt(tot)} tarjeta(s) alertada(s) · ${fmt(DATOS.lineas_leidas)} líneas leídas · fecha ${DATOS.fecha}${filtro}`;
 }
+$('fNivel').onchange=aplicarFiltros;
+$('fRegla').onchange=aplicarFiltros;
 
 function verDet(i){
-  const x=(DATOS.tarjetas||[])[i];if(!x)return;
+  const x=(VISTA||[])[i];if(!x)return;
   $('mtit').textContent='Tarjeta '+x.pan+' · score pico '+x.score_max+' ('+x.nivel+')';
   $('msub').innerHTML='Reglas: '+(x.reglas_texto||x.reglas||[]).map(esc).join(' · ')+' · pico '+esc(x.hora_pico);
   $('mbody').innerHTML=(x.detalle||[]).map(o=>'<tr><td class="l">'+esc(o.hora)+'</td><td>'+esc(o.mti)+'</td><td class="l">'+esc(o.tipo)+'</td><td class="l">'+esc(o.canal)+'</td><td>'+money(o.monto)+'</td><td>'+esc(o.de39)+'</td><td class="l '+(o.resultado==='APROBADA'?'res-ap':'res-re')+'">'+esc(o.resultado)+'</td><td class="l">'+esc(o.terminal)+'</td><td class="l">'+esc(o.comercio)+'</td><td class="l">'+esc(ubic(o))+'</td></tr>').join('')||'<tr><td colspan="10" style="text-align:center;color:var(--muted)">Sin detalle de operaciones</td></tr>';
