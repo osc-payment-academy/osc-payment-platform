@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>OSC · Análisis Diario de Fraude</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+<style>
+:root{--bg:#06111d;--panel:#0b1928;--panel2:#081624;--line:#23435f;--text:#f4f8fc;--muted:#98aec2;--blue:#42a5ff;--green:#21d187;--amber:#f7b51c;--orange:#ff8a3d;--red:#ff6670}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(circle at 84% 5%,#3a1030 0,transparent 30%),var(--bg);color:var(--text);font-family:Inter,Segoe UI,Arial,sans-serif}
+.shell{max-width:1320px;margin:auto;padding:22px}
+.top{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap}
+.eyebrow{color:var(--blue);font-size:11px;letter-spacing:.08em;margin:0}
+h1{margin:.3rem 0;display:flex;align-items:center;gap:12px}
+h2{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin:0 0 12px}
+.muted{color:var(--muted);line-height:1.5}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.btn{border:1px solid #3979a8;border-radius:9px;background:#113a5d;color:#fff;padding:9px 13px;text-decoration:none;font-weight:700;cursor:pointer;font-size:13px}
+input[type=text],input[type=date]{background:#061522;border:1px solid var(--line);border-radius:8px;color:var(--text);padding:8px 10px;font-size:13px}
+.live{display:inline-flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);font-weight:600}
+.dot{width:12px;height:12px;border-radius:50%;background:var(--green);box-shadow:0 0 10px var(--green)}
+.dot.off{background:var(--red);box-shadow:0 0 10px var(--red)}
+.kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin:18px 0}
+@media(max-width:1000px){.kpis{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:620px){.kpis{grid-template-columns:repeat(2,1fr)}}
+.kpi,.panel{border:1px solid var(--line);border-radius:14px;background:linear-gradient(180deg,var(--panel),var(--panel2));padding:16px}
+.kpi .lbl{color:var(--muted);font-size:10px;letter-spacing:.06em;text-transform:uppercase}
+.kpi .val{font-size:27px;font-weight:800;margin-top:6px;font-variant-numeric:tabular-nums}
+.kpi.crit .val{color:var(--red)}.kpi.alto .val{color:var(--orange)}.kpi.medio .val{color:var(--amber)}
+.panel{margin-bottom:16px}
+.sem{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-bottom:14px}
+.chip{display:inline-block;font-size:10px;padding:2px 7px;border-radius:20px;background:#13324c;color:var(--blue);margin:1px 3px 1px 0}
+.reglas{display:flex;flex-wrap:wrap;gap:8px}
+.rpill{border:1px solid var(--line);border-radius:9px;padding:7px 11px;font-size:12px;background:#081a2b}
+.rpill b{color:var(--text)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:8px 11px;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+th:first-child,td:first-child,th.l,td.l{text-align:left}
+thead th{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--panel)}
+tbody tr{border-bottom:1px solid #12293d;cursor:pointer}tbody tr:hover{background:#0f2238}
+.tablewrap{max-height:520px;overflow:auto;border:1px solid var(--line);border-radius:10px}
+.score{display:inline-block;min-width:38px;text-align:center;font-weight:800;border-radius:7px;padding:3px 8px;color:#06111d}
+.s-crit{background:var(--red)}.s-alto{background:var(--orange)}.s-medio{background:var(--amber)}.s-bajo{background:#43607c;color:#fff}
+.foot{color:#4d6076;font-size:12px;margin-top:10px}
+.cfg{display:none;margin-top:10px;gap:8px;align-items:center;flex-wrap:wrap}.cfg.open{display:flex}
+.modal{position:fixed;inset:0;background:#000b;display:none;align-items:flex-start;justify-content:center;padding:40px 16px;z-index:10}
+.modal.open{display:flex}
+.modal .box{background:var(--panel);border:1px solid var(--line);border-radius:14px;max-width:1000px;width:100%;max-height:85vh;overflow:auto;padding:20px}
+.modal .x{float:right;cursor:pointer;color:var(--muted);font-size:20px}
+.res-ap{color:var(--green)}.res-re{color:var(--red)}
+/* linea de tiempo por hora */
+.timeline{display:flex;align-items:flex-end;gap:3px;height:140px;padding-top:10px}
+.tl-col{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:2px;height:100%}
+.tl-h{font-size:9px;color:var(--muted)}
+</style>
+</head>
+<body>
+<main class="shell">
+  <header class="top">
+    <div>
+      <p class="eyebrow">OSC · ANÁLISIS DIARIO DE FRAUDE <span id="rtRed" style="color:var(--muted)"></span></p>
+      <h1>Análisis Diario de Fraude
+        <span class="live"><span class="dot off" id="dot"></span><span id="estadoTxt">conectando…</span></span>
+      </h1>
+      <p class="muted">Lee el log completo del día y aplica todas las reglas (F01–F12). Muestra el pico de riesgo de cada tarjeta, el desglose por regla y la actividad por hora. Complementa al monitoreo en vivo: acá no se pierde lo que pasó aunque después se calme.</p>
+      <div class="cfg" id="cfg">
+        <label class="muted" style="font-size:12px">URL del agente</label>
+        <input id="base" type="text" size="30" placeholder="http://localhost:8090">
+        <button class="btn" id="saveBase">Guardar</button>
+        <span class="muted" style="font-size:12px">Agente OSC_Analisis_Diario_Fraude (por defecto puerto 8090).</span>
+      </div>
+    </div>
+    <div class="row">
+      <label class="muted" style="font-size:12px">Fecha</label>
+      <input id="fecha" type="date">
+      <button class="btn" id="btnCargar">Analizar</button>
+      <button class="btn" id="gear" title="Configurar URL del agente">⚙ Agente</button>
+      <a class="btn" href="index.html">← Plataforma</a>
+    </div>
+  </header>
+
+  <section class="kpis" id="kpis"></section>
+
+  <div class="panel">
+    <h2>Actividad por hora (operaciones y alertas)</h2>
+    <div class="timeline" id="timeline"></div>
+    <div class="row" style="gap:16px;margin-top:10px;font-size:12px" class="muted">
+      <span class="muted"><span style="display:inline-block;width:10px;height:10px;background:#1d5a8f;border-radius:2px"></span> Operaciones</span>
+      <span class="muted"><span style="display:inline-block;width:10px;height:10px;background:var(--red);border-radius:2px"></span> Horas con pico de alerta</span>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Reglas disparadas (tarjetas afectadas en el día)</h2>
+    <div class="sem">
+      <span><span class="score s-medio">30</span> 30–59 Medio</span>
+      <span><span class="score s-alto">60</span> 60–79 Alto</span>
+      <span><span class="score s-crit">80</span> 80–100 Crítico</span>
+    </div>
+    <div class="reglas" id="reglas"></div>
+  </div>
+
+  <div class="panel">
+    <h2>Tarjetas alertadas en el día · clic para ver el detalle</h2>
+    <div class="tablewrap">
+      <table>
+        <thead><tr>
+          <th class="l">Tarjeta</th><th>Score pico</th><th class="l">Nivel</th>
+          <th class="l">Reglas</th><th class="l">Hora pico</th><th>Ops día</th>
+          <th>Aprob.</th><th>Rech.</th><th>Monto aprob.</th>
+        </tr></thead>
+        <tbody id="tbody"><tr><td class="l muted" colspan="9">Elegí la fecha y presioná Analizar.</td></tr></tbody>
+      </table>
+    </div>
+    <p class="foot" id="foot"></p>
+  </div>
+</main>
+
+<div class="modal" id="modal"><div class="box">
+  <span class="x" id="modalX">✕</span>
+  <h2 id="mtit" style="color:var(--text);text-transform:none;font-size:18px">Detalle de la tarjeta</h2>
+  <p class="muted" id="msub" style="font-size:13px"></p>
+  <div class="tablewrap" style="max-height:60vh">
+    <table><thead><tr><th class="l">Hora</th><th>MTI</th><th class="l">Tipo</th><th class="l">Canal</th><th>Monto</th><th>DE39</th><th class="l">Resultado</th><th class="l">Terminal</th><th class="l">Comercio</th><th class="l">Ubicación</th></tr></thead>
+    <tbody id="mbody"></tbody></table>
+  </div>
+</div></div>
+
+<script>
+const CFG='osc_anafraude_base';
+let BASE='http://localhost:8090';try{BASE=localStorage.getItem(CFG)||BASE;}catch(e){}
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const ubic=o=>{const c=(o.ciudad||'').trim(),p=(o.pais||'').trim();return c?(p?c+' · '+p:c):(p||'—');};
+const fmt=n=>new Intl.NumberFormat('es-AR').format(n||0);
+const money=c=>'$'+new Intl.NumberFormat('es-AR',{minimumFractionDigits:2,maximumFractionDigits:2}).format((c||0)/100);
+const claseScore=s=>s>=80?'s-crit':s>=60?'s-alto':s>=30?'s-medio':'s-bajo';
+let DATOS=null;
+
+$('base').value=BASE;
+$('fecha').value=new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD local
+$('gear').onclick=()=>$('cfg').classList.toggle('open');
+$('saveBase').onclick=()=>{BASE=$('base').value.trim().replace(/\/$/,'');try{localStorage.setItem(CFG,BASE);}catch(e){}cargar();};
+$('btnCargar').onclick=cargar;
+$('modalX').onclick=()=>$('modal').classList.remove('open');
+$('modal').onclick=e=>{if(e.target.id==='modal')$('modal').classList.remove('open');};
+
+function setDot(on,txt){$('dot').classList.toggle('off',!on);$('estadoTxt').textContent=txt;}
+
+async function cargar(){
+  const fecha=$('fecha').value;
+  setDot(false,'analizando…');
+  try{
+    const r=await fetch(BASE+'/api/analisis-fraude/estado?fecha='+encodeURIComponent(fecha)+'&recargar=1');
+    const e=await r.json();DATOS=e;setDot(true,'agente en línea');
+    $('rtRed').textContent=e.red?('· '+e.red):'';
+    pintar(e);
+  }catch(err){setDot(false,'sin conexión con el agente');$('foot').textContent='No se pudo conectar al agente en '+BASE;}
+}
+
+function pintar(e){
+  $('kpis').innerHTML=[
+    ['Operaciones analizadas',fmt(e.ops_analizadas),''],
+    ['Tarjetas analizadas',fmt(e.tarjetas_analizadas),''],
+    ['Tarjetas alertadas',fmt(e.tarjetas_alertadas),''],
+    ['Críticas',fmt(e.criticas),'crit'],
+    ['Altas',fmt(e.altas),'alto'],
+    ['Medias',fmt(e.medias),'medio'],
+  ].map(([l,v,c])=>`<div class="kpi ${c}"><div class="lbl">${l}</div><div class="val">${v}</div></div>`).join('');
+
+  // timeline
+  const ph=e.por_hora||[];const maxOps=Math.max(1,...ph.map(h=>h.ops));
+  $('timeline').innerHTML=ph.map(h=>{
+    const opsH=Math.round((h.ops/maxOps)*100);
+    const al=h.alertas>0;
+    return `<div class="tl-col" title="${h.hora}:00 — ${fmt(h.ops)} ops, ${fmt(h.alertas)} alerta(s)">
+      ${al?`<div style="width:100%;background:var(--red);border-radius:3px 3px 0 0;height:${Math.max(6,opsH*0.25)}%"></div>`:''}
+      <div style="width:100%;background:#1d5a8f;border-radius:3px 3px 0 0;height:${opsH}%;min-height:2px"></div>
+      <div class="tl-h">${h.hora}</div></div>`;
+  }).join('');
+
+  // reglas
+  $('reglas').innerHTML=(e.reglas||[]).length?(e.reglas.map(r=>`<div class="rpill"><b>${esc(r.id)}</b> ${esc(r.texto)} · ${fmt(r.tarjetas)}</div>`).join('')):'<span class="muted">Sin reglas disparadas en el día.</span>';
+
+  // tabla
+  const t=e.tarjetas||[];
+  $('tbody').innerHTML=t.length?t.map((x,i)=>`<tr onclick="verDet(${i})">
+    <td class="l">${esc(x.pan)}</td>
+    <td><span class="score ${claseScore(x.score_max)}">${x.score_max}</span></td>
+    <td class="l">${esc(x.nivel)}</td>
+    <td class="l">${(x.reglas||[]).map(r=>'<span class="chip">'+esc(r)+'</span>').join('')}</td>
+    <td class="l">${esc(x.hora_pico)}</td>
+    <td>${fmt(x.ops_dia)}</td>
+    <td class="res-ap">${fmt(x.aprobadas)}</td>
+    <td class="res-re">${fmt(x.rechazos)}</td>
+    <td>${money(x.monto_aprobado)}</td>
+  </tr>`).join(''):'<tr><td class="l muted" colspan="9">Sin tarjetas alertadas para esta fecha.</td></tr>';
+
+  $('foot').textContent=`${fmt(t.length)} tarjeta(s) alertada(s) · ${fmt(e.lineas_leidas)} líneas leídas · fecha ${e.fecha}`;
+}
+
+function verDet(i){
+  const x=(DATOS.tarjetas||[])[i];if(!x)return;
+  $('mtit').textContent='Tarjeta '+x.pan+' · score pico '+x.score_max+' ('+x.nivel+')';
+  $('msub').innerHTML='Reglas: '+(x.reglas_texto||x.reglas||[]).map(esc).join(' · ')+' · pico '+esc(x.hora_pico);
+  $('mbody').innerHTML=(x.detalle||[]).map(o=>'<tr><td class="l">'+esc(o.hora)+'</td><td>'+esc(o.mti)+'</td><td class="l">'+esc(o.tipo)+'</td><td class="l">'+esc(o.canal)+'</td><td>'+money(o.monto)+'</td><td>'+esc(o.de39)+'</td><td class="l '+(o.resultado==='APROBADA'?'res-ap':'res-re')+'">'+esc(o.resultado)+'</td><td class="l">'+esc(o.terminal)+'</td><td class="l">'+esc(o.comercio)+'</td><td class="l">'+esc(ubic(o))+'</td></tr>').join('')||'<tr><td colspan="10" style="text-align:center;color:var(--muted)">Sin detalle de operaciones</td></tr>';
+  $('modal').classList.add('open');
+}
+
+cargar();
+</script>
+</body>
+</html>
