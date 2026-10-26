@@ -47,11 +47,19 @@
   function build(channel, network, amountCents, code = "00", opts = {}) {
     const S = spec();
     if (!S.withAcquirer) return buildCore(channel, network, amountCents, code, null);
-    return S.withAcquirer(opts.profile || "AR", (prof) => buildCore(channel, network, amountCents, code, opts.profile ? prof : null, !!opts.tamper && channel === "WALLET"));
+    return S.withAcquirer(opts.profile || "AR", (prof) => buildCore(channel, network, amountCents, code, opts.profile ? prof : null, !!opts.tamper && channel === "WALLET", opts));
   }
   const CUR_ALPHA = { "032": "ARS", "840": "USD" };
 
-  function buildCore(channel, network, amountCents, code, prof, tamper = false) {
+  // rc.1.35 · E-commerce: opts.threeDs = "full" | "attempt" | "none" (resultado de la autenticación) y opts.cvc (código de seguridad).
+  const ECI = {
+    visa: { full: "05", attempt: "06", none: "07" },
+    mastercard: { full: "212", attempt: "211", none: "210" },
+    amex: { full: "05", attempt: "06", none: "07" },
+  };
+  function buildCore(channel, network, amountCents, code, prof, tamper = false, opts = {}) {
+    const tds = opts.threeDs || "full";
+    const cvc = opts.cvc || null;
     const S = spec();
     const r = S.row;
     const cred = CRED[network] || CRED.visa;
@@ -95,9 +103,14 @@
         emvData = emv("amex", pan, signed12, "0" + currency, country, amount12);
         req.push(r(55, "ICC System Related Data", emvData.value, `${emvData.value.length / 2} bytes`, "LLLVAR", "Expresspay desde el teléfono · ARQC calculado"));
       } else {
-        const aevv = "0" + hex(20).slice(1); // sub-subcampo 1 = 0 (Authenticate Successful)
-        threeDs = { eci: "05", aevv };
-        req.push(r(61, "National Use Data · American Express SafeKey", "AX" + "ASK" + "05" + "AEVV" + `[${aevv}]`, "Variable", "LLLVAR", "Primary ID AX · Secondary ID ASK · ECI 05 (autenticado con AEVV) · AEVV de 20 bytes binarios mostrado en hex (Network Spec. Authorization, Tabla 5-1)"));
+        // Bit 61 SafeKey (Tabla 5-1): ECI 05 autenticado con AEVV · 06 intento con AEVV · 07 no autenticado (sin AEVV).
+        // AEVV sub-subcampo 1: 0 = Authenticate Successful · 8 = Attempt, ACS no disponible.
+        const eci = ECI.amex[tds];
+        const aevv = tds === "none" ? null : (tds === "attempt" ? "8" : "0") + hex(20).slice(1);
+        threeDs = { network, mode: tds, eci, value: aevv, valueName: "AEVV", field: "Bit 61" };
+        req.push(r(61, "National Use Data · American Express SafeKey", "AX" + "ASK" + eci + (aevv ? "AEVV" + `[${aevv}]` : ""), "Variable", "LLLVAR",
+          `Primary ID AX · Secondary ID ASK · ECI ${eci} (${tds === "full" ? "autenticado con AEVV" : tds === "attempt" ? "intento con AEVV" : "no autenticado, sin AEVV"})${aevv ? " · AEVV de 20 bytes binarios mostrado en hex" : ""} (Network Spec. Authorization, Tabla 5-1)`));
+        if (cvc) req.push(r(53, "Security Related Control Information", "04" + cvc, "6", "LLVAR", "04 = largo · CSC de 4 dígitos (4DBC/4CSC) ingresado por el titular (Network Spec. Authorization, Bit 53)"));
       }
       const tid = String(Date.now()).slice(-15);
       res = [2, 3, 4, 7, 11, 12, 24, 32, 37, 41, 42, 49].map((de) => req.find((x) => x[0] === String(de))).filter(Boolean).map((x) => { const c = x.slice(); c[5] = "Eco"; return c; });
@@ -127,11 +140,17 @@
           emvData = emv("visa", pan, signed12, "0" + currency, country, amount12);
           req = S.merge(req, [r(23, "Card Sequence Number", "000", "3", "FIXED", "PSN del token"), r(55, "ICC-Related Data · Usage 1 · Dataset 01", emvData.value, `${emvData.value.length / 2} bytes`, "LLLVAR", "qVSDC desde el teléfono · ARQC calculado (CVN 10)")]);
         } else {
-          const cavv = hex(20);
-          threeDs = { eci: "05", cavv };
+          // 60.8 (Tabla posiciones 9-10): 05 secure e-commerce · 06 intento en comercio 3-D Secure · 07 non-authenticated security.
+          const eci = ECI.visa[tds];
+          const cavv = tds === "none" ? null : hex(20);
+          threeDs = { network, mode: tds, eci, value: cavv, valueName: "CAVV", field: "60.8 + 126.9" };
+          // 126.0 bitmap: bit 9 (CAVV) = 0x0080…, bit 10 (CVV2) = 0x0040…
+          const bm126 = cavv && cvc ? "00C0000000000000" : cavv ? "0080000000000000" : "0040000000000000";
+          const cvv2 = cvc ? "1" + "1" + cvc.padStart(4, " ") : ""; // 126.10: presente · pedir resultado en 44.10 · valor justificado a derecha
+          const subs = [cavv ? "126.9 CAVV (20 bytes, " + (tds === "attempt" ? "CAVV de intento" : "autenticación completa") + ")" : null, cvc ? "126.10 CVV2 = «11 " + cvc + "» (presente · resultado en 44.10)" : null].filter(Boolean).join(" · ");
           req = S.merge(req, [
-            r(60, "Additional POS Information · 60.8 MOTO/ECI Indicator", "00000000" + "05", "10", "LLVAR", "Posiciones 9-10 = 05: comercio seguro con CAVV (Visa Field 22 · E-Commerce)"),
-            r(126, "Visa Private-Use Fields · 126.0 bitmap + 126.9 CAVV", "0080000000000000" + cavv, "28 bytes", "LLVAR", "126.9 Usage 2: 3-D Secure CAVV (20 bytes) generado por el ACS del emisor", 29),
+            r(60, "Additional POS Information · 60.8 MOTO/ECI Indicator", "00000000" + eci, "10", "LLVAR", `Posiciones 9-10 = ${eci}: ${tds === "full" ? "secure electronic commerce (autenticado)" : tds === "attempt" ? "intento de autenticación en comercio 3-D Secure" : "non-authenticated security transaction"} (Visa Field 60.8)`),
+            r(126, "Visa Private-Use Fields · 126.0 bitmap" + (cavv ? " + 126.9 CAVV" : "") + (cvc ? " + 126.10 CVV2" : ""), bm126 + (cavv || "") + cvv2, `${8 + (cavv ? 20 : 0) + (cvc ? 6 : 0)} bytes`, "LLVAR", subs, 9 + (cavv ? 20 : 0) + (cvc ? 6 : 0)),
           ]);
         }
         res = S.merge([
@@ -143,8 +162,9 @@
         ], S.visaResponseAdditions({ request: req }));
       } else {
         // Mastercard Customer Interface Specification
-        const ecommerce = wallet ? null : { sli: "212", aav: b64(20) };
-        if (ecommerce) threeDs = { eci: "212", aav: ecommerce.aav };
+        // DE 48 SE 42 (Tabla 418): 212 AAV autenticado · 211 AAV de intento · 210 sin autenticar (sin SE 43).
+        const ecommerce = wallet ? null : { sli: ECI.mastercard[tds], aav: tds === "none" ? null : b64(20), cvc };
+        if (ecommerce) threeDs = { network, mode: tds, eci: ecommerce.sli, value: ecommerce.aav, valueName: "AAV", field: "DE 48 SE 42 + SE 43" };
         req.push(r(22, "POS Entry Mode", wallet ? "071" : "812", "3", "FIXED", wallet ? "07 contactless M/Chip · 1 acepta PIN (CIS DE 22)" : "81 e-commerce con AAV en DE 48 SE 43 · 2 sin PIN (CIS DE 22)"));
         req = S.merge(req, S.mcRequestAdditions({ stan, channel: wallet ? "card" : "cnp", chip: wallet, ecommerce }));
         if (wallet) {
@@ -158,6 +178,8 @@
           r(39, "Response Code", code, "2", "FIXED", "Emisor"), r(41, "Acceptor Terminal ID", req.find((x) => x[0] === "41")[2], "8", "FIXED", "Eco"),
           r(49, "Currency Code", currency, "3", "FIXED", "Eco"),
         ], S.mcResponseAdditions({ request: req }));
+        // El CVC 2 (SE 92) no vuelve en la respuesta.
+        if (cvc) res = res.map((x) => (x[0] === "48" ? Object.assign(x.slice(), { 2: x[2].replace("9203" + cvc, "") }) : x));
       }
       if (approved) res = S.merge(res, [r(38, "Authorization ID Response", auth, "6", "FIXED", "Código de autorización del emisor")]);
       if (approved && emvData?.arpc) {
@@ -195,15 +217,16 @@
         <div class="bitmapbox"><h3>BITMAP ISO8583 (1–64)</h3><div class="bitgrid">${grid(1)}</div></div>
         ${sec ? `<div class="bitmapbox"><h3>BITMAP ISO8583 (65–128)</h3><div class="bitgrid">${grid(65)}</div></div>` : ""}
         <div class="debox"><h3>DATA ELEMENTS</h3><table><thead><tr><th>DE</th><th>Nombre</th><th>Valor</th></tr></thead><tbody>
-        ${m.fields.map((f) => `<tr${(hl[side] || []).includes(Number(f[0])) ? ' class="de-hl"' : ""}><td>${esc(f[0])}</td><td>${esc(f[1])}<br><small style="color:#8fb0c6">${esc(f[5] || "")}</small>${tx.arqcTrace && (f[0] === "55" || f[0] === "23") ? ` <button type="button" class="de-edu-chip" data-edu="arqc">🔐 ARQC / ARPC</button>` : ""}</td><td style="font-family:Consolas,monospace;word-break:break-all">${esc(f[2])}</td></tr>`).join("")}
+        ${m.fields.map((f) => `<tr${(hl[side] || []).includes(Number(f[0])) ? ' class="de-hl"' : ""}><td>${esc(f[0])}</td><td>${esc(f[1])}<br><small style="color:#8fb0c6">${esc(f[5] || "")}</small>${tx.arqcTrace && (f[0] === "55" || f[0] === "23") ? ` <button type="button" class="de-edu-chip" data-edu="arqc">🔐 ARQC / ARPC</button>` : ""}${tx.threeDs && TDS_DE[tx.network] === f[0] ? ` <button type="button" class="de-edu-chip" data-edu="threeds">🛡️ 3-D Secure</button>` : ""}</td><td style="font-family:Consolas,monospace;word-break:break-all">${esc(f[2])}</td></tr>`).join("")}
         </tbody></table></div>`;
       panel.querySelectorAll("[data-side]").forEach((b) => (b.onclick = () => { side = b.dataset.side; draw(); }));
-      panel.querySelectorAll("[data-edu]").forEach((edu) => (edu.onclick = (e) => { e.stopPropagation(); window.OSCSecurityEdu?.open("arqc", tx.arqcTrace, "trace"); }));
+      panel.querySelectorAll("[data-edu]").forEach((edu) => (edu.onclick = (e) => { e.stopPropagation(); const k = edu.dataset.edu; window.OSCSecurityEdu?.open(k, k === "threeds" ? { ...tx.threeDs, ...(tx.threeDsAuth || {}) } : tx.arqcTrace, "trace"); }));
       const box = panel.querySelector(".debox"), first = box?.querySelector(".de-hl"); if (box && first) box.scrollTop += first.getBoundingClientRect().top - box.getBoundingClientRect().top - 40;
     };
     draw();
     return { show: (s) => { side = s === "response" ? "response" : "request"; draw(); } };
   }
+  const TDS_DE = { visa: "126", mastercard: "48", amex: "61" };
   const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
   const toObj = (fields) => Object.fromEntries(fields.map((f) => [f[0], f[2]]));
 

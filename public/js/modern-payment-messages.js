@@ -13,6 +13,7 @@
     window.OSCSwitchStore.flush?.();
     tx.recorded = true;
   }
+  window.OSCModernMessages = { record }; // rc.1.35 · los simuladores lo llaman al terminar (el polling de 8 s no alcanza en modo paso a paso)
   window.addEventListener("DOMContentLoaded", () => {
     const ch = location.pathname.includes("ecommerce") ? "ECOMMERCE" : location.pathname.includes("wallet") ? "WALLET" : null;
     if (!ch) return;

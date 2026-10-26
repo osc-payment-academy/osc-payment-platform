@@ -70,6 +70,43 @@
         ["POS → Teléfono", "La respuesta vuelve con el resultado; el teléfono muestra aprobado o rechazado."],
       ]),
     },
+    // rc.1.35 · 3-D Secure (E-commerce): autenticación EMV 3DS 2.x y cómo su resultado viaja en la autorización.
+    threeds: {
+      title: "3-D Secure · autenticación del comprador",
+      simple: () => `
+        <p>En una compra online no hay chip ni PIN. Para saber que quien compra es el titular, <b>el banco emisor lo autentica antes de autorizar</b>: a veces sin molestarlo (<b>frictionless</b>), a veces pidiéndole un código (<b>challenge</b>).</p>
+        <p>El resultado de esa autenticación es un <b>ECI</b> (qué tan autenticada quedó la compra) y un <b>valor criptográfico</b> (CAVV en Visa, AAV en Mastercard, AEVV en Amex). El comercio los agrega al mensaje de autorización ISO 8583. El emisor verifica ese valor y, si la compra fue autenticada, la responsabilidad por fraude pasa al emisor.</p>
+        <div class="osc-sec-note">Probalo: elegí <b>«Challenge fallido»</b> en los escenarios de autenticación. Si el código no es correcto, la compra se corta y la autorización nunca se envía.</div>`,
+      technical: () => `
+        <h4>Mensajes de EMV 3-D Secure 2.x (no son ISO 8583)</h4>
+        ${table(["Mensaje", "De → a", "Para qué"], [
+          ["AReq / ARes", "3DS Server → Directory Server → ACS", "Datos de la compra y del dispositivo. El ACS responde transStatus: Y (autenticado), C (challenge), A (intento), N (no autenticado)."],
+          ["CReq / CRes", "Navegador ↔ ACS", "Pantalla del banco con el código (OTP). Resultado del challenge."],
+          ["RReq / RRes", "ACS → DS → 3DS Server", "Resultado final del challenge con el ECI y el valor de autenticación."],
+        ])}
+        <h4>Del resultado 3DS al mensaje ISO 8583</h4>
+        ${table(["Red", "Autenticado", "Intento", "Sin 3DS", "Campos"], [
+          ["Visa", "ECI 05 + CAVV", "ECI 06 + CAVV", "ECI 07, sin CAVV", "60.8 (pos. 9-10) · 126.9 CAVV"],
+          ["Mastercard", "SLI 212 + AAV", "SLI 211 + AAV", "SLI 210, sin SE 43", "DE 48 SE 42 · SE 43"],
+          ["American Express", "ECI 05 + AEVV", "ECI 06 + AEVV", "ECI 07, sin AEVV", "Bit 61 SafeKey (AX · ASK · ECI · AEVV)"],
+        ])}
+        <p>En los mensajes 3DS, Mastercard usa ECI 02 (autenticado) / 01 (intento); en la autorización se traducen al SLI 212 / 211 del DE 48 SE 42.</p>
+        <h4>Código de seguridad de la tarjeta</h4>
+        ${table(["Red", "Campo", "Formato"], [
+          ["Visa", "126.10 CVV2", "Presencia (1) · tipo de respuesta (1 = devolver resultado en 44.10) · valor justificado a derecha"],
+          ["Mastercard", "DE 48 SE 92 CVC 2", "n-3"],
+          ["American Express", "Bit 53", "Largo 03/04 + CSC (4DBC de 4 dígitos)"],
+        ])}
+        <div class="osc-sec-note">Fuentes: Visa Full Service POS (Field 60.8, 126.9, 126.10, 44.10) · Mastercard CIS (DE 48 SE 42 Tabla 418, SE 43, SE 92) · Amex Network Specifications Authorization (Bit 53, Bit 61 Tabla 5-1).</div>`,
+      flow: () => flow([
+        ["Checkout", "El comprador confirma la compra; el 3DS Server del comercio arma el AReq."],
+        ["Directory Server", "La red (Visa Secure · Identity Check · SafeKey) ubica al ACS del emisor."],
+        ["ACS del emisor", "Analiza el riesgo: aprueba sin fricción o pide un challenge."],
+        ["Challenge", "El comprador ingresa el código en la pantalla del banco (CReq/CRes)."],
+        ["Resultado 3DS", "ECI + CAVV/AAV/AEVV vuelven al comercio (RReq)."],
+        ["Autorización", "El comercio envía la 0100/1100 con esos datos; el emisor verifica el valor y aprueba o rechaza."],
+      ]),
+    },
     pin: {
       title: "PIN Block, cifrado y HSM",
       simple: () => `
@@ -226,6 +263,22 @@
       }
       if (t.arpc) rows.push(["ARPC (tag 91)", mono(`${t.arpc.arpc} + ARC ${t.arpc.arc}`)]);
       return table(["Paso", "Valor"], rows);
+    }
+    if (kind === "threeds") {
+      const modeTxt = { full: "Autenticado", attempt: "Intento (ACS no disponible)", none: "Sin autenticación 3DS" }[t.mode] || t.mode;
+      return table(["Dato", "Valor"], [
+        ["Red", esc(String(t.network || "").toUpperCase())],
+        ["Escenario", esc(t.scenarioLabel || modeTxt)],
+        ...(t.version ? [["Versión 3DS", mono(t.version)]] : []),
+        ...(t.threeDSServerTransID ? [["threeDSServerTransID", mono(t.threeDSServerTransID)]] : []),
+        ...(t.aresStatus ? [["ARes · transStatus", mono(t.aresStatus)]] : []),
+        ...(t.challenge ? [["Challenge", t.challenge]] : []),
+        ...(t.finalStatus ? [["Resultado final · transStatus", mono(t.finalStatus)]] : []),
+        ...(t.dsEci ? [["ECI en el mensaje 3DS", mono(t.dsEci)]] : []),
+        [t.network === "mastercard" ? "SLI en la autorización (DE 48 SE 42)" : `ECI en la autorización (${t.network === "visa" ? "60.8" : "Bit 61"})`, mono(t.eci)],
+        [`${esc(t.valueName || "Valor")} (${t.network === "visa" ? "126.9" : t.network === "mastercard" ? "DE 48 SE 43" : "Bit 61"})`, t.value ? mono(t.value) : "— no viaja (sin autenticación)"],
+        ...(t.cvcField ? [["Código de seguridad", `${esc(t.cvcField)} · ${mono("•".repeat(t.cvcLength || 3))}`]] : []),
+      ]);
     }
     if (kind === "link_chip") return `<p class="osc-sec-muted">Esta prueba es de la Red LINK: el mensaje no lleva criptograma del chip. El campo 55 de tu operación, si está presente, contiene datos de transferencia o DEBIN.</p>`;
     if (kind === "pin" || kind === "link_pin") {

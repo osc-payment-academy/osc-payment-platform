@@ -1,0 +1,62 @@
+{
+ "product": "OSC-ACADEMY",
+ "version": "4.0.0-rc.1.35",
+ "title": "Incremental sobre rc.1.34: E-Commerce con 3-D Secure separado de la autorización",
+ "parent_baseline": "OSC-ACADEMY v4.0.0-rc.1.34",
+ "generated_at": "2026-10-26T18:33:48.989228+00:00",
+ "deleted_files": [],
+ "policy": {
+  "no_silent_file_deletion": true,
+  "sha256_inventory": true,
+  "incremental_install_package": true,
+  "complete_backup_package": true,
+  "manuals_excluded": true
+ },
+ "incremental_files": [
+  {
+   "path": "INSTRUCCIONES_INSTALACION_v4.0.0_RC1.35.txt",
+   "sha256": "b28542ba7c5350b17586a919421cf8dd9406bb7d4e1386b8427bc3ba126fbee3"
+  },
+  {
+   "path": "README.md",
+   "sha256": "d47a0cd5368cbf413ea08891bcfaecda7bd6ec7378f37269abb437b5861f3b2d"
+  },
+  {
+   "path": "RELEASE_NOTES_v4.0.0-rc.1.35.md",
+   "sha256": "9f44966abd53737fa555380f9812c328db30ec74f1e21ec34931c6d65b0c998e"
+  },
+  {
+   "path": "package.json",
+   "sha256": "c5289359e797ad92184420e72832bf88ee6aae7c6c4aa0b614aa4bfb4ffdea88"
+  },
+  {
+   "path": "public/ecommerce.html",
+   "sha256": "662acbd235a20982b4c75057c5c18bbe38051ce3235ea53395e42fb570feede8"
+  },
+  {
+   "path": "public/wallet.html",
+   "sha256": "37d376709b0e741a4df243195881db022a3bc5631a3a5ad26e9128bd17301e82"
+  },
+  {
+   "path": "public/js/ecommerce-lab.js",
+   "sha256": "0e544ad970a18d7099d45058e70c498cc96722e784e7822aa71db29d8a5a1463"
+  },
+  {
+   "path": "public/js/modern-channel-iso.js",
+   "sha256": "7ec3d2d17e22f8f6315e8c39b7d732e19f300206bbbb7130b722b8bdf6d7121c"
+  },
+  {
+   "path": "public/js/iso-network-spec.js",
+   "sha256": "f9c5d10d50002c4239b4b045db177a08244f5c21f3a5e6693073a25c606f78cc"
+  },
+  {
+   "path": "public/js/security-edu.js",
+   "sha256": "d27053c2ac98cf8ee2ec5742f438a2d3df86b9e3a3a1b24757248163fb002a79"
+  },
+  {
+   "path": "public/js/modern-payment-messages.js",
+   "sha256": "7c656a4ca745034a55cee8286d703dd8ede6a7625ba9e10c19f35856153b3470"
+  }
+ ],
+ "complete_file_count": 391
+}

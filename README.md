@@ -1,6 +1,6 @@
-# OSC Payment Academy — v4.0.0-rc.1.34
+# OSC Payment Academy — v4.0.0-rc.1.35
 
-Wallet: el historial se conserva al reiniciar y el monto arranca en el último importe + 50. Ver RELEASE_NOTES_v4.0.0-rc.1.34.md.
+E-Commerce: autenticación 3-D Secure separada de la autorización, challenge con código, escenarios 3DS, CVV2/CVC2/CSC y nueva laptop. Ver RELEASE_NOTES_v4.0.0-rc.1.35.md.
 
 ## v4.0.0-rc.1.30
 

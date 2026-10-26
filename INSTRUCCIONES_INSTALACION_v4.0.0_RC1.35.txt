@@ -1,0 +1,16 @@
+OSC Payment Academy v4.0.0-rc.1.35
+E-Commerce: 3-D Secure separado de la autorización, challenge con código, escenarios 3DS, código de seguridad y nueva laptop.
+
+INSTALACIÓN (paquete INCREMENTAL · requiere tener instalada la rc.1.34):
+1. Descomprimir el ZIP y copiar su contenido sobre la raíz del repositorio en GitHub, reemplazando archivos.
+2. No hay migración nueva.
+3. Despliegue habitual.
+
+Pruebas mínimas:
+1. E-Commerce → el producto, el total y el botón muestran el mismo monto (último + 20).
+2. Visa · Challenge → ventana del banco → 123456 → aprobada. Panel 3: AReq/ARes/CRes/RReq; después la 0100 con 60.8 = 05, 126.9 y 126.10.
+3. Mastercard · Frictionless → DE 48 con SE 42 = 212, SE 43 y SE 92; la 0110 no trae el SE 92.
+4. Amex · Intento → Bit 61 ECI 06 y Bit 53 = 04 + CSC. Escenario 51 → Action Code 116.
+5. Challenge fallido → resultado "No pudimos verificar tu identidad"; no se envía autorización.
+6. Fila del campo 126 / 48 / 61 → "🛡️ 3-D Secure" → pestaña "Tu transacción".
+7. Regresión: Wallet (pago y popup del DE 55) y POS sin cambios.

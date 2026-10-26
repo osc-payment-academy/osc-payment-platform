@@ -115,6 +115,7 @@
     if (ecommerce) {
       v += "42" + "07" + "01" + "03" + ecommerce.sli; // SE 42 · subfield 01 · n-3
       if (ecommerce.aav) v += "43" + pad2(ecommerce.aav.length) + ecommerce.aav; // SE 43 UCAF/AAV
+      if (ecommerce.cvc) v += "92" + "03" + ecommerce.cvc; // SE 92 CVC 2 (n-3) · CIS DE 48 SE 92
     }
     if (installments) v += "95" + "06" + "ARGCTA"; // SE 95 Mastercard Promotion Code
     return v;
@@ -124,7 +125,7 @@
       row(18, "Merchant Type (MCC)", ACQ.mcc, "4", "FIXED", "Rubro del comercio · CIS Tabla 14: M"),
       row(32, "Acquiring Institution ID Code", ACQ.mcAcquirerId, String(ACQ.mcAcquirerId.length), "LLVAR", "Identificación del adquirente · CIS Tabla 14: M"),
       row(48, "Additional Data: Private Use", mcDe48({ tcc: channel === "cnp" ? "T" : "R", installments, ecommerce }), "Variable", "LLLVAR",
-        `TCC ${channel === "cnp" ? "T (orden electrónica)" : "R (venta minorista)"}${ecommerce ? " · SE 42 Electronic Commerce Indicators" + (ecommerce.aav ? " · SE 43 UCAF" : "") : ""}${installments ? " · SE 95 = ARGCTA (cuotas Argentina)" : ""} · CIS DE 48`),
+        `TCC ${channel === "cnp" ? "T (orden electrónica)" : "R (venta minorista)"}${ecommerce ? " · SE 42 Electronic Commerce Indicators" + (ecommerce.aav ? " · SE 43 UCAF" : "") + (ecommerce.cvc ? " · SE 92 CVC 2" : "") : ""}${installments ? " · SE 95 = ARGCTA (cuotas Argentina)" : ""} · CIS DE 48`),
       row(61, "Point-of-Service (POS) Data", mcDe61({ channel }), "Variable", "LLLVAR", `${channel === "cnp" ? "Titular y tarjeta no presentes · CAT 6 e-commerce" : "Terminal atendida · titular y tarjeta presentes · capacidad contactless EMV"} · país ${ACQ.country} · CP · CIS DE 61: M`),
     ];
     if (channel === "card") {
