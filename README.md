@@ -1,6 +1,6 @@
-# OSC Payment Academy — v4.0.0-rc.1.35
+# OSC Payment Academy — v4.0.0-rc.1.37
 
-E-Commerce: autenticación 3-D Secure separada de la autorización, challenge con código, escenarios 3DS, CVV2/CVC2/CSC y nueva laptop. Ver RELEASE_NOTES_v4.0.0-rc.1.35.md.
+Se retira el Tutor OSC; la ficha del campo (☝) se abre desde cada fila del mensaje. Ver RELEASE_NOTES_v4.0.0-rc.1.37.md.
 
 ## v4.0.0-rc.1.30
 

@@ -1,0 +1,170 @@
+{
+ "product": "OSC-ACADEMY",
+ "version": "4.0.0-rc.1.37",
+ "title": "Incremental sobre rc.1.36: se retira el Tutor OSC; ficha del campo en cada fila; corrige package.json",
+ "parent_baseline": "OSC-ACADEMY v4.0.0-rc.1.36",
+ "generated_at": "2026-10-26T19:12:38.314662+00:00",
+ "deleted_files": [],
+ "policy": {
+  "no_silent_file_deletion": true,
+  "sha256_inventory": true,
+  "incremental_install_package": true,
+  "complete_backup_package": true,
+  "manuals_excluded": true
+ },
+ "incremental_files": [
+  {
+   "path": "INSTRUCCIONES_INSTALACION_v4.0.0_RC1.37.txt",
+   "sha256": "7de7082612319d478f923043a51c54f717332631cc4ca89263d13c576f683752"
+  },
+  {
+   "path": "README.md",
+   "sha256": "0bb0504032c5f15d1e54936100510ff60a92873317ace770c190d03eaac6c17a"
+  },
+  {
+   "path": "RELEASE_NOTES_v4.0.0-rc.1.37.md",
+   "sha256": "bfa1fef4df8c1eeb9543434d8bc67a4437f06c7d9ee40568b192bf92e21da141"
+  },
+  {
+   "path": "package.json",
+   "sha256": "03dbca3e15f95d63b65f6244ebff211c0a105b42c7d67fc4fbacf35ac7db16e8"
+  },
+  {
+   "path": "public/atm.html",
+   "sha256": "7c974e6a7c5d68ca624dc9eafe26e3dad3bef803c2c91c2d84940c527b563554"
+  },
+  {
+   "path": "public/constructor.html",
+   "sha256": "6813ad3dc22b60d3ebed840b348de7a191a55e186e7952faa6fc012bb6782fe5"
+  },
+  {
+   "path": "public/curso_interactivo.html",
+   "sha256": "fd54b0718e7bb60adf7e07844f9ef9f3f69c48b3a81cfc43c2fc17749d200544"
+  },
+  {
+   "path": "public/ecommerce.html",
+   "sha256": "50fa43cf87caace64b4b280eb75093c3dc85bedd4e133c0786b786200c4abb7e"
+  },
+  {
+   "path": "public/index.html",
+   "sha256": "ab8ca9697172727628989c7e28c76f3a0883c1f2b632014fd67425adf4b98f88"
+  },
+  {
+   "path": "public/pos.html",
+   "sha256": "ab9593c357240b956a244b27b0474c80e74288d413fb7301c65763947cf1adbb"
+  },
+  {
+   "path": "public/saas-admin.html",
+   "sha256": "7a069b08931492f6f39a21efea73dd2e9ace5a5071e545ab02b3dc6b5f762fe3"
+  },
+  {
+   "path": "public/wallet.html",
+   "sha256": "46755068e5c1141a3e6c64aae6d41baefec55e6fa62537407342b31995a71e74"
+  },
+  {
+   "path": "public/curso/slide-02.html",
+   "sha256": "2df1dd2294ac928ee962b15361a0ce3d4f8eca7af810b85ce34baaa7cce5f54a"
+  },
+  {
+   "path": "public/curso/slide-03.html",
+   "sha256": "1feda92f5be8ea55407535d430459decc706c8c7e80a01b1dad5d704e7c8c4e8"
+  },
+  {
+   "path": "public/curso/slide-04.html",
+   "sha256": "3fde1891aebb86bb3d2415a9e99dbfa7cd4dc56de513b985cb0631f7b3163361"
+  },
+  {
+   "path": "public/curso/slide-05.html",
+   "sha256": "81cbb790c6cf63ade7411a7da9be52257f988c6dadf39bd3a94cc37e733d4a1e"
+  },
+  {
+   "path": "public/curso/slide-05b.html",
+   "sha256": "8254f5e66ad250bb9b2cf4a47ac4c15053ec6562974897b51263165e87529266"
+  },
+  {
+   "path": "public/curso/slide-06.html",
+   "sha256": "ab2ac1dd9a8f6a2dac0b7755e353ff1aef720282f0782c7ddadf07fe9017bbf5"
+  },
+  {
+   "path": "public/curso/slide-07.html",
+   "sha256": "dc47b04e9dbc63840b1a09303ea70b0dbbd1d606882d990bbe269d1ee7512487"
+  },
+  {
+   "path": "public/curso/slide-08.html",
+   "sha256": "192736b83a361161b501bd5d74029ca4f9ca280216a5db4ee262dc8e6fc64b5a"
+  },
+  {
+   "path": "public/curso/slide-09.html",
+   "sha256": "9d81dd01ccdd2b75a0a674c96ab6571e5247498035fae345ef8159791c767b71"
+  },
+  {
+   "path": "public/curso/slide-10.html",
+   "sha256": "8d138f61682cc274200b5ec2c553e84d54e04265a2698f9c092fd97c2bfea89a"
+  },
+  {
+   "path": "public/curso/slide-11.html",
+   "sha256": "21ed1c5f3f7fee1b15436345fe355eb135609455503052b77a88236ea18c86c1"
+  },
+  {
+   "path": "public/curso/slide-12.html",
+   "sha256": "04704ca82a2a6d6067db8793ad5d194c6d4e334a6a706abfa0f2a4c1d52af204"
+  },
+  {
+   "path": "public/curso/slide-13.html",
+   "sha256": "0ac230ca874068a2a116607d7f3db41e050e11c1daf8b34cb2e7b42fa1f77082"
+  },
+  {
+   "path": "public/curso/slide-14.html",
+   "sha256": "d3c4a51be047313ddd5b64107e8209c7ef8e3dc11d2eec022aba4858c250653a"
+  },
+  {
+   "path": "public/curso/slide-15.html",
+   "sha256": "9571cb82c5bb63193056e3ba83cc13d916e7e8db770efa8774c87033fa48d5af"
+  },
+  {
+   "path": "public/curso/slide-16.html",
+   "sha256": "bdf72b4e3c7a415a60342c904ca1162d90a932c88fdc2a4f198f1ac0aee1ddbe"
+  },
+  {
+   "path": "public/curso/slide-17.html",
+   "sha256": "3390a0d65f106eb9e535a41f1ce50a697cdea787a13d180c249845df4914f146"
+  },
+  {
+   "path": "public/curso/slide-18.html",
+   "sha256": "57726d751ab188cae1a6bdb3cddda0bcb8893165cc761f12722598e109f64b96"
+  },
+  {
+   "path": "public/curso/slide-19.html",
+   "sha256": "0cdf3c03fd2ac80f78a5bae09104f9c48dccb91d8d72da292de526760c8e7180"
+  },
+  {
+   "path": "public/curso/slide-20.html",
+   "sha256": "78bd51dab14b335e5830c9e6aaccc61e040fc0f796640c2ddd22044a9a470f66"
+  },
+  {
+   "path": "public/curso/slide-21.html",
+   "sha256": "9d2b18a18ea5b65f3f6fa8df0664b4be2611cfd602cf99386f142685ab3d8a31"
+  },
+  {
+   "path": "public/curso/slide-22.html",
+   "sha256": "4e8d9888aa6331cbaca8c3fd9828d76f915d571985e762808d227f89a26f94b3"
+  },
+  {
+   "path": "public/curso/slide-23.html",
+   "sha256": "231aa9b107136568b7aad8110b3dbce604b28a70bf1a8848931da054c8cc9a28"
+  },
+  {
+   "path": "public/js/osc-learning.js",
+   "sha256": "1817d575543fe0ba7f593b882047cf24757c9db07cffd39646462228d49bb144"
+  },
+  {
+   "path": "public/js/module-guide.js",
+   "sha256": "dc824e4bdffdc460bf91bc367e88f79355b0361772c02d0044ca5f1c4860c473"
+  },
+  {
+   "path": "public/js/de55-popup.js",
+   "sha256": "3e1ffdbddb8b322c84d0bad31211d3bb8fddc28498ad94b38ada19008ebce817"
+  }
+ ],
+ "complete_file_count": 397
+}

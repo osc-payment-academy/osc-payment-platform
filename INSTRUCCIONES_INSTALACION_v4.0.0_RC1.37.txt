@@ -1,0 +1,15 @@
+OSC Payment Academy v4.0.0-rc.1.37
+Se retira el Tutor OSC; la ficha del campo (☝) se abre desde cada fila. Corrige el package.json vacío de la rc.1.36.
+
+INSTALACIÓN (paquete INCREMENTAL · requiere tener instalada la rc.1.36):
+1. Descomprimir el ZIP y copiar su contenido sobre la raíz del repositorio en GitHub, reemplazando archivos.
+   IMPORTANTE: incluye package.json corregido (la rc.1.36 lo dejaba vacío).
+2. No hay migración nueva.
+3. Despliegue habitual.
+
+Pruebas mínimas:
+1. POS, ATM, Wallet, E-Commerce, Constructor y Curso: ya no aparece el Tutor OSC.
+2. Wallet → pagar → en el mensaje, ☝ del DE 22 → ficha del campo de Visa.
+3. E-Commerce Amex → ☝ del Bit 61 → ficha SafeKey.
+4. POS y ATM → hacer una operación → ☝ en un campo → ficha de la red de la tarjeta. El menú ☰ sigue funcionando.
+5. package.json del repositorio tiene contenido (versión 4.0.0-rc.1.37).

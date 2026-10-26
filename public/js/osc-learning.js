@@ -1,10 +1,8 @@
-/* OSC Learning layout · v4.0.0-rc.1.19
+/* OSC Learning layout · v4.0.0-rc.1.37
    Capa compartida para POS, ATM, Wallet y E-Commerce:
-   - agrega el Tutor OSC como cuarta columna anclada (dock)
-   - vuelve interactivas las filas de Data Elements (clic o "?" → el Tutor explica el campo)
-   - agrega "Explícame esta pantalla" y "Buscar por nombre"
-   - registra eventos del Tutor en el modo técnico
-   Debe cargarse ANTES de tutor-osc.js. */
+   - rc.1.37: se retira el Tutor OSC (sin cuarta columna). Cada fila de Data Elements suma la manito ☝
+     que abre la ficha del campo (js/field-cards.js) de la red de la operación.
+   - selector de simulador en el encabezado y eventos del modo técnico. */
 (()=>{
   'use strict';
   const script=document.currentScript;
@@ -12,7 +10,7 @@
   const MAP={'pos.html':'pos','atm.html':'atm','wallet.html':'wallet','ecommerce.html':'ecommerce'};
   const moduleKey=script?.dataset?.module||MAP[file]||'';
   if(!moduleKey||window.OSCLearning)return;
-  const VERSION='4.0.0-rc.1.19';
+  const VERSION='4.0.0-rc.1.37';
   const GRID_SEL={pos:'.workspace',atm:'.atm-grid',wallet:'.workspace',ecommerce:'.workspace'}[moduleKey];
   const KEY='oscTutorDockCollapsed';
   const listeners=[];
@@ -27,6 +25,7 @@
   function buildDock(){
     grid=document.querySelector(GRID_SEL);
     if(!grid)return false;
+    return true; // rc.1.37 · sin Tutor: no se agrega la columna
     dock=document.createElement('aside');dock.id='oscTutorDock';dock.className='osc-tutor-dock';dock.setAttribute('aria-label','Tutor OSC');
     const tab=document.createElement('button');tab.type='button';tab.className='osc-dock-tab';tab.textContent='🎓 Tutor OSC';tab.title='Abrir Tutor OSC';tab.onclick=()=>setCollapsed(false);
     dock.appendChild(tab);grid.appendChild(dock);
@@ -34,9 +33,10 @@
     return true;
   }
   function apply(){
-    on=!!mq.matches&&!!dock;
+    // rc.1.37 · se mantiene el modo de pantalla (menú ☰ y barra lateral plegada) sin la columna del Tutor.
+    on=!!mq.matches&&!!grid;
     document.body.classList.toggle('osc-learning-on',on);
-    grid?.classList.toggle('osc-grid-4',on);
+    grid?.classList.toggle('osc-grid-4',false);
     if(dock){dock.hidden=!on;dock.classList.toggle('is-collapsed',collapsed);}
     document.body.classList.toggle('osc-dock-collapsed',on&&collapsed);
     listeners.forEach(f=>{try{f(on)}catch(e){}});
@@ -104,9 +104,24 @@
         const f=document.createElement('small');f.className='osc-de-fmt';
         f.textContent=[(c[4].textContent||'').trim(),(c[3].textContent||'').trim()].filter(Boolean).join(' · ');nameCell.appendChild(f);
       }
-      const b=document.createElement('button');b.type='button';b.className='osc-de-help';
-      b.title='Explicar con Tutor OSC';b.setAttribute('aria-label','Explicar DE '+key);b.textContent='?';nameCell.appendChild(b);
+      if(!/^\d{1,3}$/.test(key))return;
+      const net=fieldNetwork();
+      if(!net||!window.OSCFieldCards?.has?.(Number(key),net))return;
+      const b=document.createElement('button');b.type='button';b.className='osc-de-help osc-de-card';
+      b.title='Ver la ficha del campo';b.setAttribute('aria-label','Ficha del campo '+key);b.textContent='☝';
+      b.onclick=e=>{e.preventDefault();e.stopPropagation();openFieldCard(key)};nameCell.appendChild(b);
     });
+  }
+  // Red de la operación que se está mirando: Wallet/E-Commerce toman la última transacción; POS/ATM, la tarjeta elegida.
+  function fieldNetwork(){
+    if(moduleKey==='wallet'||moduleKey==='ecommerce')return String(window.OSCModernLastTx?.network||'').toLowerCase();
+    const n=String(window.OSCHelp?.selectedNetwork?.()||'').toLowerCase();
+    return n.startsWith('master')?'mastercard':n;
+  }
+  function openFieldCard(de){
+    const net=fieldNetwork();
+    if(window.OSCHelp?.openTechnical)return window.OSCHelp.openTechnical(Number(de),net);
+    return window.OSCFieldCards?.open?.(Number(de),net);
   }
   function ensureTools(){
     const table=document.querySelector('#deTable')?.closest('table')||document.querySelector('.debox table');
@@ -114,13 +129,11 @@
     const wrap=table.closest('.table-wrap')||table.closest('.debox')||table;
     grid?.querySelectorAll(':scope>*').forEach(ch=>ch.classList.toggle('osc-de-panel',ch.contains(table)));
     if(wrap.previousElementSibling?.classList?.contains('osc-de-tools'))return;
-    const tools=document.createElement('div');tools.className='osc-de-tools';
-    const mk=(label,fn)=>{const b=document.createElement('button');b.type='button';b.className='osc-tool-btn';b.textContent=label;b.onclick=fn;return b};
-    tools.append(mk('Buscar por nombre',()=>window.OSCTutor?.searchByName?.()),mk('Explícame esta pantalla',()=>window.OSCTutor?.explainScreen?.()));
+    const tools=document.createElement('div');tools.className='osc-de-tools';tools.style.display='none';
     wrap.parentNode.insertBefore(tools,wrap);
     if(!wrap.nextElementSibling?.classList?.contains('osc-de-hint')){
       const h=document.createElement('div');h.className='osc-de-hint';
-      h.textContent='Hacé clic en una fila o en ? y el Tutor te explica ese campo con el valor real de tu intento.';
+      h.textContent='Tocá ☝ en un campo para ver su ficha: qué es, cómo se arma y qué mirar.';
       wrap.parentNode.insertBefore(h,wrap.nextSibling);
     }
   }
@@ -137,8 +150,7 @@
     tr.classList.add('osc-de-selected');
     const cells=tr.cells,nameCell=cells[1];
     const info={value:(cells[2]?.textContent||'').trim(),name:(nameCell?.firstChild?.textContent||nameCell?.textContent||'').trim()};
-    if(window.OSCTutor?.selectField)window.OSCTutor.selectField(tr.dataset.oscDe,info);
-    else pending=[tr.dataset.oscDe,info];
+    pending=[tr.dataset.oscDe,info];
   });
 
   /* ---------- arranque ---------- */
