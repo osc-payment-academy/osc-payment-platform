@@ -1,0 +1,50 @@
+{
+ "product": "OSC-ACADEMY",
+ "version": "4.0.0-rc.1.32",
+ "title": "Incremental sobre rc.1.31: Wallet con alta y pago separados, paso a paso y perfil Guayaquil",
+ "parent_baseline": "OSC-ACADEMY v4.0.0-rc.1.31",
+ "generated_at": "2026-10-26T17:02:29.318235+00:00",
+ "deleted_files": [],
+ "policy": {
+  "no_silent_file_deletion": true,
+  "sha256_inventory": true,
+  "incremental_install_package": true,
+  "complete_backup_package": true,
+  "manuals_excluded": true
+ },
+ "incremental_files": [
+  {
+   "path": "INSTRUCCIONES_INSTALACION_v4.0.0_RC1.32.txt",
+   "sha256": "b2ae54560389298bdb862be725ee7550cf0274dd1faaf6598b6f97e412ce253d"
+  },
+  {
+   "path": "README.md",
+   "sha256": "4eaed0d59340fbb4363337e077c9e3be418fc44fcfea038795698c611fb15407"
+  },
+  {
+   "path": "RELEASE_NOTES_v4.0.0-rc.1.32.md",
+   "sha256": "f69030805a3c22ef308009930bbda1fe71b127be4f6729cbe07051b0d77ce8e9"
+  },
+  {
+   "path": "package.json",
+   "sha256": "c38cd35dbd7c6803508929f016a426f45810abd9d131159495a1438862883d61"
+  },
+  {
+   "path": "public/wallet.html",
+   "sha256": "84b2aed3ec5292588c7c93cc8ba378750e9b93eb70aad622bc4365bb5f4f9486"
+  },
+  {
+   "path": "public/js/wallet-lab.js",
+   "sha256": "4e8fcde6a5999922f368498d5d4bbb0b0a93f293a32cccc4ffb344629fadfa33"
+  },
+  {
+   "path": "public/js/modern-channel-iso.js",
+   "sha256": "9c35f586e088a7e0ccdaceb5648d9e870fba5e11698f6a670be04fd4437f8a10"
+  },
+  {
+   "path": "public/js/iso-network-spec.js",
+   "sha256": "420b47533b4a51e0c905aa26526c0a440aa882dde0ac56d3238eb89bb5ea04d7"
+  }
+ ],
+ "complete_file_count": 381
+}

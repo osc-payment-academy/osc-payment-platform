@@ -19,6 +19,9 @@
     country: "032",
     merchantName: "OSC PAYMENT ACADEMY",
     city: "BUENOS AIRES",
+    countryName: "Argentina",
+    alpha2: "AR",
+    alpha3: "ARG",
     postal: "C1043AAZ",
     terminal: "TERMID01",
     merchantId: "MERCHANT01     ",
@@ -43,8 +46,8 @@
     return (String(d.getFullYear()).slice(-1) + String(day).padStart(3, "0") + pad2(d.getHours()) + String(stan || "000000").padStart(6, "0")).slice(0, 12);
   };
   const fit = (text, len) => String(text).toUpperCase().slice(0, len).padEnd(len, " ");
-  const de43Visa = () => fit(ACQ.merchantName, 25) + fit(ACQ.city, 13) + "AR";
-  const de43Mc = () => fit(ACQ.merchantName, 22) + " " + fit(ACQ.city, 13) + " " + "ARG";
+  const de43Visa = () => fit(ACQ.merchantName, 25) + fit(ACQ.city, 13) + ACQ.alpha2;
+  const de43Mc = () => fit(ACQ.merchantName, 22) + " " + fit(ACQ.city, 13) + " " + ACQ.alpha3;
   const bcd = (n, digits) => String(Math.max(0, Math.round(Number(n) || 0))).padStart(digits, "0").slice(-digits);
   const hexLen = (hex, bytes = 1) => (hex.length / 2).toString(16).toUpperCase().padStart(bytes * 2, "0");
 
@@ -59,7 +62,7 @@
       row(12, "Time, Local Transaction", de12(), "6", "FIXED", "Hora local del comercio (hhmmss) · Visa Tabla 289: M"),
       row(13, "Date, Local Transaction", de13(), "4", "FIXED", "Fecha local (MMDD) · Visa Tabla 289: M"),
       row(18, "Merchant Type (MCC)", ACQ.mcc, "4", "FIXED", "Rubro del comercio · Visa Tabla 289: M"),
-      row(19, "Acquiring Institution Country Code", ACQ.country, "3", "FIXED", "Argentina (032) · Visa Tabla 289: M"),
+      row(19, "Acquiring Institution Country Code", ACQ.country, "3", "FIXED", `${ACQ.countryName} (${ACQ.country}) · Visa Tabla 289: M`),
       row(32, "Acquiring Institution ID Code", ACQ.visaAcquirerBin, String(ACQ.visaAcquirerBin.length), "LLVAR", "BIN del adquirente · Visa Tabla 289: M"),
       row(37, "Retrieval Reference Number", julianRrn(stan), "12", "FIXED", "Referencia del adquirente (YDDDhh + STAN) · Visa Tabla 289: M"),
       row(43, "Card Acceptor Name/Location", de43Visa(), "40", "FIXED", "Nombre 25 + ciudad 13 + país 2 · Visa Tabla 289: M"),
@@ -122,7 +125,7 @@
       row(32, "Acquiring Institution ID Code", ACQ.mcAcquirerId, String(ACQ.mcAcquirerId.length), "LLVAR", "Identificación del adquirente · CIS Tabla 14: M"),
       row(48, "Additional Data: Private Use", mcDe48({ tcc: channel === "cnp" ? "T" : "R", installments, ecommerce }), "Variable", "LLLVAR",
         `TCC ${channel === "cnp" ? "T (orden electrónica)" : "R (venta minorista)"}${ecommerce ? " · SE 42 Electronic Commerce Indicators" + (ecommerce.aav ? " · SE 43 UCAF" : "") : ""}${installments ? " · SE 95 = ARGCTA (cuotas Argentina)" : ""} · CIS DE 48`),
-      row(61, "Point-of-Service (POS) Data", mcDe61({ channel }), "Variable", "LLLVAR", `${channel === "cnp" ? "Titular y tarjeta no presentes · CAT 6 e-commerce" : "Terminal atendida · titular y tarjeta presentes · capacidad contactless EMV"} · país 032 · CP · CIS DE 61: M`),
+      row(61, "Point-of-Service (POS) Data", mcDe61({ channel }), "Variable", "LLLVAR", `${channel === "cnp" ? "Titular y tarjeta no presentes · CAT 6 e-commerce" : "Terminal atendida · titular y tarjeta presentes · capacidad contactless EMV"} · país ${ACQ.country} · CP · CIS DE 61: M`),
     ];
     if (channel === "card") {
       rows.push(row(37, "Retrieval Reference Number", julianRrn(stan), "12", "FIXED", "Requerido en chip y lectura de tarjeta · CIS Tabla 14"));
@@ -219,8 +222,20 @@
     return bin.match(/.{4}/g).map((n) => parseInt(n, 2).toString(16).toUpperCase()).join("");
   }
 
+  // rc.1.32 · Perfil del adquirente (país/ciudad). Por defecto Argentina; Wallet permite Guayaquil (Ecuador).
+  const ACQ_DEFAULT = { ...ACQ };
+  const ACQ_PROFILES = {
+    AR: { country: "032", countryName: "Argentina", alpha2: "AR", alpha3: "ARG", city: "BUENOS AIRES", postal: "C1043AAZ", currency: "032", currencyAlpha: "ARS", cityLabel: "Buenos Aires, ARG" },
+    EC: { country: "218", countryName: "Ecuador", alpha2: "EC", alpha3: "ECU", city: "GUAYAQUIL", postal: "090101", currency: "840", currencyAlpha: "USD", cityLabel: "Guayaquil, ECU" },
+  };
+  function withAcquirer(profileKey, fn) {
+    const p = ACQ_PROFILES[profileKey] || ACQ_PROFILES.AR;
+    Object.assign(ACQ, { country: p.country, countryName: p.countryName, alpha2: p.alpha2, alpha3: p.alpha3, city: p.city, postal: p.postal });
+    try { return fn(p); } finally { Object.assign(ACQ, ACQ_DEFAULT); }
+  }
+
   window.OSCIsoSpec = {
-    ACQ, MANUALS, row, de12, de13, julianRrn, de43Visa, de43Mc, VISA_DE53, MC_DE53,
+    ACQ, ACQ_PROFILES, withAcquirer, MANUALS, row, de12, de13, julianRrn, de43Visa, de43Mc, VISA_DE53, MC_DE53,
     visaRequestAdditions, visaResponseAdditions, visaInstallmentF104, visaInstallment126,
     mcRequestAdditions, mcResponseAdditions, mcDe61, mcDe48, mcInstallmentDe112, mcPlanType,
     amexDpp, amexBit48Row, installmentPlan, merge, bitmapHex,

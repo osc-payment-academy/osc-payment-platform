@@ -1,6 +1,6 @@
-# OSC Payment Academy — v4.0.0-rc.1.31
+# OSC Payment Academy — v4.0.0-rc.1.32
 
-Ficha de campo LINK del campo 126 (cuotas, múltiples cuentas, plazo fijo y área de tokens). Ver RELEASE_NOTES_v4.0.0-rc.1.31.md.
+Simulador Wallet: alta del token separada del pago, modo paso a paso, perfil Guayaquil · USD y reinicio de demo. Ver RELEASE_NOTES_v4.0.0-rc.1.32.md.
 
 ## v4.0.0-rc.1.30
 

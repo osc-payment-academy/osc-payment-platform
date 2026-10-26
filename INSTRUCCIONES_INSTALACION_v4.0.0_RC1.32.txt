@@ -1,0 +1,17 @@
+OSC Payment Academy v4.0.0-rc.1.32
+Simulador Wallet: alta y pago separados, modo paso a paso, perfil Guayaquil · USD.
+
+INSTALACIÓN (paquete INCREMENTAL · requiere tener instalada la rc.1.31):
+1. Descomprimir el ZIP y copiar su contenido sobre la raíz del repositorio en GitHub, reemplazando archivos.
+2. No hay migración nueva. La carpeta public/manuals no viene en el ZIP.
+3. Despliegue habitual.
+
+Pruebas mínimas:
+1. Wallet → Visa → "Agregar a la wallet": se encienden los pasos 1-3 y el panel 3 muestra FPAN •••• 1111 → DPAN •••• 7818.
+2. "Pagar con NFC": corren solo los pasos 4-8; el paso 6 muestra la detokenización; el teléfono muestra "Pago aprobado".
+3. Mientras se ve el resultado, el monto del teléfono y el DE 4 coinciden. "Nueva compra" sube el monto en 50.
+4. Amex → escenarios con Action Code (116, 100, 111) → elegir 51 → rechazo 116 en el teléfono y en el historial.
+5. "Paso a paso" → el paso 4 abre la solicitud con DE 2/22/55 resaltados; el paso 7 abre la respuesta.
+6. Comercio "Guayaquil · USD" → DE 49 = 840, DE 19 = 218, DE 43 con GUAYAQUIL.
+7. "Reiniciar demo" → tarjetas sin token, monto 2.500,00, historial vacío.
+8. Regresión: POS Visa chip → DE 43 termina en "BUENOS AIRES AR" y DE 19 = 032.
