@@ -21,6 +21,8 @@
     "51": { text: "Fondos insuficientes", amex: "116" },
     "05": { text: "No honrar", amex: "100" },
     "14": { text: "Tarjeta inválida", amex: "111" },
+    // rc.1.33 · El importe cambia después de que el teléfono firmó: el ARQC no valida (Visa 82 · MC 88 · Amex 100).
+    "AL": { text: "Importe alterado en tránsito", amex: "100", label: "82 / 88" },
   };
   const AMEX_TEXT = { "000": "Aprobada", "116": "Fondos insuficientes", "100": "Denegada", "111": "Cuenta inválida" };
   const HL = { request: [2, 22, 55], response: [38, 39, 55] };
@@ -86,7 +88,7 @@
     const r = $("#phoneResult"); if (!r) return;
     const okTx = tx.approved;
     const code = n === "amex" ? (okTx ? "000" : tx.code) : (okTx ? "00" : tx.code);
-    const label = n === "amex" ? (AMEX_TEXT[code] || "Rechazada") : (SCN[code]?.text || "Rechazada");
+    const label = tx.tamper ? "Criptograma inválido (ARQC no coincide)" : n === "amex" ? (AMEX_TEXT[code] || "Rechazada") : (SCN[code]?.text || "Rechazada");
     r.className = "phone-result " + (okTx ? "ok" : "ko");
     r.innerHTML = `<div class="ico">${okTx ? "✓" : "✗"}</div><b>${okTx ? "Pago aprobado" : "Pago rechazado"}</b>` +
       `<span>${(profile().currencyAlpha === "USD" ? "US$ " : "$ ") + money(tx.amountCents)}</span>` +
@@ -105,11 +107,12 @@
     const amex = network() === "amex";
     $$(".scenarios .scenario").forEach((b) => {
       const k = b.dataset.code;
-      b.innerHTML = `${k} · ${SCN[k].text}` + (amex ? ` <span class="amex-code">Amex ${SCN[k].amex}</span>` : "");
+      b.innerHTML = (k === "AL" ? `${amex ? "" : SCN[k].label + " · "}${SCN[k].text}` : `${k} · ${SCN[k].text}`) + (amex ? ` <span class="amex-code">Amex ${SCN[k].amex}</span>` : "");
     });
   }
   function scenarioCode(n) {
     const k = $(".scenarios .scenario.active")?.dataset.code || "00";
+    if (k === "AL") return n === "amex" ? "000" : "00"; // el rechazo lo produce la validación del criptograma
     return n === "amex" ? SCN[k].amex : k;
   }
 
@@ -183,7 +186,7 @@
     if (!provisioned[n]) return;
     if (amountUsed) { currentAmount += AMOUNT_STEP; amountUsed = false; }
     lock(true); clearResult(); paintIdle(); renderPhone();
-    const tx = window.OSCModernIso.build("WALLET", n, currentAmount, scenarioCode(n), { profile: profileKey() });
+    const tx = window.OSCModernIso.build("WALLET", n, currentAmount, scenarioCode(n), { profile: profileKey(), tamper: $(".scenarios .scenario.active")?.dataset.code === "AL" });
     window.OSCModernLastTx = tx;
     clearIso("Procesando el pago…");
     let view = null;
@@ -191,6 +194,7 @@
       if (i === 3) view = window.OSCModernIso.render(isoPanel, tx, "Compra Wallet NFC con token", { side: "request", highlight: HL });
       if (i === 5) { const sm = steps[5].querySelector("small"); if (sm) sm.textContent = `Detokeniza: token •••• ${tx.tokenLast4} → tarjeta •••• ${tx.fpanLast4}`; }
       if (i === 6) view?.show("response");
+      if (i === 6 && tx.tamper) { const sm = steps[6].querySelector("small"); if (sm) sm.textContent = "ARQC recalculado ≠ recibido → rechazo"; }
       if (i === 7) showResult(tx, n);
     });
     amountUsed = true;

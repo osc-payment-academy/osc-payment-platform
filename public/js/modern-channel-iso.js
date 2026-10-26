@@ -21,7 +21,7 @@
   const yymmdd = () => { const d = now(); return String(d.getFullYear()).slice(-2) + pad2(d.getMonth() + 1) + pad2(d.getDate()); };
   const tlvLen = (v) => (v.length / 2).toString(16).toUpperCase().padStart(2, "0");
 
-  function emv(network, pan, amount12, currency, country = "032") {
+  function emv(network, pan, amount12, currency, country = "032", sentAmount12 = null) {
     const C = window.OSCEmvCrypto;
     const iad = network === "mastercard" ? "0110A00003220000000000000000000000" : "06011203A0B800";
     const un = hex(4), atc = "00" + hex(1), date = yymmdd(), aip = network === "mastercard" ? "1980" : "2000";
@@ -30,22 +30,28 @@
       trace = C.computeArqc({ pan, psn: "00", atc, scheme: network === "visa" ? "UDK" : "CSK", tags: { "9F02": amount12, "9F03": "000000000000", "9F1A": "0" + country, "95": "0000000000", "5F2A": currency, "9A": date, "9C": "00", "9F37": un, "82": aip, cvr: network === "mastercard" ? iad.slice(4, 16) : iad.slice(6) } });
       arqc = trace.arqc;
     }
-    const tags = [["9F26", arqc], ["9F27", "80"], ["9F10", iad], ["9F37", un], ["9F36", atc], ["95", "0000000000"], ["9A", date], ["9F02", amount12], ["9F03", "000000000000"], ["9C", "00"], ["5F2A", currency], ["82", aip], ["9F1A", "0" + country], ["9F34", "1F0302"], ["9F6E", network === "visa" ? "20700000" : "0000"], ["5F34", "00"]];
+    // rc.1.33 · "Importe alterado en tránsito": el teléfono firmó amount12, pero viaja sentAmount12. El emisor recalcula con lo recibido.
+    let validation = trace ? { ok: true, recomputed: trace.arqc } : null;
+    if (C && trace && sentAmount12 && sentAmount12 !== amount12) {
+      const again = C.computeArqc({ pan, psn: "00", atc, scheme: network === "visa" ? "UDK" : "CSK", tags: { "9F02": sentAmount12, "9F03": "000000000000", "9F1A": "0" + country, "95": "0000000000", "5F2A": currency, "9A": date, "9C": "00", "9F37": un, "82": aip, cvr: network === "mastercard" ? iad.slice(4, 16) : iad.slice(6) } });
+      validation = { ok: false, recomputed: again.arqc, reason: "el importe (9F02 / DE 4) cambió después de que el teléfono firmó" };
+    }
+    const tags = [["9F26", arqc], ["9F27", "80"], ["9F10", iad], ["9F37", un], ["9F36", atc], ["95", "0000000000"], ["9A", date], ["9F02", sentAmount12 || amount12], ["9F03", "000000000000"], ["9C", "00"], ["5F2A", currency], ["82", aip], ["9F1A", "0" + country], ["9F34", "1F0302"], ["9F6E", network === "visa" ? "20700000" : "0000"], ["5F34", "00"]];
     const tlv = tags.map(([t, v]) => t + tlvLen(v) + v).join("");
     const value = network === "visa" ? "01" + (tlv.length / 2).toString(16).toUpperCase().padStart(4, "0") + tlv : tlv;
-    const arpc = trace && C ? C.computeArpc(trace.key, arqc, "3030") : null;
-    return { value, trace: trace ? { ...trace, pan, psn: "00", atc, network } : null, arpc };
+    const arpc = trace && C && validation?.ok ? C.computeArpc(trace.key, arqc, "3030") : null;
+    return { value, trace: trace ? { ...trace, pan, psn: "00", atc, network } : null, arpc, validation };
   }
 
   // rc.1.32 · opts.profile = "AR" (default) | "EC" (Guayaquil, USD). Solo cambia moneda/país del canal Wallet.
   function build(channel, network, amountCents, code = "00", opts = {}) {
     const S = spec();
     if (!S.withAcquirer) return buildCore(channel, network, amountCents, code, null);
-    return S.withAcquirer(opts.profile || "AR", (prof) => buildCore(channel, network, amountCents, code, opts.profile ? prof : null));
+    return S.withAcquirer(opts.profile || "AR", (prof) => buildCore(channel, network, amountCents, code, opts.profile ? prof : null, !!opts.tamper && channel === "WALLET"));
   }
   const CUR_ALPHA = { "032": "ARS", "840": "USD" };
 
-  function buildCore(channel, network, amountCents, code, prof) {
+  function buildCore(channel, network, amountCents, code, prof, tamper = false) {
     const S = spec();
     const r = S.row;
     const cred = CRED[network] || CRED.visa;
@@ -53,7 +59,10 @@
     const pan = wallet ? cred.token : cred.pan;
     const currency = wallet ? (prof?.currency || "032") : "840";
     const country = S.ACQ.country || "032";
-    const amount12 = String(Math.round(amountCents)).padStart(12, "0");
+    const signed12 = String(Math.round(amountCents)).padStart(12, "0");
+    // Con tamper, el importe que viaja (DE 4 y 9F02) es +1.000,00 respecto del firmado; el emisor rechaza por criptograma.
+    const amount12 = tamper ? String(Math.round(amountCents) + 100000).padStart(12, "0") : signed12;
+    if (tamper) code = network === "amex" ? "100" : network === "visa" ? "82" : "88";
     const stan = String(Math.floor(100000 + Math.random() * 900000));
     const auth = String(Math.floor(100000 + Math.random() * 900000));
     const approved = network === "amex" ? code === "000" || code === "00" : code === "00";
@@ -83,7 +92,7 @@
         r(49, "Currency Code, Transaction", currency, "3", "FIXED", CUR_ALPHA[currency] || currency),
       ];
       if (wallet) {
-        emvData = emv("amex", pan, amount12, "0" + currency, country);
+        emvData = emv("amex", pan, signed12, "0" + currency, country, amount12);
         req.push(r(55, "ICC System Related Data", emvData.value, `${emvData.value.length / 2} bytes`, "LLLVAR", "Expresspay desde el teléfono · ARQC calculado"));
       } else {
         const aevv = "0" + hex(20).slice(1); // sub-subcampo 1 = 0 (Authenticate Successful)
@@ -115,7 +124,7 @@
         req.push(r(25, "POS Condition Code", wallet ? "00" : "59", "2", "FIXED", wallet ? "Operación normal" : "59 = E-commerce request by public network (Visa Field 25)"));
         req = S.merge(req, S.visaRequestAdditions({ stan, channel: wallet ? "card" : "cnp" }));
         if (wallet) {
-          emvData = emv("visa", pan, amount12, "0" + currency, country);
+          emvData = emv("visa", pan, signed12, "0" + currency, country, amount12);
           req = S.merge(req, [r(23, "Card Sequence Number", "000", "3", "FIXED", "PSN del token"), r(55, "ICC-Related Data · Usage 1 · Dataset 01", emvData.value, `${emvData.value.length / 2} bytes`, "LLLVAR", "qVSDC desde el teléfono · ARQC calculado (CVN 10)")]);
         } else {
           const cavv = hex(20);
@@ -139,7 +148,7 @@
         req.push(r(22, "POS Entry Mode", wallet ? "071" : "812", "3", "FIXED", wallet ? "07 contactless M/Chip · 1 acepta PIN (CIS DE 22)" : "81 e-commerce con AAV en DE 48 SE 43 · 2 sin PIN (CIS DE 22)"));
         req = S.merge(req, S.mcRequestAdditions({ stan, channel: wallet ? "card" : "cnp", chip: wallet, ecommerce }));
         if (wallet) {
-          emvData = emv("mastercard", pan, amount12, "0" + currency, country);
+          emvData = emv("mastercard", pan, signed12, "0" + currency, country, amount12);
           req = S.merge(req, [r(55, "ICC System-Related Data", emvData.value, `${emvData.value.length / 2} bytes`, "LLLVAR", "M/Chip desde el teléfono (MDES) · ARQC calculado (EMV CSK)")]);
         }
         res = S.merge([
@@ -162,7 +171,8 @@
       channel, network, pan, panLast4: pan.slice(-4), fpanLast4: cred.pan.slice(-4), tokenLast4: cred.token.slice(-4), profile: prof ? (prof.currencyAlpha === "USD" ? "EC" : "AR") : "AR", stan, auth: approved ? auth : "", approved, code, currency, amountCents,
       request: { mti: mtiReq, fields: req, bitmap: S.bitmapHex(req) },
       response: { mti: mtiRes, fields: res, bitmap: S.bitmapHex(res) },
-      arqcTrace: emvData?.trace ? { ...emvData.trace, validation: { ok: true, recomputed: emvData.trace.arqc }, arpc: approved ? emvData.arpc : null } : null,
+      arqcTrace: emvData?.trace ? { ...emvData.trace, channel, fpanLast4: cred.pan.slice(-4), validation: emvData.validation || { ok: true, recomputed: emvData.trace.arqc }, arpc: approved ? emvData.arpc : null } : null,
+      tamper,
       threeDs, manual: notes[0],
     };
   }
@@ -181,16 +191,14 @@
       panel.innerHTML = `<h2>3 · Mensaje ISO8583</h2>
         <div class="sub">${esc(title)} · ${esc(tx.manual)}</div>
         <div class="iso-side-tabs" style="display:flex;gap:6px;margin:8px 0"><button type="button" data-side="request" class="scenario${side === "request" ? " active" : ""}">Solicitud ${tx.request.mti}</button><button type="button" data-side="response" class="scenario${side === "response" ? " active" : ""}">Respuesta ${tx.response.mti}</button></div>
-        ${tx.arqcTrace ? `<div style="margin:6px 0"><button type="button" class="scenario" data-edu="arqc">🔐 Ver ARQC / ARPC de esta compra</button></div>` : ""}
         <div class="metrics"><div class="metric"><small>MTI</small><b>${m.mti}</b></div><div class="metric"><small>BITMAP (Hex)</small><b style="word-break:break-all">${m.bitmap}</b></div><div class="metric"><small>CAMPOS</small><b>${m.fields.length}</b></div></div>
         <div class="bitmapbox"><h3>BITMAP ISO8583 (1–64)</h3><div class="bitgrid">${grid(1)}</div></div>
         ${sec ? `<div class="bitmapbox"><h3>BITMAP ISO8583 (65–128)</h3><div class="bitgrid">${grid(65)}</div></div>` : ""}
         <div class="debox"><h3>DATA ELEMENTS</h3><table><thead><tr><th>DE</th><th>Nombre</th><th>Valor</th></tr></thead><tbody>
-        ${m.fields.map((f) => `<tr${(hl[side] || []).includes(Number(f[0])) ? ' class="de-hl"' : ""}><td>${esc(f[0])}</td><td>${esc(f[1])}<br><small style="color:#8fb0c6">${esc(f[5] || "")}</small></td><td style="font-family:Consolas,monospace;word-break:break-all">${esc(f[2])}</td></tr>`).join("")}
+        ${m.fields.map((f) => `<tr${(hl[side] || []).includes(Number(f[0])) ? ' class="de-hl"' : ""}><td>${esc(f[0])}</td><td>${esc(f[1])}<br><small style="color:#8fb0c6">${esc(f[5] || "")}</small>${tx.arqcTrace && (f[0] === "55" || f[0] === "23") ? ` <button type="button" class="de-edu-chip" data-edu="arqc">🔐 ARQC / ARPC</button>` : ""}</td><td style="font-family:Consolas,monospace;word-break:break-all">${esc(f[2])}</td></tr>`).join("")}
         </tbody></table></div>`;
       panel.querySelectorAll("[data-side]").forEach((b) => (b.onclick = () => { side = b.dataset.side; draw(); }));
-      const edu = panel.querySelector("[data-edu]");
-      if (edu) edu.onclick = () => window.OSCSecurityEdu?.open("arqc", tx.arqcTrace, "trace");
+      panel.querySelectorAll("[data-edu]").forEach((edu) => (edu.onclick = (e) => { e.stopPropagation(); window.OSCSecurityEdu?.open("arqc", tx.arqcTrace, "trace"); }));
       const box = panel.querySelector(".debox"), first = box?.querySelector(".de-hl"); if (box && first) box.scrollTop += first.getBoundingClientRect().top - box.getBoundingClientRect().top - 40;
     };
     draw();

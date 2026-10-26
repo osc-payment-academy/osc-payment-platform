@@ -1,0 +1,50 @@
+{
+ "product": "OSC-ACADEMY",
+ "version": "4.0.0-rc.1.33",
+ "title": "Incremental sobre rc.1.32: Wallet con ARQC/ARPC en el DE 55 y criptograma alterado",
+ "parent_baseline": "OSC-ACADEMY v4.0.0-rc.1.32",
+ "generated_at": "2026-10-26T17:30:05.752002+00:00",
+ "deleted_files": [],
+ "policy": {
+  "no_silent_file_deletion": true,
+  "sha256_inventory": true,
+  "incremental_install_package": true,
+  "complete_backup_package": true,
+  "manuals_excluded": true
+ },
+ "incremental_files": [
+  {
+   "path": "INSTRUCCIONES_INSTALACION_v4.0.0_RC1.33.txt",
+   "sha256": "bb59cb44eae07fc367db755ee30c7a8d8bd6a5543d03868cf0756513588c2471"
+  },
+  {
+   "path": "README.md",
+   "sha256": "bd861151678dc64eb869d78548390ce1eddfbeaf341883e50deb3a80ae63e594"
+  },
+  {
+   "path": "RELEASE_NOTES_v4.0.0-rc.1.33.md",
+   "sha256": "67f14a808eb9008e1b1a264a57439956aecfcd9aa1a4c138a61fa155fb5674d5"
+  },
+  {
+   "path": "package.json",
+   "sha256": "8c2dd2c6cc35678105135cfa33b79aa54eb123bc7688fbb7fca3caf1f92dec7c"
+  },
+  {
+   "path": "public/wallet.html",
+   "sha256": "62877fcce3c535c34f1c2be45ac44071c83793a24967739558ef227aa4ac0ac2"
+  },
+  {
+   "path": "public/js/wallet-lab.js",
+   "sha256": "ba3b5dfb28ed8b84ac527d5715833cbe95d6097a3a5b72c491696d3f4034a33f"
+  },
+  {
+   "path": "public/js/modern-channel-iso.js",
+   "sha256": "401bd469406da443cdde2b4e9ae329ba8432b86c44cb76390b445feef74648e4"
+  },
+  {
+   "path": "public/js/security-edu.js",
+   "sha256": "182ebb29b3e2fa4ec1b4afa3af18b1e29084aa5cec983dafee3cc5cf1bef8717"
+  }
+ ],
+ "complete_file_count": 384
+}

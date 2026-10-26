@@ -46,6 +46,30 @@
         ["POS → Tarjeta", "La tarjeta verifica el ARPC (EXTERNAL AUTHENTICATE / 2º GENERATE AC)."],
       ]),
     },
+    // rc.1.33 · Variante Wallet: firma el teléfono con una clave derivada del token (DPAN), no de la tarjeta.
+    arqc_wallet: {
+      title: "Criptograma ARQC y respuesta ARPC · Wallet",
+      simple: () => `
+        <p>En una compra con la wallet, <b>el teléfono firma la operación</b>. Usa una clave secreta que se generó para el <b>token (DPAN)</b> cuando agregaste la tarjeta. La tarjeta real (FPAN) no participa. Esa firma se llama <b>ARQC</b>.</p>
+        <p>La red o el TSP traduce el token a la tarjeta real (detokenización). El emisor, o el TSP en su nombre, recalcula la firma con los mismos datos. Si coincide, sabe que la compra salió de ese teléfono y que nadie cambió el importe. Entonces responde con <b>su propia firma (ARPC)</b>.</p>
+        <div class="osc-sec-note">Probalo: elegí el escenario <b>«Importe alterado en tránsito»</b>. El importe cambia después de que el teléfono firmó, la firma no coincide y la compra se rechaza (Visa 82 · Mastercard 88 · Amex 100).</div>`,
+      technical: () => `
+        <h4>Qué cambia respecto de una tarjeta con chip</h4>
+        <ul>
+          <li><b>Clave:</b> se deriva del <b>DPAN</b> y su PSN, no del PAN de la tarjeta. Por eso en «Tu transacción» el PAN es el token.</li>
+          <li><b>Kernel:</b> Visa qVSDC (Visa Token Service), Mastercard M/Chip desde el teléfono (MDES), Amex Expresspay.</li>
+          <li><b>Quién valida:</b> según el programa, el TSP valida el criptograma antes de detokenizar, o lo reenvía al emisor para que lo valide.</li>
+        </ul>
+        ${CONTENT.arqc.technical()}`,
+      flow: () => flow([
+        ["Teléfono (wallet)", "Calcula el ARQC con la clave del token y los datos de la compra."],
+        ["POS", "Recibe el DE 55 por NFC y arma la solicitud con el DPAN en el DE 2."],
+        ["Adquirente", "Transporta el DE 55 sin modificarlo."],
+        ["Red · TSP", "Detokeniza DPAN → FPAN y valida o reenvía el criptograma."],
+        ["Emisor · HSM", "Recalcula el ARQC y lo compara. Si coincide y aprueba, genera el ARPC (tag 91)."],
+        ["POS → Teléfono", "La respuesta vuelve con el resultado; el teléfono muestra aprobado o rechazado."],
+      ]),
+    },
     pin: {
       title: "PIN Block, cifrado y HSM",
       simple: () => `
@@ -185,18 +209,20 @@
 
   function traceHtml(kind, t) {
     if (!t) return `<p class="osc-sec-muted">Todavía no hay una operación con este dato. Hacé una compra en el simulador y volvé a abrir esta ayuda para ver tus propios valores.</p>`;
-    if (kind === "arqc") {
+    if (kind === "arqc" || kind === "arqc_wallet") {
+      const wallet = kind === "arqc_wallet";
       const rows = [
-        ["PAN / PSN", mono(`${t.pan} / ${t.psn || "00"}`)],
+        [wallet ? "Token (DPAN) / PSN" : "PAN / PSN", mono(`${t.pan} / ${t.psn || "00"}`)],
+        ...(wallet && t.fpanLast4 ? [["Tarjeta real (FPAN)", `•••• ${esc(t.fpanLast4)} · no entra en el cálculo; la red la recupera al detokenizar`]] : []),
         ["Y (16 dígitos de PAN‖PSN)", mono(t.y)],
-        ["Clave de la tarjeta (UDK)", mono(t.udk)],
+        [wallet ? "Clave del token (UDK)" : "Clave de la tarjeta (UDK)", mono(t.udk)],
         ...(t.scheme === "CSK" ? [["ATC", mono(t.atc)], ["Clave de sesión (EMV CSK)", mono(t.sk)]] : [["Esquema", "Visa CVN 10 · MAC directo con la UDK (padding método 1)"]]),
         ["Datos firmados", mono(t.data)],
         ["ARQC (9F26)", mono(t.arqc)],
       ];
       if (t.validation) {
         rows.push(["ARQC recalculado por el emisor", mono(t.validation.recomputed)]);
-        rows.push(["Resultado", t.validation.ok ? "✅ Coincide: la tarjeta es auténtica" : `❌ No coincide · ${esc(t.validation.reason || "dato alterado")}`]);
+        rows.push(["Resultado", t.validation.ok ? (wallet ? "✅ Coincide: la compra salió de ese teléfono" : "✅ Coincide: la tarjeta es auténtica") : `❌ No coincide · ${esc(t.validation.reason || "dato alterado")}`]);
       }
       if (t.arpc) rows.push(["ARPC (tag 91)", mono(`${t.arpc.arpc} + ARC ${t.arpc.arc}`)]);
       return table(["Paso", "Valor"], rows);
@@ -279,6 +305,7 @@
   }
   function open(kind, trace, startTab) {
     if (activeNetwork() === "link" && (kind === "pin" || kind === "arqc")) kind = kind === "pin" ? "link_pin" : "link_chip";
+    if (kind === "arqc" && trace?.channel === "WALLET") kind = "arqc_wallet";
     const c = CONTENT[kind];
     if (!c) return;
     ensure();

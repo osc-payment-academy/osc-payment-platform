@@ -1,0 +1,13 @@
+OSC Payment Academy v4.0.0-rc.1.33
+Wallet: ARQC / ARPC en la fila del DE 55, explicación de wallet y escenario "Importe alterado en tránsito".
+
+INSTALACIÓN (paquete INCREMENTAL · requiere tener instalada la rc.1.32):
+1. Descomprimir el ZIP y copiar su contenido sobre la raíz del repositorio en GitHub, reemplazando archivos.
+2. No hay migración nueva.
+3. Despliegue habitual.
+
+Pruebas mínimas:
+1. Wallet → Visa → agregar y pagar → en la solicitud, fila DE 55 → "🔐 ARQC / ARPC": título "· Wallet"; "Tu transacción" muestra Token (DPAN) y Tarjeta real (FPAN).
+2. Mastercard → escenario "Importe alterado en tránsito" → rechazo 88; el popup muestra "No coincide".
+3. Amex → mismo escenario → Action Code 100.
+4. Regresión: POS → DE 55 → "🔐 ARQC / ARPC" sigue mostrando la versión de tarjeta.

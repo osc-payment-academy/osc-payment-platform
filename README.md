@@ -1,6 +1,6 @@
-# OSC Payment Academy — v4.0.0-rc.1.32
+# OSC Payment Academy — v4.0.0-rc.1.33
 
-Simulador Wallet: alta del token separada del pago, modo paso a paso, perfil Guayaquil · USD y reinicio de demo. Ver RELEASE_NOTES_v4.0.0-rc.1.32.md.
+Wallet: ARQC / ARPC en la fila del DE 55 con explicación propia de wallet y escenario «Importe alterado en tránsito». Ver RELEASE_NOTES_v4.0.0-rc.1.33.md.
 
 ## v4.0.0-rc.1.30
 
