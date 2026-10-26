@@ -1,6 +1,6 @@
-# OSC Payment Academy — v4.0.0-rc.1.33
+# OSC Payment Academy — v4.0.0-rc.1.34
 
-Wallet: ARQC / ARPC en la fila del DE 55 con explicación propia de wallet y escenario «Importe alterado en tránsito». Ver RELEASE_NOTES_v4.0.0-rc.1.33.md.
+Wallet: el historial se conserva al reiniciar y el monto arranca en el último importe + 50. Ver RELEASE_NOTES_v4.0.0-rc.1.34.md.
 
 ## v4.0.0-rc.1.30
 

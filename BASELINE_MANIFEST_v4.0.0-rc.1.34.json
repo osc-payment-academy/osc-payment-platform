@@ -1,0 +1,42 @@
+{
+ "product": "OSC-ACADEMY",
+ "version": "4.0.0-rc.1.34",
+ "title": "Incremental sobre rc.1.33: Wallet conserva el historial y no repite montos",
+ "parent_baseline": "OSC-ACADEMY v4.0.0-rc.1.33",
+ "generated_at": "2026-10-26T17:52:30.462053+00:00",
+ "deleted_files": [],
+ "policy": {
+  "no_silent_file_deletion": true,
+  "sha256_inventory": true,
+  "incremental_install_package": true,
+  "complete_backup_package": true,
+  "manuals_excluded": true
+ },
+ "incremental_files": [
+  {
+   "path": "INSTRUCCIONES_INSTALACION_v4.0.0_RC1.34.txt",
+   "sha256": "9e45f4f45520a55ffa0bedbffe85deac92eb8b0d51dc6d50d537add6265bbec2"
+  },
+  {
+   "path": "README.md",
+   "sha256": "f2aa707cee4e8d2b05fe94fc80f9061e8e8386d7735d74a5c38499074d50ab4e"
+  },
+  {
+   "path": "RELEASE_NOTES_v4.0.0-rc.1.34.md",
+   "sha256": "733a9ce11297f650f25d653317159d6d797c6b355b425209b4dd1677e6e9711e"
+  },
+  {
+   "path": "package.json",
+   "sha256": "f8cd5015c52175bb1973a667ced4e05411969fdc1e6840db9df7dd13503be0c9"
+  },
+  {
+   "path": "public/wallet.html",
+   "sha256": "864c0137e93b26976dfd3f688eaded59bd11390bc10e2cb2b4c2ec08ee217347"
+  },
+  {
+   "path": "public/js/wallet-lab.js",
+   "sha256": "0bf14e70738ee6d363ef05e132a7f2707ddff0076adc20b348a37f7f7f95fa47"
+  }
+ ],
+ "complete_file_count": 387
+}

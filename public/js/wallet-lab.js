@@ -3,7 +3,8 @@
    - Detokenización visible en Marca / Red y resultado en el teléfono.
    - Modo paso a paso: el paso 4 muestra la solicitud y el 7 la respuesta, con los DE de wallet resaltados.
    - Monto incremental: se aplica al iniciar la nueva compra, no al terminar la anterior.
-   - Perfil de comercio (Buenos Aires · ARS / Guayaquil · USD) y "Reiniciar demo" (no borra datos del Switch). */
+   - Perfil de comercio (Buenos Aires · ARS / Guayaquil · USD) y "Reiniciar demo" (no borra datos del Switch).
+   - rc.1.34: el historial no se oculta al reiniciar; el monto arranca en el último importe + 50. */
 (function () {
   const $ = (s) => document.querySelector(s);
   const $$ = (s) => [...document.querySelectorAll(s)];
@@ -247,19 +248,25 @@
     return `<tr${selected ? ' class="selected"' : ""}><td>${t.toLocaleDateString("es-AR")}</td><td>${t.toLocaleTimeString("es-AR", { hour12: false })}</td><td>${tx.operationLabel || tx.type}</td><td>${detail}</td><td>${amount}</td><td>${tx.mtiRequest} / ${tx.mtiResponse}</td><td class="${declined ? "" : "ok"}">${declined ? "✗ Rechazada " + (tx.responseCode || "") : "✓ Aprobada"}</td></tr>`;
   }
   function restoreHistory() {
-    const since = store.get(K.since, "");
     const db = window.OSCSwitchStore?.read?.();
-    const rows = (db?.transactions || []).filter((t) => t.channel === "WALLET" && (!since || String(t.createdAt || t.dateTime || "") >= since)).slice(0, 20);
+    const rows = (db?.transactions || []).filter((t) => t.channel === "WALLET").slice(0, 50);
     hist.innerHTML = rows.length ? rows.map((t, i) => txRow(t, i === 0)).join("") : '<tr><td colspan="7" class="sub">Sin operaciones nuevas.</td></tr>';
     const c = $("#histCount"); if (c) c.textContent = rows.length ? `(${rows.length})` : "";
+  }
+
+  // rc.1.34 · El monto nunca se repite: al abrir la página (y al reiniciar) arranca en el último importe de Wallet + 50.
+  function syncAmountWithHistory() {
+    if (amountUsed || busy) return;
+    const last = (window.OSCSwitchStore?.read?.()?.transactions || []).find((t) => t.channel === "WALLET");
+    const next = last ? Number(last.amountCents || 0) + AMOUNT_STEP : BASE_AMOUNT;
+    if (next > currentAmount) { currentAmount = next; store.set(K.amount, String(currentAmount)); renderPhone(); }
   }
 
   /* ---------- Reinicio y eventos ---------- */
   function resetDemo() {
     if (busy) return;
     provisioned = {}; store.set(K.prov, "{}");
-    currentAmount = BASE_AMOUNT; amountUsed = false; store.set(K.amount, String(BASE_AMOUNT));
-    store.set(K.since, new Date().toISOString());
+    amountUsed = false; syncAmountWithHistory();
     $$(".scenarios .scenario").forEach((x) => x.classList.toggle("active", x.dataset.code === "00"));
     currentTutorTransaction = null;
     const ev = $("#techEvents"); if (ev) ev.innerHTML = "";
@@ -280,5 +287,7 @@
   new MutationObserver(onCardChange).observe($(".card-carousel"), { attributes: true, attributeFilter: ["hidden"], subtree: true });
 
   clearIso(); renderPhone(); renderScenarios(); paintIdle();
-  (window.OSCSwitchStore?.ready || Promise.resolve()).then(restoreHistory, restoreHistory);
+  const afterReady = () => { restoreHistory(); syncAmountWithHistory(); };
+  (window.OSCSwitchStore?.ready || Promise.resolve()).then(afterReady, afterReady);
+  window.addEventListener("osc-switch-updated", () => { if (!busy) restoreHistory(); });
 })();
