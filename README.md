@@ -1,4 +1,8 @@
-# OSC Payment Academy — v4.0.0-rc.1.30
+# OSC Payment Academy — v4.0.0-rc.1.31
+
+Ficha de campo LINK del campo 126 (cuotas, múltiples cuentas, plazo fijo y área de tokens). Ver RELEASE_NOTES_v4.0.0-rc.1.31.md.
+
+## v4.0.0-rc.1.30
 
 Fichas de campo para Red LINK y campos ampliados de Visa, Mastercard y Amex. Ver RELEASE_NOTES_v4.0.0-rc.1.30.md.
 

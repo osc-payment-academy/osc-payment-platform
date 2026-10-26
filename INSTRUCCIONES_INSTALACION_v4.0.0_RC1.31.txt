@@ -1,0 +1,13 @@
+OSC Payment Academy v4.0.0-rc.1.31
+Ficha de campo LINK del campo 126.
+
+INSTALACIÓN (paquete INCREMENTAL · requiere tener instalada la rc.1.30):
+1. Descomprimir el ZIP y copiar su contenido sobre la raíz del repositorio en GitHub, reemplazando archivos (son menos de 100 archivos: se pueden subir de una vez).
+2. No hay migración nueva. La carpeta public/manuals no viene en el ZIP.
+3. Despliegue habitual.
+
+Pruebas mínimas:
+1. Alumno → Parser con una trama LINK que traiga el campo 126 → manito ☝ del campo 126: ficha con "Según el código de transacción" (cuotas, múltiples cuentas, plazo fijo, tokens).
+2. Tutor en ATM con tarjeta LINK → "campo 126" → botón "Ver ficha del campo LINK".
+3. Admin OSC → misma ficha: botón "Abrir manual original".
+4. Recargar con Ctrl+F5 si sigue apareciendo "Todavía no hay una ficha didáctica" (caché del navegador).

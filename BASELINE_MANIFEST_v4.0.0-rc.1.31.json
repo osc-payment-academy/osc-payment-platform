@@ -1,0 +1,54 @@
+{
+ "product": "OSC-ACADEMY",
+ "version": "4.0.0-rc.1.31",
+ "title": "Incremental sobre rc.1.30: ficha LINK del campo 126",
+ "parent_baseline": "OSC-ACADEMY v4.0.0-rc.1.30",
+ "generated_at": "2026-10-26T15:21:42.790107+00:00",
+ "deleted_files": [],
+ "policy": {
+  "no_silent_file_deletion": true,
+  "sha256_inventory": true,
+  "incremental_install_package": true,
+  "complete_backup_package": true,
+  "manuals_excluded": true
+ },
+ "incremental_files": [
+  {
+   "path": "INSTRUCCIONES_INSTALACION_v4.0.0_RC1.31.txt",
+   "sha256": "b7cb661ad23ea23183ebacf3ebd3199228c25d200820c968eff46faa5333e9ae"
+  },
+  {
+   "path": "README.md",
+   "sha256": "6247e96810cbe75eaefd7a7189b59e3f32ac5993b97f1df435766e1ef2c90216"
+  },
+  {
+   "path": "RELEASE_NOTES_v4.0.0-rc.1.31.md",
+   "sha256": "0c82e0a6e49cbdf267bb16700489a862a87d185b0c154153a28aba7addb73aa2"
+  },
+  {
+   "path": "package.json",
+   "sha256": "84f47c8ccd0aaab7d4021f92f90e07cd3f1af874665fc9a82e9a1e414eb3284a"
+  },
+  {
+   "path": "public/atm.html",
+   "sha256": "5b57ab7b6f5fa681915bba35d8b863392c712c66fbaf20aad23cca4ace2c695f"
+  },
+  {
+   "path": "public/constructor.html",
+   "sha256": "4cb3a0b93af207cc0d4d68e4c92ee3a84f5f0588a3f43b64e135d2113a493771"
+  },
+  {
+   "path": "public/js/field-cards.js",
+   "sha256": "e28e7b99d9e128e6e410120a2fa18d8a71e962c83c57ac962dc1835c512df97c"
+  },
+  {
+   "path": "public/parser.html",
+   "sha256": "5c1021dadb025bafbfa0d63baeb4549d5b234bca51d0fc4f1b260ddf741d8c04"
+  },
+  {
+   "path": "public/pos.html",
+   "sha256": "0ebeb19878f896d93d404fe4dd030f970068579b609aa338b1e3fb282bf4aa9d"
+  }
+ ],
+ "complete_file_count": 377
+}
