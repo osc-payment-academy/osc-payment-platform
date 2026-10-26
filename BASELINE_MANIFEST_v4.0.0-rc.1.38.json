@@ -1,0 +1,74 @@
+{
+ "product": "OSC-ACADEMY",
+ "version": "4.0.0-rc.1.38",
+ "title": "Incremental sobre rc.1.37: Dashboard, menú, navegación y ayudas de Fraude",
+ "parent_baseline": "OSC-ACADEMY v4.0.0-rc.1.37",
+ "generated_at": "2026-10-26T20:22:52.429770+00:00",
+ "deleted_files": [],
+ "policy": {
+  "no_silent_file_deletion": true,
+  "sha256_inventory": true,
+  "incremental_install_package": true,
+  "complete_backup_package": true,
+  "manuals_excluded": true
+ },
+ "incremental_files": [
+  {
+   "path": "INSTRUCCIONES_INSTALACION_v4.0.0_RC1.38.txt",
+   "sha256": "e35026b36d733852d952d0e9f70e0f39a7b6b85f4cdcaeb92c66143086b9cd0d"
+  },
+  {
+   "path": "README.md",
+   "sha256": "a15173fa9e63f7a4e3b761893fe4e0d445c978fd55dbd10e4b4deaaffeb151dc"
+  },
+  {
+   "path": "RELEASE_NOTES_v4.0.0-rc.1.38.md",
+   "sha256": "ce29d3b12f7445be94f4d431b111975812418c6067b9b3b6ad0de31ed3f96aa6"
+  },
+  {
+   "path": "package.json",
+   "sha256": "58bf9355c2dbdeed8657baaf846c1ff035de048a50d4b9dcdeca7f004c781dbc"
+  },
+  {
+   "path": "public/index.html",
+   "sha256": "2756fa71ef552c74872ce6ada2be59888cb049f3eaeb75f3d043d57e3906b1d9"
+  },
+  {
+   "path": "public/js/navigation.js",
+   "sha256": "97c869e7d384371c47d3f9b8588b2eccd67cca8fecfc16b118b74903b9d3575d"
+  },
+  {
+   "path": "public/curso_interactivo.html",
+   "sha256": "3da7647a50733a3b79526ffc427a503e7472a61aee696b4eb8c71741c1dd8465"
+  },
+  {
+   "path": "public/ebook.html",
+   "sha256": "04b61e37e4f04057bd1e3172a99bea14fbcf0e7ea031645e37db31912d98195a"
+  },
+  {
+   "path": "public/support.html",
+   "sha256": "75ecec9fa45a4d55d04189ff8465b5fb8225ba8d4f76a79dc40dedee0f390fdd"
+  },
+  {
+   "path": "public/topic.html",
+   "sha256": "e4e6ac44c40a744f45b894e9ef2638a589aa520fef0f468f230223f0325b4aa1"
+  },
+  {
+   "path": "public/account.html",
+   "sha256": "29703dcb476e458f23d30fad1b9c8225193dc8a6c595d4e38ee9ce8dfd4001a0"
+  },
+  {
+   "path": "public/monitoreo-fraude.html",
+   "sha256": "e477c1a9a826479bb968993eedfe93b707287b3831fd987e3a80ef04674ffaaa"
+  },
+  {
+   "path": "public/analisis-diario-fraude.html",
+   "sha256": "ac7c084b413c4ad8fc69cc80992e4084833f5a83f9ea0a5606c617f8a68a9786"
+  },
+  {
+   "path": "public/js/fraud-help.js",
+   "sha256": "5490c568254df68af02ac94ec3df3fdc33326eb161578c3539aca397fe2a3b91"
+  }
+ ],
+ "complete_file_count": 401
+}

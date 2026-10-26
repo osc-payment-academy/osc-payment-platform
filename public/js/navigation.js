@@ -1,4 +1,4 @@
-/* OSC Academy v4.0.0-rc.1.24 - navegación por licencia y por redes habilitadas.
+/* OSC Academy v4.0.0-rc.1.38 (menú por recorrido) · rc.1.24 - navegación por licencia y por redes habilitadas.
    - Cada opción del menú depende de un módulo habilitable (licencia de la consultora o edición del curso).
    - Edición de curso: lo no habilitado se muestra con candado (Día N). Consultora: lo no incluido no se muestra.
    - Análisis Diario y Monitoreo en Vivo: licencias separadas.
@@ -11,24 +11,27 @@
     { href: "curso_interactivo.html", icon: "🎓", label: "Curso Interactivo", key: "course_iso8583", day: 1 },
     { href: "ebook.html", icon: "📖", label: "eBook ISO 8583", key: "ebook", version: "4.0.0-rc1.12" },
     { href: "evaluacion.html", icon: "📝", label: "Evaluaciones", assess: true },
-    { section: "Banco simulado" },
-    { href: "clientes.html", icon: "👤", label: "CLIENTES", key: "banco_simulado" },
-    { href: "pasivas.html", icon: "🏦", label: "PASIVAS", key: "banco_simulado" },
-    { href: "solicitudes.html", icon: "💳", label: "SOLICITUDES", key: "banco_simulado" },
-    { href: "cuenta_cliente.html", icon: "💳", label: "Cuenta del Cliente", key: "banco_simulado", visible: false },
-    { section: "Laboratorios" },
-    { href: "constructor.html", icon: "⌘", label: "Constructor ISO8583", key: "constructor", day: 1 },
+    // rc.1.38 · Menú agrupado por recorrido: operar → mensajes → back office → banco simulado.
+    { section: "Operar transacciones" },
     { href: "pos.html", icon: "▣", label: "POS Virtual", key: "pos", day: 1 },
     { href: "atm.html", icon: "🏧", label: "ATM Virtual", key: "atm", day: 2 },
-    { href: "wallet.html", icon: "📱", label: "Wallet / Tokenización", key: "wallet", day: 4, nets: ["visa", "mastercard", "amex"] },
     { href: "ecommerce.html", icon: "🛒", label: "E-Commerce / 3DS", key: "ecommerce", day: 3, nets: ["visa", "mastercard", "amex"] },
+    { href: "wallet.html", icon: "📱", label: "Wallet / Tokenización", key: "wallet", day: 4, nets: ["visa", "mastercard", "amex"] },
+    { section: "Mensajes ISO 8583" },
+    { href: "constructor.html", icon: "⌘", label: "Constructor ISO 8583", key: "constructor", day: 1 },
+    { href: "parser.html", icon: "◉", label: "Parser ISO 8583", key: "parser", day: 1 },
+    { href: "parser_guiado.html", icon: "🧩", label: "Parser Guiado", key: "parser", day: 1 },
+    { section: "Back office" },
     { href: "switch.html", icon: "🏦", label: "Switch del Adquirente", key: "switch_adquirente" },
+    { href: "switch_emisor.html", icon: "🌎", label: "Switch Emisor", key: "switch_emisor", day: 5 },
     { href: "compensacion.html", icon: "⇄", label: "Compensación Visa (BASE II)", key: "switch_adquirente", nets: ["visa"] },
     { href: "compensacion_mastercard.html", icon: "⇄", label: "Compensación Mastercard (IPM)", key: "switch_adquirente", nets: ["mastercard"] },
     { href: "mastercard_iso.html", icon: "◉", label: "Mastercard ISO", key: "switch_adquirente", nets: ["mastercard"] },
-    { href: "switch_emisor.html", icon: "🌎", label: "Switch Emisor", key: "switch_emisor", day: 5 },
-    { href: "parser.html", icon: "◉", label: "Parser ISO8583", key: "parser", day: 1 },
-    { href: "parser_guiado.html", icon: "🧩", label: "Parser Guiado", key: "parser", day: 1 },
+    { section: "Banco simulado" },
+    { href: "clientes.html", icon: "👤", label: "Clientes", key: "banco_simulado" },
+    { href: "pasivas.html", icon: "🏦", label: "Pasivas", key: "banco_simulado" },
+    { href: "solicitudes.html", icon: "💳", label: "Solicitudes", key: "banco_simulado" },
+    { href: "cuenta_cliente.html", icon: "💳", label: "Cuenta del Cliente", key: "banco_simulado", visible: false },
     { section: "Soluciones profesionales" },
     { href: "authorization-analytics.html", icon: "📊", label: "Análisis Diario de Autorizaciones", product: "authorizationAnalytics" },
     { href: "monitoreo-vivo.html", icon: "🔴", label: "Monitoreo en Vivo de Autorizaciones", product: "liveMonitoring" },
@@ -74,6 +77,10 @@
     return "hidden";
   };
   const currentModule = modules.find((m) => m.href && m.href.toLowerCase() === current);
+  // rc.1.38 · Último módulo visitado, para "Continuar donde quedaste" en el Dashboard.
+  if (currentModule && currentModule.href !== "index.html" && !currentModule.adminOnly && !currentModule.usage) {
+    try { localStorage.setItem("oscLastModule", JSON.stringify({ href: currentModule.href, label: currentModule.label, icon: currentModule.icon, at: new Date().toISOString() })); } catch (_) {}
+  }
   if (currentModule && me) {
     const st = stateOf(currentModule);
     if (st === "locked" || (st === "hidden" && currentModule.visible !== false)) {

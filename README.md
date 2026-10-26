@@ -1,6 +1,6 @@
-# OSC Payment Academy — v4.0.0-rc.1.37
+# OSC Payment Academy — v4.0.0-rc.1.38
 
-Se retira el Tutor OSC; la ficha del campo (☝) se abre desde cada fila del mensaje. Ver RELEASE_NOTES_v4.0.0-rc.1.37.md.
+Dashboard y menú por recorrido, «← Plataforma» unificado y ayudas de Fraude (cómo funciona y reglas F01–F12). Ver RELEASE_NOTES_v4.0.0-rc.1.38.md.
 
 ## v4.0.0-rc.1.30
 

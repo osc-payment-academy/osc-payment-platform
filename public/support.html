@@ -5,12 +5,12 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Soporte Online · OSC Payment Academy</title><link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="stylesheet" href="css/saas.css">
-</head>
+<style id="osc-back-rc138">.osc-back-platform{display:inline-block;background:#0b2238!important;color:#fff!important;border:1px solid #2f83ff;border-radius:8px;padding:8px 12px;text-decoration:none!important;font:600 12px Inter,Segoe UI,Arial,sans-serif;box-shadow:0 6px 18px #0006;white-space:nowrap}.osc-back-platform:hover{background:#12355a!important}</style></head>
 <body>
 <main class="shell">
   <header class="top">
-    <div><div class="brand"><span>OSC</span> PAYMENT ACADEMY</div><h1>Soporte Online</h1><p class="muted">Consultas a OSC Payment Academy. Las respuestas quedan visibles para todo tu grupo.</p></div>
-    <nav class="tabs"><a class="btn" href="index.html">Dashboard</a><button class="btn" id="logout">Cerrar sesión</button></nav>
+    <div><a class="osc-back-platform" href="index.html">← Plataforma</a><div class="brand" style="margin-top:12px"><span>OSC</span> PAYMENT ACADEMY</div><h1>Soporte Online</h1><p class="muted">Consultas a OSC Payment Academy. Las respuestas quedan visibles para todo tu grupo.</p></div>
+    <nav class="tabs"><button class="btn" id="logout">Cerrar sesión</button></nav>
   </header>
   <section class="panel">
     <div class="field"><label>Grupo</label><select id="cohort"></select></div>
@@ -19,7 +19,7 @@
   <section class="panel" id="askPanel">
     <h2>Nueva consulta</h2>
     <form id="topicForm" class="form-grid">
-      <div class="field"><label>Módulo</label><select id="moduleKey"><option>GENERAL</option><option>POS</option><option>ATM</option><option>PARSER</option><option>CONSTRUCTOR</option><option>SWITCH_ADQUIRENTE</option><option>ISO_8583</option><option>WALLET</option><option>ECOMMERCE</option><option>SWITCH_EMISOR</option><option>RED_LINK</option><option>EVALUACIONES</option></select></div>
+      <div class="field"><label>Módulo</label><select id="moduleKey"><option value="GENERAL">General</option><option value="POS">POS Virtual</option><option value="ATM">ATM Virtual</option><option value="WALLET">Wallet / Tokenización</option><option value="ECOMMERCE">E-Commerce / 3DS</option><option value="CONSTRUCTOR">Constructor ISO 8583</option><option value="PARSER">Parser ISO 8583</option><option value="ISO_8583">ISO 8583 (teoría y curso)</option><option value="SWITCH_ADQUIRENTE">Switch del Adquirente</option><option value="SWITCH_EMISOR">Switch Emisor</option><option value="RED_LINK">Red LINK</option><option value="EVALUACIONES">Evaluaciones</option></select></div>
       <div class="field"><label>Título</label><input id="topicTitle" required></div>
       <div class="field full-row"><label>Consulta</label><textarea id="topicBody" required placeholder="Contá qué estabas haciendo, qué esperabas y qué pasó. Podés pegar una captura de pantalla con Ctrl+V."></textarea></div>
       <div class="full-row"><button class="btn primary">Enviar consulta</button></div>
@@ -30,6 +30,8 @@
 </main>
 <script src="js/saas-session.js"></script><script src="js/support-images.js?v=4.0.0-rc1.27"></script>
 <script>
+const MODULE_LABEL={"GENERAL": "General", "POS": "POS Virtual", "ATM": "ATM Virtual", "WALLET": "Wallet / Tokenización", "ECOMMERCE": "E-Commerce / 3DS", "CONSTRUCTOR": "Constructor ISO 8583", "PARSER": "Parser ISO 8583", "ISO_8583": "ISO 8583 (teoría y curso)", "SWITCH_ADQUIRENTE": "Switch del Adquirente", "SWITCH_EMISOR": "Switch Emisor", "RED_LINK": "Red LINK", "EVALUACIONES": "Evaluaciones"};
+
 const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 // rc.1.27 · Canales: ediciones del curso (foro de la cohorte) y consultoras. Responde la administración OSC.
 let CH=[],ADMIN=false;const ATT=OSCSupportImages.attach(document.getElementById('topicBody'));
@@ -52,7 +54,7 @@ async function load(){
   courseState.textContent=c.kind==='tenant'?`Consultora · ${ADMIN?'respondés como OSC Payment Academy':'te responde OSC Payment Academy'}`:`Acceso hasta ${new Date(d.cohort.expiresAt).toLocaleDateString('es-AR')} · Foro ${closed?'cerrado':'activo'}`;
   askPanel.style.display=closed?'none':'block';
   const st=t=>t.status==='OPEN'?'<span class="pill" style="background:#5a4a12;color:#ffe08a">Pendiente de respuesta</span>':'<span class="pill">Respondida</span>';
-  topics.innerHTML=d.topics.map(t=>`<article class="topic" tabindex="0" role="link" onclick="location.href='topic.html?id=${encodeURIComponent(t.id)}&kind=${c.kind}&g=${encodeURIComponent(cohort.value)}'"><div class="topic-head"><span class="pill">${esc(t.module_key)}</span>${st(t)}<span class="muted">${new Date(t.created_at).toLocaleString('es-AR')}</span></div><h3>${esc(t.title)}</h3><p>${esc(t.body)}</p><small class="muted">${esc(t.author_name)} · ${t.reply_count} respuestas${t.image_count?` · 📎 ${t.image_count}`:''}</small></article>`).join('')||'<p class="muted">Todavía no hay consultas en este grupo.</p>';
+  topics.innerHTML=d.topics.map(t=>`<article class="topic" tabindex="0" role="link" onclick="location.href='topic.html?id=${encodeURIComponent(t.id)}&kind=${c.kind}&g=${encodeURIComponent(cohort.value)}'"><div class="topic-head"><span class="pill">${esc(MODULE_LABEL[t.module_key]||t.module_key)}</span>${st(t)}<span class="muted">${new Date(t.created_at).toLocaleString('es-AR')}</span></div><h3>${esc(t.title)}</h3><p>${esc(t.body)}</p><small class="muted">${esc(t.author_name)} · ${t.reply_count} respuestas${t.image_count?` · 📎 ${t.image_count}`:''}</small></article>`).join('')||'<p class="muted">Todavía no hay consultas en este grupo.</p>';
 }
 topicForm.onsubmit=async e=>{
   e.preventDefault();const c=cur();if(!c)return;

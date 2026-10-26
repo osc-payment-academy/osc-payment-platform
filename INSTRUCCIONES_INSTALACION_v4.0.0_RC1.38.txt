@@ -1,0 +1,14 @@
+OSC Payment Academy v4.0.0-rc.1.38
+Dashboard y menú por recorrido, «← Plataforma» unificado, Soporte con nombres legibles y ayudas de Fraude.
+
+INSTALACIÓN (paquete INCREMENTAL · requiere tener instalada la rc.1.37):
+1. Descomprimir el ZIP y copiar su contenido sobre la raíz del repositorio en GitHub, reemplazando archivos.
+2. No hay migración nueva. Los agentes de fraude no cambian.
+3. Despliegue habitual.
+
+Pruebas mínimas:
+1. Dashboard como alumno: saludo, "Continuar donde quedaste" después de abrir un simulador, contadores con tus operaciones, tarjetas agrupadas y sin el cartel de versión.
+2. Menú lateral: grupos Aprendizaje / Operar transacciones / Mensajes ISO 8583 / Back office / Banco simulado.
+3. Curso, eBook, Soporte y Mi cuenta: «← Plataforma» arriba a la izquierda.
+4. Soporte: el selector de módulo muestra nombres legibles; las consultas anteriores siguen abriendo.
+5. Monitoreo en Vivo de Fraude y Análisis Diario: botones «🧭 Cómo funciona» y «📋 Reglas» (F09 Pendiente, el resto Habilitada).
