@@ -1,0 +1,11 @@
+OSC Payment Academy v4.0.0-rc.1.44
+POS · QR sin falsos rojos en la pestaña Validaciones.
+
+INSTALACIÓN (paquete INCREMENTAL · requiere tener instalada la rc.1.43):
+1. Descomprimir el ZIP y copiar su contenido sobre la raíz del repositorio en GitHub, reemplazando archivos.
+2. No hay migración nueva.
+3. Despliegue habitual.
+
+Prueba mínima:
+1. POS → QR → Mastercard QR → compra. Pestaña Validaciones: aviso "Pago con QR…" y bitmap sin rojos. Pestaña Explicación: DE 22 = 010 como pago QR.
+2. Compra con tarjeta (Visa Crédito, chip): Validaciones sigue mostrando C01 como antes.

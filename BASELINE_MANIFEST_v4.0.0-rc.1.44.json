@@ -1,0 +1,38 @@
+{
+ "product": "OSC-ACADEMY",
+ "version": "4.0.0-rc.1.44",
+ "title": "Incremental sobre rc.1.43: QR sin falsos rojos en Validaciones del POS",
+ "parent_baseline": "OSC-ACADEMY v4.0.0-rc.1.43",
+ "generated_at": "2026-10-27T18:23:24.429753+00:00",
+ "deleted_files": [],
+ "policy": {
+  "no_silent_file_deletion": true,
+  "sha256_inventory": true,
+  "incremental_install_package": true,
+  "complete_backup_package": true,
+  "manuals_excluded": true
+ },
+ "incremental_files": [
+  {
+   "path": "INSTRUCCIONES_INSTALACION_v4.0.0_RC1.44.txt",
+   "sha256": "c2bd359c91f8081d9db133cd5920a637a8aedfc2734b3e8cde818a3c7dbe3ac0"
+  },
+  {
+   "path": "README.md",
+   "sha256": "ddc0d00d22a33b5c9ddd29724ffc5770e662bb9fdf43554ee83dab55c3316526"
+  },
+  {
+   "path": "RELEASE_NOTES_v4.0.0-rc.1.44.md",
+   "sha256": "213d326906971a2f330987d314b85245346ed6a3cb18a6db6f70c9e85dfa00c5"
+  },
+  {
+   "path": "package.json",
+   "sha256": "a9a0411f81fa523119f4e6a4040df0bd91c7be625100bbd609394fd39696cb8b"
+  },
+  {
+   "path": "public/js/pos-validations.js",
+   "sha256": "ae088d62182b7b0d0e7b7154ab1484dbebe79cd1f08f2e2cce05b37ebd58acda"
+  }
+ ],
+ "complete_file_count": 419
+}

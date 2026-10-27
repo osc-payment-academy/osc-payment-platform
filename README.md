@@ -1,4 +1,8 @@
-# OSC Payment Academy — v4.0.0-rc.1.43
+# OSC Payment Academy — v4.0.0-rc.1.44
+
+POS · pagos QR: la pestaña Validaciones ya no los marca en rojo como compra manual. Ver RELEASE_NOTES_v4.0.0-rc.1.44.md.
+
+## v4.0.0-rc.1.43
 
 Los módulos abren completos y sin demora (sesión cacheada en la pestaña; la página no se muestra a medio llenar). Ver RELEASE_NOTES_v4.0.0-rc.1.43.md.
 

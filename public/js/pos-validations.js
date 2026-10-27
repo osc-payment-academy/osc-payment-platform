@@ -1,4 +1,4 @@
-/* OSC Academy v4.0.0-rc.1.27 · POS · Pestañas del panel "Data Elements":
+/* OSC Academy v4.0.0-rc.1.44 (QR sin validación de batería) · v4.0.0-rc.1.27 · POS · Pestañas del panel "Data Elements":
    DATA ELEMENTS (tabla) · VISTA TLV (DE 55 decodificado) · EXPLICACIÓN (lectura del mensaje) · VALIDACIONES (checklist del caso de uso).
    El caso de uso se detecta solo (marca, DE 22, producto, cuotas, DE 3 y DE 39) y se compara contra la batería de escenarios
    (claude/bateria_escenarios_v1.json · borrador). "verificado" = revisado contra el manual; "borrador" = falta cruzar con la marca. */
@@ -47,8 +47,10 @@
     const req = reqs[reqs.length - 1] || (i.message.direction === 'SALIENTE' ? i.message : null);
     const respMti = req ? req.mti.slice(0, 2) + '1' + req.mti.slice(3) : '';
     const res = chrono.filter((m) => m.direction === 'ENTRANTE' && m.mti === respMti).pop() || null;
-    const network = String(i.card?.network || i.op?.network || '').toLowerCase();
-    return { ...i, req, res, network, product: String(i.card?.product || '').toLowerCase() };
+    // rc.1.44 · En QR la red es la del QR elegido (op.network), no la de la tarjeta de prueba seleccionada.
+    const qr = i.op?.paymentMethod === 'qr';
+    const network = String((qr ? i.op?.network : null) || i.card?.network || i.op?.network || '').toLowerCase();
+    return { ...i, req, res, network, qr, product: String(i.card?.product || '').toLowerCase() };
   }
 
   function detect(c) {
@@ -101,6 +103,7 @@
   const ICON = { ok: '✅', miss: '❌', bad: '❌', cond: '⚠️', todo: '❔', info: 'ℹ️' };
   function validationsHtml(c) {
     if (!c?.req) return '<p class="pv-muted">Hacé una compra (o seleccioná un mensaje del historial) para validar el caso de uso.</p>';
+    if (c.qr) return '<p class="pv-obj"><b>Pago con QR</b> — la batería de escenarios v1 todavía no tiene casos de uso de QR, así que este mensaje no se valida (no es un error de la operación).</p><p class="pv-muted">El QR del simulador es educativo: el procesador arma la autorización con la credencial de la wallet (DE 22 = 010, datos del QR en el DE 48). Las validaciones de QR se agregan cuando se definan sus casos con la marca.</p>';
     const auto = detect(c), id = manualCase && CASES[manualCase] ? manualCase : auto;
     const { exp, rows, score } = validationRows(c, id);
     const opts = Object.entries(CASES).map(([k, v]) => `<option value="${k}" ${k === id ? 'selected' : ''}>${k} · ${esc(v.nombre)}${k === auto ? ' (detectado)' : ''}</option>`).join('');
@@ -115,7 +118,7 @@
   }
   function colorBitmap(c, on) {
     document.querySelectorAll('#selectedBitmapPrimaryBits i, #selectedBitmapSecondaryBits i').forEach((i) => i.classList.remove('val-miss', 'val-cond', 'val-bad'));
-    if (!on || !c?.req) return;
+    if (!on || !c?.req || c.qr) return;
     const id = manualCase && CASES[manualCase] ? manualCase : detect(c), exp = CASES[id]?.[c.network];
     if (!exp) return;
     const present = fmap(c.req), cell = (n) => document.querySelector(`#selectedBitmapPrimaryBits i[data-bit="${n}"], #selectedBitmapSecondaryBits i[data-bit="${n}"]`);
@@ -159,7 +162,8 @@
     const lines = [`<b>${esc(m.mti)}</b> — ${esc(MTI_TXT[m.mti] || 'Mensaje ISO 8583')} · ${m.direction === 'SALIENTE' ? 'sale del POS hacia el adquirente' : 'vuelve del emisor hacia el POS'}.`];
     if (de3) lines.push(`<b>DE 3 = ${esc(de3)}</b>: tipo de operación ${esc(de3.slice(0, 2))} (${{ '00': 'compra', '01': 'retiro de efectivo', '09': 'compra con cashback', '20': 'devolución', '30': 'consulta de saldo' }[de3.slice(0, 2)] || 'según la marca'}), cuenta desde ${esc(de3.slice(2, 4))} y hacia ${esc(de3.slice(4, 6))}.`);
     if (de4) lines.push(`<b>DE 4 = ${esc(de4)}</b>: importe con 2 decimales implícitos → ${(Number(de4) / 100).toLocaleString('es-AR', { minimumFractionDigits: 2 })}.`);
-    if (de22) lines.push(`<b>DE 22 = ${esc(de22)}</b>: la tarjeta se leyó por ${esc(DE22[de22.slice(0, 2)] || 'un modo a revisar en el manual')}.`);
+    if (de22) lines.push(c.qr ? `<b>DE 22 = ${esc(de22)}</b>: pago con QR; no se leyó una tarjeta física, viaja la credencial de la wallet.` : `<b>DE 22 = ${esc(de22)}</b>: la tarjeta se leyó por ${esc(DE22[de22.slice(0, 2)] || 'un modo a revisar en el manual')}.`);
+    if (c.qr && fmap(m).has('48')) lines.push('<b>DE 48</b>: datos del QR (tipo de QR y perfil de la marca).');
     if (fmap(m).has('52')) lines.push('<b>DE 52</b>: viaja el PIN cifrado (PIN Block). El emisor lo verifica en su HSM.');
     if (fmap(m).has('55')) lines.push('<b>DE 55</b>: datos del chip en formato TLV (mirá la pestaña Vista TLV).');
     if (de39) lines.push(`<b>DE 39 = ${esc(de39)}</b>: código de respuesta del emisor${de39 === '00' || de39 === '000' ? ' (aprobada)' : ''}.`);
