@@ -10,6 +10,19 @@
     amex: { label: 'American Express · Network Specifications – Authorization (oct 2023)', ref: (n) => `Bit ${n}` },
     link: { label: 'Red LINK · Conexión Host to Host ISO 8583 (BASE24) – registros C-X-1-2-3 y C-X-4', ref: (n) => `Campo ${n}`, grantor: 'Red LINK' },
   };
+  // rc.1.48 · En el ATM, las fichas Visa citan el manual de cajeros y usan sus reglas para estos campos.
+  const SRC_ATM = { visa: { label: 'Visa · Full Service ATM Online Messages – Technical Specifications (21 oct 2024)', ref: (n) => `Field ${n}` } };
+  const ATM_CARDS = {
+    visa: {
+      18: { en: 'Merchant Type (MCC)', es: 'Rubro del comercio (en el ATM: cajero)', fmt: 'n 4 · fijo · BCD 2 bytes', what: 'El código de categoría del comercio. En un cajero automático identifica que la operación salió de un ATM.', build: [['1-4', 'MCC', 'Rubro', '6011 = cajero automático (ATM)']], when: 'Obligatorio en 0200, 0220, 0400/0420 y 0600/0620. No va en las respuestas. En la reversa repite el valor de la solicitud.', watch: ['"The merchant category code must be 6011 for all ATM transactions."', 'Si Field 3 empieza con 01 (retiro), el MCC debe ser 6011. Con 6011, Field 3 no puede ser 20.', 'Si falta: reject 0283 (Field missing). Si no es compatible con Field 3: reject 0610.'], ex: '6011' },
+      12: { en: 'Time, Local Transaction', es: 'Hora local de la transacción', fmt: 'n 6 · hhmmss', what: 'La hora en el lugar del cajero cuando ocurrió la operación.', build: [['1-2', 'hh', 'Hora', '00-23'], ['3-4', 'mm', 'Minutos', '00-59'], ['5-6', 'ss', 'Segundos', '00-59']], when: 'Lo envía el adquirente en 0200, 0220, 0400 y 0420. No va en las respuestas.', watch: ['En los mensajes posteriores (reversa) va el valor de la solicitud original.', 'En un ajuste por misdispense va la hora en que se hizo el ajuste.', 'Reject codes: 0090 valor inválido · 0278 falta.'], ex: '163127' },
+      13: { en: 'Date, Local Transaction', es: 'Fecha local de la transacción', fmt: 'n 4 · mmdd', what: 'Mes y día locales del cajero.', build: [['1-2', 'mm', 'Mes', '01-12'], ['3-4', 'dd', 'Día', '01-31']], when: 'Requerido en requests y advices 02xx y en las reversas 04xx relacionadas.', watch: ['Reject codes: 0091 inválido · 0279 falta.'], ex: '1027' },
+      19: { en: 'Acquiring Institution Country Code', es: 'País del adquirente', fmt: 'n 3 · código ISO numérico', what: 'El país de la institución dueña del cajero.', build: [['1-3', 'Country code', 'Código numérico ISO 3166', '032 Argentina · 218 Ecuador · 840 EE. UU.']], when: 'Requerido en todos los mensajes de una transacción del tarjetahabiente.', watch: ['Field 19 y Field 43 son obligatorios en 02xx y 04xx aunque el cajero y el adquirente estén en el mismo país.', 'Reject codes: 0033 país inválido · 0306 falta.'], ex: '032' },
+      43: { en: 'Card Acceptor Name/Location', es: 'Nombre y ubicación del cajero', fmt: 'ans 40 · fijo · 3 subcampos', what: 'Nombre del cajero o de la institución, ciudad y país, como lo ve el tarjetahabiente en su resumen.', build: [['1-25', 'Card acceptor name', 'Nombre del cajero', 'No puede ser todo ceros o espacios'], ['26-38', 'City name', 'Ciudad', 'No puede ser todo ceros o espacios'], ['39-40', 'Country code', 'País (código alfabético de 2)', 'AR, EC…']], when: 'Requerido en todas las 0200 y 0420 y en sus advices. No va en respuestas.', watch: ['En los mensajes posteriores va el valor del original.'], ex: 'OSC BANK ATM001          BUENOS AIRES AR' },
+      90: { en: 'Original Data Elements', es: 'Datos de la transacción original', fmt: 'n 42 · fijo · 5 subcampos', what: 'Une una reversa (u otro mensaje posterior) con la transacción original.', build: [['1-4', 'Original Message Type (90.1)', 'MTI del original', '0200 en un retiro'], ['5-10', 'Original Trace Number (90.2)', 'STAN (Field 11) del original', ''], ['11-20', 'Original Transmission Date/Time (90.3)', 'Field 7 del original', 'MMDDhhmmss'], ['21-31', 'Original Acquirer ID (90.4)', 'Field 32 del original', 'Alineado a la derecha, ceros a la izquierda'], ['32-42', 'Original Forwarding Institution ID (90.5)', 'Field 33 del original', 'Ceros si no vino']], when: 'En todos los mensajes 04xx (salvo fee collections). Es la clave para unir la reversa con su retiro.', watch: ['El 90.1 es siempre obligatorio; el resto puede ir en ceros si no se conoce.', 'Si el emisor lo recibe en un advice, debe devolverlo en la respuesta.'], ex: '0200 624593 1027163127 00012345678 00000000000' },
+      95: { en: 'Replacement Amounts', es: 'Importe realmente entregado', fmt: 'an 42 · fijo · 4 subcampos (solo se usa el primero)', what: 'En una reversa parcial, el importe que el cajero realmente entregó.', build: [['1-12', 'Actual Amount, Transaction (95.1)', 'Importe entregado', 'Alineado a la derecha, ceros a la izquierda'], ['13-42', '95.2 · 95.3 · 95.4', 'No se usan', 'Ceros']], when: 'Solo en reversas parciales 0400/0420. Si viene en la solicitud, tiene que volver en la respuesta.', watch: ['Va junto con Field 63.3 = 2504 (Partial dispense by ATM) y Field 3 = 01.', 'Según el manual, la reversa parcial con Field 95 es para adquirentes V.I.P. Authorization-Only. Un adquirente Full Service que envió una 0200 corrige con un ajuste 0220 (Visa convierte la 0420 parcial en 0220 para emisores Full Service).'], ex: '000000080000 + 30 ceros' },
+    },
+  };
   // c: { en, es, fmt, what, build:[[pos, en, es, valores]], when, watch:[...], ex }
   const CARDS = {
     visa: {
@@ -217,11 +230,12 @@
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape') o.classList.remove('show'); });
   }
 
+  const isAtm = () => /atm\.html$/i.test(location.pathname) || /\/atm$/i.test(location.pathname);
   function brandOf(network) { const n = String(network || '').toLowerCase(); return n.includes('master') ? 'mastercard' : n.includes('amex') || n.includes('american') ? 'amex' : n.includes('visa') ? 'visa' : n.includes('link') ? 'link' : n; }
-  function has(de, network) { return !!CARDS[brandOf(network)]?.[Number(de)]; }
+  function has(de, network) { const b = brandOf(network); return !!((isAtm() && ATM_CARDS[b]?.[Number(de)]) || CARDS[b]?.[Number(de)]); }
 
   function open(de, network, opts = {}) {
-    const brand = brandOf(network), n = Number(de), c = CARDS[brand]?.[n], src = SRC[brand];
+    const brand = brandOf(network), n = Number(de), atm = isAtm(), c = (atm && ATM_CARDS[brand]?.[n]) || CARDS[brand]?.[n], src = (atm && SRC_ATM[brand]) || SRC[brand];
     const generic = window.OSCHelp?.refs?.[brand]?.[n];
     if (!src) return false;
     ensure();

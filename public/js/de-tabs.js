@@ -18,6 +18,13 @@
       mastercard: { mti: "0100", de3: "000000", de22: "07", obligatorios: null, condicionales: {}, prohibidos: [25], respuesta: "00", estado: "verificado", nota: "DE 22 071, DE 61 con capacidad contactless", chip: true },
       amex: { mti: "1100", de3: null, bit22: { 6: "Y" }, obligatorios: null, condicionales: {}, prohibidos: [], respuesta: "aprobada", estado: "borrador", nota: AMEX_NOTE, chip: true },
     },
+    // rc.1.48 · Wallet con "Importe alterado en tránsito": el teléfono firmó un importe y viaja otro; el emisor rechaza.
+    C14: {
+      nombre: "Criptograma alterado (wallet)", canal: "wallet", objetivo: "El importe cambia después de que el teléfono firmó el ARQC; el emisor no lo valida y rechaza.",
+      visa: { mti: "0100", de3: "000000", de22: "07", obligatorios: null, condicionales: {}, prohibidos: [], respuesta: "82", estado: "verificado", nota: "Visa DE 39 = 82 (Negative online CAM). Sin ARPC en la respuesta.", chip: true, sinArpc: true },
+      mastercard: { mti: "0100", de3: "000000", de22: "07", obligatorios: null, condicionales: {}, prohibidos: [25], respuesta: "88", estado: "verificado", nota: "Mastercard DE 39 = 88 (Cryptographic failure). Sin ARPC en la respuesta.", chip: true, sinArpc: true },
+      amex: { mti: "1100", de3: null, bit22: { 6: "Y" }, obligatorios: null, condicionales: {}, prohibidos: [], respuesta: "100", estado: "verificado", nota: "Amex Action Code 100 (Deny). Sin ARPC en la respuesta.", chip: true, sinArpc: true },
+    },
     C09: {
       nombre: "Compra e-commerce 3DS", canal: "ecommerce", objetivo: "Compra no presente autenticada con 3-D Secure.",
       visa: { mti: "0100", de3: "000000", de22: "01", obligatorios: null, condicionales: { 25: "= 59", "60.8": "ECI", "126.9": "CAVV" }, prohibidos: [], respuesta: "00", estado: "verificado" },
@@ -27,7 +34,7 @@
     C17: {
       nombre: "Extracción ATM chip", canal: "atm", objetivo: "Extracción de efectivo con PIN.",
       visa: { mti: null, de3: "010000", de22: "05", obligatorios: null, condicionales: { 52: "obligatorio", 18: "= 6011", 12: "obligatorio", 13: "obligatorio", 19: "obligatorio", 43: "obligatorio" }, prohibidos: [], respuesta: "00", estado: "borrador", nota: "DE 12, 13, 18 (= 6011), 19 y 43 verificados contra Visa Full Service ATM Online Messages (21 oct 2024), Field Edits. El resto de la lista, a completar." },
-      mastercard: { mti: null, de3: "010000", de22: "05", obligatorios: null, condicionales: { 52: "obligatorio", 18: "= 6011" }, prohibidos: [25], respuesta: "00", estado: "borrador", nota: "ATM Mastercard no envía DE 53" },
+      mastercard: { mti: null, de3: "010000", de22: "05", obligatorios: null, condicionales: { 52: "obligatorio", 18: "= 6011", 12: "obligatorio", 13: "obligatorio", 33: "obligatorio", 43: "obligatorio", 61: "obligatorio" }, prohibidos: [25], respuesta: "00", estado: "borrador", nota: "DE 12, 13, 18 (= 6011), 33, 43 y 61 obligatorios y DE 25 no usado, según Mastercard Debit Switch (MDS) Online Specifications, 0200. ATM Mastercard no envía DE 53." },
       amex: ATM_AMEX,
     },
     C18: {
@@ -38,8 +45,8 @@
     },
     C19: {
       nombre: "Consulta de saldo ATM", canal: "atm", objetivo: "Consulta sin monto; los saldos vuelven en la respuesta.",
-      visa: { mti: null, de3: null, de3Tipo: ["30", "31"], de22: "05", obligatorios: null, condicionales: {}, respuesta: "00", prohibidos: [], estado: "borrador", saldos: 54, nota: "DE 3: confirmar 30 o 31 con el manual (el simulador envía 31)" },
-      mastercard: { mti: null, de3: null, de3Tipo: ["30", "31"], de22: "05", obligatorios: null, condicionales: {}, respuesta: "00", prohibidos: [25], estado: "borrador", saldos: 54, nota: "DE 3: confirmar 30 o 31 con el manual (el simulador envía 31)" },
+      visa: { mti: null, de3: "300000", de22: "05", obligatorios: null, condicionales: { 18: "= 6011" }, respuesta: "00", prohibidos: [], estado: "borrador", saldos: 54, nota: "DE 3 = 30 Balance Inquiry (Visa Full Service ATM, Tabla 28)." },
+      mastercard: { mti: null, de3: "300000", de22: "05", obligatorios: null, condicionales: { 18: "= 6011" }, respuesta: "00", prohibidos: [25], estado: "borrador", saldos: 54, nota: "DE 3 = 30 y DE 18 = 6011 (Mastercard MDS: 6011 para DE 3 = 01, 30 o 40)." },
       amex: ATM_AMEX,
     },
   };
@@ -175,7 +182,7 @@
   // ---------- VALIDACIONES ----------
   function detect(c) {
     if (!c?.req) return null;
-    if (c.channel === "wallet") return "C08";
+    if (c.channel === "wallet") return c.tamper || ["82", "88", "100"].includes(c.res ? val(c.res, 39) : "") ? "C14" : "C08";
     if (c.channel === "ecommerce") return "C09";
     if (c.channel === "atm") {
       const t = val(c.req, 3).slice(0, 2);
@@ -227,7 +234,8 @@
     const code = c.res ? val(c.res, 39) : "";
     if (/^\d+$/.test(String(exp.respuesta))) add(!c.res ? "todo" : code === exp.respuesta ? "ok" : "bad", `Respuesta ${exp.respuesta}`, c.res ? `DE 39 = ${code || "—"}` : "Todavía no hay respuesta");
     else if (exp.respuesta === "aprobada") add(!c.res ? "todo" : isApproved(code, c.network) ? "ok" : "bad", "Respuesta aprobada", c.res ? `${c.network === "amex" ? "Bit" : "DE"} 39 = ${code || "—"}` : "Todavía no hay respuesta");
-    if (exp.chip && c.res && isApproved(code, c.network)) add(has(c.res, 55) ? "ok" : "miss", "DE 55 en la respuesta · ARPC (tag 91)", has(c.res, 55) ? "Presente" : "Falta");
+    if (exp.sinArpc && c.res) add(has(c.res, 55) ? "bad" : "ok", "Sin ARPC en la respuesta", has(c.res, 55) ? "Viaja DE 55 en un rechazo por criptograma" : "Correcto: el emisor no firma una operación que rechazó");
+    if (exp.chip && !exp.sinArpc && c.res && isApproved(code, c.network)) add(has(c.res, 55) ? "ok" : "miss", "DE 55 en la respuesta · ARPC (tag 91)", has(c.res, 55) ? "Presente" : "Falta");
     if (exp.saldos && c.res) add(has(c.res, exp.saldos) ? "ok" : "miss", `DE ${exp.saldos} en la respuesta · saldos`, has(c.res, exp.saldos) ? "Presente" : "Falta");
     if (exp.reverso) {
       const rv = c.reversal;

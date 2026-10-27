@@ -3163,7 +3163,7 @@
                     </tr>
                     <tr>
                       <td>Consulta saldo</td>
-                      <td>310000</td>
+                      <td>300000</td>
                       <td class="off">No</td>
                       <td class="on">Sí</td>
                       <td class="on">Respuesta</td>
@@ -3478,7 +3478,7 @@
                 direction,
                 batch: String(tx.batch || 1).padStart(6, "0"),
                 status:
-                  responseCode === "00" || !String(responseCode || "").trim()
+                  /^0{2,3}$/.test(String(responseCode || "").trim()) || !String(responseCode || "").trim()
                     ? "Aprobada"
                     : "Rechazada",
               };
@@ -3515,7 +3515,7 @@
               m.stan || "",
               String(m.pan || "").slice(-4),
               m.direction || "",
-              String(m.amount || ""),
+              String(Number(m.amount || 0)), // rc.1.48 · "0" y "000000000000" son el mismo importe (consulta de saldo duplicada)
               m.batch || "000001",
             ].join("|");
 
@@ -4015,7 +4015,8 @@
 
         function processingCode() {
           if (state.operation === "withdrawal") return "010000";
-          if (state.operation === "balance") return "310000";
+          // rc.1.48 · Balance Inquiry = 30 (Visa Full Service ATM Tabla 28 · Mastercard MDS DE 3). 31 no figura en los manuales.
+          if (state.operation === "balance") return "300000";
           if (state.operation === "transfer") return "400000";
           return "010000";
         }
@@ -4269,6 +4270,15 @@
                 "Cuenta destino",
               ),
             );
+          if (state.brand === "mastercard") {
+            // rc.1.48 · Mastercard Debit Switch (MDS) Online Specifications, Financial Transaction Request/0200:
+            //   M = 12, 13, 18 (6011 para retiro/consulta/transferencia), 33, 43, 61. DE 25: "The MDS does not use this data element".
+            const d = new Date(), p2 = (n) => String(n).padStart(2, "0");
+            state.mcLocal = { de12: p2(d.getHours()) + p2(d.getMinutes()) + p2(d.getSeconds()), de13: p2(d.getMonth() + 1) + p2(d.getDate()) };
+            const i25 = fields.findIndex((r) => r[0] === "25");
+            if (i25 >= 0) fields.splice(i25, 1);
+            fields.push(...mcAtmMandatoryFields("request"));
+          }
           if (state.brand === "visa") {
             // rc.1.47 · Visa Full Service ATM (21 oct 2024), Field Edits: obligatorios en la 0200.
             const d = new Date();
@@ -4294,6 +4304,28 @@
             field(19, "Acquiring Institution Country Code", A.country || "032", "N3", "País del adquirente · Visa Field 19"),
             field(43, "Card Acceptor Name/Location", fit("OSC BANK ATM001", 25) + fit(A.city, 13) + (A.alpha2 || "AR"), "ANS40", "Nombre 25 + ciudad 13 + país 2 · Visa Field 43"),
           ];
+        }
+
+        function mcAtmMandatoryFields(kind) {
+          const A = (window.OSCIsoSpec && OSCIsoSpec.ACQ) || { country: "032", city: "BUENOS AIRES", alpha3: "ARG", postal: "C1043AAZ" };
+          const fit = (v, n) => String(v || "").toUpperCase().slice(0, n).padEnd(n, " ");
+          const loc = state.mcLocal || {};
+          const orig = kind === "reversal" ? "Operación original" : null;
+          const rows = [
+            field(12, "Time, Local Transaction", loc.de12 || "000000", "N6", orig || "Hora local del cajero · MDS DE 12 (M)"),
+            field(13, "Date, Local Transaction", loc.de13 || "0101", "N4", orig || "Fecha local del cajero · MDS DE 13 (M)"),
+            field(33, "Forwarding Institution ID Code", "9000000123", "LLVAR", orig || "Processor ID 9000000xxx · MDS DE 33 (M)"),
+          ];
+          if (kind === "request") {
+            // DE 61 (Tabla 4.29): 1 desatendido · 0 · 0 en el local · 0 cliente presente · 0 tarjeta presente · 1 captura · 0 normal · 0 · 0 · 1 CAT nivel 1 (ATM con PIN) · 5 banda + chip · 01 · país · código postal.
+            const de61 = "1000010001" + (captureProfile().de55 ? "5" : "2") + "01" + (A.country || "032") + fit(A.postal || "", 10);
+            rows.push(
+              field(18, "Merchant Type (MCC)", "6011", "N4", "6011 = ATM cash · MDS DE 18 (M)"),
+              field(43, "Card Acceptor Name and Location", fit("OSC BANK ATM001", 22) + " " + fit(A.city, 13) + " " + (A.alpha3 || "ARG"), "ANS40", "Nombre 22 + ciudad 13 + país 3 · MDS DE 43 (M)"),
+              field(61, "Point of Service (POS) Data", de61, "LLLVAR", "Desatendido · CAT nivel 1 (ATM) · país y código postal · MDS DE 61 (M)"),
+            );
+          }
+          return rows;
         }
 
         function responseFields(code) {
@@ -4735,6 +4767,8 @@
                 "2503 · No confirmation from point of service",
               ),
             );
+          // rc.1.48 · MDS 0420: 12, 13, 32 y 33 con el valor de la solicitud original.
+          if (state.brand === "mastercard") fields.push(...mcAtmMandatoryFields("reversal"));
           // Mastercard profile retained for zero dispense/POI failure.
           if (state.brand === "mastercard")
             fields.push(
@@ -5261,8 +5295,9 @@
                 ? "Entrante"
                 : "Saliente",
             batch: "000001",
+            // rc.1.48 · Amex aprueba con Action Code 000.
             status:
-              responseCode === "00" || !String(responseCode || "").trim()
+              /^0{2,3}$/.test(String(responseCode || "").trim()) || !String(responseCode || "").trim()
                 ? "Aprobada"
                 : "Rechazada",
           };
@@ -5448,14 +5483,14 @@
             type,
             amountCents: Number(state.amount || 0),
             currency: "USD",
-            status: code === "00" ? "APPROVED" : "DECLINED",
+            status: /^0{2,3}$/.test(String(code)) ? "APPROVED" : "DECLINED", // rc.1.48 · Amex 000
             responseCode: code,
             stan: state.stan,
             rrn: res.find((r) => r[0] === "37")?.[2] || "",
             auth: state.auth || "",
             batch: 1,
             closed: false,
-            clearingStatus: code === "00" ? "PENDING" : "EXCLUDED",
+            clearingStatus: /^0{2,3}$/.test(String(code)) ? "PENDING" : "EXCLUDED",
             mtiRequest: state.brand === "amex" ? "1200" : "0200",
             mtiResponse: state.brand === "amex" ? "1210" : "0210",
             panLast4: state.pan.slice(-4),

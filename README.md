@@ -1,4 +1,8 @@
-# OSC Payment Academy — v4.0.0-rc.1.47
+# OSC Payment Academy — v4.0.0-rc.1.48
+
+Correcciones pendientes: Wallet importe alterado (C14), ATM Mastercard según MDS, consulta de saldo 30, fichas Visa del manual ATM, historial ATM (saldo duplicado, Amex 000). Ver RELEASE_NOTES_v4.0.0-rc.1.48.md.
+
+## v4.0.0-rc.1.47
 
 ATM Visa: la 0200 y la 0420 incluyen DE 12, 13, 18 (6011), 19 y 43 según el manual Full Service ATM. Ver RELEASE_NOTES_v4.0.0-rc.1.47.md.
 

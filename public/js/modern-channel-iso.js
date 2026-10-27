@@ -207,7 +207,7 @@
     const T = window.OSCDeTabs, ch = tx.channel === "ECOMMERCE" ? "ecommerce" : "wallet";
     let tab = lastTab[ch] || 0;
     const norm = (m, s) => m && { id: `${ch}-${tx.stan}-${s}`, mti: m.mti, side: s, fields: m.fields.map((f) => [f[0], f[1], f[2], f[5]]) };
-    const ctx = () => ({ channel: ch, network: tx.network, message: norm(tx[side], side), req: norm(tx.request, "request"), res: norm(tx.response, "response"), threeDs: tx.threeDs, threeDsAuth: tx.threeDsAuth, operation: title });
+    const ctx = () => ({ channel: ch, network: tx.network, message: norm(tx[side], side), req: norm(tx.request, "request"), res: norm(tx.response, "response"), threeDs: tx.threeDs, threeDsAuth: tx.threeDsAuth, tamper: !!tx.tamper, operation: title });
     const draw = () => {
       const m = tx[side];
       const bits = new Set(m.fields.map((f) => Number(f[0])));

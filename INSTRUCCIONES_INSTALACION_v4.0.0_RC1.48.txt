@@ -1,0 +1,14 @@
+OSC Payment Academy v4.0.0-rc.1.48
+Correcciones pendientes: Wallet importe alterado, ATM Mastercard (MDS), consulta de saldo 30, fichas ATM, historial ATM.
+
+INSTALACIÓN (paquete INCREMENTAL · requiere tener instalada la rc.1.47):
+1. Descomprimir el ZIP y copiar su contenido sobre la raíz del repositorio en GitHub, reemplazando archivos.
+2. No hay migración nueva.
+3. Despliegue habitual.
+
+Pruebas mínimas:
+1. Wallet → escenario "82/88 · Importe alterado en tránsito" → Validaciones: C14 al 100 % (Visa 82 · Mastercard 88 · Amex 100).
+2. ATM Mastercard Débito → extracción: la 0200 lleva 12, 13, 18 = 6011, 33, 43 y 61, sin DE 25. Validaciones C17 al 100 %.
+3. ATM consulta de saldo (Visa): DE 3 = 300000; aparece una sola vez en el historial. Validaciones C19 al 100 %.
+4. ATM Amex extracción: la 1210 (000) figura "Aprobada".
+5. ATM Visa: la manito del DE 18 dice "Visa Full Service ATM Online Messages" con ejemplo 6011.

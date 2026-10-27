@@ -1,0 +1,54 @@
+{
+ "product": "OSC-ACADEMY",
+ "version": "4.0.0-rc.1.48",
+ "title": "Incremental sobre rc.1.47: correcciones pendientes Wallet/ATM/fichas",
+ "parent_baseline": "OSC-ACADEMY v4.0.0-rc.1.47",
+ "generated_at": "2026-10-27T20:12:47.977716+00:00",
+ "deleted_files": [],
+ "policy": {
+  "no_silent_file_deletion": true,
+  "sha256_inventory": true,
+  "incremental_install_package": true,
+  "complete_backup_package": true,
+  "manuals_excluded": true
+ },
+ "incremental_files": [
+  {
+   "path": "INSTRUCCIONES_INSTALACION_v4.0.0_RC1.48.txt",
+   "sha256": "8d6575dc20bbca4f84fd9ce89c8be22801acd39f34cba720af215baa7efd3849"
+  },
+  {
+   "path": "README.md",
+   "sha256": "eaf4a67902914a470b1938eee5f7f5b71a5102ca8264cbcce2f7d97bc7448de3"
+  },
+  {
+   "path": "RELEASE_NOTES_v4.0.0-rc.1.48.md",
+   "sha256": "d50e42d7bc79c3d9cef7b84066acb79493a0bdd1f14b1ca6ffc3f3b06dc9d239"
+  },
+  {
+   "path": "package.json",
+   "sha256": "a1170dfa66a8e62eaf62a9e710da50145d68f372d94f1793ed83f8d11ec59a51"
+  },
+  {
+   "path": "public/atm.html",
+   "sha256": "3da3dd1e6f00cd2f7f6e1219f4dbd4c1740e6a5aa9b2caca1ed92a91d34c1fc6"
+  },
+  {
+   "path": "public/js/de-tabs.js",
+   "sha256": "f0caca22b3ce60b2a6663b181d6b659ac4d9781f444e201c91b685173f031fb5"
+  },
+  {
+   "path": "public/js/modern-channel-iso.js",
+   "sha256": "7a22a07cd4aa6d530d46654294956dbd3ee0a32810e011195809dd5ca17d8e55"
+  },
+  {
+   "path": "public/js/field-cards.js",
+   "sha256": "80fd593266ec17432f29e4f0f8b376ee6f0ba6c4c57adc36897efa4fe3751789"
+  },
+  {
+   "path": "public/js/help-catalog.js",
+   "sha256": "818d1a448275f8979b26df6b0dee6c3e5792ac93763924ad3f8f9473f8c42735"
+  }
+ ],
+ "complete_file_count": 431
+}

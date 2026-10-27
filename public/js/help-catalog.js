@@ -278,6 +278,8 @@
     if(net==='amex') return amexPages[number]?`manuals/amex-network-specifications-authorization-oct2023.pdf#page=${amexPages[number]}`:'';
     // rc.1.30: páginas verificadas de los campos ampliados (44, 54, 60, 62, 63, 90, 95) en Full Service POS (abr 2025).
     const visaPage={44:326,54:464,60:510,62:530,63:601,90:696,95:704}[number]||refs.visa[number]?.page;
+    // rc.1.48 · En el ATM, el manual Visa de cajeros (Full Service ATM Online Messages, 21 oct 2024).
+    if(net==='visa' && /atm(\.html)?$/i.test(location.pathname)){const p={3:139,12:162,13:164,18:172,19:175,43:223,52:274,55:292,90:413,95:419}[number];if(p) return `manuals/full-service-atm-online-messages-tech-specs.pdf#page=${p}`;}
     if(net==='visa') return visaPage?`manuals/full-service-pos-online-messages-tech-specs.pdf#page=${visaPage}`:'';
     if(net==='mastercard'){
       if(mastercardManual()==='cis'&&mastercardCisPages[number]) return `manuals/mastercard-customer-interface-specification-feb2025.pdf#page=${mastercardCisPages[number]}`;
