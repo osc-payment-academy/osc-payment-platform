@@ -1,0 +1,42 @@
+{
+ "product": "OSC-ACADEMY",
+ "version": "4.0.0-rc.1.47",
+ "title": "Incremental sobre rc.1.46: ATM Visa con campos obligatorios del manual",
+ "parent_baseline": "OSC-ACADEMY v4.0.0-rc.1.46",
+ "generated_at": "2026-10-27T19:22:42.544734+00:00",
+ "deleted_files": [],
+ "policy": {
+  "no_silent_file_deletion": true,
+  "sha256_inventory": true,
+  "incremental_install_package": true,
+  "complete_backup_package": true,
+  "manuals_excluded": true
+ },
+ "incremental_files": [
+  {
+   "path": "INSTRUCCIONES_INSTALACION_v4.0.0_RC1.47.txt",
+   "sha256": "f39f68ee884faccf5d6b65ad04ae0aa8232a3e7140e2c273fd8f010dc9551d6c"
+  },
+  {
+   "path": "README.md",
+   "sha256": "54539675f59b484971f7c5fe618cca08da056df95cef259de99513fe30bc6e28"
+  },
+  {
+   "path": "RELEASE_NOTES_v4.0.0-rc.1.47.md",
+   "sha256": "f36d1fce039bb6b0ac6f9df4a169a0a883bd9b916d41c58a731957b96d239e6e"
+  },
+  {
+   "path": "package.json",
+   "sha256": "1e42dd4fc37a5b386f141880d0491c657449521524097369f4deccbcf24e3df4"
+  },
+  {
+   "path": "public/atm.html",
+   "sha256": "a573222511d4bb04669d3f51f5c2d5d16ca2cc34dffc54ee2a850712d08ae084"
+  },
+  {
+   "path": "public/js/de-tabs.js",
+   "sha256": "6bb9a3fd59e1127356fdd949833474465efe79c41c43deddc91eb8038fd74bda"
+  }
+ ],
+ "complete_file_count": 428
+}

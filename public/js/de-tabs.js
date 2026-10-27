@@ -26,7 +26,7 @@
     },
     C17: {
       nombre: "Extracción ATM chip", canal: "atm", objetivo: "Extracción de efectivo con PIN.",
-      visa: { mti: null, de3: "010000", de22: "05", obligatorios: null, condicionales: { 52: "obligatorio", 18: "= 6011" }, prohibidos: [], respuesta: "00", estado: "borrador" },
+      visa: { mti: null, de3: "010000", de22: "05", obligatorios: null, condicionales: { 52: "obligatorio", 18: "= 6011", 12: "obligatorio", 13: "obligatorio", 19: "obligatorio", 43: "obligatorio" }, prohibidos: [], respuesta: "00", estado: "borrador", nota: "DE 12, 13, 18 (= 6011), 19 y 43 verificados contra Visa Full Service ATM Online Messages (21 oct 2024), Field Edits. El resto de la lista, a completar." },
       mastercard: { mti: null, de3: "010000", de22: "05", obligatorios: null, condicionales: { 52: "obligatorio", 18: "= 6011" }, prohibidos: [25], respuesta: "00", estado: "borrador", nota: "ATM Mastercard no envía DE 53" },
       amex: ATM_AMEX,
     },

@@ -4269,7 +4269,31 @@
                 "Cuenta destino",
               ),
             );
+          if (state.brand === "visa") {
+            // rc.1.47 · Visa Full Service ATM (21 oct 2024), Field Edits: obligatorios en la 0200.
+            const d = new Date();
+            state.visaLocal = { de12: OSCIsoSpec?.de12 ? OSCIsoSpec.de12(d) : String(d.getHours()).padStart(2, "0") + String(d.getMinutes()).padStart(2, "0") + String(d.getSeconds()).padStart(2, "0"), de13: OSCIsoSpec?.de13 ? OSCIsoSpec.de13(d) : String(d.getMonth() + 1).padStart(2, "0") + String(d.getDate()).padStart(2, "0") };
+            fields.push(...visaAtmMandatoryFields("request"));
+          }
           return fields.sort((a, b) => Number(a[0]) - Number(b[0]));
+        }
+
+        // rc.1.47 · Campos que el manual Visa exige en 0200 y 0400/0420 de ATM y que faltaban:
+        //   Field 12 (reject 0278), Field 13 (0279), Field 18 = 6011 (0283; "must be 6011 for all ATM transactions"),
+        //   Field 19 (0306) y Field 43 ("required in all messages related to a cardholder transaction (02xx, 04xx)").
+        //   En la reversa, 12/13/18 llevan el valor de la solicitud original.
+        function visaAtmMandatoryFields(kind) {
+          const A = (window.OSCIsoSpec && OSCIsoSpec.ACQ) || { country: "032", city: "BUENOS AIRES", alpha2: "AR" };
+          const fit = (v, n) => String(v || "").toUpperCase().slice(0, n).padEnd(n, " ");
+          const loc = state.visaLocal || {};
+          const src = kind === "reversal" ? "Operación original" : null;
+          return [
+            field(12, "Time, Local Transaction", loc.de12 || "000000", "N6", src || "Hora local del cajero (hhmmss) · Visa Field 12"),
+            field(13, "Date, Local Transaction", loc.de13 || "0101", "N4", src || "Fecha local del cajero (MMDD) · Visa Field 13"),
+            field(18, "Merchant Type (MCC)", "6011", "N4", src || "6011 = cajero automático · Visa Field 18 (obligatorio en ATM)"),
+            field(19, "Acquiring Institution Country Code", A.country || "032", "N3", "País del adquirente · Visa Field 19"),
+            field(43, "Card Acceptor Name/Location", fit("OSC BANK ATM001", 25) + fit(A.city, 13) + (A.alpha2 || "AR"), "ANS40", "Nombre 25 + ciudad 13 + país 2 · Visa Field 43"),
+          ];
         }
 
         function responseFields(code) {
@@ -4698,6 +4722,7 @@
           if (state.brand === "visa")
             fields.push(
               field(22, "POS Entry Mode", de22Value(), "N4", captureProfile().label),
+              ...visaAtmMandatoryFields("reversal"),
             );
           // Visa 15-Oct-2025: ATM full reversals carry Field 63.3 = 2501/2502/2503.
           if (state.brand === "visa")

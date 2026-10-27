@@ -1,0 +1,12 @@
+OSC Payment Academy v4.0.0-rc.1.47
+ATM Visa: DE 12, 13, 18 (6011), 19 y 43 en la 0200 y la 0420.
+
+INSTALACIÓN (paquete INCREMENTAL · requiere tener instalada la rc.1.46):
+1. Descomprimir el ZIP y copiar su contenido sobre la raíz del repositorio en GitHub, reemplazando archivos.
+2. No hay migración nueva.
+3. Despliegue habitual.
+
+Pruebas mínimas:
+1. ATM → Visa Débito → chip → extracción. En la 0200: DE 12, 13, 18 = 6011, 19 = 032 y 43. Pestaña Validaciones: C17 al 100 %.
+2. Extracción con "Dispensación parcial 80%": la 0420 lleva los mismos campos, con 12/13 de la 0200 original.
+3. Mastercard Débito: el mensaje no cambia.

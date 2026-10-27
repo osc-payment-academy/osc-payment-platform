@@ -1,4 +1,8 @@
-# OSC Payment Academy — v4.0.0-rc.1.46
+# OSC Payment Academy — v4.0.0-rc.1.47
+
+ATM Visa: la 0200 y la 0420 incluyen DE 12, 13, 18 (6011), 19 y 43 según el manual Full Service ATM. Ver RELEASE_NOTES_v4.0.0-rc.1.47.md.
+
+## v4.0.0-rc.1.46
 
 ATM: popups de ARQC/ARPC y PIN Block en el DE 55 y DE 52, completos como en el POS. Ver RELEASE_NOTES_v4.0.0-rc.1.46.md.
 
