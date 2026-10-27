@@ -1,4 +1,8 @@
-# OSC Payment Academy — v4.0.0-rc.1.45
+# OSC Payment Academy — v4.0.0-rc.1.46
+
+ATM: popups de ARQC/ARPC y PIN Block en el DE 55 y DE 52, completos como en el POS. Ver RELEASE_NOTES_v4.0.0-rc.1.46.md.
+
+## v4.0.0-rc.1.45
 
 POS y ATM: la ficha del campo (☝) se abre según la red de la operación (antes siempre Visa). Ver RELEASE_NOTES_v4.0.0-rc.1.45.md.
 

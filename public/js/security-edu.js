@@ -369,6 +369,8 @@
     const show = (k) => {
       bar.querySelectorAll("button").forEach((b) => b.classList.toggle("active", b.dataset.k === k));
       body.innerHTML = k === "trace" ? traceHtml(kind, trace) : c[k]();
+      // rc.1.46 · En el ATM el dispositivo es el cajero, no el POS.
+      if (trace?.channel === "ATM" && k === "flow") body.querySelectorAll("*").forEach((el) => { if (el.children.length === 0) el.textContent = el.textContent.replace(/^POS → Tarjeta$/, "Cajero → Tarjeta").replace(/^POS$/, "Cajero (ATM)"); });
     };
     bar.innerHTML = tabs.map(([k, l]) => `<button type="button" role="tab" data-k="${k}">${l}</button>`).join("");
     bar.querySelectorAll("button").forEach((b) => (b.onclick = () => show(b.dataset.k)));

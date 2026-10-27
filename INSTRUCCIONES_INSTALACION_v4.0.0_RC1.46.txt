@@ -1,0 +1,13 @@
+OSC Payment Academy v4.0.0-rc.1.46
+ATM: popups de ARQC/ARPC y PIN Block en su campo, completos como en el POS.
+
+INSTALACIÓN (paquete INCREMENTAL · requiere tener instalada la rc.1.45):
+1. Descomprimir el ZIP y copiar su contenido sobre la raíz del repositorio en GitHub, reemplazando archivos.
+2. No hay migración nueva.
+3. Despliegue habitual.
+
+Pruebas mínimas:
+1. ATM con Visa Débito, chip, extracción. Seleccionar la 0200 en el historial: en el DE 55, el botón "🔐 ARQC / ARPC" abre el popup de 4 pestañas. En "Tu transacción": ARQC recalculado, "Coincide" y ARPC (tag 91).
+2. En el DE 52, "🔑 PIN Block y HSM": en "Tu transacción", PIN Block descifrado, formato ISO 0 válido y PIN correcto.
+3. Repetir con Mastercard Débito.
+4. Tarjeta LINK: no aparecen esos botones.

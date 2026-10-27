@@ -3215,10 +3215,8 @@
               <div class="iso-block">
                 <h3>DATA ELEMENTS</h3>
                 <p>Detalle completo de cada dato que compone el mensaje.</p>
-                <div class="osc-edu-buttons" style="display:flex;flex-wrap:wrap;gap:8px;margin:10px 0">
-                  <button type="button" style="border:1px solid #2f6f9f;background:#0d2a44;color:#e6f2fb;border-radius:999px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer" onclick="window.OSCSecurityEdu&&OSCSecurityEdu.open('pin',window.OSCAtmPinTrace,window.OSCAtmPinTrace?'trace':'simple')">🔑 PIN Block y HSM</button>
-                  <button type="button" style="border:1px solid #2f6f9f;background:#0d2a44;color:#e6f2fb;border-radius:999px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer" onclick="window.OSCSecurityEdu&&OSCSecurityEdu.open('arqc',window.OSCAtmArqcTrace,window.OSCAtmArqcTrace?'trace':'simple')">🔐 ARQC del chip</button>
-                </div>
+                <div class="osc-edu-buttons" style="display:flex;flex-wrap:wrap;gap:8px;margin:10px 0"><span style="font-size:11.5px;color:#8fa8bd">🔐 ARQC / ARPC está en el DE 55 y 🔑 PIN Block y HSM en el DE 52 de la tabla.</span></div>
+                <style>.de-edu-chip{display:inline-block;margin:6px 0 0 6px;border:1px solid #2f6f9f;background:#0d2a44;color:#e6f2fb;border-radius:999px;padding:3px 9px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap}.de-edu-chip:hover{background:#13406a}</style>
                 <div id="atmDeTabs"></div>
                 <div class="table-wrap">
                   <table>
@@ -3689,6 +3687,7 @@
           if (window.OSCEmvCrypto && state.pin && state.pan) {
             const b = OSCEmvCrypto.pinBlockEncrypted(state.pin, state.pan);
             window.OSCAtmPinTrace = {
+              channel: "ATM",
               pinLength: state.pin.length,
               pinFieldMasked: b.pinField.slice(0, 2) + "•".repeat(state.pin.length) + b.pinField.slice(2 + state.pin.length),
               panField: b.panField, encrypted: b.encrypted, zpk: b.zpk,
@@ -4137,7 +4136,7 @@
             const r = OSCEmvCrypto.computeArqc({ pan: state.pan, psn: "00", atc: state.emvAtc, scheme: net === "visa" ? "UDK" : "CSK",
               tags: { "9F02": amount, "9F03": "000000000000", "9F1A": "0032", "95": "0000000000", "5F2A": "0840", "9A": date, "9C": txnType, "9F37": state.emvUn, "82": "1800", cvr: net === "mastercard" ? iad.slice(4, 16) : iad.slice(6) } });
             arqc = r.arqc;
-            window.OSCAtmArqcTrace = { ...r, pan: state.pan, psn: "00", atc: state.emvAtc, network: net };
+            window.OSCAtmArqcTrace = { ...r, pan: state.pan, psn: "00", atc: state.emvAtc, network: net, channel: "ATM" };
           }
           const tags = [
             ["9F26", "08", arqc],
@@ -5244,6 +5243,8 @@
           };
           // rc.1.26 · props extra (LINK: raw, bitmap, trama anotada, estado) antes de guardar el historial.
           if (extra) Object.assign(message, extra);
+          // rc.1.46 · ARQC/ARPC y PIN Block de la operación, para el popup de 4 pestañas desde el DE 55 / DE 52.
+          if (state.brand !== "link") { if (window.OSCAtmArqcTrace) message.arqcTrace = window.OSCAtmArqcTrace; if (window.OSCAtmPinTrace) message.pinTrace = window.OSCAtmPinTrace; }
           state.messages.unshift(message);
           $("historyBody").prepend(historyRow(message));
           saveAtmHistory();
@@ -5280,7 +5281,47 @@
             .forEach((tr) =>
               tr.classList.toggle("selected", tr.dataset.id === message.id),
             );
+          decorateAtmEduRows(message);
           window.OSCAtmTabs?.refresh();
+        }
+        // rc.1.46 · Como en el POS: el popup de ARQC/ARPC vive en el DE 55 (y DE 23) y el de PIN Block/HSM en el DE 52 (y DE 53).
+        const ATM_EDU_FIELDS = { "55": "arqc", "23": "arqc", "52": "pin", "53": "pin" };
+        function atmTraceFor(kind, message) {
+          const stan = message?.stan;
+          const pool = [message, ...state.messages.filter((m) => stan && m.stan === stan)].filter(Boolean);
+          const hit = pool.find((m) => (kind === "pin" ? m.pinTrace : m.arqcTrace));
+          if (hit) return kind === "pin" ? hit.pinTrace : hit.arqcTrace;
+          return kind === "pin" ? window.OSCAtmPinTrace : window.OSCAtmArqcTrace;
+        }
+        // El emisor recalcula el ARQC con lo que recibió en el DE 55 y, si coincide y aprueba, genera el ARPC (igual que el POS).
+        function atmIssuerValidation(trace, message) {
+          if (!trace || trace.validation || !window.OSCEmvCrypto || !window.OSCDeTabs || !["visa", "mastercard"].includes(trace.network)) return;
+          const stan = message?.stan;
+          const related = state.messages.filter((m) => stan && m.stan === stan);
+          const req = related.find((m) => m.direction === "Saliente" && /^(0200|0100)$/.test(m.mti));
+          const res = related.find((m) => m.direction === "Entrante" && /^(0210|0110)$/.test(m.mti));
+          let hex = String(req?.fields?.find((r) => r[0] === "55")?.[2] || "").replace(/[^0-9A-F]/gi, "").toUpperCase();
+          if (!hex) return;
+          if (/^01/.test(hex) && parseInt(hex.substr(2, 4), 16) * 2 === hex.length - 6) hex = hex.slice(6);
+          const t = Object.fromEntries(window.OSCDeTabs.parseTlv(hex).map((x) => [x.tag, x.value]));
+          const iad = t["9F10"] || "";
+          try {
+            const r = OSCEmvCrypto.computeArqc({ pan: trace.pan, psn: t["5F34"] || trace.psn || "00", atc: t["9F36"], scheme: trace.network === "visa" ? "UDK" : "CSK",
+              tags: { "9F02": t["9F02"], "9F03": t["9F03"] || "000000000000", "9F1A": t["9F1A"], "95": t["95"], "5F2A": t["5F2A"], "9A": t["9A"], "9C": t["9C"], "9F37": t["9F37"], "82": t["82"], cvr: trace.network === "mastercard" ? iad.slice(4, 16) : iad.slice(6) } });
+            trace.validation = { ok: r.arqc === t["9F26"], recomputed: r.arqc, received: t["9F26"], reason: r.arqc === t["9F26"] ? "" : "Los datos del DE 55 no coinciden con los que firmó la tarjeta" };
+            if (trace.validation.ok && res && /^0{2,3}$/.test(String(res.responseCode || "").trim())) trace.arpc = OSCEmvCrypto.computeArpc(r.key, t["9F26"], "3030");
+          } catch (_) {}
+        }
+        function decorateAtmEduRows(message) {
+          if (!message || String(message.brand).toUpperCase() === "LINK") return;
+          [...$("deTable").rows].forEach((row) => {
+            const de = (row.cells[0]?.textContent || "").trim(), k = ATM_EDU_FIELDS[de], cell = row.cells[1];
+            if (!k || !cell || cell.querySelector(".de-edu-chip")) return;
+            const b = document.createElement("button");
+            b.type = "button"; b.className = "de-edu-chip"; b.textContent = k === "pin" ? "🔑 PIN Block y HSM" : "🔐 ARQC / ARPC";
+            b.onclick = (e) => { e.stopPropagation(); const t = atmTraceFor(k, message); if (k === "arqc") atmIssuerValidation(t, message); if (k === "pin" && t && !t.hsm && t.encrypted && window.OSCEmvCrypto) { try { t.hsm = OSCEmvCrypto.hsmVerifyPin(t.encrypted, message.pan || state.pan, "1234"); } catch (_) {} } window.OSCSecurityEdu?.open(k, t, t ? "trace" : "simple"); };
+            cell.appendChild(b);
+          });
         }
 
         let cashTimer = null;

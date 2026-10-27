@@ -1,0 +1,42 @@
+{
+ "product": "OSC-ACADEMY",
+ "version": "4.0.0-rc.1.46",
+ "title": "Incremental sobre rc.1.45: ATM con popups ARQC/ARPC y PIN Block como el POS",
+ "parent_baseline": "OSC-ACADEMY v4.0.0-rc.1.45",
+ "generated_at": "2026-10-27T18:57:27.455945+00:00",
+ "deleted_files": [],
+ "policy": {
+  "no_silent_file_deletion": true,
+  "sha256_inventory": true,
+  "incremental_install_package": true,
+  "complete_backup_package": true,
+  "manuals_excluded": true
+ },
+ "incremental_files": [
+  {
+   "path": "INSTRUCCIONES_INSTALACION_v4.0.0_RC1.46.txt",
+   "sha256": "746aab9c3cd268b9a591da611a110be4b6cba1f19e5674ad7e341666e1c02a25"
+  },
+  {
+   "path": "README.md",
+   "sha256": "fe8b7cecc94268a66e67fc92a5905d2a929f18575c774642b17ae5fd2d5b6b4d"
+  },
+  {
+   "path": "RELEASE_NOTES_v4.0.0-rc.1.46.md",
+   "sha256": "6c8ac056b8b6302b559bfd1b9727ae8b844964e180d53ec04af1a86a479c188d"
+  },
+  {
+   "path": "package.json",
+   "sha256": "c4fba521fd677b0fa536d472b7d94d1f0aa04b876e7455214de94823a8c3e91a"
+  },
+  {
+   "path": "public/atm.html",
+   "sha256": "929f66c564d8de7b9f8820f243793ad167094bd632624bc20180d4d8d4b1e4b2"
+  },
+  {
+   "path": "public/js/security-edu.js",
+   "sha256": "d9e538a478f9d7cd6cd40ad482e6956f9dd58502ff354e8d4936b0dcd5d8856c"
+  }
+ ],
+ "complete_file_count": 425
+}
