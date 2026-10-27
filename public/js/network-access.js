@@ -4,7 +4,9 @@
 (() => {
   const ALL = ['visa', 'mastercard', 'amex', 'link', 'domestic'];
   const LABEL = { visa: 'Visa', mastercard: 'Mastercard', amex: 'American Express', link: 'Red LINK', domestic: 'Doméstica' };
-  const me = window.OSCMePromise || (window.OSCMePromise = fetch('/api/auth/me', { credentials: 'same-origin' }).then(r => (r.ok ? r.json() : null)).catch(() => null));
+  // rc.1.43 · /api/auth/me cacheado en la pestaña (sessionStorage): al entrar a un módulo se usa la respuesta anterior y se confirma en segundo plano.
+  window.OSCGetMe = window.OSCGetMe || function () { if (window.OSCMePromise) return window.OSCMePromise; const fresh = fetch('/api/auth/me', { credentials: 'same-origin' }).then((r) => (r.ok ? r.json() : null)).catch(() => null).then((d) => { try { if (d) sessionStorage.setItem('oscMeV1', JSON.stringify(d)); else sessionStorage.removeItem('oscMeV1'); } catch (_) {} return d; }); window.OSCMeFresh = fresh; let c = null; try { c = JSON.parse(sessionStorage.getItem('oscMeV1') || 'null'); } catch (_) {} return (window.OSCMePromise = c ? Promise.resolve(c) : fresh); };
+  const me = window.OSCGetMe();
   const ready = me.then(d => {
     const allowed = new Set(d?.networks?.allowed || ALL);
     return { allowed, restricted: !!d?.networks?.restricted };
@@ -107,6 +109,16 @@
     // Las tarjetas Doméstica se completan después de consultar el Banco simulado: se reaplica una vez más.
     setTimeout(apply, 1500);
   }, release);
+  // Si la respuesta fresca cambia las redes respecto de la cacheada, se vuelve a aplicar.
+  (window.OSCMeFresh || Promise.resolve(null)).then((d) => {
+    if (!d) return;
+    const allowed = new Set(d?.networks?.allowed || ALL), restricted = !!d?.networks?.restricted;
+    const same = restricted === state.restricted && allowed.size === state.allowed.size && [...allowed].every((n) => state.allowed.has(n));
+    if (same) return;
+    state.allowed = allowed; state.restricted = restricted;
+    const go = () => { try { apply(); } catch (_) {} };
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', go); else go();
+  });
 
   window.OSCNetworkAccess = { ready, allows, apply, label: n => LABEL[n] || n, get allowed() { return [...state.allowed]; } };
 })();

@@ -188,7 +188,8 @@
   let isAdmin = false, meAsked = false;
   function askMe() {
     if (meAsked) return; meAsked = true;
-    const me = window.OSCMePromise || (window.OSCMePromise = fetch('/api/auth/me', { credentials: 'same-origin' }).then((r) => (r.ok ? r.json() : null)).catch(() => null));
+    window.OSCGetMe = window.OSCGetMe || function () { if (window.OSCMePromise) return window.OSCMePromise; const fresh = fetch('/api/auth/me', { credentials: 'same-origin' }).then((r) => (r.ok ? r.json() : null)).catch(() => null).then((d) => { try { if (d) sessionStorage.setItem('oscMeV1', JSON.stringify(d)); else sessionStorage.removeItem('oscMeV1'); } catch (_) {} return d; }); window.OSCMeFresh = fresh; let c = null; try { c = JSON.parse(sessionStorage.getItem('oscMeV1') || 'null'); } catch (_) {} return (window.OSCMePromise = c ? Promise.resolve(c) : fresh); };
+    const me = window.OSCGetMe();
     me.then((d) => { isAdmin = d?.user?.platform_role === 'OSC_ADMIN'; }).catch(() => {});
   }
   setTimeout(askMe, 1500);

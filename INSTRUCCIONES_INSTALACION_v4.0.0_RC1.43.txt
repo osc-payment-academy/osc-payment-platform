@@ -1,0 +1,12 @@
+OSC Payment Academy v4.0.0-rc.1.43
+Los módulos abren completos y sin demora.
+
+INSTALACIÓN (paquete INCREMENTAL · requiere tener instalada la rc.1.42):
+1. Descomprimir el ZIP y copiar su contenido sobre la raíz del repositorio en GitHub, reemplazando archivos.
+2. No hay migración nueva.
+3. Despliegue habitual. Después, cerrar sesión y volver a entrar una vez.
+
+Pruebas mínimas:
+1. Desde el Dashboard entrar a POS, ATM, Wallet y E-Commerce: cada uno aparece ya con las tarjetas de prueba, sin el hueco vacío.
+2. Con una consultora con redes restringidas: siguen viéndose solo las redes de su licencia.
+3. Cerrar sesión e ingresar con otro usuario en la misma pestaña: el menú y las redes corresponden al nuevo usuario.

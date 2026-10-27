@@ -1,0 +1,86 @@
+{
+ "product": "OSC-ACADEMY",
+ "version": "4.0.0-rc.1.43",
+ "title": "Incremental sobre rc.1.42: módulos sin demora ni pantalla a medio llenar",
+ "parent_baseline": "OSC-ACADEMY v4.0.0-rc.1.42",
+ "generated_at": "2026-10-27T15:47:39.906731+00:00",
+ "deleted_files": [],
+ "policy": {
+  "no_silent_file_deletion": true,
+  "sha256_inventory": true,
+  "incremental_install_package": true,
+  "complete_backup_package": true,
+  "manuals_excluded": true
+ },
+ "incremental_files": [
+  {
+   "path": "INSTRUCCIONES_INSTALACION_v4.0.0_RC1.43.txt",
+   "sha256": "e0889dd66c6584512b04b8a02a474f1a42d80b00623229f43b565d502f1992c4"
+  },
+  {
+   "path": "README.md",
+   "sha256": "15ef1dc7a519fe5b2621a1d9e15e85101b291155a8a034dca9b23f91d6978eb7"
+  },
+  {
+   "path": "RELEASE_NOTES_v4.0.0-rc.1.43.md",
+   "sha256": "ee3b3aef5e108236438f77737198a0279fcb45d80b2347dc73dc32aee615a7db"
+  },
+  {
+   "path": "package.json",
+   "sha256": "47a10e2b6fa2f5a8f89da1263649790a7f8c911e0a091caf918189e1e506fd46"
+  },
+  {
+   "path": "public/js/network-access.js",
+   "sha256": "abd2ef12297ff77d98195ba842645fabb8e19e7a0d5a1c842a0c3fee860de4f0"
+  },
+  {
+   "path": "public/js/navigation.js",
+   "sha256": "883dc8202b6faeb93ab231cd78bac8d343d2712296ceb460bd77f0287a9e11b0"
+  },
+  {
+   "path": "public/js/field-cards.js",
+   "sha256": "09a29f2a31e8c6219abbc0915e2798443c2013a504009c0ac40f97a62b1f4b6e"
+  },
+  {
+   "path": "public/login.html",
+   "sha256": "85c871ac4dbc903d7683fb3e147f46399beb47acc50765db4727a7adbeade41b"
+  },
+  {
+   "path": "public/atm.html",
+   "sha256": "679abe3e80629f4ea831b07e9da4b09a2f76f17ef6e7e3fb15ad52a2254592dd"
+  },
+  {
+   "path": "public/constructor.html",
+   "sha256": "f7ba205db4b66bfbfee062b2a466558d70e6c620216099fee968bb873d26a1a4"
+  },
+  {
+   "path": "public/ecommerce.html",
+   "sha256": "f0b8592cc90bc918ba29b53822c703386945d6f00d7205eb11d5c06286d262a4"
+  },
+  {
+   "path": "public/parser.html",
+   "sha256": "5686892d86da343135d36dd0e533cf8c6434a203ad7cb94e9c93eb2de92aea9f"
+  },
+  {
+   "path": "public/parser_guiado.html",
+   "sha256": "143f6a5af7d592d7eeb6c85ea8601ab709002f2da994c606d4f54b3dbf60c201"
+  },
+  {
+   "path": "public/pos.html",
+   "sha256": "c3015afec340f631f8d202fdcae7118cd2d83d8a639be4e3b2ed62c0215d4187"
+  },
+  {
+   "path": "public/switch.html",
+   "sha256": "271c7c64cae88f2ef5072749a9f5cb547b2f3a14635a9ef1dc428c1e7a4b9dc4"
+  },
+  {
+   "path": "public/switch_emisor.html",
+   "sha256": "c8662ca864392d7ecb699447925a7b638ba74f521f103ed3262ccfa6179f903e"
+  },
+  {
+   "path": "public/wallet.html",
+   "sha256": "9bb95f1c2e03765ce6d73991cdddeb0f167da2fee75c4836402a9202153da0ba"
+  }
+ ],
+ "complete_file_count": 416
+}

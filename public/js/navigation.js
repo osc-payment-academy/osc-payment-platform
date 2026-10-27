@@ -56,7 +56,8 @@
   let me = null;
   try {
     // rc.1.24 · Se reutiliza la consulta de network-access.js si ya se hizo.
-    me = await (window.OSCMePromise || (window.OSCMePromise = fetch("/api/auth/me", { credentials: "same-origin" }).then((r) => (r.ok ? r.json() : null))));
+    window.OSCGetMe = window.OSCGetMe || function () { if (window.OSCMePromise) return window.OSCMePromise; const fresh = fetch('/api/auth/me', { credentials: 'same-origin' }).then((r) => (r.ok ? r.json() : null)).catch(() => null).then((d) => { try { if (d) sessionStorage.setItem('oscMeV1', JSON.stringify(d)); else sessionStorage.removeItem('oscMeV1'); } catch (_) {} return d; }); window.OSCMeFresh = fresh; let c = null; try { c = JSON.parse(sessionStorage.getItem('oscMeV1') || 'null'); } catch (_) {} return (window.OSCMePromise = c ? Promise.resolve(c) : fresh); };
+    me = await window.OSCGetMe();
   } catch (_) {}
   // Sin sesión (vista previa local): se muestra todo, como antes.
   const isAdmin = !me || me.user?.platform_role === "OSC_ADMIN";

@@ -1,4 +1,8 @@
-# OSC Payment Academy — v4.0.0-rc.1.42
+# OSC Payment Academy — v4.0.0-rc.1.43
+
+Los módulos abren completos y sin demora (sesión cacheada en la pestaña; la página no se muestra a medio llenar). Ver RELEASE_NOTES_v4.0.0-rc.1.43.md.
+
+## v4.0.0-rc.1.42
 
 Íconos propios por módulo (POS, ATM, E-Commerce, Wallet, Constructor, Parser, Parser Guiado) en Dashboard y menú. Ver RELEASE_NOTES_v4.0.0-rc.1.42.md.
 
