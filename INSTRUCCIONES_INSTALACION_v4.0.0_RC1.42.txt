@@ -1,0 +1,12 @@
+OSC Payment Academy v4.0.0-rc.1.42
+Íconos propios por módulo en Dashboard y menú lateral.
+
+INSTALACIÓN (paquete INCREMENTAL · requiere tener instalada la rc.1.41):
+1. Descomprimir el ZIP y copiar su contenido sobre la raíz del repositorio en GitHub, reemplazando archivos.
+2. No hay migración nueva.
+3. Despliegue habitual.
+
+Pruebas mínimas:
+1. Dashboard: POS, ATM, E-Commerce, Wallet, Constructor, Parser y Parser Guiado con ícono de color (ya no aparece el recuadro blanco del POS).
+2. Menú lateral (por ejemplo en POS o Switch del Adquirente): los mismos 7 íconos en chico.
+3. "Continuar donde quedaste" con el ícono del último simulador usado.

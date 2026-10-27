@@ -1,4 +1,8 @@
-# OSC Payment Academy — v4.0.0-rc.1.41
+# OSC Payment Academy — v4.0.0-rc.1.42
+
+Íconos propios por módulo (POS, ATM, E-Commerce, Wallet, Constructor, Parser, Parser Guiado) en Dashboard y menú. Ver RELEASE_NOTES_v4.0.0-rc.1.42.md.
+
+## v4.0.0-rc.1.41
 
 Dashboard: encabezado con el banner «Del manual a la práctica.» (POS · ATM · Wallet · E-Commerce). Ver RELEASE_NOTES_v4.0.0-rc.1.41.md.
 

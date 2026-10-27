@@ -1,4 +1,4 @@
-/* OSC Academy v4.0.0-rc.1.38 (menú por recorrido) · rc.1.24 - navegación por licencia y por redes habilitadas.
+/* OSC Academy v4.0.0-rc.1.42 (íconos propios) · rc.1.38 (menú por recorrido) · rc.1.24 - navegación por licencia y por redes habilitadas.
    - Cada opción del menú depende de un módulo habilitable (licencia de la consultora o edición del curso).
    - Edición de curso: lo no habilitado se muestra con candado (Día N). Consultora: lo no incluido no se muestra.
    - Análisis Diario y Monitoreo en Vivo: licencias separadas.
@@ -50,6 +50,8 @@
     { href: "ondemand_lab.html", icon: "🧩", label: "Laboratorio de Nuevas Funcionalidades", visible: false },
     { href: "production_diagnostic.html", icon: "🔎", label: "Diagnóstico de Procesos Productivos", visible: false },
   ];
+  // rc.1.42 · Íconos propios de simuladores y mensajes (js/osc-icons.js).
+  const iconsReady = window.OSCIcons ? Promise.resolve() : new Promise((r) => { const sc = document.createElement("script"); sc.src = "/js/osc-icons.js?v=4.0.0-rc1.42"; sc.onload = sc.onerror = r; document.head.appendChild(sc); });
   const current = (location.pathname.split("/").pop() || "index.html").toLowerCase().replace(/^([^.]+)$/, "$1.html");
   let me = null;
   try {
@@ -122,6 +124,7 @@
     if (!nav.querySelector("a,button,[data-op],[data-section]")) nav.remove();
   });
   sidebar.querySelectorAll(":scope > .section:not(.instructor)").forEach((section) => section.remove());
+  await iconsReady;
   const nav = document.createElement("nav");
   nav.className = "osc-primary-navigation";
   nav.setAttribute("aria-label", "Navegación principal");
@@ -150,6 +153,8 @@
     link.className = "nav" + (current === item.href.toLowerCase() ? " active" : "") + (isLocked ? " locked" : "");
     link.href = target.href;
     link.textContent = `${isLocked ? "🔒" : item.icon} ${item.label}${isLocked && item.day ? ` · Día ${item.day}` : ""}`;
+    const ik = !isLocked && window.OSCIcons?.forHref(item.href);
+    if (ik) { link.innerHTML = window.OSCIcons.inline(ik) + " "; link.append(item.label); }
     // rc.1.27 · Consultas pendientes de respuesta (solo administración OSC).
     if (item.support && isAdmin && ent.supportPending) link.textContent += ` (${ent.supportPending})`;
     nav.appendChild(link);

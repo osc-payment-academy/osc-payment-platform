@@ -1,0 +1,46 @@
+{
+ "product": "OSC-ACADEMY",
+ "version": "4.0.0-rc.1.42",
+ "title": "Incremental sobre rc.1.41: íconos propios por módulo",
+ "parent_baseline": "OSC-ACADEMY v4.0.0-rc.1.41",
+ "generated_at": "2026-10-27T15:22:44.994591+00:00",
+ "deleted_files": [],
+ "policy": {
+  "no_silent_file_deletion": true,
+  "sha256_inventory": true,
+  "incremental_install_package": true,
+  "complete_backup_package": true,
+  "manuals_excluded": true
+ },
+ "incremental_files": [
+  {
+   "path": "INSTRUCCIONES_INSTALACION_v4.0.0_RC1.42.txt",
+   "sha256": "d1c16ca0b290ae60fc93c1b518e4828433c5473f26b6738d85d6ce34e0a663c0"
+  },
+  {
+   "path": "README.md",
+   "sha256": "4c5e5bf36cdf262f846389246af1c66adb43d7fc648c11f34f45c839f93a2af0"
+  },
+  {
+   "path": "RELEASE_NOTES_v4.0.0-rc.1.42.md",
+   "sha256": "1e40b036c91c464226d75d8fc45117b98d53e90799d0ff0f2fe3315b83979c3a"
+  },
+  {
+   "path": "package.json",
+   "sha256": "86d04ff208d843fed21d2753e5379ded1f66c12cae50ff52147545eb263c216e"
+  },
+  {
+   "path": "public/index.html",
+   "sha256": "fcf5636b13720ec64c12d9fdd71f91c43ed3c65502fe561350c1f29e31f3a416"
+  },
+  {
+   "path": "public/js/navigation.js",
+   "sha256": "4f5a4444cfc7db95456edcbedefb3e2e08da2c3965a6eb05be34b3a981c5a13a"
+  },
+  {
+   "path": "public/js/osc-icons.js",
+   "sha256": "ab1c2a7ac2f501e88ecf6ae5e1c03835e82b7e32a61546d2fa09f480a6081ebf"
+  }
+ ],
+ "complete_file_count": 413
+}
