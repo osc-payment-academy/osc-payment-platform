@@ -1,0 +1,42 @@
+{
+ "product": "OSC-ACADEMY",
+ "version": "4.0.0-rc.1.41",
+ "title": "Incremental sobre rc.1.40: encabezado del Dashboard con el banner",
+ "parent_baseline": "OSC-ACADEMY v4.0.0-rc.1.40",
+ "generated_at": "2026-10-27T15:09:02.513261+00:00",
+ "deleted_files": [],
+ "policy": {
+  "no_silent_file_deletion": true,
+  "sha256_inventory": true,
+  "incremental_install_package": true,
+  "complete_backup_package": true,
+  "manuals_excluded": true
+ },
+ "incremental_files": [
+  {
+   "path": "INSTRUCCIONES_INSTALACION_v4.0.0_RC1.41.txt",
+   "sha256": "3ae2403208477d2a15fdc529788d929f45ba038eb4bd2f84e39b0b7b3ee5364c"
+  },
+  {
+   "path": "README.md",
+   "sha256": "00b549a4d3d33c7614ec079e326057099943aa90bea95a6409d7c4bd9956fd0d"
+  },
+  {
+   "path": "RELEASE_NOTES_v4.0.0-rc.1.41.md",
+   "sha256": "b18b9cc0bdf2de2a76e5ff4f48a9ff3bcafe0b00ede04efd6e2f142f873483f9"
+  },
+  {
+   "path": "package.json",
+   "sha256": "52ceab4821196945214f798a63097f85211149b52475545e96557097561abf66"
+  },
+  {
+   "path": "public/index.html",
+   "sha256": "a8081dd23a39bc37aa0488253855f12856b52ae1fbf0602f9fb9516d692b6572"
+  },
+  {
+   "path": "public/assets/dashboard-hero-banner.webp",
+   "sha256": "9eec65a384d74765b63e0ff81f4849996f579fca354d4f12483553560fc5e004"
+  }
+ ],
+ "complete_file_count": 409
+}

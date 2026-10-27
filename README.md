@@ -1,4 +1,12 @@
-# OSC Payment Academy — v4.0.0-rc.1.39
+# OSC Payment Academy — v4.0.0-rc.1.41
+
+Dashboard: encabezado con el banner «Del manual a la práctica.» (POS · ATM · Wallet · E-Commerce). Ver RELEASE_NOTES_v4.0.0-rc.1.41.md.
+
+## v4.0.0-rc.1.40
+
+Dashboard: vuelve el slogan «Del manual a la práctica.» en el encabezado. Ver RELEASE_NOTES_v4.0.0-rc.1.40.md.
+
+## v4.0.0-rc.1.39
 
 Pestañas Vista TLV / Autenticación 3DS / Explicación / Validaciones en ATM, Wallet y E-Commerce; «Continuar donde quedaste» a la derecha del encabezado. Ver RELEASE_NOTES_v4.0.0-rc.1.39.md.
 
