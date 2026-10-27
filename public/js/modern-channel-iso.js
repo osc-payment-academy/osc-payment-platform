@@ -1,4 +1,4 @@
-/* OSC Payment Academy v4.0.0-rc.1.22 · Mensajes ISO de Wallet (NFC con token) y E-commerce (3-D Secure)
+/* OSC Payment Academy v4.0.0-rc.1.39 (pestañas del panel Data Elements) · v4.0.0-rc.1.22 · Mensajes ISO de Wallet (NFC con token) y E-commerce (3-D Secure)
    por red, según los manuales cargados (ver js/iso-network-spec.js). Reemplaza los mensajes fijos Visa-only. */
 (function () {
   const spec = () => window.OSCIsoSpec;
@@ -204,6 +204,10 @@
     if (!panel || !tx) return;
     let side = opts.side === "response" ? "response" : "request";
     const hl = opts.highlight || {};
+    const T = window.OSCDeTabs, ch = tx.channel === "ECOMMERCE" ? "ecommerce" : "wallet";
+    let tab = lastTab[ch] || 0;
+    const norm = (m, s) => m && { id: `${ch}-${tx.stan}-${s}`, mti: m.mti, side: s, fields: m.fields.map((f) => [f[0], f[1], f[2], f[5]]) };
+    const ctx = () => ({ channel: ch, network: tx.network, message: norm(tx[side], side), req: norm(tx.request, "request"), res: norm(tx.response, "response"), threeDs: tx.threeDs, threeDsAuth: tx.threeDsAuth, operation: title });
     const draw = () => {
       const m = tx[side];
       const bits = new Set(m.fields.map((f) => Number(f[0])));
@@ -216,17 +220,24 @@
         <div class="metrics"><div class="metric"><small>MTI</small><b>${m.mti}</b></div><div class="metric"><small>BITMAP (Hex)</small><b style="word-break:break-all">${m.bitmap}</b></div><div class="metric"><small>CAMPOS</small><b>${m.fields.length}</b></div></div>
         <div class="bitmapbox"><h3>BITMAP ISO8583 (1–64)</h3><div class="bitgrid">${grid(1)}</div></div>
         ${sec ? `<div class="bitmapbox"><h3>BITMAP ISO8583 (65–128)</h3><div class="bitgrid">${grid(65)}</div></div>` : ""}
-        <div class="debox"><h3>DATA ELEMENTS</h3><table><thead><tr><th>DE</th><th>Nombre</th><th>Valor</th></tr></thead><tbody>
+        <div class="debox"><h3>DATA ELEMENTS</h3>${T ? T.tabsHtml(ch, tab) : ""}${tab && T ? `<div class="pv-view">${T.viewHtml(tab, ctx())}</div>` : ""}<table${tab && T ? " hidden" : ""}><thead><tr><th>DE</th><th>Nombre</th><th>Valor</th></tr></thead><tbody>
         ${m.fields.map((f) => `<tr${(hl[side] || []).includes(Number(f[0])) ? ' class="de-hl"' : ""}><td>${esc(f[0])}</td><td>${esc(f[1])}<br><small style="color:#8fb0c6">${esc(f[5] || "")}</small>${tx.arqcTrace && (f[0] === "55" || f[0] === "23") ? ` <button type="button" class="de-edu-chip" data-edu="arqc">🔐 ARQC / ARPC</button>` : ""}${tx.threeDs && TDS_DE[tx.network] === f[0] ? ` <button type="button" class="de-edu-chip" data-edu="threeds">🛡️ 3-D Secure</button>` : ""}</td><td style="font-family:Consolas,monospace;word-break:break-all">${esc(f[2])}</td></tr>`).join("")}
         </tbody></table></div>`;
       panel.querySelectorAll("[data-side]").forEach((b) => (b.onclick = () => { side = b.dataset.side; draw(); }));
+      // rc.1.39 · pestañas Data Elements / Vista TLV (Autenticación 3DS en E-Commerce) / Explicación / Validaciones (js/de-tabs.js).
+      if (T) {
+        panel.querySelectorAll("[data-dt-tab]").forEach((b) => (b.onclick = () => { tab = lastTab[ch] = Number(b.dataset.dtTab); draw(); }));
+        T.wire(panel, ctx(), draw);
+        T.colorBitmap(ctx(), tab === 3, [...panel.querySelectorAll(".bitgrid .bit")]);
+      }
       panel.querySelectorAll("[data-edu]").forEach((edu) => (edu.onclick = (e) => { e.stopPropagation(); const k = edu.dataset.edu; window.OSCSecurityEdu?.open(k, k === "threeds" ? { ...tx.threeDs, ...(tx.threeDsAuth || {}) } : tx.arqcTrace, "trace"); }));
-      const box = panel.querySelector(".debox"), first = box?.querySelector(".de-hl"); if (box && first) box.scrollTop += first.getBoundingClientRect().top - box.getBoundingClientRect().top - 40;
+      const box = panel.querySelector(".debox"), first = box?.querySelector(".de-hl"); if (box && first && !tab) box.scrollTop += first.getBoundingClientRect().top - box.getBoundingClientRect().top - 40;
     };
     draw();
     return { show: (s) => { side = s === "response" ? "response" : "request"; draw(); } };
   }
   const TDS_DE = { visa: "126", mastercard: "48", amex: "61" };
+  const lastTab = {}; // la pestaña elegida se mantiene entre operaciones
   const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
   const toObj = (fields) => Object.fromEntries(fields.map((f) => [f[0], f[2]]));
 

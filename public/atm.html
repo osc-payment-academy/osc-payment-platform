@@ -3219,6 +3219,7 @@
                   <button type="button" style="border:1px solid #2f6f9f;background:#0d2a44;color:#e6f2fb;border-radius:999px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer" onclick="window.OSCSecurityEdu&&OSCSecurityEdu.open('pin',window.OSCAtmPinTrace,window.OSCAtmPinTrace?'trace':'simple')">🔑 PIN Block y HSM</button>
                   <button type="button" style="border:1px solid #2f6f9f;background:#0d2a44;color:#e6f2fb;border-radius:999px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer" onclick="window.OSCSecurityEdu&&OSCSecurityEdu.open('arqc',window.OSCAtmArqcTrace,window.OSCAtmArqcTrace?'trace':'simple')">🔐 ARQC del chip</button>
                 </div>
+                <div id="atmDeTabs"></div>
                 <div class="table-wrap">
                   <table>
                     <thead>
@@ -3234,6 +3235,7 @@
                     <tbody id="deTable"></tbody>
                   </table>
                 </div>
+                <div id="atmAltView" class="pv-view" hidden></div>
               </div>
 
               <div class="output-actions">
@@ -3317,6 +3319,28 @@
     <script src="js/iso-network-spec.js?v=4.0.0-rc1.22"></script>
     <script src="js/security-edu.js?v=4.0.0-rc1.26"></script>
     <script src="js/switch-store.js?v=4.0.0-rc1.29"></script>
+    <script src="js/de-tabs.js?v=4.0.0-rc1.39"></script>
+    <script>
+      // rc.1.39 · Pestañas del panel Data Elements del ATM (mismo criterio que el POS).
+      window.OSCAtmTabs = (() => {
+        let tab = 0;
+        const refresh = () => {
+          const T = window.OSCDeTabs, host = document.getElementById("atmDeTabs"), view = document.getElementById("atmAltView");
+          const wrap = host?.parentElement.querySelector(".table-wrap");
+          if (!T || !host || !view || !wrap) return;
+          host.innerHTML = T.tabsHtml("atm", tab);
+          host.querySelectorAll("[data-dt-tab]").forEach((b) => (b.onclick = () => { tab = Number(b.dataset.dtTab); refresh(); }));
+          const c = window.OSCAtmInspect?.() || null;
+          wrap.style.display = tab ? "none" : ""; view.hidden = tab === 0;
+          host.parentElement.querySelectorAll(".osc-de-tools, .osc-de-hint").forEach((e) => (e.style.display = tab ? "none" : ""));
+          view.innerHTML = tab ? T.viewHtml(tab, c) : "";
+          if (tab) T.wire(view, c, refresh);
+          T.colorBitmap(c, tab === 3, [...document.querySelectorAll("#bitmap .bit, #bitmapSecondary .bit")]);
+        };
+        document.addEventListener("DOMContentLoaded", refresh);
+        return { refresh };
+      })();
+    </script>
     <script>
       (() => {
         const $ = (id) => document.getElementById(id);
@@ -5256,6 +5280,7 @@
             .forEach((tr) =>
               tr.classList.toggle("selected", tr.dataset.id === message.id),
             );
+          window.OSCAtmTabs?.refresh();
         }
 
         let cashTimer = null;
@@ -6312,6 +6337,7 @@ ${raw(m)}`;
           $("fieldCount").textContent = "0";
           $("messageSubtitle").textContent = "Esperando operación";
           $("deTable").innerHTML = "";
+          setTimeout(() => window.OSCAtmTabs?.refresh(), 0);
           $("bitmap").innerHTML = Array.from(
             { length: 64 },
             (_, i) => `<span class="bit">${i + 1}</span>`,
@@ -6424,6 +6450,24 @@ ${raw(m)}`;
           }),
         );
 
+
+        // rc.1.39 · Datos del mensaje seleccionado para las pestañas Vista TLV / Explicación / Validaciones (js/de-tabs.js).
+        window.OSCAtmInspect = function () {
+          const msg = state.messages.find((m) => m.id === state.selectedMessageId);
+          if (!msg) return null;
+          const norm = (m) => m && { id: m.id, mti: m.mti, side: m.direction === "Saliente" ? "request" : "response", operation: m.operation, fields: (m.fields || []).map((r) => [r[0], r[1], r[2], r[4]]) };
+          const stan = msg.stan, isRev = (m) => /^(04|14)[02]0$/.test(m.mti);
+          const de90 = (m) => String((m.fields || []).find((r) => r[0] === "90")?.[2] || "");
+          const related = state.messages.filter((m) => m.stan === stan || (isRev(m) && stan && de90(m).includes(stan)));
+          let req = related.find((m) => m.direction === "Saliente" && /^(0100|0200|1100|1200)$/.test(m.mti));
+          if (!req && msg.direction === "Saliente" && !isRev(msg)) req = msg;
+          const resMti = req ? req.mti.slice(0, 2) + "1" + req.mti.slice(3) : "";
+          const res = related.find((m) => m.direction === "Entrante" && m.mti === resMti) || null;
+          // Reversa de esta operación: misma STAN o DE 90 con la STAN original (y posterior a la solicitud).
+          const reversal = state.messages.find((m) => isRev(m) && m.direction === "Saliente" && req && (m.stan === req.stan || de90(m).includes(req.stan)) && m.id !== req.id) || null;
+          const net = { visa: "visa", mastercard: "mastercard", amex: "amex", link: "link" }[String(msg.brand || state.brand || "").toLowerCase()] || "visa";
+          return { channel: "atm", network: net, message: norm(msg), req: norm(req), res: norm(res), reversal: norm(reversal), operation: (req || msg).operation };
+        };
 
         // Tutor OSC v1.0 blueprint context provider.
         window.OSCTutorContext = function () {

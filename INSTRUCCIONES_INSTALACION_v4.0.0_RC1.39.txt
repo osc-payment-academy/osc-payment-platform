@@ -1,0 +1,14 @@
+OSC Payment Academy v4.0.0-rc.1.39
+Pestañas del panel Data Elements en ATM, Wallet y E-Commerce (Vista TLV / Autenticación 3DS / Explicación / Validaciones) y «Continuar donde quedaste» a la derecha.
+
+INSTALACIÓN (paquete INCREMENTAL · requiere tener instalada la rc.1.38):
+1. Descomprimir el ZIP y copiar su contenido sobre la raíz del repositorio en GitHub, reemplazando archivos.
+2. No hay migración nueva.
+3. Despliegue habitual.
+
+Pruebas mínimas:
+1. Dashboard: "Continuar donde quedaste" aparece a la derecha, entre el texto y la ilustración.
+2. Wallet: pagar con cada red → pestañas Vista TLV (DE 55 del teléfono), Explicación y Validaciones (C08 detectado). Cambiar entre Solicitud y Respuesta.
+3. E-Commerce: Frictionless, Intento y Sin 3-D Secure con Visa, Mastercard y Amex → pestaña "Autenticación 3DS" con ECI y CAVV/AAV/AEVV (con Sin 3DS: "no viaja"). Validaciones C09 al 100 %.
+4. ATM: extracción chip (C17), "Dispensación parcial 80%" (C18: reversa 0420 con DE 90 y 95) y consulta de saldo (C19: DE 54). Con tarjeta LINK las pestañas muestran el aviso de Red LINK.
+5. POS: las pestañas siguen como antes; la fila de "Cuotas" no se superpone.

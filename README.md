@@ -1,4 +1,8 @@
-# OSC Payment Academy — v4.0.0-rc.1.38
+# OSC Payment Academy — v4.0.0-rc.1.39
+
+Pestañas Vista TLV / Autenticación 3DS / Explicación / Validaciones en ATM, Wallet y E-Commerce; «Continuar donde quedaste» a la derecha del encabezado. Ver RELEASE_NOTES_v4.0.0-rc.1.39.md.
+
+## v4.0.0-rc.1.38
 
 Dashboard y menú por recorrido, «← Plataforma» unificado y ayudas de Fraude (cómo funciona y reglas F01–F12). Ver RELEASE_NOTES_v4.0.0-rc.1.38.md.
 

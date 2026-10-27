@@ -1,0 +1,62 @@
+{
+ "product": "OSC-ACADEMY",
+ "version": "4.0.0-rc.1.39",
+ "title": "Incremental sobre rc.1.38: pestañas Data Elements en ATM, Wallet y E-Commerce; Continuar donde quedaste a la derecha",
+ "parent_baseline": "OSC-ACADEMY v4.0.0-rc.1.38",
+ "generated_at": "2026-10-27T14:50:00.584420+00:00",
+ "deleted_files": [],
+ "policy": {
+  "no_silent_file_deletion": true,
+  "sha256_inventory": true,
+  "incremental_install_package": true,
+  "complete_backup_package": true,
+  "manuals_excluded": true
+ },
+ "incremental_files": [
+  {
+   "path": "INSTRUCCIONES_INSTALACION_v4.0.0_RC1.39.txt",
+   "sha256": "5a65d88fb9e0de8e087312bd6e187e19b2fd212d3eccc83a920c66d590794a55"
+  },
+  {
+   "path": "README.md",
+   "sha256": "df4ba909da134f6b0f8ef8df6604523187de6e169d24c747aeec7eef477efcd5"
+  },
+  {
+   "path": "RELEASE_NOTES_v4.0.0-rc.1.39.md",
+   "sha256": "ce31fb09c34b0c7e7929e8d923a694b96fa9b6dc5c6b9b54aeb1ca8a27850015"
+  },
+  {
+   "path": "package.json",
+   "sha256": "83dfc251064ba790c6be6bcc9c40121ccda11448b80efb99ef2a415941f7cfe5"
+  },
+  {
+   "path": "public/index.html",
+   "sha256": "c466306fe3bf9fc3ef941e66128925b246b7cb3643bd996cb7dec3c27c843f11"
+  },
+  {
+   "path": "public/pos.html",
+   "sha256": "980dff464de0b0a03dd2dd77bbd351d80f2a6e93f6ab624ba7bda723f81a9660"
+  },
+  {
+   "path": "public/atm.html",
+   "sha256": "f755680c88cb39c0407cf1da38b8d4c37e96924bd4e2c85741e60b4096aaf44a"
+  },
+  {
+   "path": "public/wallet.html",
+   "sha256": "88bdc6b743d00dba7147755aeefd54abb126b48b79a7805a6cd5d475ed17d2ec"
+  },
+  {
+   "path": "public/ecommerce.html",
+   "sha256": "b8e86ec80fd5aadfadcc6810430ea0f9bba4873154a21ee03153073dbd10d50f"
+  },
+  {
+   "path": "public/js/de-tabs.js",
+   "sha256": "d20cd04915d89970f6081673e80d66378fd0d55659720740c1f4e59f8e3987ee"
+  },
+  {
+   "path": "public/js/modern-channel-iso.js",
+   "sha256": "d0113e5163fa2aff05ac216dad8041aefe94a3ef826e5a74dcf2adb8766ba4ae"
+  }
+ ],
+ "complete_file_count": 402
+}
