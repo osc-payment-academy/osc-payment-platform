@@ -1,4 +1,8 @@
-# OSC Payment Academy — v4.0.0-rc.1.44
+# OSC Payment Academy — v4.0.0-rc.1.45
+
+POS y ATM: la ficha del campo (☝) se abre según la red de la operación (antes siempre Visa). Ver RELEASE_NOTES_v4.0.0-rc.1.45.md.
+
+## v4.0.0-rc.1.44
 
 POS · pagos QR: la pestaña Validaciones ya no los marca en rojo como compra manual. Ver RELEASE_NOTES_v4.0.0-rc.1.44.md.
 

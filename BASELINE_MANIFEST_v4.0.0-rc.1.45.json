@@ -1,0 +1,38 @@
+{
+ "product": "OSC-ACADEMY",
+ "version": "4.0.0-rc.1.45",
+ "title": "Incremental sobre rc.1.44: ficha del campo según la red en POS y ATM",
+ "parent_baseline": "OSC-ACADEMY v4.0.0-rc.1.44",
+ "generated_at": "2026-10-27T18:39:28.573293+00:00",
+ "deleted_files": [],
+ "policy": {
+  "no_silent_file_deletion": true,
+  "sha256_inventory": true,
+  "incremental_install_package": true,
+  "complete_backup_package": true,
+  "manuals_excluded": true
+ },
+ "incremental_files": [
+  {
+   "path": "INSTRUCCIONES_INSTALACION_v4.0.0_RC1.45.txt",
+   "sha256": "12c46d905c2df10e0fbcb073ee673f547368e732e4a6c1119527171a09aa9140"
+  },
+  {
+   "path": "README.md",
+   "sha256": "4a2ca61c69c9f048fc37ff0c5f934d96524c0aa5905cdcf5360388f03b379a0c"
+  },
+  {
+   "path": "RELEASE_NOTES_v4.0.0-rc.1.45.md",
+   "sha256": "addae1a0a7c827d74d20e72c5ec87db25fff8a084330230709f07cf1f0ccb8f2"
+  },
+  {
+   "path": "package.json",
+   "sha256": "ca043fb6087e24c1b1e3ffe878da94f202e7389a12c1273e6a5940ca06d1a1ac"
+  },
+  {
+   "path": "public/js/osc-learning.js",
+   "sha256": "43e26cbc2118d821fc1bd5f20a8f86d983ef1b5e02e59334e711d973038d2e8c"
+  }
+ ],
+ "complete_file_count": 422
+}

@@ -1,0 +1,12 @@
+OSC Payment Academy v4.0.0-rc.1.45
+Ficha del campo (☝) según la red de la operación en POS y ATM.
+
+INSTALACIÓN (paquete INCREMENTAL · requiere tener instalada la rc.1.44):
+1. Descomprimir el ZIP y copiar su contenido sobre la raíz del repositorio en GitHub, reemplazando archivos.
+2. No hay migración nueva.
+3. Despliegue habitual.
+
+Pruebas mínimas:
+1. POS → QR → Mastercard QR → compra. Manito del DE 48: abre "Ficha del campo · Mastercard · DE 48". La del DE 22 dice Mastercard.
+2. POS con Amex Crédito: la ficha dice American Express.
+3. ATM con Mastercard Débito: la ficha del DE 3 dice Mastercard.

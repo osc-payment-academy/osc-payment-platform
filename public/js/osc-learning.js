@@ -115,7 +115,13 @@
   // Red de la operación que se está mirando: Wallet/E-Commerce toman la última transacción; POS/ATM, la tarjeta elegida.
   function fieldNetwork(){
     if(moduleKey==='wallet'||moduleKey==='ecommerce')return String(window.OSCModernLastTx?.network||'').toLowerCase();
-    const n=String(window.OSCHelp?.selectedNetwork?.()||'').toLowerCase();
+    // rc.1.45 · POS y ATM: red de la operación seleccionada (en QR, la del QR). Antes caía siempre en Visa.
+    let n='';
+    try{
+      if(moduleKey==='pos'){const i=window.OSCPosInspect?.();n=String((i?.op?.paymentMethod==='qr'?i.op.network:'')||i?.card?.network||i?.op?.network||'');}
+      else if(moduleKey==='atm'){n=String(window.OSCAtmInspect?.()?.network||'');}
+    }catch(_){}
+    n=(n||String(window.OSCHelp?.selectedNetwork?.()||'')).toLowerCase();
     return n.startsWith('master')?'mastercard':n;
   }
   function openFieldCard(de){
