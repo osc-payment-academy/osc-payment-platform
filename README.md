@@ -1,4 +1,8 @@
-# OSC Payment Academy — v4.0.0-rc.1.48
+# OSC Payment Academy — v4.0.0-rc.1.49
+
+TestLab (fase 1 · Red LINK): pruebas POS y ATM contra el ambiente de desarrollo del banco, con validación campo a campo de la 0210. Ver RELEASE_NOTES_v4.0.0-rc.1.49.md.
+
+## v4.0.0-rc.1.48
 
 Correcciones pendientes: Wallet importe alterado (C14), ATM Mastercard según MDS, consulta de saldo 30, fichas Visa del manual ATM, historial ATM (saldo duplicado, Amex 000). Ver RELEASE_NOTES_v4.0.0-rc.1.48.md.
 

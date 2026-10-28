@@ -1,0 +1,86 @@
+{
+  "product": "OSC-ACADEMY",
+  "version": "4.0.0-rc.1.49",
+  "title": "Incremental sobre rc.1.48: TestLab fase 1 (Red LINK, ambiente de desarrollo)",
+  "parent_baseline": "OSC-ACADEMY v4.0.0-rc.1.48",
+  "generated_at": "2026-10-28T15:32:49.679374+00:00",
+  "deleted_files": [],
+  "policy": {
+    "no_silent_file_deletion": true,
+    "sha256_inventory": true,
+    "incremental_install_package": true,
+    "complete_backup_package": true,
+    "manuals_excluded": true
+  },
+  "incremental_files": [
+    {
+      "path": "INSTRUCCIONES_INSTALACION_v4.0.0_RC1.49.txt",
+      "sha256": "5b0b7b25a7849a8e779dc0b5f440fb44bbd2631474f873cf3574c9bec3f19e89"
+    },
+    {
+      "path": "MIGRATION_v4.0.0-rc.1.49_TESTLAB.sql",
+      "sha256": "afddf5234a00bb61a33b24a37d4f30f9fffe78909442989edeabf75e3dc41f4f"
+    },
+    {
+      "path": "README.md",
+      "sha256": "617bc911ad40a6b31ec0fe9fd53ec00632c4292ba89279b8dd1250d580d00062"
+    },
+    {
+      "path": "RELEASE_NOTES_v4.0.0-rc.1.49.md",
+      "sha256": "aa6f684aa03e1db013f885e4744a78a666e958054f8adb5caf33ba740c46483f"
+    },
+    {
+      "path": "navigation.js",
+      "sha256": "f6fa5810df39cca907112fe0c558670b2d0857ca8e65e8812607e595df2c78b1"
+    },
+    {
+      "path": "package.json",
+      "sha256": "6d967945fbf722373421c32a5deed2341309448613d4c67e7d4cb3a228f6f40c"
+    },
+    {
+      "path": "public/atm.html",
+      "sha256": "9c3b38efdcf47193657344b3712d393401f693e0b9f138a331ab6c7f5505c9b9"
+    },
+    {
+      "path": "public/js/app.js",
+      "sha256": "aacc36678493ac15389449627dce47fa708b0d598c38f3e7c85401d99b44f293"
+    },
+    {
+      "path": "public/js/link-hth.js",
+      "sha256": "4f16353c8cd93acb2c63d1e1751da2ce685ab664e62118b945afc2b2fa27e029"
+    },
+    {
+      "path": "public/js/navigation.js",
+      "sha256": "f1036a8ae6d28ce986bc463dcbed3ba71b0b619722c344c1f2f358cfd460fd21"
+    },
+    {
+      "path": "public/js/testlab-core.js",
+      "sha256": "82debb52d1ee38b154cc38ebbd367631176115c18e8c2c09e4c0ad9c3cf1161a"
+    },
+    {
+      "path": "public/js/testlab-mode.js",
+      "sha256": "c7ea659dabdfee52ed39308a1155ce7f3cdacb6c9c0a39a9ad5531a25abccd0a"
+    },
+    {
+      "path": "public/parser.html",
+      "sha256": "f23156d21d38e09ff8938a9fedc99d2b647b72d59bb1dd83066a9f731fb9dc70"
+    },
+    {
+      "path": "public/pos.html",
+      "sha256": "4437faa6d9297c66155a3f4f9532ce191d9471e9b0eb784b3e1d6483618abe31"
+    },
+    {
+      "path": "public/saas-admin.html",
+      "sha256": "b36e14f8d9191bf7689f14cb29e4a01d2c7fdc9ebd1ac494edfd827be06893d7"
+    },
+    {
+      "path": "public/testlab.html",
+      "sha256": "5bb15851962ea44886b4f69e2c6ad7b257edbcba5100f5a5f12b2d8f33fdb072"
+    },
+    {
+      "path": "src/index.js",
+      "sha256": "99f65330d8635da846461827ca173f2b994be56aa46ffc100fef658ff1ce5e7c"
+    }
+  ],
+  "complete_file_count": 503
+}

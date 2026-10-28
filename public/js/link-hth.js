@@ -26,6 +26,9 @@
     pan: '9900020000000018',
     expiry: '2912',
     serviceCode: '120',
+    locality: 'CAP. FED.',          // rc.1.49 · DE43 localidad 13 (parametrizable por el TestLab)
+    province: 'BUE',                // rc.1.49 · DE43 provincia 3
+    country: 'AR',                  // rc.1.49 · DE43 país 2
     pinOffset: '8352FFFFFFFFFFFF',
     buyerCuit: '20304050607',
     buyerName: 'ALUMNO OSC ACADEMY',
@@ -102,7 +105,7 @@
     const isAtm = ctx.terminal === 'ATM';
     const termId = pad(ctx.termId || (isAtm ? 'S1AXOSC0001' : 'POSOSC0001'), 16);
     const owner = isAtm ? LINK.atmFiid : LINK.posAcquirerFiid;
-    const loc = pad(isAtm ? LINK.atmOwnerName : (ctx.merchantName || 'COMERCIO OSC'), 22) + pad('CAP. FED.', 13) + pad('BUE', 3) + pad('AR', 2);
+    const loc = pad(isAtm ? LINK.atmOwnerName : (ctx.merchantName || 'COMERCIO OSC'), 22) + pad(LINK.locality, 13) + pad(LINK.province, 3) + pad(LINK.country, 2);
     return {
       3: f(3, proc, 'g 9(6)', 'C-X-5 · nnXXYY: transacción + cuenta desde + cuenta hacia'),
       4: f(4, amt12(ctx.amountCents), '9(12)', '10 enteros + 2 decimales'),

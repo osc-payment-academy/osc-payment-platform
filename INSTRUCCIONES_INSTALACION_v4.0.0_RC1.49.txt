@@ -1,0 +1,31 @@
+OSC Payment Academy v4.0.0-rc.1.49
+TestLab (fase 1 · Red LINK): pruebas POS y ATM contra el ambiente de DESARROLLO del banco.
+
+INSTALACIÓN (paquete INCREMENTAL · requiere tener instalada la rc.1.48):
+1. Descomprimir el ZIP y copiar su contenido sobre la raíz del repositorio en GitHub, reemplazando archivos.
+2. SECRETO OBLIGATORIO para las tarjetas de prueba (cifrado AES-GCM). Una sola vez:
+     npx wrangler secret put TESTLAB_KEY
+   (pegar una clave larga y aleatoria, por ejemplo de 40 caracteres o más, y guardarla).
+   IMPORTANTE: si se cambia o se pierde la clave, las tarjetas ya cargadas no se pueden leer y hay que cargarlas de nuevo.
+3. Migración: NO es obligatoria. El Worker crea las tablas del TestLab la primera vez que se usa.
+   Si se prefiere dejarlas creadas antes:
+     npx wrangler d1 execute osc-academy --remote --file=MIGRATION_v4.0.0-rc.1.49_TESTLAB.sql
+4. Despliegue habitual.
+
+ACTIVAR PARA UN BANCO:
+1. Administración → editar la consultora del banco → marcar "🔬 TestLab" → Guardar.
+2. El TENANT_ADMIN del banco entra a TestLab y carga:
+   - Perfil del ambiente: IP, puerto, framing y timeout del ambiente de DESARROLLO, más los datos de la institución.
+   - Tarjetas de prueba: alias, PAN, vencimiento, PIN block (calculado por el banco), cuentas.
+3. Cada usuario configura la URL de su agente en TestLab → "⚙ Agente" (por defecto http://localhost:8082).
+
+PRUEBAS MÍNIMAS:
+1. Usuario sin licencia TestLab: no ve "TestLab" en el menú y /testlab.html muestra el candado.
+2. TENANT_ADMIN: guarda perfil y tarjeta. Un usuario común del mismo banco los ve en solo lectura y no puede modificarlos.
+3. TestLab → Ejecutar → ATM · Extracción · versión "prueba 1" → el banco responde → resultado con conformidad y detalle por campo.
+4. Mis resultados: el usuario A no ve las pruebas del usuario B del mismo banco. Otro banco no ve nada.
+5. ATM: "Abrir el ATM en Modo Laboratorio" → tarjeta LINK → extracción → la pantalla dice "RESPUESTA DEL BANCO". Aparece el aviso con el resultado y el enlace al detalle.
+6. POS en Modo Laboratorio → compra Maestro → ticket con la línea "TESTLAB · DESARROLLO".
+7. Agente apagado o IP sin respuesta → "Error de comunicación" (no "Fallida").
+8. "Volver a Capacitación" → POS/ATM simulados como siempre (no llega nada al banco).
+9. Reporte descargado: sin PAN completo, con "AMBIENTE: DESARROLLO" y el pie "No reemplaza ni anticipa la certificación de la red".

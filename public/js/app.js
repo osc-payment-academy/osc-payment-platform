@@ -1940,6 +1940,7 @@ ${rawMessage(msg)}`;
       ['TARJETA','•••• '+String(out.ctx.pan).slice(-4)],['TERMINAL','POSOSC0001'],['STAN',out.ctx.stan],['RECIBO (DE37)',out.ctx.rrn],
       ok&&out.auth?['AUTORIZACIÓN',out.auth]:null,
       ['RESPUESTA',`${out.code} · ${out.resultText}`],
+      out.lab?['TESTLAB',`DESARROLLO · ${out.lab.verdict==='APROBADA'?'Aprobada':out.lab.verdict==='FALLIDA'?'Fallida':'Sin respuesta'}`]:null,
       ok&&!out.reversal&&kind!=='debin'?['SALDO DISPONIBLE',money(out.balanceCents)]:null
     ].filter(Boolean);
     return `<div class="ticket-head"><strong>OSC PAYMENT ACADEMY</strong><small>${new Date().toLocaleString('es-AR')}</small></div>`+
@@ -1954,9 +1955,24 @@ ${rawMessage(msg)}`;
     const orig=selectedLinkOriginal();
     const original=orig&&OSCLinkHth.OPS[kind]?.original?{id:orig.id,amountCents:orig.linkPurchaseCents??orig.amountCents,rrn:orig.rrn,mmdd:orig.linkMmdd}:null;
     const cashbackCents=kind==='cashback'?p.cashbackCents:kind==='cashback_void'&&orig?Number(orig.linkCashCents||0):0;
-    const out=OSCLinkHth.build(kind,{terminal:'POS',amountCents:LINK_NO_AMOUNT.includes(kind)?0:Number(state.amountDigits||0),accountType:p.accountType,scenario:p.scenario,after:p.after,
+    const linkCtx={terminal:'POS',amountCents:LINK_NO_AMOUNT.includes(kind)?0:Number(state.amountDigits||0),accountType:p.accountType,scenario:p.scenario,after:p.after,
       installments:kind==='purchase'?p.installments:1,cashbackCents,original,
-      pinBlock:state.pinBlock,pinOk:kind==='debin'?undefined:state.pinDigits==='1234',stan:state.currentStan,destination:p.destination,debin:p.debin,termId:'POSOSC0001',merchantName:'COMERCIO OSC'});
+      pinBlock:state.pinBlock,pinOk:kind==='debin'?undefined:state.pinDigits==='1234',stan:state.currentStan,destination:p.destination,debin:p.debin,termId:'POSOSC0001',merchantName:'COMERCIO OSC'};
+    // rc.1.49 · TestLab · Modo Laboratorio: la 0200 sale al ambiente de DESARROLLO del banco; la respuesta es la del banco.
+    if(window.OSCTestLabMode?.active()){
+      op.lab=true;
+      screen('LABORATORIO',`<small>LINK · ambiente de desarrollo</small><strong>0200</strong><span>${OSCLinkHth.TX[kind]?.short||kind} · enviando…</span>`);
+      posTech('TestLab · la trama sale al ambiente de DESARROLLO con la tarjeta del perfil');
+      const {scenario,after,pinBlock,pinOk,...labCtx}=linkCtx;
+      OSCTestLabMode.runFromSimulator({kind,terminal:'POS',ctx:labCtx}).then(proceedLink).catch(e=>{
+        op.status='NO ENVIADA'; state.step='done';
+        screen('TESTLAB',`<small>No se envió</small><strong>—</strong><span>${String(e.message||e).replace(/</g,'&lt;')}</span>`);
+        posTech('TestLab · '+(e.message||e)); OSCTestLabMode.errorToast(e.message||String(e));
+      });
+      return;
+    }
+    proceedLink(OSCLinkHth.build(kind,linkCtx));
+    function proceedLink(out){
     op.rrn=out.ctx.rrn; op.amountCents=out.amountCents??out.ctx.amountCents; op.linkMmdd=out.ctx.clock.mmdd; op.linkPurchaseCents=Number(state.amountDigits||0); op.linkCashCents=cashbackCents;
     document.querySelector('#step4 small').textContent='LINK · 0200 OUTPUT B24';
     screen('PROCESANDO',`<small>LINK · BASE24</small><strong>0200</strong><span>${OSCLinkHth.TX[kind].short}</span>`);
@@ -1977,7 +1993,7 @@ ${rawMessage(msg)}`;
       const ok=out.code==='00'&&!out.reversal;
       op.status=out.reversal?'REVERSADA':ok?'APROBADA':'RECHAZADA'; op.responseCode=out.code;
       if(ok&&original){const o=state.operations.find(x=>x.id===original.id); if(o){o.linkClosed=true; o.status=({void:'ANULADA',cashback_void:'ANULADA',refund_void:'ANULADA',refund:'DEVUELTA',preauth_complete:'FINALIZADA'})[kind]||o.status;}}
-      fillLinkOriginals(); op.auth=out.auth||(ok?random6():'-'); state.currentAuth=op.auth;
+      fillLinkOriginals(); op.auth=out.lab?'-':(out.auth||(ok?random6():'-')); state.currentAuth=op.auth;
       $('flowResponse').textContent=`${out.code} - ${out.resultText}`;
       $('resultText').textContent=out.reversal?(out.timeout?'SIN RESPUESTA · REVERSADA':'REVERSADA'):ok?'APROBADA':'RECHAZADA';$('resultCode').textContent=out.reversal?out.reversal.reason:out.code;
       $('resultDetail').textContent=`LINK · ${out.summary}${!out.timeout&&kind!=='debin'?` · Saldo ${formatCents(out.balanceCents)}`:''}`;
@@ -1993,6 +2009,7 @@ ${rawMessage(msg)}`;
       },500);
     };
     setTimeout(next,700);
+    }
   }
   function refreshNetworkProfile(){
     if(!window.OSCNetworks) return;

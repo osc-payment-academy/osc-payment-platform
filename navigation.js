@@ -34,6 +34,7 @@
     { href: "monitoreo-vivo.html", icon: "🔴", label: "Monitoreo en Vivo de Autorizaciones", product: "liveMonitoring" },
     { href: "analisis-diario-fraude.html", icon: "📊", label: "Análisis Diario de Fraude", product: "fraudDailyAnalysis" },
     { href: "monitoreo-fraude.html", icon: "🛡️", label: "Monitoreo en Vivo de Fraude", product: "fraudMonitor" },
+    { href: "testlab.html", icon: "🔬", label: "TestLab", product: "testLab" },
     { href: "qa-certificacion.html", icon: "🧪", label: "QA / Certificación LINK", product: "qaCertificacion" },
     { href: "certificacion-host.html", icon: "🖧", label: "Simulador de Host / Certificación", product: "qaCertificacion" },
     { section: "Administración", adminSection: true },

@@ -46,6 +46,7 @@ code{background:#06121e;border:1px solid #23435f;border-radius:6px;padding:1px 6
     <div class="check-grid">
       <label class="check"><input type="checkbox" id="prodDaily"><span>📊 Análisis Diario de Autorizaciones<small>Producto OSC Authorization Analytics</small></span></label>
       <label class="check"><input type="checkbox" id="prodLive"><span>🔴 Monitoreo en Vivo de Autorizaciones<small>Producto OSC Monitoreo en Vivo</small></span></label>
+      <label class="check"><input type="checkbox" id="prodTestlab"><span>🔬 TestLab<small>Pruebas contra el ambiente de desarrollo del banco</small></span></label>
     </div>
     <div class="full-row" style="margin-top:14px"><button class="btn primary" id="consSubmit">Crear consultora</button> <button type="button" class="btn hidden" id="consCancel">Cancelar edición</button></div>
   </form>
@@ -74,7 +75,7 @@ async function loadCons(){
   const r=await fetch('/api/admin/consultancies');if(!r.ok){consList.innerHTML='<p class="muted">No se pudieron cargar las consultoras.</p>';return}
   const d=await r.json();CONS=d.consultancies||[];if(d.modules?.length)MODULES=d.modules.map(m=>m.key);
   consList.innerHTML=CONS.length?CONS.map(c=>`<article class="cons"><div class="cons-head"><div><h3 style="margin:0">${esc(c.name)}</h3><p class="muted" style="margin:4px 0">${c.members.length} de ${c.seats} licencias · ${c.expiresAt?'vence '+new Date(c.expiresAt).toLocaleDateString('es-AR'):'sin vencimiento'} · ID <code>${esc(c.id)}</code></p></div><div class="inline-actions"><a class="btn" href="uso-licencias.html?tenantId=${encodeURIComponent(c.id)}">📈 Uso</a><button class="btn primary" data-edit="${esc(c.id)}">Editar</button></div></div>
-    <div class="chips">${MODULES.map(k=>`<span class="chip ${c.modules.includes(k)?'':'off'}">${c.modules.includes(k)?'✓':'✗'} ${(MODULE_INFO[k]?.[0]||k).replace(/^\S+\s/,'')}</span>`).join('')}${NETWORKS.map(k=>`<span class="chip ${(c.networks||NETWORKS).includes(k)?'prod':'off'}">${(c.networks||NETWORKS).includes(k)?'✓':'✗'} ${NETWORK_INFO[k][0]}</span>`).join('')}<span class="chip ${c.products.daily?'prod':'off'}">${c.products.daily?'✓':'✗'} Análisis Diario</span><span class="chip ${c.products.live?'prod':'off'}">${c.products.live?'✓':'✗'} Monitoreo en Vivo</span>${c.modulesConfigured?'':'<span class="chip">Consultora anterior a rc.1.22: todos los módulos hasta que la edites</span>'}</div>
+    <div class="chips">${MODULES.map(k=>`<span class="chip ${c.modules.includes(k)?'':'off'}">${c.modules.includes(k)?'✓':'✗'} ${(MODULE_INFO[k]?.[0]||k).replace(/^\S+\s/,'')}</span>`).join('')}${NETWORKS.map(k=>`<span class="chip ${(c.networks||NETWORKS).includes(k)?'prod':'off'}">${(c.networks||NETWORKS).includes(k)?'✓':'✗'} ${NETWORK_INFO[k][0]}</span>`).join('')}<span class="chip ${c.products.daily?'prod':'off'}">${c.products.daily?'✓':'✗'} Análisis Diario</span><span class="chip ${c.products.live?'prod':'off'}">${c.products.live?'✓':'✗'} Monitoreo en Vivo</span><span class="chip ${c.products.testlab?'prod':'off'}">${c.products.testlab?'✓':'✗'} TestLab</span>${c.modulesConfigured?'':'<span class="chip">Consultora anterior a rc.1.22: todos los módulos hasta que la edites</span>'}</div>
     <p class="muted" style="margin:10px 0 0">${c.members.map(m=>`${esc(m.full_name)} &lt;${esc(m.email)}&gt;${m.role==='TENANT_ADMIN'?' · <b>administrador</b>':''}`).join(' · ')||'Sin usuarios'}</p></article>`).join(''):'<p class="muted">Todavía no hay consultoras.</p>';
   consList.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>startEdit(b.dataset.edit));
 }
@@ -84,7 +85,7 @@ function startEdit(idv){
   consId.value=c.id;consName.value=c.name;consName.disabled=true;consAdmin.value=c.members.find(m=>m.role==='TENANT_ADMIN')?.email||'';
   consUsers.value='';consUsersLabel.textContent='Agregar usuarios (opcional · correos o IDs). Los actuales se conservan.';
   consSeats.value=c.seats;consExpires.value=c.expiresAt?c.expiresAt.slice(0,10):'';
-  renderChecks(c.modules);renderNetworks(c.networks||NETWORKS);prodDaily.checked=!!c.products.daily;prodLive.checked=!!c.products.live;
+  renderChecks(c.modules);renderNetworks(c.networks||NETWORKS);prodDaily.checked=!!c.products.daily;prodLive.checked=!!c.products.live;prodTestlab.checked=!!c.products.testlab;
   consFormTitle.textContent='Editar · '+c.name;consSubmit.textContent='Guardar cambios';consCancel.classList.remove('hidden');
   document.getElementById('consultancyPanel').scrollIntoView({behavior:'smooth'});
 }
@@ -95,10 +96,10 @@ consForm.onsubmit=async e=>{e.preventDefault();
   const networks=[...networkChecks.querySelectorAll('input:checked')].map(i=>i.dataset.network);
   if(!networks.length)return show('consMessage','Marcá al menos una red.',true);
   const users=consUsers.value.split(/[\n,;]+/).map(x=>x.trim()).filter(Boolean);
-  const body={name:consName.value.trim(),adminUser:consAdmin.value.trim()||undefined,seats:Number(consSeats.value||1),expiresAt:consExpires.value?new Date(consExpires.value+'T23:59:59').toISOString():null,modules,networks,products:{daily:prodDaily.checked,live:prodLive.checked}};
+  const body={name:consName.value.trim(),adminUser:consAdmin.value.trim()||undefined,seats:Number(consSeats.value||1),expiresAt:consExpires.value?new Date(consExpires.value+'T23:59:59').toISOString():null,modules,networks,products:{daily:prodDaily.checked,live:prodLive.checked,testlab:prodTestlab.checked}};
   const editing=!!consId.value;
   if(editing)body.addUsers=users;else body.users=users;
-  if(!modules.length&&!prodDaily.checked&&!prodLive.checked)return show('consMessage','Marcá al menos un módulo o una solución.',true);
+  if(!modules.length&&!prodDaily.checked&&!prodLive.checked&&!prodTestlab.checked)return show('consMessage','Marcá al menos un módulo o una solución.',true);
   const r=await fetch(editing?'/api/admin/consultancies/'+encodeURIComponent(consId.value):'/api/admin/consultancies',{method:editing?'PUT':'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});
   const d=await r.json().catch(()=>({}));
   if(!r.ok)return show('consMessage',d.message||'No se pudo guardar. Verificá los datos.',true);

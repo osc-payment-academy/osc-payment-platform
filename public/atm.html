@@ -3312,7 +3312,9 @@
     </div>
 
     <script src="js/network-profiles.js?v=4.0.0-rc1.26"></script>
-    <script src="js/link-hth.js?v=4.0.0-rc1.28"></script>
+    <script src="js/link-hth.js?v=4.0.0-rc1.49"></script>
+    <script src="js/testlab-core.js?v=4.0.0-rc1.49"></script>
+    <script src="js/testlab-mode.js?v=4.0.0-rc1.49"></script>
     <script src="js/emv-crypto.js?v=4.0.0-rc1.22"></script>
     <script src="js/iso-network-spec.js?v=4.0.0-rc1.22"></script>
     <script src="js/security-edu.js?v=4.0.0-rc1.26"></script>
@@ -6275,6 +6277,8 @@
           const cur = linkCur();
           state.step = "processing"; state.stan = random6(); setFlow(4);
           const noAmount = ["balance", "movements", "fx_rate", "pin_change"].includes(kind) || !!T.OPS[kind]?.noAmount;
+          // rc.1.49 · TestLab · Modo Laboratorio: la 0200 sale al ambiente de DESARROLLO del banco y se muestra su respuesta real.
+          if (window.OSCTestLabMode?.active()) { sendLinkAtmLab(kind, p, noAmount); return; }
           // rc.1.26 · El HSM del emisor simulado descifra el campo 52 y verifica el PIN (queda en «PIN Block y HSM · Tu transacción»).
           const linkBlock = pinBlock();
           const linkHsm = kind === "debin" ? null : hsmVerifyAtmPin(linkBlock);
@@ -6327,6 +6331,35 @@
             if (T.CASH_KINDS.includes(kind)) { state.linkOut = out; state.linkCash = true; setFlow(6); $("deviceStatus").textContent = "Billetes presentados · esperando retiro"; dispenseCash(); }
           };
           setTimeout(next, 700);
+        }
+
+        // rc.1.49 · TestLab · envío real al ambiente de desarrollo (sin respuesta simulada, sin dispensador ni reversas simuladas).
+        function sendLinkAtmLab(kind, p, noAmount) {
+          const T = OSCLinkHth, cur = linkCur();
+          setScreen("LABORATORIO", `<strong>LINK · 0200</strong><small>${T.TX[kind]?.short || kind} · enviando al ambiente de desarrollo del banco…</small>`);
+          addTechEvent(`TestLab · ${T.TX[kind]?.label || kind} · la trama sale al ambiente de DESARROLLO con la tarjeta del perfil`, "done");
+          OSCTestLabMode.runFromSimulator({ kind, terminal: "ATM", ctx: {
+            amountCents: noAmount ? 0 : Number(state.amount || 0), accountType: p.accountType, toAccount: state.linkTo, depositType: state.linkDepType,
+            stan: state.stan, destination: p.destination, debin: p.debin, termId: "S1AXOSC0001", pas: p.pas, pf: p.pf,
+          } }).then((out) => {
+            showLinkMessages(out, out.messages, () => {
+              state.step = "done";
+              const L = out.lab || {};
+              $("hostStatus").textContent = `${out.code} - ${out.resultText}`;
+              addTechEvent(out.summary, L.verdict === "APROBADA" ? "done" : "warn");
+              if (L.commError) { setFlow(4); setScreen("SIN RESPUESTA DEL BANCO", `<strong>Ambiente de desarrollo</strong><small>${L.commError}</small>`); return; }
+              setFlow(out.code === "00" ? 6 : 5);
+              const amt = linkMoney(out.amountCents ?? out.ctx.amountCents, out.currency || cur);
+              if (out.code !== "00") { setScreen("OPERACIÓN RECHAZADA", `<strong>${out.code}</strong><small>${out.resultText} · respuesta del banco (desarrollo)</small>`); return; }
+              const noAmt = ["balance", "movements", "fx_rate", "pin_change"].includes(kind) || !!T.OPS[kind]?.noAmount;
+              setScreen("RESPUESTA DEL BANCO · APROBADA", `<strong>${noAmt ? linkMoney(out.balanceCents, out.currency || cur) : amt}</strong><small>${noAmt ? "Saldo disponible informado en el campo 44" : T.TX[kind]?.short || ""} · Modo Laboratorio: no se dispensa efectivo ni se generan reversas simuladas</small>`);
+            });
+          }).catch((e) => {
+            state.step = "done"; setFlow(4);
+            setScreen("TESTLAB", `<strong>No se envió</strong><small>${String(e.message || e).replace(/</g, "&lt;")}</small>`);
+            addTechEvent("TestLab · " + (e.message || e), "warn");
+            OSCTestLabMode.errorToast(e.message || String(e));
+          });
         }
 
         function labelOperation() {

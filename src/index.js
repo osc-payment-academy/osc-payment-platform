@@ -22,6 +22,8 @@ const DAY1_MODULES=['course_iso8583','pos','parser','constructor'];
 // Módulos que antes de rc.1.22 estaban siempre visibles: en las ediciones se siembran habilitados para no cambiar nada sin aviso.
 const DEFAULT_ON_MODULES=['ebook','banco_simulado','switch_adquirente'];
 const PRODUCT_PAYMENT='product_payment',PRODUCT_DAILY='product_authorization_analytics',PRODUCT_LIVE='product_live_monitoring';
+// rc.1.49 · TestLab: licencia separada por consultora (cada banco = una consultora = un tenant).
+const PRODUCT_TESTLAB='product_testlab';
 const PAGE_MODULES={
   'curso_interactivo.html':'course_iso8583','ebook.html':'ebook',
   'clientes.html':'banco_simulado','pasivas.html':'banco_simulado','solicitudes.html':'banco_simulado','cuenta_cliente.html':'banco_simulado',
@@ -142,6 +144,7 @@ async function ensureTenantModuleSchema(env){
 async function ensureLiveMonitoringProduct(env){
   await env.DB.prepare("INSERT OR IGNORE INTO products(id,name,slug,core_enabled,status,created_at,updated_at) VALUES(?,?,?,0,'ACTIVE',?,?)").bind(PRODUCT_LIVE,'OSC Monitoreo en Vivo de Autorizaciones','live-monitoring',now(),now()).run();
   await env.DB.prepare("INSERT OR IGNORE INTO products(id,name,slug,core_enabled,status,created_at,updated_at) VALUES(?,?,?,0,'ACTIVE',?,?)").bind(PRODUCT_DAILY,'OSC Authorization Analytics','authorization-analytics',now(),now()).run();
+  await env.DB.prepare("INSERT OR IGNORE INTO products(id,name,slug,core_enabled,status,created_at,updated_at) VALUES(?,?,?,0,'ACTIVE',?,?)").bind(PRODUCT_TESTLAB,'OSC TestLab','testlab',now(),now()).run();
 }
 /* rc.1.22 · Acceso por módulo.
    - Admin OSC: todo.
@@ -298,6 +301,77 @@ const validAnalyticsPayload=payload=>payload&&/^\d{4}-\d{2}-\d{2}$/.test(String(
   payload.resumen&&Array.isArray(payload.horas)&&payload.horas.length===24&&
   Array.isArray(payload.intervalos_15_minutos)&&payload.intervalos_15_minutos.length===96&&
   Array.isArray(payload.codigos)&&!hasSensitiveAnalyticsKey(payload);
+
+/* rc.1.49 · TestLab (pruebas contra el ambiente de DESARROLLO del banco).
+   Aislamiento: 1 banco = 1 consultora = 1 tenant.
+   - Perfil del ambiente y tarjetas: compartidos dentro del tenant; solo los edita el TENANT_ADMIN.
+   - Pruebas, historial, reportes y escenarios: de cada usuario (WHERE tenant_id=? AND user_id=?, ambos tomados de la sesión).
+   - Los datos de las tarjetas (PAN, vencimiento, PIN block) se guardan cifrados con AES-GCM (secreto TESTLAB_KEY).
+   - La evidencia se guarda enmascarada: el servidor vuelve a enmascarar cualquier PAN de las tarjetas del tenant. */
+const TESTLAB_RULES_VERSION='TL-1.0';
+const TESTLAB_VERDICTS=new Set(['APROBADA','FALLIDA','ERROR_COMUNICACION']);
+const TESTLAB_NETWORKS=['link','visa','mastercard','amex'];
+async function ensureTestlabSchema(env){
+  await env.DB.batch([
+    env.DB.prepare(`CREATE TABLE IF NOT EXISTS testlab_profiles (tenant_id TEXT PRIMARY KEY,profile_json TEXT NOT NULL,updated_by TEXT,updated_at TEXT NOT NULL)`),
+    env.DB.prepare(`CREATE TABLE IF NOT EXISTS testlab_cards (id TEXT PRIMARY KEY,tenant_id TEXT NOT NULL,network TEXT NOT NULL,alias TEXT NOT NULL,masked_pan TEXT NOT NULL,secret_enc TEXT NOT NULL,meta_json TEXT,status TEXT NOT NULL DEFAULT 'ACTIVE',created_by TEXT,created_at TEXT NOT NULL,updated_at TEXT NOT NULL)`),
+    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_testlab_cards_tenant ON testlab_cards(tenant_id,status)`),
+    env.DB.prepare(`CREATE TABLE IF NOT EXISTS testlab_runs (id TEXT PRIMARY KEY,tenant_id TEXT NOT NULL,user_id TEXT NOT NULL,network TEXT NOT NULL,channel TEXT,kind TEXT,scenario TEXT,dev_version TEXT NOT NULL,expected_code TEXT,received_code TEXT,verdict TEXT NOT NULL,conformity INTEGER,ms INTEGER,rules_version TEXT NOT NULL,manual_ref TEXT,card_alias TEXT,request_masked TEXT,response_masked TEXT,checks_json TEXT,created_at TEXT NOT NULL)`),
+    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_testlab_runs_owner ON testlab_runs(tenant_id,user_id,created_at)`),
+    env.DB.prepare(`CREATE TABLE IF NOT EXISTS testlab_scenarios (tenant_id TEXT NOT NULL,user_id TEXT NOT NULL,payload_json TEXT NOT NULL,updated_at TEXT NOT NULL,PRIMARY KEY(tenant_id,user_id))`)
+  ]);
+}
+async function testlabAccess(env,user){
+  const a=await productAccess(env,user,PRODUCT_TESTLAB);
+  if(!a)return null;
+  return {tenantId:a.tenantId,role:a.role,admin:user.platform_role==='OSC_ADMIN'||a.role==='TENANT_ADMIN'};
+}
+const tlB64=bytes=>{let s='';bytes.forEach(b=>s+=String.fromCharCode(b));return btoa(s);};
+const tlUnb64=str=>Uint8Array.from(atob(str),c=>c.charCodeAt(0));
+async function tlKey(env){
+  if(!env.TESTLAB_KEY)return null;
+  const raw=await crypto.subtle.digest('SHA-256',enc.encode(String(env.TESTLAB_KEY)));
+  return crypto.subtle.importKey('raw',raw,'AES-GCM',false,['encrypt','decrypt']);
+}
+async function tlEncrypt(env,obj){
+  const key=await tlKey(env); if(!key)return null;
+  const iv=crypto.getRandomValues(new Uint8Array(12));
+  const ct=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},key,enc.encode(JSON.stringify(obj))));
+  const out=new Uint8Array(iv.length+ct.length);out.set(iv);out.set(ct,iv.length);
+  return tlB64(out);
+}
+async function tlDecrypt(env,str){
+  const key=await tlKey(env); if(!key)return null;
+  const all=tlUnb64(str);
+  const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:all.slice(0,12)},key,all.slice(12));
+  return JSON.parse(new TextDecoder().decode(pt));
+}
+const tlMaskPan=pan=>{const p=String(pan||'');return p.length<10?'*'.repeat(p.length):p.slice(0,6)+'*'.repeat(p.length-10)+p.slice(-4);};
+// Vuelve a enmascarar en el servidor cualquier PAN de las tarjetas del tenant (por si el navegador no lo hizo).
+async function tlScrub(env,tenantId,texts){
+  const rows=(await env.DB.prepare("SELECT secret_enc FROM testlab_cards WHERE tenant_id=?").bind(tenantId).all()).results;
+  const secrets=[];
+  for(const r of rows){try{const s=await tlDecrypt(env,r.secret_enc);if(s?.pan)secrets.push(s);}catch(_){}}
+  return texts.map(t=>{let v=String(t??'');secrets.forEach(s=>{
+    const p=String(s.pan),m=tlMaskPan(p);
+    if(p.length>=10)v=v.split(p).join(m);
+    // Track 2: vencimiento + service code después del separador.
+    v=v.split(m+'=').map((part,i)=>i===0?part:part.replace(/^\d{7}/,'*******')).join(m+'=');
+    if(s.pinBlock&&!/^F{16}$/i.test(s.pinBlock))v=v.split(String(s.pinBlock)).join('*'.repeat(16));
+  });return v;});
+}
+const tlStr=(v,max)=>String(v??'').slice(0,max);
+function tlCleanProfile(p){
+  // Solo configuración del ambiente: nunca datos de tarjetas ni claves.
+  const out={networks:{}};
+  for(const n of TESTLAB_NETWORKS){
+    const x=p?.networks?.[n]; if(!x||typeof x!=='object')continue;
+    const inst={};Object.entries(x.inst||{}).slice(0,40).forEach(([k,v])=>{if(/^[a-zA-Z0-9_]{1,40}$/.test(k))inst[k]=tlStr(v,60);});
+    out.networks[n]={host:tlStr(x.host,120),port:tlStr(x.port,6).replace(/\D/g,''),framing:['none','2bin','4ascii'].includes(x.framing)?x.framing:'none',timeout:Math.min(60000,Math.max(1000,Number(x.timeout)||8000)),inst};
+  }
+  out.environmentLabel=tlStr(p?.environmentLabel||'DESARROLLO',40);
+  return out;
+}
 
 async function requireUser(request,env,roles){
   const user=await currentUser(request,env);
@@ -625,6 +699,7 @@ async function api(request,env,path){
       WHERE e.user_id=? AND e.status='ACTIVE' ORDER BY c.starts_at DESC`).bind(auth.user.id).all()).results;
     const analytics=await productAccess(env,auth.user,PRODUCT_DAILY);
     const live=await productAccess(env,auth.user,PRODUCT_LIVE);
+    const testlab=await productAccess(env,auth.user,PRODUCT_TESTLAB);
     const modules=await learningAccess(env,auth.user);
     const adminTenants=await tenantAdminTenants(env,auth.user);
     const networks=await networkAccess(env,auth.user);
@@ -636,8 +711,119 @@ async function api(request,env,path){
     let supportPending=0;
     if(isOscAdmin){try{supportPending=await supportPendingCount(env);}catch(_){}}
     return json({user:auth.user,memberships,cohorts,networks,
-      entitlements:{authorizationAnalytics:!!analytics,liveMonitoring:!!live,assessments,usagePanel:isOscAdmin||!!adminTenants?.length,support,supportPending},
+      entitlements:{authorizationAnalytics:!!analytics,liveMonitoring:!!live,testLab:!!testlab,assessments,usagePanel:isOscAdmin||!!adminTenants?.length,support,supportPending},
       moduleAccess:modules});
+  }
+
+  // ---------------- rc.1.49 · TestLab ----------------
+  if(path.startsWith('/api/testlab/')){
+    const auth=await requireUser(request,env); if(auth.error)return auth.error;
+    const tl=await testlabAccess(env,auth.user);
+    if(!tl)return json({error:'PRODUCT_LICENSE_REQUIRED',message:'TestLab no está incluido en la licencia de tu empresa.'},403);
+    await ensureTestlabSchema(env);
+    const T=tl.tenantId,U=auth.user.id;
+    const adminOnly=()=>tl.admin?null:json({error:'FORBIDDEN',message:'Solo el administrador del TestLab de tu empresa puede modificar el perfil y las tarjetas.'},403);
+    if(path==='/api/testlab/context'&&request.method==='GET'){
+      const tenant=await env.DB.prepare('SELECT id,name FROM tenants WHERE id=?').bind(T).first();
+      const prof=await env.DB.prepare('SELECT profile_json,updated_at FROM testlab_profiles WHERE tenant_id=?').bind(T).first();
+      const cards=(await env.DB.prepare("SELECT id,network,alias,masked_pan,meta_json FROM testlab_cards WHERE tenant_id=? AND status='ACTIVE' ORDER BY alias").bind(T).all()).results
+        .map(c=>({id:c.id,network:c.network,alias:c.alias,maskedPan:c.masked_pan,meta:JSON.parse(c.meta_json||'{}')}));
+      const nets=auth.user.platform_role==='OSC_ADMIN'||T==='tenant_osc'?[...NETWORKS]:await tenantNetworks(env,T);
+      return json({tenant:{id:T,name:tenant?.name||'OSC Academy'},user:{id:U,name:auth.user.full_name||auth.user.email},admin:tl.admin,
+        networks:TESTLAB_NETWORKS.filter(n=>nets.includes(n)),profile:prof?JSON.parse(prof.profile_json):{networks:{},environmentLabel:'DESARROLLO'},profileUpdatedAt:prof?.updated_at||null,
+        cards,rulesVersion:TESTLAB_RULES_VERSION,keyConfigured:!!env.TESTLAB_KEY});
+    }
+    if(path==='/api/testlab/profile'&&request.method==='PUT'){
+      const deny=adminOnly(); if(deny)return deny;
+      const b=await readBody(request),clean=tlCleanProfile(b.profile||b),ts=now();
+      await env.DB.prepare(`INSERT INTO testlab_profiles(tenant_id,profile_json,updated_by,updated_at) VALUES(?,?,?,?)
+        ON CONFLICT(tenant_id) DO UPDATE SET profile_json=excluded.profile_json,updated_by=excluded.updated_by,updated_at=excluded.updated_at`).bind(T,JSON.stringify(clean),U,ts).run();
+      await audit(env,U,'TESTLAB_PROFILE_UPDATE','TENANT',T,{networks:Object.keys(clean.networks)});
+      return json({ok:true,profile:clean,updatedAt:ts});
+    }
+    if(path==='/api/testlab/cards'&&request.method==='POST'){
+      const deny=adminOnly(); if(deny)return deny;
+      if(!env.TESTLAB_KEY)return json({error:'KEY_NOT_CONFIGURED',message:'Falta configurar el secreto TESTLAB_KEY en el servidor: sin él no se guardan tarjetas.'},503);
+      const b=await readBody(request),ts=now();
+      const network=String(b.network||'link').toLowerCase();
+      const pan=String(b.pan||'').replace(/\D/g,''),expiry=String(b.expiry||'').replace(/\D/g,'');
+      const alias=tlStr(b.alias,40).trim();
+      if(!TESTLAB_NETWORKS.includes(network))return json({error:'INVALID_DATA',message:'Red inválida.'},400);
+      if(!alias)return json({error:'INVALID_DATA',message:'Falta el alias de la tarjeta.'},400);
+      if(pan.length<12||pan.length>19)return json({error:'INVALID_DATA',message:'El PAN debe tener entre 12 y 19 dígitos.'},400);
+      if(!/^\d{4}$/.test(expiry))return json({error:'INVALID_DATA',message:'El vencimiento va en formato AAMM (4 dígitos).'},400);
+      const pinBlock=String(b.pinBlock||'').toUpperCase().replace(/\s/g,'');
+      if(pinBlock&&!/^[0-9A-F]{16}$/.test(pinBlock))return json({error:'INVALID_DATA',message:'El PIN block debe tener 16 caracteres hexadecimales.'},400);
+      const pinOffset=String(b.pinOffset||'').toUpperCase().replace(/\s/g,'');
+      if(pinOffset&&!/^[0-9A-F]{1,16}$/.test(pinOffset))return json({error:'INVALID_DATA',message:'El PIN offset debe ser hexadecimal (hasta 16).'},400);
+      const serviceCode=String(b.serviceCode||'').replace(/\D/g,'').slice(0,3);
+      const accounts={};Object.entries(b.accounts||{}).forEach(([k,v])=>{if(/^\d{2}$/.test(k)&&String(v||'').trim())accounts[k]=tlStr(String(v).trim(),28);});
+      const secret=await tlEncrypt(env,{pan,expiry,pinBlock,pinOffset,serviceCode});
+      const cid=id('tlc');
+      const meta={serviceCode:serviceCode||null,hasPinBlock:!!pinBlock,hasPinOffset:!!pinOffset,accounts};
+      await env.DB.prepare("INSERT INTO testlab_cards(id,tenant_id,network,alias,masked_pan,secret_enc,meta_json,status,created_by,created_at,updated_at) VALUES(?,?,?,?,?,?,?,'ACTIVE',?,?,?)")
+        .bind(cid,T,network,alias,tlMaskPan(pan),secret,JSON.stringify(meta),U,ts,ts).run();
+      await audit(env,U,'TESTLAB_CARD_CREATE','TESTLAB_CARD',cid,{tenantId:T,network,alias,masked:tlMaskPan(pan)});
+      return json({ok:true,card:{id:cid,network,alias,maskedPan:tlMaskPan(pan),meta}},201);
+    }
+    const cardMatch=path.match(/^\/api\/testlab\/cards\/([^/]+)(\/secret)?$/);
+    if(cardMatch&&request.method==='DELETE'&&!cardMatch[2]){
+      const deny=adminOnly(); if(deny)return deny;
+      const r=await env.DB.prepare("UPDATE testlab_cards SET status='INACTIVE',updated_at=? WHERE id=? AND tenant_id=?").bind(now(),cardMatch[1],T).run();
+      if(!r.meta?.changes)return json({error:'NOT_FOUND'},404);
+      await audit(env,U,'TESTLAB_CARD_DELETE','TESTLAB_CARD',cardMatch[1],{tenantId:T});
+      return json({ok:true});
+    }
+    if(cardMatch&&cardMatch[2]&&request.method==='GET'){
+      const row=await env.DB.prepare("SELECT id,alias,network,secret_enc,meta_json FROM testlab_cards WHERE id=? AND tenant_id=? AND status='ACTIVE'").bind(cardMatch[1],T).first();
+      if(!row)return json({error:'NOT_FOUND'},404);
+      let s=null;try{s=await tlDecrypt(env,row.secret_enc);}catch(_){}
+      if(!s)return json({error:'KEY_NOT_CONFIGURED',message:'No se pudo descifrar la tarjeta: revisá el secreto TESTLAB_KEY del servidor.'},503);
+      return json({id:row.id,alias:row.alias,network:row.network,...s,accounts:JSON.parse(row.meta_json||'{}').accounts||{}},200,{'cache-control':'no-store'});
+    }
+    if(path==='/api/testlab/runs'&&request.method==='GET'){
+      const limit=Math.min(500,Math.max(1,Number(new URL(request.url).searchParams.get('limit')||200)));
+      const rows=(await env.DB.prepare(`SELECT id,network,channel,kind,scenario,dev_version,expected_code,received_code,verdict,conformity,ms,rules_version,card_alias,created_at
+        FROM testlab_runs WHERE tenant_id=? AND user_id=? ORDER BY created_at DESC LIMIT ?`).bind(T,U,limit).all()).results;
+      return json({runs:rows});
+    }
+    const runMatch=path.match(/^\/api\/testlab\/runs\/([^/]+)$/);
+    if(runMatch&&request.method==='GET'){
+      const r=await env.DB.prepare('SELECT * FROM testlab_runs WHERE id=? AND tenant_id=? AND user_id=?').bind(runMatch[1],T,U).first();
+      if(!r)return json({error:'NOT_FOUND'},404);
+      return json({run:{...r,checks:JSON.parse(r.checks_json||'[]'),checks_json:undefined,tenant_id:undefined,user_id:undefined}});
+    }
+    if(path==='/api/testlab/runs'&&request.method==='POST'){
+      const b=await readBody(request),ts=now();
+      const network=String(b.network||'').toLowerCase();
+      if(!TESTLAB_NETWORKS.includes(network))return json({error:'INVALID_DATA',message:'Red inválida.'},400);
+      if(!TESTLAB_VERDICTS.has(b.verdict))return json({error:'INVALID_DATA',message:'Resultado inválido.'},400);
+      const devVersion=tlStr(b.devVersion,60).trim(); if(!devVersion)return json({error:'INVALID_DATA',message:'Falta la versión del desarrollo.'},400);
+      const checks=JSON.stringify(Array.isArray(b.checks)?b.checks.slice(0,400):[]);
+      if(checks.length>120000)return json({error:'INVALID_DATA',message:'Detalle de validación demasiado grande.'},400);
+      const [reqM,resM,checksM]=await tlScrub(env,T,[tlStr(b.request,12000),tlStr(b.response,12000),checks]);
+      const rid=id('tlr');
+      await env.DB.prepare(`INSERT INTO testlab_runs(id,tenant_id,user_id,network,channel,kind,scenario,dev_version,expected_code,received_code,verdict,conformity,ms,rules_version,manual_ref,card_alias,request_masked,response_masked,checks_json,created_at)
+        VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).bind(rid,T,U,network,tlStr(b.channel,10),tlStr(b.kind,40),tlStr(b.scenario,120),devVersion,tlStr(b.expectedCode,4),tlStr(b.receivedCode,4),b.verdict,
+        Number.isFinite(Number(b.conformity))?Math.round(Number(b.conformity)):null,Math.max(0,Math.round(Number(b.ms)||0)),TESTLAB_RULES_VERSION,tlStr(b.manualRef,200),tlStr(b.cardAlias,40),reqM,resM,checksM,ts).run();
+      return json({ok:true,id:rid,rulesVersion:TESTLAB_RULES_VERSION,createdAt:ts},201);
+    }
+    if(path==='/api/testlab/scenarios'&&request.method==='GET'){
+      const r=await env.DB.prepare('SELECT payload_json,updated_at FROM testlab_scenarios WHERE tenant_id=? AND user_id=?').bind(T,U).first();
+      return json({scenarios:r?JSON.parse(r.payload_json):[],updatedAt:r?.updated_at||null});
+    }
+    if(path==='/api/testlab/scenarios'&&request.method==='PUT'){
+      const b=await readBody(request);
+      const list=(Array.isArray(b.scenarios)?b.scenarios:[]).slice(0,300);
+      const payload=JSON.stringify(list);
+      if(payload.length>200000)return json({error:'INVALID_DATA',message:'Demasiados escenarios.'},400);
+      if(/\d{13,19}/.test(payload.replace(/"amount[^,}]*|"account[^,}]*/g,'')))return json({error:'INVALID_DATA',message:'Los escenarios no pueden llevar números de tarjeta: elegí la tarjeta por alias.'},400);
+      const ts=now();
+      await env.DB.prepare(`INSERT INTO testlab_scenarios(tenant_id,user_id,payload_json,updated_at) VALUES(?,?,?,?)
+        ON CONFLICT(tenant_id,user_id) DO UPDATE SET payload_json=excluded.payload_json,updated_at=excluded.updated_at`).bind(T,U,payload,ts).run();
+      return json({ok:true,updatedAt:ts});
+    }
+    return json({error:'NOT_FOUND'},404);
   }
 
   if(path==='/api/workspace/payment'){
@@ -838,7 +1024,7 @@ async function api(request,env,path){
     return {...t,licenses,members,networks,
       modules:mods.length?mods.filter(m=>m.enabled).map(m=>m.module_key):(active(PRODUCT_PAYMENT)?[...LEARNING_MODULES]:[]),
       modulesConfigured:mods.length>0,
-      products:{payment:active(PRODUCT_PAYMENT),daily:active(PRODUCT_DAILY),live:active(PRODUCT_LIVE)},
+      products:{payment:active(PRODUCT_PAYMENT),daily:active(PRODUCT_DAILY),live:active(PRODUCT_LIVE),testlab:active(PRODUCT_TESTLAB)},
       seats:pay?.seat_limit||members.length,expiresAt:pay?.expires_at||null};
   }
   if(path==='/api/admin/consultancies'&&request.method==='GET'){
@@ -862,10 +1048,11 @@ async function api(request,env,path){
     const tenantId=id('tenant');
     await env.DB.prepare("INSERT INTO tenants(id,name,slug,tenant_type,status,created_at,updated_at) VALUES(?,?,?,'CONSULTANCY','ACTIVE',?,?)").bind(tenantId,name,name.toLowerCase().replace(/[^a-z0-9]+/g,'-')+'-'+Date.now(),ts,ts).run();
     const modules=(Array.isArray(b.modules)?b.modules:[]).filter(k=>LEARNING_MODULES.includes(k));
-    const products={payment:modules.length>0,daily:!!b.products?.daily,live:!!b.products?.live};
+    const products={payment:modules.length>0,daily:!!b.products?.daily,live:!!b.products?.live,testlab:!!b.products?.testlab};
     await upsertProductLicense(tenantId,PRODUCT_PAYMENT,products.payment,seats,expiresAt,ts);
     await upsertProductLicense(tenantId,PRODUCT_DAILY,products.daily,seats,expiresAt,ts);
     await upsertProductLicense(tenantId,PRODUCT_LIVE,products.live,seats,expiresAt,ts);
+    await upsertProductLicense(tenantId,PRODUCT_TESTLAB,products.testlab,seats,expiresAt,ts);
     await saveTenantModules(tenantId,modules,auth.user.id,ts);
     await saveTenantNetworks(tenantId,networks,auth.user.id,ts);
     const all=[...r.users];if(!all.find(u=>u.id===adminId))all.push(admin.users[0]);
@@ -888,10 +1075,11 @@ async function api(request,env,path){
     const seats=Number(b.seats||current.seats||1),expiresAt=b.expiresAt===undefined?current.expiresAt:(b.expiresAt||null);
     if(current.members.length+add.users.filter(u=>!current.members.find(m=>m.id===u.id)).length>seats)return json({error:'SEAT_LIMIT_EXCEEDED',message:'Superás la cantidad de licencias. Aumentá las licencias o quitá usuarios.'},409);
     const modules=(Array.isArray(b.modules)?b.modules:current.modules).filter(k=>LEARNING_MODULES.includes(k));
-    const products={payment:modules.length>0,daily:b.products?.daily??current.products.daily,live:b.products?.live??current.products.live};
+    const products={payment:modules.length>0,daily:b.products?.daily??current.products.daily,live:b.products?.live??current.products.live,testlab:b.products?.testlab??current.products.testlab};
     await upsertProductLicense(tenantId,PRODUCT_PAYMENT,products.payment,seats,expiresAt,ts);
     await upsertProductLicense(tenantId,PRODUCT_DAILY,!!products.daily,seats,expiresAt,ts);
     await upsertProductLicense(tenantId,PRODUCT_LIVE,!!products.live,seats,expiresAt,ts);
+    await upsertProductLicense(tenantId,PRODUCT_TESTLAB,!!products.testlab,seats,expiresAt,ts);
     await saveTenantModules(tenantId,modules,auth.user.id,ts);
     if(putNetworks) await saveTenantNetworks(tenantId,putNetworks,auth.user.id,ts);
     for(const u of add.users){
@@ -1426,6 +1614,7 @@ export default {async fetch(request,env,ctx){
     // rc.1.22 · Análisis Diario y Monitoreo en Vivo se habilitan con licencias SEPARADAS.
     if((path==='/authorization-analytics'||path==='/authorization-analytics.html')&&!(await productAccess(env,user,PRODUCT_DAILY)))return Response.redirect(`${url.origin}/expired?product=authorization-analytics`,302);
     if((path==='/monitoreo-vivo'||path==='/monitoreo-vivo.html')&&!(await productAccess(env,user,PRODUCT_LIVE)))return Response.redirect(`${url.origin}/expired?product=live-monitoring`,302);
+    if((path==='/testlab'||path==='/testlab.html')&&!(await productAccess(env,user,PRODUCT_TESTLAB)))return moduleBlockedPage('TestLab','TestLab no está incluido en la licencia de tu empresa. Consultá con tu administrador.');
     if(path!=='/expired'&&path!=='/expired.html'&&!(await hasActiveLicense(env,user)))return Response.redirect(`${url.origin}/expired`,302);
     // rc.1.22 · Páginas por módulo, solo administración y registro de actividad.
     let page=(path.split('/').pop()||'index.html').toLowerCase();

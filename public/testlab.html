@@ -1,0 +1,438 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OSC · TestLab</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<style>
+:root{--bg:#06111d;--panel:#0b1827;--panel2:#0a1726;--line:#173149;--text:#f5f8fc;--muted:#9dafc2;--blue:#2f83ff;--green:#18d17e;--red:#ff5d6c;--amber:#f7b51c;--lab:#b98cff}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,Segoe UI,Arial,sans-serif;font-size:14px}
+.shell{max-width:1200px;margin:0 auto;padding:22px 16px 60px}
+a{color:var(--blue)}
+.top{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap}
+.eyebrow{color:var(--lab);font-size:.7rem;font-weight:800;letter-spacing:.09em;text-transform:uppercase;margin:0 0 2px}
+h1{margin:0;font-size:1.7rem}
+h2{font-size:1.05rem;margin:0 0 12px}
+h3{font-size:.95rem;margin:16px 0 8px}
+.muted{color:var(--muted)}
+.btn{background:#0d2238;border:1px solid var(--line);color:var(--text);border-radius:9px;padding:9px 14px;cursor:pointer;font:inherit;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+.btn:hover{background:#12304c}
+.btn.primary{background:var(--blue);border-color:var(--blue)}
+.btn.lab{background:#2b1d47;border-color:#5b3f91}
+.btn.sm{padding:5px 10px;font-size:12px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;margin:16px 0}
+.envbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:#1b1230;border:1px solid #4a3477;border-radius:12px;padding:10px 14px;margin-top:14px}
+.envbar b{color:var(--lab);letter-spacing:.06em}
+input,select{background:#07131f;border:1px solid var(--line);color:var(--text);border-radius:8px;padding:8px 10px;font:inherit;width:100%}
+input[type=checkbox]{width:auto}
+label.f{display:grid;gap:4px;font-size:12px;color:var(--muted)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-top:18px;border-bottom:1px solid var(--line)}
+.tab{background:none;border:none;color:var(--muted);padding:10px 14px;cursor:pointer;font:inherit;font-weight:700;border-bottom:2px solid transparent}
+.tab.on{color:var(--text);border-bottom-color:var(--lab)}
+.view{display:none}.view.on{display:block}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:16px 0}
+@media(max-width:700px){.kpis{grid-template-columns:repeat(2,1fr)}}
+.kpi{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:14px}
+.kpi .lbl{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.06em}
+.kpi .val{font-size:1.9rem;font-weight:800;margin-top:4px}
+.kpi.ok .val{color:var(--green)}.kpi.fail .val{color:var(--red)}.kpi.warn .val{color:var(--amber)}
+.tbl{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+thead th{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.05em}
+tbody tr.click{cursor:pointer}
+tbody tr.click:hover{background:rgba(255,255,255,.03)}
+.badge{display:inline-block;padding:3px 10px;border-radius:999px;font-weight:800;font-size:12px}
+.b-ok{background:rgba(24,209,126,.16);color:var(--green)}
+.b-fail{background:rgba(255,93,108,.16);color:var(--red)}
+.b-comm{background:rgba(247,181,28,.16);color:var(--amber)}
+.b-wait{background:rgba(157,175,194,.16);color:var(--muted)}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--green);display:inline-block}
+.dot.off{background:var(--red)}
+.modal{position:fixed;inset:0;background:#000b;display:none;align-items:flex-start;justify-content:center;padding:30px 12px;z-index:10}
+.modal.open{display:flex}
+.modal .box{background:var(--panel);border:1px solid var(--line);border-radius:14px;max-width:1040px;width:100%;max-height:90vh;overflow:auto;padding:20px}
+.modal .x{float:right;cursor:pointer;color:var(--muted);font-size:20px;background:none;border:none}
+.ok{color:var(--green)}.bad{color:var(--red)}.warn{color:var(--amber)}
+.foot{color:var(--muted);font-size:12px;margin-top:18px;line-height:1.5;border-top:1px solid var(--line);padding-top:12px}
+textarea{width:100%;min-height:80px;background:#07131f;border:1px solid var(--line);color:var(--text);border-radius:8px;padding:10px;font-family:ui-monospace,Consolas,monospace;font-size:12px}
+.chk{display:grid;grid-template-columns:28px 70px 1fr;gap:8px;padding:8px 6px;border-bottom:1px solid var(--line);align-items:start}
+.chk .ic{font-size:15px}
+.chk .de{font-weight:800;font-family:ui-monospace,Consolas,monospace}
+.chk .ficha{display:none;margin-top:6px;padding:8px 10px;border-left:3px solid var(--lab);background:#120d1f;color:#d9cdf0;font-size:12px;border-radius:0 8px 8px 0}
+.chk.open .ficha{display:block}
+.chk .txt{cursor:pointer}
+.chk small{color:var(--muted)}
+.grp{margin-top:14px;font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.note{background:#0d2238;border:1px solid var(--line);border-radius:10px;padding:10px 12px;color:#cfe0f2;font-size:13px}
+.note.warn{border-color:#6b5414;background:#211a07;color:#f3dfa6}
+.result{display:none;margin-top:14px}
+.result.on{display:block}
+.hidden{display:none!important}
+.mono{font-family:ui-monospace,Consolas,monospace}
+@media print{body{background:#fff;color:#000}.shell>*:not(#printArea){display:none!important}#printArea{display:block!important;white-space:pre-wrap;font:12px ui-monospace,Consolas,monospace}}
+#printArea{display:none}
+</style>
+</head>
+<body>
+<main class="shell">
+  <header class="top">
+    <div>
+      <p class="eyebrow">OSC · TestLab</p>
+      <h1>TestLab</h1>
+      <p class="muted" style="margin:6px 0 0;max-width:760px">Enviá operaciones POS y ATM al <b>ambiente de desarrollo</b> de tu banco con sus tarjetas de prueba. La respuesta del banco se interpreta y se valida campo por campo contra las reglas de la red.</p>
+    </div>
+    <div class="row">
+      <span class="row" style="gap:6px"><span class="dot off" id="agentDot"></span><span class="muted" id="agentTxt">Agente sin verificar</span></span>
+      <button class="btn sm" id="btnAgent">⚙ Agente</button>
+      <a class="btn sm" href="index.html">← Plataforma</a>
+    </div>
+  </header>
+
+  <div class="envbar">
+    <b>AMBIENTE: DESARROLLO</b><span class="muted">·</span><span id="envTenant">—</span><span class="muted">·</span><span id="envUser" class="muted">—</span>
+    <span class="muted" style="margin-left:auto;font-size:12px">Ves solo tus pruebas. El perfil y las tarjetas son del banco.</span>
+  </div>
+
+  <div class="panel hidden" id="agentPanel">
+    <h2>Agente</h2>
+    <p class="muted" style="margin-top:0">El agente corre en tu PC, dentro de la red del banco, y es el que envía la trama a la IP del ambiente de desarrollo. Es el mismo agente de QA: lo que cambia es el destino (perfil del TestLab).</p>
+    <div class="row"><label class="f" style="min-width:280px">URL del agente<input id="agentUrl" placeholder="http://localhost:8082"></label><button class="btn" id="agentSave">Guardar y verificar</button></div>
+  </div>
+
+  <div class="panel hidden" id="noAccess"><h2>TestLab no disponible</h2><p class="muted" id="noAccessTxt"></p></div>
+
+  <nav class="tabs" id="tabs">
+    <button class="tab on" data-tab="run">Ejecutar</button>
+    <button class="tab" data-tab="results">Mis resultados</button>
+    <button class="tab" data-tab="profile">Perfil del ambiente</button>
+    <button class="tab" data-tab="cards">Tarjetas de prueba</button>
+  </nav>
+
+  <!-- EJECUTAR -->
+  <section class="view on" id="v-run">
+    <div class="panel">
+      <h2>Nueva prueba</h2>
+      <div class="grid">
+        <label class="f">Red<select id="rNet"></select></label>
+        <label class="f">Canal<select id="rTerm"><option value="ATM">ATM</option><option value="POS">POS</option></select></label>
+        <label class="f">Operación<select id="rKind"></select></label>
+        <label class="f">Tipo de cuenta<select id="rAcct"><option value="10">10 · Caja de ahorros $</option><option value="20">20 · Cuenta corriente $</option><option value="15">15 · Caja de ahorros U$S</option><option value="07">07 · Cuenta corriente U$S</option></select></label>
+        <label class="f">Importe<input id="rAmount" inputmode="decimal" placeholder="1000,00"></label>
+        <label class="f">Tarjeta de prueba<select id="rCard"></select></label>
+        <label class="f">Versión del desarrollo *<input id="rVersion" placeholder="build 2026-10-28 #3"></label>
+        <label class="f">Código de respuesta esperado<input id="rExpected" value="00" maxlength="3" list="codes"></label>
+        <label class="f">Nombre del escenario<input id="rName" placeholder="Extracción CA $ aprobada"></label>
+      </div>
+      <datalist id="codes"></datalist>
+      <p class="muted" style="font-size:12px;margin:10px 0 0" id="rHint"></p>
+      <div class="row" style="margin-top:14px">
+        <button class="btn primary" id="btnRun">▶ Ejecutar ahora</button>
+        <button class="btn" id="btnSaveScn">＋ Guardar como escenario</button>
+        <button class="btn lab" id="btnOpenAtm">Abrir el ATM en Modo Laboratorio</button>
+        <button class="btn lab" id="btnOpenPos">Abrir el POS en Modo Laboratorio</button>
+      </div>
+      <div class="result panel" id="runResult" style="background:var(--panel2)"></div>
+    </div>
+    <div class="panel">
+      <div class="row" style="justify-content:space-between"><h2 style="margin:0">Mis escenarios</h2><button class="btn" id="btnRunAll">▶ Correr todos con la versión indicada</button></div>
+      <div class="tbl" style="margin-top:10px"><table id="scnTable"><thead><tr><th>Escenario</th><th>Canal</th><th>Operación</th><th>Cuenta</th><th>Importe</th><th>Tarjeta</th><th>Esperado</th><th>Último</th><th></th></tr></thead><tbody></tbody></table></div>
+    </div>
+  </section>
+
+  <!-- RESULTADOS -->
+  <section class="view" id="v-results">
+    <section class="kpis">
+      <div class="kpi"><div class="lbl">Mis pruebas</div><div class="val" id="kTot">—</div></div>
+      <div class="kpi ok"><div class="lbl">Aprobadas</div><div class="val" id="kOk">—</div></div>
+      <div class="kpi fail"><div class="lbl">Fallidas</div><div class="val" id="kFail">—</div></div>
+      <div class="kpi warn"><div class="lbl">Error de comunicación</div><div class="val" id="kComm">—</div></div>
+    </section>
+    <div class="panel">
+      <div class="row" style="justify-content:space-between">
+        <h2 style="margin:0">Historial</h2>
+        <div class="row"><label class="f" style="min-width:220px">Versión del desarrollo<select id="fVersion"><option value="">Todas</option></select></label><button class="btn" id="btnReload">↻ Actualizar</button></div>
+      </div>
+      <div class="tbl" style="margin-top:10px"><table id="runTable"><thead><tr><th>Fecha</th><th>Canal</th><th>Operación</th><th>Versión</th><th>Tarjeta</th><th>Esperado</th><th>Recibido</th><th>Resultado</th><th>Conformidad</th><th>ms</th></tr></thead><tbody></tbody></table></div>
+    </div>
+  </section>
+
+  <!-- PERFIL -->
+  <section class="view" id="v-profile">
+    <div class="panel">
+      <h2>Perfil del ambiente de desarrollo · Red LINK</h2>
+      <p class="note" id="profileNote"></p>
+      <h3>Destino</h3>
+      <div class="grid">
+        <label class="f">IP / host del ambiente<input data-p="host" placeholder="10.20.30.40"></label>
+        <label class="f">Puerto<input data-p="port" inputmode="numeric" placeholder="7000"></label>
+        <label class="f">Framing TCP<select data-p="framing"><option value="none">none</option><option value="2bin">2bin (2 bytes binario)</option><option value="4ascii">4ascii (4 dígitos)</option></select></label>
+        <label class="f">Timeout (ms)<input data-p="timeout" inputmode="numeric" placeholder="8000"></label>
+      </div>
+      <h3>Datos de la institución (van en la trama)</h3>
+      <div class="grid">
+        <label class="f">FIID emisor de la tarjeta (DE61, DE122)<input data-i="issuerFiid" maxlength="4" placeholder="0311"></label>
+        <label class="f">FIID dueño del ATM (DE60)<input data-i="atmFiid" maxlength="4" placeholder="0270"></label>
+        <label class="f">Nombre dueño del ATM (DE43)<input data-i="atmOwnerName" maxlength="22"></label>
+        <label class="f">FIID host adquirente POS (DE60)<input data-i="posAcquirerFiid" maxlength="4"></label>
+        <label class="f">Institución pagadora (DE32) · 11 dígitos<input data-i="acquirerId" maxlength="11"></label>
+        <label class="f">Institución receptora (DE100) · 11<input data-i="receivingId" maxlength="11"></label>
+        <label class="f">Red (DE60 / DE61)<input data-i="network" maxlength="4" placeholder="PRO1"></label>
+        <label class="f">Localidad (DE43) · 13<input data-i="locality" maxlength="13" placeholder="CAP. FED."></label>
+        <label class="f">Provincia (DE43) · 3<input data-i="province" maxlength="3" placeholder="BUE"></label>
+        <label class="f">País (DE43) · 2<input data-i="country" maxlength="2" placeholder="AR"></label>
+        <label class="f">Terminal ATM (DE41)<input data-i="termAtm" maxlength="16" placeholder="S1AXOSC0001"></label>
+        <label class="f">Terminal POS (DE41)<input data-i="termPos" maxlength="16" placeholder="POSOSC0001"></label>
+        <label class="f">Nombre del comercio POS (DE43)<input data-i="merchantName" maxlength="22"></label>
+      </div>
+      <p class="muted" style="font-size:12px">Lo que quede vacío usa el valor de práctica del simulador.</p>
+      <div class="row"><button class="btn primary" id="btnSaveProfile">Guardar perfil</button><span id="profileMsg" class="muted"></span></div>
+    </div>
+  </section>
+
+  <!-- TARJETAS -->
+  <section class="view" id="v-cards">
+    <div class="panel">
+      <h2>Tarjetas de prueba del banco</h2>
+      <p class="note" id="cardsNote"></p>
+      <div class="tbl"><table id="cardTable"><thead><tr><th>Alias</th><th>Red</th><th>Tarjeta</th><th>Service code</th><th>PIN block</th><th>Cuentas</th><th></th></tr></thead><tbody></tbody></table></div>
+      <div id="cardForm">
+        <h3>Agregar tarjeta</h3>
+        <div class="grid">
+          <label class="f">Alias *<input id="cAlias" placeholder="Débito CA $ OK"></label>
+          <label class="f">PAN *<input id="cPan" inputmode="numeric" autocomplete="off" maxlength="19"></label>
+          <label class="f">Vencimiento (AAMM) *<input id="cExp" inputmode="numeric" maxlength="4" placeholder="2812"></label>
+          <label class="f">Service code<input id="cSvc" inputmode="numeric" maxlength="3" placeholder="120"></label>
+          <label class="f">PIN block (DE52, 16 hex)<input id="cPin" maxlength="16" autocomplete="off" placeholder="vacío = 16 F"></label>
+          <label class="f">PIN offset (DE63)<input id="cOff" maxlength="16" autocomplete="off"></label>
+          <label class="f">Cuenta 10 · CA $<input data-acct="10" maxlength="28"></label>
+          <label class="f">Cuenta 20 · CC $<input data-acct="20" maxlength="28"></label>
+          <label class="f">Cuenta 15 · CA U$S<input data-acct="15" maxlength="28"></label>
+          <label class="f">Cuenta 07 · CC U$S<input data-acct="07" maxlength="28"></label>
+        </div>
+        <p class="muted" style="font-size:12px">El PIN block lo calcula el banco con la ZPK de su ambiente de desarrollo. El TestLab lo envía tal cual en el DE52 (no lo calcula). Los datos de la tarjeta se guardan cifrados y nunca se muestran completos.</p>
+        <div class="row"><button class="btn primary" id="btnAddCard">Guardar tarjeta</button><span id="cardMsg" class="muted"></span></div>
+      </div>
+    </div>
+  </section>
+
+  <p class="foot" id="disclaimer"></p>
+  <pre id="printArea"></pre>
+</main>
+
+<div class="modal" id="modal"><div class="box">
+  <button class="x" id="modalX" aria-label="Cerrar">✕</button>
+  <h2 id="mTit" style="margin:0 0 4px">Detalle</h2>
+  <p class="muted" id="mSub" style="margin:0 0 12px"></p>
+  <div class="row" style="margin-bottom:8px"><button class="btn" id="btnReport">⬇ Descargar reporte</button><button class="btn" id="btnPrint">🖨 Imprimir / PDF</button><label class="row muted" style="font-size:12px;gap:6px"><input type="checkbox" id="onlyBad"> Ver solo desvíos</label></div>
+  <div id="mChecks"></div>
+  <h3>Trama enviada (enmascarada)</h3><textarea id="mReq" readonly></textarea>
+  <h3>Trama recibida del banco (enmascarada)</h3><textarea id="mRes" readonly></textarea>
+  <p class="foot" id="mFoot"></p>
+</div></div>
+
+<script src="js/link-hth.js?v=4.0.0-rc1.49"></script>
+<script src="js/testlab-core.js?v=4.0.0-rc1.49"></script>
+<script>
+(async () => {
+  const $ = (id) => document.getElementById(id), TL = window.OSCTestLab, esc = TL.esc;
+  const VB = { APROBADA: 'b-ok', FALLIDA: 'b-fail', ERROR_COMUNICACION: 'b-comm' };
+  const badge = (v) => `<span class="badge ${VB[v] || 'b-wait'}">${esc(TL.VERDICT_TEXT[v] || v || '—')}</span>`;
+  const C = await TL.context();
+  if (!TL.ctx) {
+    document.querySelectorAll('.tabs,.view,.envbar').forEach((e) => e.classList.add('hidden'));
+    $('noAccess').classList.remove('hidden');
+    $('noAccessTxt').textContent = C?.error === 'PRODUCT_LICENSE_REQUIRED' ? 'TestLab no está incluido en la licencia de tu empresa. Consultá con tu administrador.' : 'No se pudo cargar el TestLab. Volvé a iniciar sesión.';
+    return;
+  }
+  const ctx = TL.ctx, A = TL.ADAPTERS.link, isAdmin = !!ctx.admin;
+  $('envTenant').textContent = ctx.tenant.name; $('envUser').textContent = ctx.user.name;
+  $('disclaimer').textContent = TL.DISCLAIMER(A.manual);
+
+  // ---- Tabs ----
+  const showTab = (t) => { document.querySelectorAll('.tab').forEach((b) => b.classList.toggle('on', b.dataset.tab === t)); document.querySelectorAll('.view').forEach((v) => v.classList.toggle('on', v.id === 'v-' + t)); if (t === 'results') loadRuns(); };
+  document.querySelectorAll('.tab').forEach((b) => (b.onclick = () => showTab(b.dataset.tab)));
+
+  // ---- Agente ----
+  $('agentUrl').value = TL.agentUrl();
+  const ping = async () => { const r = await TL.pingAgent(); $('agentDot').className = 'dot' + (r.ok ? '' : ' off'); $('agentTxt').textContent = r.ok ? 'Agente OK ' + (r.version || '') : 'Agente no responde (' + TL.agentUrl() + ')'; return r.ok; };
+  $('btnAgent').onclick = () => $('agentPanel').classList.toggle('hidden');
+  $('agentSave').onclick = async () => { TL.setAgentUrl($('agentUrl').value); $('agentUrl').value = TL.agentUrl(); await ping(); };
+  ping();
+
+  // ---- Red / operación / tarjetas ----
+  const NET_LABEL = { link: 'Red LINK', visa: 'Visa', mastercard: 'Mastercard', amex: 'American Express' };
+  const nets = ctx.networks || [];
+  $('rNet').innerHTML = nets.map((n) => `<option value="${n}" ${TL.ADAPTERS[n] ? '' : 'disabled'}>${NET_LABEL[n]}${TL.ADAPTERS[n] ? '' : ' · próximamente'}</option>`).join('') || '<option value="">Sin redes habilitadas</option>';
+  if (nets.includes('link')) $('rNet').value = 'link';
+  const cardsOf = (n) => (ctx.cards || []).filter((c) => c.network === n);
+  const fillKinds = () => {
+    const kinds = A.kinds($('rTerm').value);
+    $('rKind').innerHTML = kinds.map((k) => `<option value="${k}">${esc(A.label4(k))} · ${esc(window.OSCLinkHth.TX[k]?.code || '')}</option>`).join('');
+    syncHint();
+  };
+  const fillCards = () => { const list = cardsOf($('rNet').value || 'link'); $('rCard').innerHTML = list.length ? list.map((c) => `<option value="${c.id}">${esc(c.alias)} · ${esc(c.maskedPan)}</option>`).join('') : '<option value="">Sin tarjetas cargadas</option>'; const st = TL.labState(); if (st.cardId && list.some((c) => c.id === st.cardId)) $('rCard').value = st.cardId; };
+  const syncHint = () => {
+    const k = $('rKind').value, o = window.OSCLinkHth.OPS[k];
+    const msgs = [];
+    if (o?.noAmount || k === 'balance') msgs.push('Operación sin importe.');
+    if (o?.original) msgs.push('Necesita los datos de la operación original: ejecutala desde el POS en Modo Laboratorio (elegís la original del historial).');
+    $('rHint').textContent = msgs.join(' ');
+    $('rAmount').disabled = !!(o?.noAmount || k === 'balance');
+  };
+  $('rTerm').onchange = fillKinds; $('rKind').onchange = syncHint; $('rNet').onchange = fillCards;
+  fillKinds(); fillCards();
+  $('codes').innerHTML = Object.entries(window.OSCLinkHth.RESULT).map(([c, t]) => `<option value="${c}">${esc(t)}</option>`).join('');
+  const st0 = TL.labState(); $('rVersion').value = st0.version || ''; $('rExpected').value = st0.expected || '00';
+  const cents = (v) => Math.round(Number(String(v || '0').replace(/\./g, '').replace(',', '.')) * 100) || 0;
+  const money = (c) => (Number(c || 0) / 100).toLocaleString('es-AR', { minimumFractionDigits: 2 });
+
+  function formSpec() {
+    const k = $('rKind').value, o = window.OSCLinkHth.OPS[k];
+    return { name: $('rName').value.trim() || A.label4(k), network: $('rNet').value || 'link', terminal: $('rTerm').value, kind: k, accountType: $('rAcct').value, amountCents: (o?.noAmount || k === 'balance') ? 0 : cents($('rAmount').value), cardId: $('rCard').value, expected: $('rExpected').value.trim() || '00' };
+  }
+  async function execute(spec, version) {
+    TL.setLabState({ cardId: spec.cardId, version, expected: spec.expected });
+    return TL.run({ network: spec.network, kind: spec.kind, terminal: spec.terminal, ctx: { amountCents: spec.amountCents, accountType: spec.accountType }, cardId: spec.cardId, version, expectedCode: spec.expected, scenario: spec.name });
+  }
+  function resultHtml(r) {
+    const s = r.summary, rec = r.record, bad = rec.checks.filter((c) => !c.ok);
+    return `<div class="row" style="justify-content:space-between"><div class="row">${badge(s.verdict)}<b>${esc(rec.scenario)}</b><span class="muted">${esc(rec.channel)} · versión ${esc(rec.devVersion)}</span></div>
+      <div class="row"><span class="muted">Conformidad</span><b>${s.conformity == null ? '—' : s.conformity + '%'}</b><span class="muted">· ${rec.ms} ms</span>${rec.id ? `<button class="btn sm" onclick="window.__tlOpen('${rec.id}')">Ver detalle →</button>` : ''}</div></div>
+      ${bad.length ? `<div style="margin-top:10px">${bad.slice(0, 6).map((c) => `<div class="${c.sev === 'bloqueante' ? 'bad' : 'warn'}" style="font-size:13px;margin:3px 0">${c.sev === 'bloqueante' ? '✖' : '⚠'} ${c.de ? 'DE' + c.de + ' · ' : ''}${esc(c.nombre)} — esperado: ${esc(c.esperado)} · recibido: ${esc(c.recibido)}</div>`).join('')}${bad.length > 6 ? `<div class="muted" style="font-size:12px">… y ${bad.length - 6} más en el detalle</div>` : ''}</div>` : '<div class="ok" style="margin-top:8px">Sin desvíos.</div>'}
+      ${r.out.lab.saveError ? `<div class="warn" style="margin-top:8px">${esc(r.out.lab.saveError)}</div>` : ''}`;
+  }
+  $('btnRun').onclick = async () => {
+    const spec = formSpec(), version = $('rVersion').value.trim(), box = $('runResult');
+    box.classList.add('on'); box.innerHTML = '<span class="muted">Enviando al ambiente de desarrollo…</span>'; $('btnRun').disabled = true;
+    try { const r = await execute(spec, version); box.innerHTML = resultHtml(r); }
+    catch (e) { box.innerHTML = `<span class="bad">${esc(e.message)}</span>`; }
+    finally { $('btnRun').disabled = false; }
+  };
+  const openLab = (page) => {
+    const v = $('rVersion').value.trim(); if (!v) { alert('Indicá la versión del desarrollo.'); return; }
+    if (!$('rCard').value) { alert('Elegí una tarjeta de prueba.'); return; }
+    TL.setLabState({ on: true, network: $('rNet').value || 'link', cardId: $('rCard').value, version: v, expected: $('rExpected').value.trim() || '00' });
+    location.href = page;
+  };
+  $('btnOpenAtm').onclick = () => openLab('atm.html'); $('btnOpenPos').onclick = () => openLab('pos.html');
+
+  // ---- Escenarios (de cada usuario) ----
+  let SCN = [], LAST = {};
+  async function loadScn() { try { const r = await fetch('/api/testlab/scenarios', { credentials: 'same-origin' }); const d = await r.json(); SCN = Array.isArray(d.scenarios) ? d.scenarios : []; } catch (_) { SCN = []; } drawScn(); }
+  async function saveScn() { const r = await fetch('/api/testlab/scenarios', { method: 'PUT', credentials: 'same-origin', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ scenarios: SCN }) }); if (!r.ok) alert((await r.json().catch(() => ({}))).message || 'No se pudieron guardar los escenarios.'); }
+  function drawScn() {
+    const alias = (id) => (ctx.cards || []).find((c) => c.id === id)?.alias || '<span class="warn">tarjeta eliminada</span>';
+    $('scnTable').tBodies[0].innerHTML = SCN.map((s, i) => `<tr><td>${esc(s.name)}</td><td>${esc(s.terminal)}</td><td>${esc(A.label4(s.kind))}</td><td>${esc(s.accountType)}</td><td>${s.amountCents ? '$ ' + money(s.amountCents) : '—'}</td><td>${alias(s.cardId)}</td><td>${esc(s.expected)}</td><td>${LAST[i] ? badge(LAST[i]) : '<span class="muted">—</span>'}</td>
+      <td><button class="btn sm" data-run="${i}">▶</button> <button class="btn sm" data-del="${i}" title="Quitar">✕</button></td></tr>`).join('') || '<tr><td colspan="9" class="muted">Todavía no guardaste escenarios. Armá una prueba arriba y tocá «Guardar como escenario».</td></tr>';
+  }
+  $('btnSaveScn').onclick = async () => { const s = formSpec(); if (!s.cardId) return alert('Elegí una tarjeta de prueba.'); SCN.push(s); drawScn(); await saveScn(); };
+  $('scnTable').onclick = async (e) => {
+    const b = e.target.closest('button'); if (!b) return;
+    if (b.dataset.del != null) { SCN.splice(Number(b.dataset.del), 1); LAST = {}; drawScn(); await saveScn(); return; }
+    if (b.dataset.run != null) { const i = Number(b.dataset.run); await runScn(i); }
+  };
+  async function runScn(i) {
+    const v = $('rVersion').value.trim(); const box = $('runResult'); box.classList.add('on');
+    try { box.innerHTML = `<span class="muted">Ejecutando «${esc(SCN[i].name)}»…</span>`; const r = await execute(SCN[i], v); LAST[i] = r.summary.verdict; box.innerHTML = resultHtml(r); }
+    catch (e) { LAST[i] = 'ERROR'; box.innerHTML = `<span class="bad">${esc(SCN[i].name)}: ${esc(e.message)}</span>`; throw e; }
+    finally { drawScn(); }
+  }
+  $('btnRunAll').onclick = async () => {
+    if (!$('rVersion').value.trim()) return alert('Indicá la versión del desarrollo.');
+    $('btnRunAll').disabled = true;
+    try { for (let i = 0; i < SCN.length; i++) { try { await runScn(i); } catch (_) {} } $('runResult').insertAdjacentHTML('afterbegin', `<div class="muted" style="margin-bottom:8px">Batería finalizada · ${SCN.length} escenarios · ${new Date().toLocaleString('es-AR')}</div>`); }
+    finally { $('btnRunAll').disabled = false; }
+  };
+  loadScn();
+
+  // ---- Resultados (solo los del usuario) ----
+  let RUNS = [];
+  async function loadRuns() {
+    const r = await fetch('/api/testlab/runs?limit=500', { credentials: 'same-origin', cache: 'no-store' }); const d = await r.json().catch(() => ({ runs: [] }));
+    RUNS = d.runs || [];
+    const versions = [...new Set(RUNS.map((x) => x.dev_version))];
+    const cur = $('fVersion').value; $('fVersion').innerHTML = '<option value="">Todas</option>' + versions.map((v) => `<option ${v === cur ? 'selected' : ''}>${esc(v)}</option>`).join('');
+    drawRuns();
+  }
+  function drawRuns() {
+    const v = $('fVersion').value, list = RUNS.filter((x) => !v || x.dev_version === v);
+    $('kTot').textContent = list.length; $('kOk').textContent = list.filter((x) => x.verdict === 'APROBADA').length; $('kFail').textContent = list.filter((x) => x.verdict === 'FALLIDA').length; $('kComm').textContent = list.filter((x) => x.verdict === 'ERROR_COMUNICACION').length;
+    $('runTable').tBodies[0].innerHTML = list.map((x) => `<tr class="click" data-id="${x.id}"><td>${new Date(x.created_at).toLocaleString('es-AR')}</td><td>${esc(x.channel)}</td><td>${esc(x.scenario || x.kind)}</td><td>${esc(x.dev_version)}</td><td>${esc(x.card_alias || '')}</td><td>${esc(x.expected_code)}</td><td>${esc(x.received_code || '—')}</td><td>${badge(x.verdict)}</td><td>${x.conformity == null ? '—' : x.conformity + '%'}</td><td>${x.ms}</td></tr>`).join('') || '<tr><td colspan="10" class="muted">Todavía no hay pruebas.</td></tr>';
+  }
+  $('fVersion').onchange = drawRuns; $('btnReload').onclick = loadRuns;
+  $('runTable').onclick = (e) => { const tr = e.target.closest('tr[data-id]'); if (tr) openRun(tr.dataset.id); };
+
+  // ---- Detalle ----
+  let CUR = null;
+  async function openRun(id) {
+    const r = await fetch('/api/testlab/runs/' + encodeURIComponent(id), { credentials: 'same-origin', cache: 'no-store' }); const d = await r.json().catch(() => ({}));
+    if (!r.ok) return alert('No se encontró la prueba.');
+    CUR = d.run; drawRun();
+    $('modal').classList.add('open'); history.replaceState(null, '', '#run=' + id);
+  }
+  window.__tlOpen = openRun;
+  function drawRun() {
+    const x = CUR, only = $('onlyBad').checked;
+    $('mTit').innerHTML = `${badge(x.verdict)} ${esc(x.scenario || x.kind)}`;
+    $('mSub').textContent = `${String(x.network).toUpperCase()} · ${x.channel} · versión ${x.dev_version} · tarjeta ${x.card_alias || ''} · esperado ${x.expected_code} · recibido ${x.received_code || '—'} · conformidad ${x.conformity == null ? '—' : x.conformity + '%'} · ${x.ms} ms · ${new Date(x.created_at).toLocaleString('es-AR')}`;
+    const groups = {}; (x.checks || []).filter((c) => !only || !c.ok).forEach((c) => (groups[c.grupo] = groups[c.grupo] || []).push(c));
+    $('mChecks').innerHTML = Object.entries(groups).map(([g, list]) => `<div class="grp">${esc(g)}</div>` + list.map((c) => `<div class="chk"><span class="ic ${c.ok ? 'ok' : c.sev === 'bloqueante' ? 'bad' : 'warn'}">${c.ok ? '✔' : c.sev === 'bloqueante' ? '✖' : '⚠'}</span><span class="de">${c.de ? 'DE' + c.de : ''}</span>
+      <div class="txt"><b>${esc(c.nombre)}</b> <small>· ${esc(c.regla)}${c.ok ? '' : c.sev === 'bloqueante' ? ' · bloqueante' : ' · advertencia'}</small><br><small>Esperado:</small> <span class="mono">${esc(c.esperado)}</span> · <small>Recibido:</small> <span class="mono ${c.ok ? '' : 'bad'}">${esc(c.recibido)}</span>${c.ficha ? `<div class="ficha">📘 ${esc(c.ficha)}</div>` : ''}</div></div>`).join('')).join('') || '<p class="ok">Sin desvíos.</p>';
+    $('mReq').value = x.request_masked || ''; $('mRes').value = x.response_masked || '(sin respuesta del banco)';
+    $('mFoot').textContent = TL.DISCLAIMER(x.manual_ref || A.manual) + ` · Reglas usadas en esta prueba: ${x.rules_version}.`;
+  }
+  $('mChecks').onclick = (e) => { const t = e.target.closest('.txt'); if (t) t.parentElement.classList.toggle('open'); };
+  $('onlyBad').onchange = () => CUR && drawRun();
+  const closeModal = () => { $('modal').classList.remove('open'); history.replaceState(null, '', location.pathname); };
+  $('modalX').onclick = closeModal; $('modal').onclick = (e) => { if (e.target.id === 'modal') closeModal(); };
+  $('btnReport').onclick = () => { const blob = new Blob([TL.reportText(CUR)], { type: 'text/plain;charset=utf-8' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `TestLab_${CUR.channel}_${(CUR.kind || '').replace(/\W+/g, '_')}_${CUR.id.slice(-8)}.txt`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); };
+  $('btnPrint').onclick = () => { $('printArea').textContent = TL.reportText(CUR); window.print(); };
+
+  // ---- Perfil (compartido; lo edita el administrador) ----
+  const P = ctx.profile?.networks?.link || {};
+  document.querySelectorAll('[data-p]').forEach((el) => { el.value = P[el.dataset.p] ?? (el.dataset.p === 'framing' ? 'none' : ''); el.disabled = !isAdmin; });
+  document.querySelectorAll('[data-i]').forEach((el) => { el.value = P.inst?.[el.dataset.i] ?? ''; el.disabled = !isAdmin; });
+  $('btnSaveProfile').classList.toggle('hidden', !isAdmin);
+  $('profileNote').textContent = isAdmin ? 'Este perfil es del banco: lo usan todos los usuarios del TestLab de tu empresa. Solo lo modifica el administrador.' : 'Perfil del banco (solo lectura). Lo modifica el administrador del TestLab de tu empresa.' + (ctx.profileUpdatedAt ? ` Última actualización: ${new Date(ctx.profileUpdatedAt).toLocaleString('es-AR')}.` : '');
+  $('btnSaveProfile').onclick = async () => {
+    const link = { inst: {} }; document.querySelectorAll('[data-p]').forEach((el) => (link[el.dataset.p] = el.value.trim())); document.querySelectorAll('[data-i]').forEach((el) => { if (el.value.trim()) link.inst[el.dataset.i] = el.value.trim(); });
+    const profile = { ...(ctx.profile || {}), networks: { ...(ctx.profile?.networks || {}), link } };
+    const r = await fetch('/api/testlab/profile', { method: 'PUT', credentials: 'same-origin', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ profile }) }); const d = await r.json().catch(() => ({}));
+    $('profileMsg').textContent = r.ok ? 'Perfil guardado.' : d.message || 'No se pudo guardar.'; $('profileMsg').className = r.ok ? 'ok' : 'bad';
+    if (r.ok) ctx.profile = d.profile;
+  };
+
+  // ---- Tarjetas (compartidas; las carga el administrador) ----
+  function drawCards() {
+    $('cardTable').tBodies[0].innerHTML = (ctx.cards || []).map((c) => `<tr><td>${esc(c.alias)}</td><td>${esc(NET_LABEL[c.network] || c.network)}</td><td class="mono">${esc(c.maskedPan)}</td><td>${esc(c.meta?.serviceCode || '—')}</td><td>${c.meta?.hasPinBlock ? 'cargado' : '16 F'}</td><td>${Object.keys(c.meta?.accounts || {}).join(', ') || '—'}</td><td>${isAdmin ? `<button class="btn sm" data-delcard="${c.id}">Eliminar</button>` : ''}</td></tr>`).join('') || '<tr><td colspan="7" class="muted">No hay tarjetas cargadas.</td></tr>';
+  }
+  $('cardForm').classList.toggle('hidden', !isAdmin);
+  $('cardsNote').textContent = (isAdmin ? 'Las tarjetas son del banco y las usan todos los usuarios del TestLab de tu empresa.' : 'Tarjetas del banco (solo lectura). Las carga el administrador del TestLab de tu empresa.') + (ctx.keyConfigured ? '' : ' ⚠ El servidor no tiene configurado el secreto TESTLAB_KEY: no se pueden guardar ni usar tarjetas.');
+  if (!ctx.keyConfigured) $('cardsNote').classList.add('warn');
+  $('btnAddCard').onclick = async () => {
+    const accounts = {}; document.querySelectorAll('[data-acct]').forEach((el) => { if (el.value.trim()) accounts[el.dataset.acct] = el.value.trim(); });
+    const body = { network: 'link', alias: $('cAlias').value, pan: $('cPan').value, expiry: $('cExp').value, serviceCode: $('cSvc').value, pinBlock: $('cPin').value, pinOffset: $('cOff').value, accounts };
+    const r = await fetch('/api/testlab/cards', { method: 'POST', credentials: 'same-origin', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) }); const d = await r.json().catch(() => ({}));
+    $('cardMsg').textContent = r.ok ? 'Tarjeta guardada.' : d.message || 'No se pudo guardar.'; $('cardMsg').className = r.ok ? 'ok' : 'bad';
+    if (r.ok) { ctx.cards = [...(ctx.cards || []), d.card]; ['cAlias', 'cPan', 'cExp', 'cSvc', 'cPin', 'cOff'].forEach((i) => ($(i).value = '')); document.querySelectorAll('[data-acct]').forEach((el) => (el.value = '')); drawCards(); fillCards(); drawScn(); }
+  };
+  $('cardTable').onclick = async (e) => {
+    const b = e.target.closest('[data-delcard]'); if (!b || !confirm('¿Eliminar esta tarjeta de prueba?')) return;
+    const r = await fetch('/api/testlab/cards/' + encodeURIComponent(b.dataset.delcard), { method: 'DELETE', credentials: 'same-origin' });
+    if (r.ok) { ctx.cards = ctx.cards.filter((c) => c.id !== b.dataset.delcard); drawCards(); fillCards(); drawScn(); }
+  };
+  drawCards();
+
+  // Acceso directo a una prueba (#run=<id>) desde POS / ATM.
+  const m = location.hash.match(/run=([\w-]+)/);
+  if (m) { showTab('results'); openRun(m[1]); }
+})();
+</script>
+</body>
+</html>
