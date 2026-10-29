@@ -123,7 +123,7 @@ textarea{width:100%;min-height:80px;background:#07131f;border:1px solid var(--li
         <label class="f">Canal<select id="rTerm"><option value="ATM">ATM</option><option value="POS">POS</option></select></label>
         <label class="f">Operación<select id="rKind"></select></label>
         <label class="f">Tipo de cuenta<select id="rAcct"><option value="10">10 · Caja de ahorros $</option><option value="20">20 · Cuenta corriente $</option><option value="15">15 · Caja de ahorros U$S</option><option value="07">07 · Cuenta corriente U$S</option></select></label>
-        <label class="f">Importe<input id="rAmount" inputmode="decimal" placeholder="1000,00"></label>
+        <label class="f">Importe<input id="rAmount" inputmode="decimal" placeholder="1000,00"><small id="rAmountView" class="muted"></small></label>
         <label class="f">Tarjeta de prueba<select id="rCard"></select></label>
         <label class="f">Versión del desarrollo *<input id="rVersion" placeholder="build 2026-10-28 #3"></label>
         <label class="f">Código de respuesta esperado<input id="rExpected" value="00" maxlength="3" list="codes"></label>
@@ -299,8 +299,19 @@ textarea{width:100%;min-height:80px;background:#07131f;border:1px solid var(--li
   fillKinds(); await loadCards(); fillCards();
   $('codes').innerHTML = Object.entries(window.OSCLinkHth.RESULT).map(([c, t]) => `<option value="${c}">${esc(t)}</option>`).join('');
   const st0 = TL.labState(); $('rVersion').value = st0.version || ''; $('rExpected').value = st0.expected || '00';
-  const cents = (v) => Math.round(Number(String(v || '0').replace(/\./g, '').replace(',', '.')) * 100) || 0;
+  // rc.1.51 · Importe: acepta 5000 · 5000,00 · 5000.00 · 5.000,00 · 5,000.00 (el último separador con 1-2 decimales es el decimal).
+  const cents = (v) => {
+    let t = String(v || '').replace(/[^\d.,]/g, '');
+    if (!t) return 0;
+    const last = Math.max(t.lastIndexOf('.'), t.lastIndexOf(','));
+    let ent = t, dec = '';
+    if (last >= 0 && /^\d{1,2}$/.test(t.slice(last + 1))) { ent = t.slice(0, last); dec = t.slice(last + 1); }
+    ent = ent.replace(/[.,]/g, '');
+    return Number(ent || '0') * 100 + Number((dec + '00').slice(0, 2));
+  };
   const money = (c) => (Number(c || 0) / 100).toLocaleString('es-AR', { minimumFractionDigits: 2 });
+  const showAmount = () => { const v = $('rAmount').value.trim(); $('rAmountView').textContent = v && !$('rAmount').disabled ? 'Se envía: $ ' + money(cents(v)) + ' · DE4 ' + String(cents(v)).padStart(12, '0') : ''; };
+  $('rAmount').addEventListener('input', showAmount);
 
   function formSpec() {
     const k = $('rKind').value, o = window.OSCLinkHth.OPS[k];

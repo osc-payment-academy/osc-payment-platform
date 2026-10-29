@@ -1,4 +1,8 @@
-# OSC Payment Academy — v4.0.0-rc.1.50
+# OSC Payment Academy — v4.0.0-rc.1.51
+
+TestLab: corrección del importe en «Ejecutar» (5000.00 se leía como 500.000,00). Ver RELEASE_NOTES_v4.0.0-rc.1.51.md.
+
+## v4.0.0-rc.1.50
 
 TestLab: tarjetas de prueba guardadas en el agente del banco (opción por banco) + Agente QA/TestLab qa-v2.0. Ver RELEASE_NOTES_v4.0.0-rc.1.50.md.
 
