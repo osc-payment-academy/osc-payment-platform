@@ -1,4 +1,8 @@
-# OSC Payment Academy — v4.0.0-rc.1.52
+# OSC Payment Academy — v4.0.0-rc.1.53
+
+E-Commerce: nuevas infografías del flujo (01 Estándar · 02 Frictionless · 03 Challenge) con el formato del flujo de Wallet. Ver RELEASE_NOTES_v4.0.0-rc.1.53.md.
+
+## v4.0.0-rc.1.52
 
 E-Commerce: el botón «⇄ Flujo» vuelve a abrir la infografía. Ver RELEASE_NOTES_v4.0.0-rc.1.52.md.
 
