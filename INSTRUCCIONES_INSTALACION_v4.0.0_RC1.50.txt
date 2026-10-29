@@ -1,0 +1,16 @@
+OSC Payment Academy v4.0.0-rc.1.50
+TestLab: tarjetas de prueba guardadas en el agente del banco + Agente QA/TestLab qa-v2.0.
+
+INSTALACIÓN (paquete INCREMENTAL · requiere tener instalada la rc.1.49):
+1. Descomprimir el ZIP y copiar su contenido sobre la raíz del repositorio en GitHub, reemplazando archivos.
+2. No hay migración nueva.
+3. Despliegue habitual.
+4. Reemplazar OSC_QA_Agent.exe en C:\ISO8583\Agentes por la versión qa-v2.0 (ver LEEME-QA-TestLab.txt).
+
+PRUEBA SIN BANCO (con el mock del agente):
+1. OSC_QA_Agent.exe tarjeta-agregar -alias TC-001 -pan 9900020000000018 -venc 2912
+2. OSC_QA_Agent.exe -mock          (el mock escucha en 9100, framing none)
+3. TestLab → Perfil del ambiente: IP 127.0.0.1 · Puerto 9100 · Framing none · Tarjetas de prueba: "En el agente" → Guardar.
+4. TestLab → Tarjetas de prueba: aparece TC-001 990002******0018.
+5. Ejecutar: ATM · Extracción · versión "prueba agente" → Aprobada 100 %.
+6. Con OSC_Host_Sim.exe: Puerto 9200 · Framing 2bin → Fallida 78 % (el Host_Sim responde una 0210 reducida).

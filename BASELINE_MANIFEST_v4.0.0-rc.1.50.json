@@ -1,0 +1,57 @@
+{
+  "product": "OSC-ACADEMY",
+  "version": "4.0.0-rc.1.50",
+  "title": "Incremental sobre rc.1.49: TestLab con tarjetas en el agente del banco (qa-v2.0)",
+  "parent_baseline": "OSC-ACADEMY v4.0.0-rc.1.49",
+  "generated_at": "2026-10-28T20:09:33.681754+00:00",
+  "deleted_files": [],
+  "policy": {
+    "no_silent_file_deletion": true,
+    "sha256_inventory": true,
+    "incremental_install_package": true,
+    "complete_backup_package": true,
+    "manuals_excluded": true
+  },
+  "incremental_files": [
+    {
+      "path": "public/js/testlab-core.js",
+      "sha256": "1724c95328285f3bb8033acdd333f26ce756cb6acd1402137fff086948114b04"
+    },
+    {
+      "path": "public/js/testlab-mode.js",
+      "sha256": "ef105984b8cc0c88068ab6c759afc5db405fd35636e0da1f3758a47e622d8fbf"
+    },
+    {
+      "path": "public/testlab.html",
+      "sha256": "9ce591a81e6f36aff74598fc1c1145365cff5c19fe1534c0a6b523ee0e6f0ffc"
+    },
+    {
+      "path": "public/atm.html",
+      "sha256": "06205fcf1126f4c30bc782f49ed0def89f3f1647a91786d7a199f304ba803e21"
+    },
+    {
+      "path": "public/pos.html",
+      "sha256": "e391cc9485a617d51f4b72e26c43f912e9b7ae0e401e8c23dd202640b799f41e"
+    },
+    {
+      "path": "src/index.js",
+      "sha256": "8d178ecbdd793429d9290c81c9582a03ad44c7321b394be5a10382ee606613ed"
+    },
+    {
+      "path": "README.md",
+      "sha256": "0c53ed346c611f2c6b872cd25b173acad238a11ed0e1fc95a647cdea1a9fd631"
+    },
+    {
+      "path": "package.json",
+      "sha256": "dc86b2e3ba34b9f430009e8706dc9adce2b7a874e4f8400f7b5a04dacbbdc19a"
+    },
+    {
+      "path": "RELEASE_NOTES_v4.0.0-rc.1.50.md",
+      "sha256": "201db29bbc100d050bb4ec1d167bf84d9b4b1247913f0d273f08ef0c0d208e0e"
+    },
+    {
+      "path": "INSTRUCCIONES_INSTALACION_v4.0.0_RC1.50.txt",
+      "sha256": "6d7e693425fd5f1a789e6b7a57cfb3053f6c94743169695861f03f74ec710c65"
+    }
+  ]
+}

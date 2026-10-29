@@ -173,6 +173,7 @@ textarea{width:100%;min-height:80px;background:#07131f;border:1px solid var(--li
         <label class="f">Puerto<input data-p="port" inputmode="numeric" placeholder="7000"></label>
         <label class="f">Framing TCP<select data-p="framing"><option value="none">none</option><option value="2bin">2bin (2 bytes binario)</option><option value="4ascii">4ascii (4 dígitos)</option></select></label>
         <label class="f">Timeout (ms)<input data-p="timeout" inputmode="numeric" placeholder="8000"></label>
+        <label class="f">Tarjetas de prueba<select data-p="cardsSource"><option value="platform">En la plataforma (cifradas en la nube)</option><option value="agent">En el agente (no salen del banco)</option></select></label>
       </div>
       <h3>Datos de la institución (van en la trama)</h3>
       <div class="grid">
@@ -200,6 +201,13 @@ textarea{width:100%;min-height:80px;background:#07131f;border:1px solid var(--li
     <div class="panel">
       <h2>Tarjetas de prueba del banco</h2>
       <p class="note" id="cardsNote"></p>
+      <div class="note hidden" id="agentCardsHelp" style="margin-bottom:12px">
+        <b>Las tarjetas de este banco están guardadas en el agente</b>, dentro de la red del banco: la plataforma solo ve el alias y el número enmascarado.
+        Se cargan en la PC donde corre el agente, desde la carpeta del agente:<br>
+        <code class="mono">OSC_QA_Agent.exe tarjeta-agregar -alias TC-001 -venc 2912 -pinblock 1A2B3C4D5E6F7081 -cuenta 10=0290001100012345678</code><br>
+        (el PAN lo pide por teclado) · <code class="mono">OSC_QA_Agent.exe tarjeta-listar</code> · <code class="mono">OSC_QA_Agent.exe tarjeta-borrar -alias TC-001</code>
+        <div class="row" style="margin-top:8px"><button class="btn sm" id="btnReloadAgentCards">↻ Leer tarjetas del agente</button><span class="muted" id="agentCardsMsg"></span></div>
+      </div>
       <div class="tbl"><table id="cardTable"><thead><tr><th>Alias</th><th>Red</th><th>Tarjeta</th><th>Service code</th><th>PIN block</th><th>Cuentas</th><th></th></tr></thead><tbody></tbody></table></div>
       <div id="cardForm">
         <h3>Agregar tarjeta</h3>
@@ -237,7 +245,7 @@ textarea{width:100%;min-height:80px;background:#07131f;border:1px solid var(--li
 </div></div>
 
 <script src="js/link-hth.js?v=4.0.0-rc1.49"></script>
-<script src="js/testlab-core.js?v=4.0.0-rc1.49"></script>
+<script src="js/testlab-core.js?v=4.0.0-rc1.50"></script>
 <script>
 (async () => {
   const $ = (id) => document.getElementById(id), TL = window.OSCTestLab, esc = TL.esc;
@@ -262,7 +270,7 @@ textarea{width:100%;min-height:80px;background:#07131f;border:1px solid var(--li
   $('agentUrl').value = TL.agentUrl();
   const ping = async () => { const r = await TL.pingAgent(); $('agentDot').className = 'dot' + (r.ok ? '' : ' off'); $('agentTxt').textContent = r.ok ? 'Agente OK ' + (r.version || '') : 'Agente no responde (' + TL.agentUrl() + ')'; return r.ok; };
   $('btnAgent').onclick = () => $('agentPanel').classList.toggle('hidden');
-  $('agentSave').onclick = async () => { TL.setAgentUrl($('agentUrl').value); $('agentUrl').value = TL.agentUrl(); await ping(); };
+  $('agentSave').onclick = async () => { TL.setAgentUrl($('agentUrl').value); $('agentUrl').value = TL.agentUrl(); await ping(); if (TL.cardsSource() === 'agent') { await loadCards(true); fillCards(); drawCards(); drawScn(); } };
   ping();
 
   // ---- Red / operación / tarjetas ----
@@ -270,13 +278,15 @@ textarea{width:100%;min-height:80px;background:#07131f;border:1px solid var(--li
   const nets = ctx.networks || [];
   $('rNet').innerHTML = nets.map((n) => `<option value="${n}" ${TL.ADAPTERS[n] ? '' : 'disabled'}>${NET_LABEL[n]}${TL.ADAPTERS[n] ? '' : ' · próximamente'}</option>`).join('') || '<option value="">Sin redes habilitadas</option>';
   if (nets.includes('link')) $('rNet').value = 'link';
-  const cardsOf = (n) => (ctx.cards || []).filter((c) => c.network === n);
+  let CARDS = { source: 'platform', cards: [], error: null };
+  const loadCards = async (force) => { CARDS = await TL.cardsFor($('rNet').value || 'link', force); return CARDS; };
+  const cardsOf = () => CARDS.cards;
   const fillKinds = () => {
     const kinds = A.kinds($('rTerm').value);
     $('rKind').innerHTML = kinds.map((k) => `<option value="${k}">${esc(A.label4(k))} · ${esc(window.OSCLinkHth.TX[k]?.code || '')}</option>`).join('');
     syncHint();
   };
-  const fillCards = () => { const list = cardsOf($('rNet').value || 'link'); $('rCard').innerHTML = list.length ? list.map((c) => `<option value="${c.id}">${esc(c.alias)} · ${esc(c.maskedPan)}</option>`).join('') : '<option value="">Sin tarjetas cargadas</option>'; const st = TL.labState(); if (st.cardId && list.some((c) => c.id === st.cardId)) $('rCard').value = st.cardId; };
+  const fillCards = () => { const list = cardsOf(); $('rCard').innerHTML = list.length ? list.map((c) => `<option value="${c.id}">${esc(c.alias)} · ${esc(c.maskedPan)}</option>`).join('') : '<option value="">Sin tarjetas cargadas</option>'; const st = TL.labState(); if (st.cardId && list.some((c) => c.id === st.cardId)) $('rCard').value = st.cardId; };
   const syncHint = () => {
     const k = $('rKind').value, o = window.OSCLinkHth.OPS[k];
     const msgs = [];
@@ -285,8 +295,8 @@ textarea{width:100%;min-height:80px;background:#07131f;border:1px solid var(--li
     $('rHint').textContent = msgs.join(' ');
     $('rAmount').disabled = !!(o?.noAmount || k === 'balance');
   };
-  $('rTerm').onchange = fillKinds; $('rKind').onchange = syncHint; $('rNet').onchange = fillCards;
-  fillKinds(); fillCards();
+  $('rTerm').onchange = fillKinds; $('rKind').onchange = syncHint; $('rNet').onchange = async () => { await loadCards(); fillCards(); };
+  fillKinds(); await loadCards(); fillCards();
   $('codes').innerHTML = Object.entries(window.OSCLinkHth.RESULT).map(([c, t]) => `<option value="${c}">${esc(t)}</option>`).join('');
   const st0 = TL.labState(); $('rVersion').value = st0.version || ''; $('rExpected').value = st0.expected || '00';
   const cents = (v) => Math.round(Number(String(v || '0').replace(/\./g, '').replace(',', '.')) * 100) || 0;
@@ -327,7 +337,7 @@ textarea{width:100%;min-height:80px;background:#07131f;border:1px solid var(--li
   async function loadScn() { try { const r = await fetch('/api/testlab/scenarios', { credentials: 'same-origin' }); const d = await r.json(); SCN = Array.isArray(d.scenarios) ? d.scenarios : []; } catch (_) { SCN = []; } drawScn(); }
   async function saveScn() { const r = await fetch('/api/testlab/scenarios', { method: 'PUT', credentials: 'same-origin', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ scenarios: SCN }) }); if (!r.ok) alert((await r.json().catch(() => ({}))).message || 'No se pudieron guardar los escenarios.'); }
   function drawScn() {
-    const alias = (id) => (ctx.cards || []).find((c) => c.id === id)?.alias || '<span class="warn">tarjeta eliminada</span>';
+    const alias = (id) => cardsOf().find((c) => c.id === id)?.alias || '<span class="warn">tarjeta eliminada</span>';
     $('scnTable').tBodies[0].innerHTML = SCN.map((s, i) => `<tr><td>${esc(s.name)}</td><td>${esc(s.terminal)}</td><td>${esc(A.label4(s.kind))}</td><td>${esc(s.accountType)}</td><td>${s.amountCents ? '$ ' + money(s.amountCents) : '—'}</td><td>${alias(s.cardId)}</td><td>${esc(s.expected)}</td><td>${LAST[i] ? badge(LAST[i]) : '<span class="muted">—</span>'}</td>
       <td><button class="btn sm" data-run="${i}">▶</button> <button class="btn sm" data-del="${i}" title="Quitar">✕</button></td></tr>`).join('') || '<tr><td colspan="9" class="muted">Todavía no guardaste escenarios. Armá una prueba arriba y tocá «Guardar como escenario».</td></tr>';
   }
@@ -396,7 +406,7 @@ textarea{width:100%;min-height:80px;background:#07131f;border:1px solid var(--li
 
   // ---- Perfil (compartido; lo edita el administrador) ----
   const P = ctx.profile?.networks?.link || {};
-  document.querySelectorAll('[data-p]').forEach((el) => { el.value = P[el.dataset.p] ?? (el.dataset.p === 'framing' ? 'none' : ''); el.disabled = !isAdmin; });
+  document.querySelectorAll('[data-p]').forEach((el) => { el.value = P[el.dataset.p] ?? ({ framing: 'none', cardsSource: 'platform' }[el.dataset.p] || ''); el.disabled = !isAdmin; });
   document.querySelectorAll('[data-i]').forEach((el) => { el.value = P.inst?.[el.dataset.i] ?? ''; el.disabled = !isAdmin; });
   $('btnSaveProfile').classList.toggle('hidden', !isAdmin);
   $('profileNote').textContent = isAdmin ? 'Este perfil es del banco: lo usan todos los usuarios del TestLab de tu empresa. Solo lo modifica el administrador.' : 'Perfil del banco (solo lectura). Lo modifica el administrador del TestLab de tu empresa.' + (ctx.profileUpdatedAt ? ` Última actualización: ${new Date(ctx.profileUpdatedAt).toLocaleString('es-AR')}.` : '');
@@ -405,27 +415,33 @@ textarea{width:100%;min-height:80px;background:#07131f;border:1px solid var(--li
     const profile = { ...(ctx.profile || {}), networks: { ...(ctx.profile?.networks || {}), link } };
     const r = await fetch('/api/testlab/profile', { method: 'PUT', credentials: 'same-origin', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ profile }) }); const d = await r.json().catch(() => ({}));
     $('profileMsg').textContent = r.ok ? 'Perfil guardado.' : d.message || 'No se pudo guardar.'; $('profileMsg').className = r.ok ? 'ok' : 'bad';
-    if (r.ok) ctx.profile = d.profile;
+    if (r.ok) { ctx.profile = d.profile; await loadCards(true); fillCards(); drawCards(); drawScn(); }
   };
 
   // ---- Tarjetas (compartidas; las carga el administrador) ----
   function drawCards() {
-    $('cardTable').tBodies[0].innerHTML = (ctx.cards || []).map((c) => `<tr><td>${esc(c.alias)}</td><td>${esc(NET_LABEL[c.network] || c.network)}</td><td class="mono">${esc(c.maskedPan)}</td><td>${esc(c.meta?.serviceCode || '—')}</td><td>${c.meta?.hasPinBlock ? 'cargado' : '16 F'}</td><td>${Object.keys(c.meta?.accounts || {}).join(', ') || '—'}</td><td>${isAdmin ? `<button class="btn sm" data-delcard="${c.id}">Eliminar</button>` : ''}</td></tr>`).join('') || '<tr><td colspan="7" class="muted">No hay tarjetas cargadas.</td></tr>';
+    const agentMode = CARDS.source === 'agent';
+    $('agentCardsHelp').classList.toggle('hidden', !agentMode);
+    $('cardForm').classList.toggle('hidden', !isAdmin || agentMode);
+    $('agentCardsMsg').textContent = agentMode ? (CARDS.error || `${CARDS.cards.length} tarjeta(s) en el agente ${TL.agentUrl()}`) : '';
+    $('agentCardsMsg').className = CARDS.error ? 'bad' : 'muted';
+    $('cardTable').tBodies[0].innerHTML = (agentMode ? CARDS.cards : (ctx.cards || [])).map((c) => `<tr><td>${esc(c.alias)}</td><td>${esc(NET_LABEL[c.network] || c.network)}</td><td class="mono">${esc(c.maskedPan)}</td><td>${esc(c.meta?.serviceCode || '—')}</td><td>${c.meta?.hasPinBlock ? 'cargado' : '16 F'}</td><td>${Object.keys(c.meta?.accounts || {}).join(', ') || '—'}</td><td>${isAdmin && !agentMode ? `<button class="btn sm" data-delcard="${c.id}">Eliminar</button>` : agentMode ? '<span class="muted">en el agente</span>' : ''}</td></tr>`).join('') || `<tr><td colspan="7" class="muted">${agentMode ? 'El agente no tiene tarjetas cargadas.' : 'No hay tarjetas cargadas.'}</td></tr>`;
+    const note = $('cardsNote');
+    note.textContent = agentMode ? 'Origen de las tarjetas: agente del banco (se configura en «Perfil del ambiente»).' : (isAdmin ? 'Las tarjetas son del banco y las usan todos los usuarios del TestLab de tu empresa.' : 'Tarjetas del banco (solo lectura). Las carga el administrador del TestLab de tu empresa.') + (ctx.keyConfigured ? '' : ' ⚠ El servidor no tiene configurado el secreto TESTLAB_KEY: no se pueden guardar ni usar tarjetas en la plataforma (podés usar tarjetas en el agente).');
+    note.classList.toggle('warn', !agentMode && !ctx.keyConfigured);
   }
-  $('cardForm').classList.toggle('hidden', !isAdmin);
-  $('cardsNote').textContent = (isAdmin ? 'Las tarjetas son del banco y las usan todos los usuarios del TestLab de tu empresa.' : 'Tarjetas del banco (solo lectura). Las carga el administrador del TestLab de tu empresa.') + (ctx.keyConfigured ? '' : ' ⚠ El servidor no tiene configurado el secreto TESTLAB_KEY: no se pueden guardar ni usar tarjetas.');
-  if (!ctx.keyConfigured) $('cardsNote').classList.add('warn');
+  $('btnReloadAgentCards').onclick = async () => { await loadCards(true); fillCards(); drawCards(); drawScn(); };
   $('btnAddCard').onclick = async () => {
     const accounts = {}; document.querySelectorAll('[data-acct]').forEach((el) => { if (el.value.trim()) accounts[el.dataset.acct] = el.value.trim(); });
     const body = { network: 'link', alias: $('cAlias').value, pan: $('cPan').value, expiry: $('cExp').value, serviceCode: $('cSvc').value, pinBlock: $('cPin').value, pinOffset: $('cOff').value, accounts };
     const r = await fetch('/api/testlab/cards', { method: 'POST', credentials: 'same-origin', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) }); const d = await r.json().catch(() => ({}));
     $('cardMsg').textContent = r.ok ? 'Tarjeta guardada.' : d.message || 'No se pudo guardar.'; $('cardMsg').className = r.ok ? 'ok' : 'bad';
-    if (r.ok) { ctx.cards = [...(ctx.cards || []), d.card]; ['cAlias', 'cPan', 'cExp', 'cSvc', 'cPin', 'cOff'].forEach((i) => ($(i).value = '')); document.querySelectorAll('[data-acct]').forEach((el) => (el.value = '')); drawCards(); fillCards(); drawScn(); }
+    if (r.ok) { ctx.cards = [...(ctx.cards || []), d.card]; await loadCards(); ['cAlias', 'cPan', 'cExp', 'cSvc', 'cPin', 'cOff'].forEach((i) => ($(i).value = '')); document.querySelectorAll('[data-acct]').forEach((el) => (el.value = '')); drawCards(); fillCards(); drawScn(); }
   };
   $('cardTable').onclick = async (e) => {
     const b = e.target.closest('[data-delcard]'); if (!b || !confirm('¿Eliminar esta tarjeta de prueba?')) return;
     const r = await fetch('/api/testlab/cards/' + encodeURIComponent(b.dataset.delcard), { method: 'DELETE', credentials: 'same-origin' });
-    if (r.ok) { ctx.cards = ctx.cards.filter((c) => c.id !== b.dataset.delcard); drawCards(); fillCards(); drawScn(); }
+    if (r.ok) { ctx.cards = ctx.cards.filter((c) => c.id !== b.dataset.delcard); await loadCards(); drawCards(); fillCards(); drawScn(); }
   };
   drawCards();
 

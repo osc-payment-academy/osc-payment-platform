@@ -367,7 +367,7 @@ function tlCleanProfile(p){
   for(const n of TESTLAB_NETWORKS){
     const x=p?.networks?.[n]; if(!x||typeof x!=='object')continue;
     const inst={};Object.entries(x.inst||{}).slice(0,40).forEach(([k,v])=>{if(/^[a-zA-Z0-9_]{1,40}$/.test(k))inst[k]=tlStr(v,60);});
-    out.networks[n]={host:tlStr(x.host,120),port:tlStr(x.port,6).replace(/\D/g,''),framing:['none','2bin','4ascii'].includes(x.framing)?x.framing:'none',timeout:Math.min(60000,Math.max(1000,Number(x.timeout)||8000)),inst};
+    out.networks[n]={host:tlStr(x.host,120),port:tlStr(x.port,6).replace(/\D/g,''),framing:['none','2bin','4ascii'].includes(x.framing)?x.framing:'none',timeout:Math.min(60000,Math.max(1000,Number(x.timeout)||8000)),inst,cardsSource:x.cardsSource==='agent'?'agent':'platform'};
   }
   out.environmentLabel=tlStr(p?.environmentLabel||'DESARROLLO',40);
   return out;

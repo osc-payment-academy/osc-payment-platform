@@ -1,4 +1,8 @@
-# OSC Payment Academy — v4.0.0-rc.1.49
+# OSC Payment Academy — v4.0.0-rc.1.50
+
+TestLab: tarjetas de prueba guardadas en el agente del banco (opción por banco) + Agente QA/TestLab qa-v2.0. Ver RELEASE_NOTES_v4.0.0-rc.1.50.md.
+
+## v4.0.0-rc.1.49
 
 TestLab (fase 1 · Red LINK): pruebas POS y ATM contra el ambiente de desarrollo del banco, con validación campo a campo de la 0210. Ver RELEASE_NOTES_v4.0.0-rc.1.49.md.
 

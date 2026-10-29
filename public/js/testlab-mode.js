@@ -26,7 +26,8 @@
   .tl-toast .ok{color:#18d17e}.tl-toast .bad{color:#ff5d6c}.tl-toast .warn{color:#f7b51c}`;
 
   function ensureCss() { if (document.getElementById('tl-mode-css')) return; const s = document.createElement('style'); s.id = 'tl-mode-css'; s.textContent = css; document.head.appendChild(s); }
-  const cards = () => (CTX?.cards || []).filter((c) => c.network === 'link');
+  let CARDS = { cards: [], error: null, source: 'platform' };
+  const cards = () => CARDS.cards;
 
   function render() {
     const st = TL().labState();
@@ -36,7 +37,7 @@
     if (!bar) { bar = document.createElement('div'); bar.className = 'tl-bar'; document.body.appendChild(bar); }
     const list = cards();
     bar.innerHTML = `<b class="tl-t">🔬 MODO LABORATORIO · LINK · AMBIENTE: DESARROLLO · ${esc(CTX.tenant.name)}</b>
-      <label>Tarjeta <select class="tl-c">${list.length ? list.map((c) => `<option value="${c.id}" ${c.id === st.cardId ? 'selected' : ''}>${esc(c.alias)} · ${esc(c.maskedPan)}</option>`).join('') : '<option value="">Sin tarjetas: cargalas en TestLab</option>'}</select></label>
+      <label>Tarjeta <select class="tl-c">${list.length ? list.map((c) => `<option value="${c.id}" ${c.id === st.cardId ? 'selected' : ''}>${esc(c.alias)} · ${esc(c.maskedPan)}</option>`).join('') : `<option value="">${esc(CARDS.error || (CARDS.source === 'agent' ? 'El agente no tiene tarjetas' : 'Sin tarjetas: cargalas en TestLab'))}</option>`}</select></label>
       <label>Versión <input class="tl-v" value="${esc(st.version || '')}" placeholder="versión del desarrollo *"></label>
       <label>Esperado <input class="tl-e" value="${esc(st.expected || '00')}" maxlength="3"></label>
       <span style="display:flex;gap:5px;align-items:center"><span class="tl-dot"></span><span class="tl-a" style="font-size:12px">agente…</span></span>
@@ -82,6 +83,7 @@
     try { me = window.OSCGetMe ? await window.OSCGetMe() : await fetch('/api/auth/me', { credentials: 'same-origin' }).then((r) => (r.ok ? r.json() : null)); } catch (_) {}
     if (!me?.entitlements?.testLab && me?.user?.platform_role !== 'OSC_ADMIN') return;
     await TL().context(); CTX = TL().ctx; if (!CTX) return;
+    CARDS = await TL().cardsFor('link');
     ensureCss(); render();
     window.addEventListener('resize', () => bar && document.body.style.setProperty('--tl-h', bar.offsetHeight + 'px'));
   }

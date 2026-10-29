@@ -44,6 +44,31 @@
   function pick(o, keys) { const r = {}; keys.forEach((k) => { if (o && o[k] !== undefined && o[k] !== '') r[k] = o[k]; }); return r; }
   const labOn = (network) => { const s = labState(); return !!(CTX && s.on && (!network || s.network === network)); };
 
+  // ---- Origen de las tarjetas (rc.1.50): en la plataforma (cifradas en la nube) o en el agente (dentro del banco) ----
+  const cardsSource = (network = 'link') => (CTX?.profile?.networks?.[network]?.cardsSource === 'agent' ? 'agent' : 'platform');
+  let AGENT_CARDS = null;
+  async function agentCards(force) {
+    if (AGENT_CARDS && !force) return AGENT_CARDS;
+    try {
+      const r = await fetch(agentUrl() + '/api/testlab/tarjetas', { cache: 'no-store' });
+      const d = await r.json();
+      if (!d.ok) return { error: d.error || 'El agente no devolvió tarjetas.', cards: [] };
+      AGENT_CARDS = { cards: (d.tarjetas || []).map((t) => ({ id: 'agent:' + t.alias, alias: t.alias, network: t.red || 'link', maskedPan: t.panMasked, source: 'agent', meta: { panLength: t.panLength, accounts: Object.fromEntries((t.cuentas || []).map((k) => [k, '(en el agente)'])), hasPinBlock: !!t.pinBlock, hasPinOffset: !!t.pinOffset, serviceCode: t.serviceCode ? '(en el agente)' : null } })) };
+      return AGENT_CARDS;
+    } catch (_) {
+      return { error: `No se pudo leer las tarjetas del agente (${agentUrl()}). Verificá que sea la versión qa-v2.0 o superior y que esté corriendo.`, cards: [] };
+    }
+  }
+  async function cardsFor(network = 'link', force) {
+    if (cardsSource(network) === 'agent') { const r = await agentCards(force); return { source: 'agent', cards: r.cards.filter((x) => x.network === network), error: r.error || null }; }
+    return { source: 'platform', cards: (CTX?.cards || []).filter((x) => x.network === network), error: null };
+  }
+  // Tarjeta con MARCADORES: el agente los reemplaza por los datos reales (el PAN no pasa por el navegador ni por la nube).
+  function markerCard(ac) {
+    const accounts = {}; Object.keys(ac.meta?.accounts || {}).forEach((t) => { accounts[t] = '{A' + t + '}'; });
+    return { id: ac.id, alias: ac.alias, network: ac.network, pan: '#'.repeat(Number(ac.meta?.panLength || 16)), expiry: '@@@@', serviceCode: '^^^', pinBlock: '~'.repeat(16), pinOffset: '`'.repeat(16), accounts, agent: true, maskedPan: ac.maskedPan };
+  }
+
   async function cardSecret(cardId) {
     const r = await fetch('/api/testlab/cards/' + encodeURIComponent(cardId) + '/secret', { credentials: 'same-origin', cache: 'no-store' });
     const d = await r.json().catch(() => ({}));
@@ -213,24 +238,24 @@
   }
 
   // ---------------- Envío por el agente ----------------
-  async function send(network, payload, profile) {
+  async function send(network, payload, profile, alias) {
     const n = profile?.networks?.[network] || {};
     if (!n.host || !n.port) return { ok: false, error: 'El perfil del ambiente no tiene IP y puerto para esta red. Pedile al administrador del TestLab que los cargue.' };
     const t0 = Date.now();
     try {
-      const r = await fetch(agentUrl() + '/api/qa/enviar', {
+      const r = await fetch(agentUrl() + (alias ? '/api/testlab/enviar' : '/api/qa/enviar'), {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ host: n.host, puerto: Number(n.port), ...payload, framing: n.framing || 'none', timeout_ms: Number(n.timeout || 8000), ambiente: 'DESARROLLO', red: network, tenant: CTX?.tenant?.id })
+        body: JSON.stringify({ host: n.host, puerto: Number(n.port), ...payload, framing: n.framing || 'none', timeout_ms: Number(n.timeout || 8000), ambiente: 'DESARROLLO', red: network, tenant: CTX?.tenant?.id, ...(alias ? { alias } : {}) })
       });
       const d = await r.json().catch(() => ({}));
-      if (!d.ok || !d.respuesta) return { ok: false, error: d.error || 'El banco no respondió (sin respuesta del host).', ms: d.ms || Date.now() - t0 };
-      return { ok: true, respuesta: d.respuesta, ms: d.ms || Date.now() - t0 };
+      if (!d.ok || !d.respuesta) return { ok: false, error: d.error || 'El banco no respondió (sin respuesta del host).', ms: d.ms || Date.now() - t0, solicitud: d.solicitud || null };
+      return { ok: true, respuesta: d.respuesta, solicitud: d.solicitud || null, ms: d.ms || Date.now() - t0 };
     } catch (e) {
       return { ok: false, error: `No se pudo hablar con el agente (${agentUrl()}). Verificá que esté corriendo en tu PC.`, ms: Date.now() - t0 };
     }
   }
   async function pingAgent() {
-    try { const r = await fetch(agentUrl() + '/api/qa/ping', { cache: 'no-store' }); const d = await r.json(); return { ok: !!d.ok, version: d.version || '' }; } catch (_) { return { ok: false }; }
+    try { const r = await fetch(agentUrl() + '/api/qa/ping', { cache: 'no-store' }); const d = await r.json(); return { ok: !!d.ok, version: d.version || '', cards: !!d.tarjetas, cardCount: d.cantidadTarjetas || 0 }; } catch (_) { return { ok: false }; }
   }
 
   // ---------------- Ejecución de una prueba ----------------
@@ -244,16 +269,26 @@
     if (!A.supports(opts.kind)) throw new Error('Esta operación usa varios mensajes y todavía no está disponible en el TestLab.');
     const version = String(opts.version || '').trim(); if (!version) throw new Error('Indicá la versión del desarrollo que estás probando.');
     if (!opts.cardId) throw new Error('Elegí una tarjeta de prueba del banco.');
-    const card = await cardSecret(opts.cardId);
+    let card;
+    if (String(opts.cardId).startsWith('agent:')) {
+      const ac = (await cardsFor(network, true)).cards.find((x) => x.id === opts.cardId);
+      if (!ac) throw new Error('El agente no tiene la tarjeta ' + String(opts.cardId).slice(6) + '. Revisá el agente o elegí otra.');
+      if (opts.kind === 'online_payment_inquiry') throw new Error('Esta operación todavía no está disponible con tarjetas guardadas en el agente.');
+      card = markerCard(ac);
+    } else {
+      card = await cardSecret(opts.cardId);
+    }
     const expectedCode = String(opts.expectedCode || '00').trim();
     const out = A.build(opts.kind, { terminal: opts.terminal, ...(opts.ctx || {}) }, c.profile, card);
     const req = A.request(out);
     if (!req) throw new Error('Esta operación no genera una única solicitud 0200: todavía no está disponible en el TestLab.');
-    const sent = await send(network, A.payload(req), c.profile);
+    const sent = await send(network, A.payload(req), c.profile, card.agent ? card.alias : null);
+    // Con tarjetas en el agente, la solicitud "real" es la que devuelve el agente (ya enmascarada); la local tiene marcadores.
+    const reqRaw = card.agent ? (sent.solicitud || '') : req.raw;
     let res = null, checks = [], code = '';
     if (sent.ok) {
       res = A.decode(sent.respuesta);
-      const reqParsed = window.OSCLinkHth.parse(req.raw);
+      const reqParsed = window.OSCLinkHth.parse(reqRaw);
       ({ checks, code } = A.rules({ req, reqParsed, res, terminal: opts.terminal, kind: opts.kind, expectedCode }));
     } else {
       checks = [{ grupo: 'Comunicación', de: null, nombre: 'Respuesta del banco', regla: 'El ambiente de desarrollo tiene que responder dentro del tiempo configurado', esperado: 'respuesta', recibido: sent.error, ok: false, sev: 'bloqueante', ficha: 'Error de comunicación: no hay respuesta para evaluar campos.' }];
@@ -262,7 +297,7 @@
     const record = {
       network, channel: opts.terminal, kind: opts.kind, scenario: opts.scenario || A.label4(opts.kind), devVersion: version,
       expectedCode, receivedCode: code, verdict: sum.verdict, conformity: sum.conformity, ms: sent.ms || 0, manualRef: A.manual, cardAlias: card.alias,
-      request: maskText(req.raw, card), response: res ? maskText(res.message.raw, card) : '',
+      request: card.agent ? reqRaw : maskText(req.raw, card), response: res ? maskText(res.message.raw, card) : '',
       checks: checks.map((x) => ({ ...x, esperado: maskText(x.esperado, card), recibido: maskText(x.recibido, card) }))
     };
     let saved = null;
@@ -272,11 +307,13 @@
       if (!r.ok) saved = { error: saved?.message || 'No se pudo guardar el resultado.' };
     } catch (_) { saved = { error: 'No se pudo guardar el resultado.' }; }
     // Salida compatible con los simuladores (POS / ATM): solicitud y respuesta enmascaradas, sin respuesta simulada.
-    const maskedReq = maskMessage(req, card);
+    const maskedReq = card.agent
+      ? (reqRaw ? { ...A.decode(reqRaw).message, direction: 'SALIENTE', label: req.label, leg: req.leg, responseCode: '' } : { ...req, raw: '(el agente no envió la trama)', fields: [] })
+      : maskMessage(req, card);
     const resMsg = res ? maskMessage(res.message, card) : null;
     const de44 = res?.parsed?.fields?.find((f) => f.num === 44)?.value || '';
     const labOut = {
-      ...out, ctx: { ...out.ctx, pan: maskPan(card.pan) }, messages: resMsg ? [maskedReq, resMsg] : [maskedReq],
+      ...out, ctx: { ...out.ctx, pan: card.agent ? card.maskedPan : maskPan(card.pan) }, messages: resMsg ? [maskedReq, resMsg] : [maskedReq],
       code: sent.ok ? code || '--' : 'ER', resultText: sent.ok ? (A.codeText(code) || (code === '00' ? 'APROBADA' : 'RECHAZADA')) : 'SIN RESPUESTA DEL BANCO',
       summary: sent.ok ? `TestLab · ${VERDICT_TEXT[sum.verdict]} · conformidad ${sum.conformity ?? '—'}%` : 'TestLab · ' + sent.error,
       balanceCents: /^2\d{24}$/.test(de44) ? Number(de44.slice(13, 25)) : 0, auth: '', reversal: null, timeout: false, saf: null, statement: [], ticket: null,
@@ -316,5 +353,5 @@
     return L.join('\n');
   }
 
-  window.OSCTestLab = { RULES_VERSION, DISCLAIMER, VERDICT_TEXT, ADAPTERS, context, labState, setLabState, labOn, agentUrl, setAgentUrl, pingAgent, run, summarize, maskPan, maskText, reportText, esc, get ctx() { return CTX; } };
+  window.OSCTestLab = { RULES_VERSION, DISCLAIMER, VERDICT_TEXT, ADAPTERS, context, labState, setLabState, labOn, agentUrl, setAgentUrl, pingAgent, cardsSource, cardsFor, run, summarize, maskPan, maskText, reportText, esc, get ctx() { return CTX; } };
 })();
