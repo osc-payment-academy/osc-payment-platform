@@ -1,4 +1,8 @@
-# OSC Payment Academy — v4.0.0-rc.1.51
+# OSC Payment Academy — v4.0.0-rc.1.52
+
+E-Commerce: el botón «⇄ Flujo» vuelve a abrir la infografía. Ver RELEASE_NOTES_v4.0.0-rc.1.52.md.
+
+## v4.0.0-rc.1.51
 
 TestLab: corrección del importe en «Ejecutar» (5000.00 se leía como 500.000,00). Ver RELEASE_NOTES_v4.0.0-rc.1.51.md.
 
