@@ -64,6 +64,18 @@ tbody tr{border-bottom:1px solid #12293d}tbody tr.curso{background:#0f2238}
 .modal .box{background:var(--panel);border:1px solid var(--line);border-radius:14px;max-width:1000px;width:100%;max-height:85vh;overflow:auto;padding:20px}
 .modal .x{float:right;cursor:pointer;color:var(--muted);font-size:20px}
 .svgwrap{width:100%;overflow:visible}
+/* --- Estado del Vínculo --- */
+.vinc{display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin-bottom:18px;border-left:4px solid var(--green)}
+.vinc.bad{border-left-color:var(--red)}
+.vinc .vdot{width:16px;height:16px;border-radius:50%;background:var(--green);box-shadow:0 0 12px var(--green);flex:none}
+.vinc.bad .vdot{background:var(--red);box-shadow:0 0 12px var(--red)}
+.vinc .vtit{font-size:17px;font-weight:800}
+.vinc.bad .vtit{color:var(--red)}
+.vinc .vmeta{display:flex;gap:22px;flex-wrap:wrap;color:var(--muted);font-size:12px}
+.vinc .vmeta b{color:var(--text);font-weight:700}
+.vinc .valts{display:flex;flex-direction:column;gap:6px;flex-basis:100%;margin-top:4px}
+.vinc .valt{font-size:12px;font-weight:600;background:#2a0f12;border:1px solid var(--red);color:#ffb4ac;border-radius:8px;padding:7px 11px}
+.vinc .valt.ALTA{background:#2a2410;border-color:var(--amber);color:#ffe79a}
 </style>
 </head>
 <body>
@@ -79,7 +91,10 @@ tbody tr{border-bottom:1px solid #12293d}tbody tr.curso{background:#0f2238}
         <label class="muted" style="font-size:12px">URL del agente</label>
         <input id="base" type="text" size="30" placeholder="http://localhost:8080">
         <button class="btn" id="saveBase">Guardar</button>
-        <span class="muted" style="font-size:12px">El agente-rt debe estar corriendo y accesible desde este navegador.</span>
+        <label class="muted" style="font-size:12px">URL control de vínculo</label>
+        <input id="vbase" type="text" size="26" placeholder="http://localhost:8082">
+        <button class="btn" id="saveVBase">Guardar</button>
+        <span class="muted" style="font-size:12px">El agente-rt y (opcional) el control de vínculo deben estar corriendo.</span>
       </div>
     </div>
     <div class="row">
@@ -88,6 +103,15 @@ tbody tr{border-bottom:1px solid #12293d}tbody tr.curso{background:#0f2238}
       <a class="btn" href="index.html">← Plataforma</a>
     </div>
   </header>
+
+  <div class="panel vinc" id="vincPanel" style="display:none">
+    <span class="vdot" id="vdot"></span>
+    <div>
+      <div class="vtit" id="vtit">Vínculo</div>
+      <div class="vmeta" id="vmeta"></div>
+    </div>
+    <div class="valts" id="valts"></div>
+  </div>
 
   <section class="kpis" id="kpis"></section>
   <h2>Alertas</h2>
@@ -131,6 +155,41 @@ try{BASE=localStorage.getItem('osc_rt_base')||BASE;}catch(e){}
 $('base').value=BASE;
 $('gear').onclick=()=>$('cfg').classList.toggle('open');
 $('saveBase').onclick=()=>{BASE=$('base').value.trim().replace(/\/$/,'');try{localStorage.setItem('osc_rt_base',BASE);}catch(e){}$('cfg').classList.remove('open');tick();};
+
+// URL base del control de vínculo (agente OSC_Control_Vinculo, opcional)
+let VBASE='http://localhost:8082';
+try{VBASE=localStorage.getItem('osc_vinculo_base')||VBASE;}catch(e){}
+$('vbase').value=VBASE;
+$('saveVBase').onclick=()=>{VBASE=$('vbase').value.trim().replace(/\/$/,'');try{localStorage.setItem('osc_vinculo_base',VBASE);}catch(e){}$('cfg').classList.remove('open');tickVinculo();};
+
+const haceCuanto=iso=>{
+  if(!iso)return '—';
+  const t=new Date(iso).getTime(); if(isNaN(t))return '—';
+  let s=Math.max(0,Math.round((Date.now()-t)/1000));
+  if(s<60)return s+'s';
+  if(s<3600)return Math.floor(s/60)+'m '+(s%60)+'s';
+  return Math.floor(s/3600)+'h '+Math.floor((s%3600)/60)+'m';
+};
+
+async function tickVinculo(){
+ try{
+  const r=await fetch(VBASE+'/api/vinculo',{cache:'no-store'});const d=await r.json();
+  const ok=!!d.vinculo_ok;
+  const p=$('vincPanel'); p.style.display='flex'; p.className='panel vinc'+(ok?'':' bad');
+  $('vtit').textContent=ok?'Vínculo operativo':'Vínculo caído';
+  const metas=[];
+  if(d.servicio)metas.push('Servicio <b>'+esc(d.servicio)+'</b>: '+esc(d.servicio_estado||'?'));
+  metas.push('Últ. mensaje de red: <b>'+haceCuanto(d.ultimo_mensaje_red)+'</b>'+(d.ultimo_mensaje_red_detalle?(' ('+esc(d.ultimo_mensaje_red_detalle)+')'):''));
+  metas.push('Últ. actividad del log: <b>'+haceCuanto(d.ultima_actividad)+'</b>');
+  metas.push(d.en_horario?'En horario operativo':'Fuera de horario');
+  $('vmeta').innerHTML=metas.join('');
+  const al=d.alertas_activas||[];
+  $('valts').innerHTML=al.map(a=>'<div class="valt '+esc(a.severidad)+'"><b>'+esc(a.codigo)+'</b> · '+esc(a.severidad)+' — '+esc(a.mensaje)+' <span style="opacity:.7">(desde '+(a.desde?new Date(a.desde).toLocaleTimeString('es-AR'):'—')+')</span></div>').join('');
+ }catch(err){
+  // El control de vínculo es opcional: si no responde, se oculta el panel.
+  $('vincPanel').style.display='none';
+ }
+}
 
 function lineChart(el,pts,color,fmtVal){
   const W=el.clientWidth||520,H=200,pad={l:48,r:12,t:12,b:26};
@@ -195,6 +254,7 @@ async function abrirSinResp(){
 function cerrarModal(){$('modal').classList.remove('open');}
 $('modal').addEventListener('click',e=>{if(e.target.id==='modal')cerrarModal();});
 tick();setInterval(tick,3000);
+tickVinculo();setInterval(tickVinculo,3000);
 </script>
 </body>
 </html>
