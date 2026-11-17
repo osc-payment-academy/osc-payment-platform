@@ -26,7 +26,7 @@
   .tl-toast .ok{color:#18d17e}.tl-toast .bad{color:#ff5d6c}.tl-toast .warn{color:#f7b51c}`;
 
   function ensureCss() { if (document.getElementById('tl-mode-css')) return; const s = document.createElement('style'); s.id = 'tl-mode-css'; s.textContent = css; document.head.appendChild(s); }
-  let CARDS = { cards: [], error: null, source: 'platform' };
+  let CARDS = { cards: [], error: null, source: 'agent' };
   const cards = () => CARDS.cards;
 
   function render() {

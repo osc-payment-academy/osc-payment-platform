@@ -1,6 +1,6 @@
-# OSC Payment Academy — v4.0.0-rc.1.53
+# OSC Payment Academy — v4.0.0-rc.1.54
 
-E-Commerce: nuevas infografías del flujo (01 Estándar · 02 Frictionless · 03 Challenge) con el formato del flujo de Wallet. Ver RELEASE_NOTES_v4.0.0-rc.1.53.md.
+TestLab: las tarjetas de prueba se cargan solo en el agente del banco (se quitó la opción «En la plataforma»). Ver RELEASE_NOTES_v4.0.0-rc.1.54.md.
 
 ## v4.0.0-rc.1.52
 

@@ -367,7 +367,7 @@ function tlCleanProfile(p){
   for(const n of TESTLAB_NETWORKS){
     const x=p?.networks?.[n]; if(!x||typeof x!=='object')continue;
     const inst={};Object.entries(x.inst||{}).slice(0,40).forEach(([k,v])=>{if(/^[a-zA-Z0-9_]{1,40}$/.test(k))inst[k]=tlStr(v,60);});
-    out.networks[n]={host:tlStr(x.host,120),port:tlStr(x.port,6).replace(/\D/g,''),framing:['none','2bin','4ascii'].includes(x.framing)?x.framing:'none',timeout:Math.min(60000,Math.max(1000,Number(x.timeout)||8000)),inst,cardsSource:x.cardsSource==='agent'?'agent':'platform'};
+    out.networks[n]={host:tlStr(x.host,120),port:tlStr(x.port,6).replace(/\D/g,''),framing:['none','2bin','4ascii'].includes(x.framing)?x.framing:'none',timeout:Math.min(60000,Math.max(1000,Number(x.timeout)||8000)),inst,cardsSource:'agent'};
   }
   out.environmentLabel=tlStr(p?.environmentLabel||'DESARROLLO',40);
   return out;
@@ -726,12 +726,11 @@ async function api(request,env,path){
     if(path==='/api/testlab/context'&&request.method==='GET'){
       const tenant=await env.DB.prepare('SELECT id,name FROM tenants WHERE id=?').bind(T).first();
       const prof=await env.DB.prepare('SELECT profile_json,updated_at FROM testlab_profiles WHERE tenant_id=?').bind(T).first();
-      const cards=(await env.DB.prepare("SELECT id,network,alias,masked_pan,meta_json FROM testlab_cards WHERE tenant_id=? AND status='ACTIVE' ORDER BY alias").bind(T).all()).results
-        .map(c=>({id:c.id,network:c.network,alias:c.alias,maskedPan:c.masked_pan,meta:JSON.parse(c.meta_json||'{}')}));
+      const cards=[]; // rc.1.54: las tarjetas viven solo en el agente del banco.
       const nets=auth.user.platform_role==='OSC_ADMIN'||T==='tenant_osc'?[...NETWORKS]:await tenantNetworks(env,T);
       return json({tenant:{id:T,name:tenant?.name||'OSC Academy'},user:{id:U,name:auth.user.full_name||auth.user.email},admin:tl.admin,
         networks:TESTLAB_NETWORKS.filter(n=>nets.includes(n)),profile:prof?JSON.parse(prof.profile_json):{networks:{},environmentLabel:'DESARROLLO'},profileUpdatedAt:prof?.updated_at||null,
-        cards,rulesVersion:TESTLAB_RULES_VERSION,keyConfigured:!!env.TESTLAB_KEY});
+        cards,rulesVersion:TESTLAB_RULES_VERSION});
     }
     if(path==='/api/testlab/profile'&&request.method==='PUT'){
       const deny=adminOnly(); if(deny)return deny;
@@ -741,31 +740,9 @@ async function api(request,env,path){
       await audit(env,U,'TESTLAB_PROFILE_UPDATE','TENANT',T,{networks:Object.keys(clean.networks)});
       return json({ok:true,profile:clean,updatedAt:ts});
     }
-    if(path==='/api/testlab/cards'&&request.method==='POST'){
-      const deny=adminOnly(); if(deny)return deny;
-      if(!env.TESTLAB_KEY)return json({error:'KEY_NOT_CONFIGURED',message:'Falta configurar el secreto TESTLAB_KEY en el servidor: sin él no se guardan tarjetas.'},503);
-      const b=await readBody(request),ts=now();
-      const network=String(b.network||'link').toLowerCase();
-      const pan=String(b.pan||'').replace(/\D/g,''),expiry=String(b.expiry||'').replace(/\D/g,'');
-      const alias=tlStr(b.alias,40).trim();
-      if(!TESTLAB_NETWORKS.includes(network))return json({error:'INVALID_DATA',message:'Red inválida.'},400);
-      if(!alias)return json({error:'INVALID_DATA',message:'Falta el alias de la tarjeta.'},400);
-      if(pan.length<12||pan.length>19)return json({error:'INVALID_DATA',message:'El PAN debe tener entre 12 y 19 dígitos.'},400);
-      if(!/^\d{4}$/.test(expiry))return json({error:'INVALID_DATA',message:'El vencimiento va en formato AAMM (4 dígitos).'},400);
-      const pinBlock=String(b.pinBlock||'').toUpperCase().replace(/\s/g,'');
-      if(pinBlock&&!/^[0-9A-F]{16}$/.test(pinBlock))return json({error:'INVALID_DATA',message:'El PIN block debe tener 16 caracteres hexadecimales.'},400);
-      const pinOffset=String(b.pinOffset||'').toUpperCase().replace(/\s/g,'');
-      if(pinOffset&&!/^[0-9A-F]{1,16}$/.test(pinOffset))return json({error:'INVALID_DATA',message:'El PIN offset debe ser hexadecimal (hasta 16).'},400);
-      const serviceCode=String(b.serviceCode||'').replace(/\D/g,'').slice(0,3);
-      const accounts={};Object.entries(b.accounts||{}).forEach(([k,v])=>{if(/^\d{2}$/.test(k)&&String(v||'').trim())accounts[k]=tlStr(String(v).trim(),28);});
-      const secret=await tlEncrypt(env,{pan,expiry,pinBlock,pinOffset,serviceCode});
-      const cid=id('tlc');
-      const meta={serviceCode:serviceCode||null,hasPinBlock:!!pinBlock,hasPinOffset:!!pinOffset,accounts};
-      await env.DB.prepare("INSERT INTO testlab_cards(id,tenant_id,network,alias,masked_pan,secret_enc,meta_json,status,created_by,created_at,updated_at) VALUES(?,?,?,?,?,?,?,'ACTIVE',?,?,?)")
-        .bind(cid,T,network,alias,tlMaskPan(pan),secret,JSON.stringify(meta),U,ts,ts).run();
-      await audit(env,U,'TESTLAB_CARD_CREATE','TESTLAB_CARD',cid,{tenantId:T,network,alias,masked:tlMaskPan(pan)});
-      return json({ok:true,card:{id:cid,network,alias,maskedPan:tlMaskPan(pan),meta}},201);
-    }
+    // rc.1.54: se quitó la carga de tarjetas en la plataforma. Alta y lectura del secreto quedan deshabilitadas.
+    if(path==='/api/testlab/cards'&&request.method==='POST')return json({error:'CARDS_ONLY_IN_AGENT',message:'Las tarjetas de prueba se cargan solo en el agente del banco.'},410);
+    if(/^\/api\/testlab\/cards\/[^/]+\/secret$/.test(path))return json({error:'CARDS_ONLY_IN_AGENT',message:'Las tarjetas de prueba se cargan solo en el agente del banco.'},410);
     const cardMatch=path.match(/^\/api\/testlab\/cards\/([^/]+)(\/secret)?$/);
     if(cardMatch&&request.method==='DELETE'&&!cardMatch[2]){
       const deny=adminOnly(); if(deny)return deny;
@@ -773,13 +750,6 @@ async function api(request,env,path){
       if(!r.meta?.changes)return json({error:'NOT_FOUND'},404);
       await audit(env,U,'TESTLAB_CARD_DELETE','TESTLAB_CARD',cardMatch[1],{tenantId:T});
       return json({ok:true});
-    }
-    if(cardMatch&&cardMatch[2]&&request.method==='GET'){
-      const row=await env.DB.prepare("SELECT id,alias,network,secret_enc,meta_json FROM testlab_cards WHERE id=? AND tenant_id=? AND status='ACTIVE'").bind(cardMatch[1],T).first();
-      if(!row)return json({error:'NOT_FOUND'},404);
-      let s=null;try{s=await tlDecrypt(env,row.secret_enc);}catch(_){}
-      if(!s)return json({error:'KEY_NOT_CONFIGURED',message:'No se pudo descifrar la tarjeta: revisá el secreto TESTLAB_KEY del servidor.'},503);
-      return json({id:row.id,alias:row.alias,network:row.network,...s,accounts:JSON.parse(row.meta_json||'{}').accounts||{}},200,{'cache-control':'no-store'});
     }
     if(path==='/api/testlab/runs'&&request.method==='GET'){
       const limit=Math.min(500,Math.max(1,Number(new URL(request.url).searchParams.get('limit')||200)));

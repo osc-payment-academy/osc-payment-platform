@@ -44,8 +44,8 @@
   function pick(o, keys) { const r = {}; keys.forEach((k) => { if (o && o[k] !== undefined && o[k] !== '') r[k] = o[k]; }); return r; }
   const labOn = (network) => { const s = labState(); return !!(CTX && s.on && (!network || s.network === network)); };
 
-  // ---- Origen de las tarjetas (rc.1.50): en la plataforma (cifradas en la nube) o en el agente (dentro del banco) ----
-  const cardsSource = (network = 'link') => (CTX?.profile?.networks?.[network]?.cardsSource === 'agent' ? 'agent' : 'platform');
+  // ---- Origen de las tarjetas (rc.1.54): solo en el agente (dentro del banco). La opción «en la plataforma» se quitó. ----
+  const cardsSource = () => 'agent';
   let AGENT_CARDS = null;
   async function agentCards(force) {
     if (AGENT_CARDS && !force) return AGENT_CARDS;
@@ -60,20 +60,12 @@
     }
   }
   async function cardsFor(network = 'link', force) {
-    if (cardsSource(network) === 'agent') { const r = await agentCards(force); return { source: 'agent', cards: r.cards.filter((x) => x.network === network), error: r.error || null }; }
-    return { source: 'platform', cards: (CTX?.cards || []).filter((x) => x.network === network), error: null };
+    const r = await agentCards(force); return { source: 'agent', cards: r.cards.filter((x) => x.network === network), error: r.error || null };
   }
   // Tarjeta con MARCADORES: el agente los reemplaza por los datos reales (el PAN no pasa por el navegador ni por la nube).
   function markerCard(ac) {
     const accounts = {}; Object.keys(ac.meta?.accounts || {}).forEach((t) => { accounts[t] = '{A' + t + '}'; });
     return { id: ac.id, alias: ac.alias, network: ac.network, pan: '#'.repeat(Number(ac.meta?.panLength || 16)), expiry: '@@@@', serviceCode: '^^^', pinBlock: '~'.repeat(16), pinOffset: '`'.repeat(16), accounts, agent: true, maskedPan: ac.maskedPan };
-  }
-
-  async function cardSecret(cardId) {
-    const r = await fetch('/api/testlab/cards/' + encodeURIComponent(cardId) + '/secret', { credentials: 'same-origin', cache: 'no-store' });
-    const d = await r.json().catch(() => ({}));
-    if (!r.ok) throw new Error(d.message || 'No se pudo leer la tarjeta de prueba.');
-    return d;
   }
 
   // ---------------- Enmascarado ----------------
@@ -270,13 +262,12 @@
     const version = String(opts.version || '').trim(); if (!version) throw new Error('Indicá la versión del desarrollo que estás probando.');
     if (!opts.cardId) throw new Error('Elegí una tarjeta de prueba del banco.');
     let card;
-    if (String(opts.cardId).startsWith('agent:')) {
+    if (!String(opts.cardId).startsWith('agent:')) throw new Error('Las tarjetas de prueba se cargan solo en el agente. Elegí una tarjeta del agente.');
+    {
       const ac = (await cardsFor(network, true)).cards.find((x) => x.id === opts.cardId);
       if (!ac) throw new Error('El agente no tiene la tarjeta ' + String(opts.cardId).slice(6) + '. Revisá el agente o elegí otra.');
       if (opts.kind === 'online_payment_inquiry') throw new Error('Esta operación todavía no está disponible con tarjetas guardadas en el agente.');
       card = markerCard(ac);
-    } else {
-      card = await cardSecret(opts.cardId);
     }
     const expectedCode = String(opts.expectedCode || '00').trim();
     const out = A.build(opts.kind, { terminal: opts.terminal, ...(opts.ctx || {}) }, c.profile, card);
