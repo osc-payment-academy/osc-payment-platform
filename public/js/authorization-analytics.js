@@ -2,6 +2,7 @@ const $=id=>document.getElementById(id);
 const number=n=>new Intl.NumberFormat('es-AR').format(Number(n||0));
 const pct=n=>`${Number(n||0).toFixed(2).replace('.',',')}%`;
 const safe=value=>String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+const stamp=iso=>{if(!iso)return '';const t=new Date(iso);return isNaN(t)?String(iso):t.toLocaleString('es-AR',{dateStyle:'short',timeStyle:'short'});};
 const de39={
   '05':{name:'No honrar',type:'Negocio / genérico',category:'4 · Respuesta genérica',action:'Revisar reglas del emisor y segmentar por comercio, canal y producto.'},
   '12':{name:'Transacción inválida',type:'Datos / negocio',category:'1 · No reintentar',action:'Validar tipo de operación, processing code y consistencia de campos.'},
@@ -46,6 +47,8 @@ function renderCodeDetail(code){
 
 function render(d){
   currentData=d;const r=d.resumen||{},hours=d.horas||[];
+  const gen=d.generado_en||r.generado_en||'';
+  if($('genStamp'))$('genStamp').textContent=gen?('Generado por el agente: '+stamp(gen)):'Generado por el agente: sin dato (JSON previo a esta versión)';
   $('date').textContent=d.fecha||'—';$('total').textContent=number(r.total_financieras);$('approved').textContent=pct(r.tasa_aprobacion_pct);$('rejected').textContent=number(r.rechazadas);$('rejectRate').textContent=pct(r.tasa_rechazo_pct);$('worst').textContent=r.peor_hora||'—';$('worstRate').textContent=pct(r.peor_hora_tasa_rechazo_pct);
   const max=Math.max(...hours.map(x=>Number(x.TasaRechazoPct||0)),1);
   $('hourChart').innerHTML=hours.map(x=>`<div class="bar-wrap" title="${safe(x.Hora)}: ${pct(x.TasaRechazoPct)} · ${number(x.Rechazadas)} rechazadas"><div class="bar" style="height:${Math.max(1,Number(x.TasaRechazoPct||0)/max*100)}%"></div></div>`).join('');
