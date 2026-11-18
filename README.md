@@ -1,4 +1,8 @@
-# OSC Payment Academy — v4.0.0-rc.1.54
+# OSC Payment Academy — v4.0.0-rc.1.55
+
+Red LINK: Fondo común de inversión (F1XX00 débito / F200XX crédito) en el POS, Parser y fichas de campo, según el Anexo FCI BCBA. Ver RELEASE_NOTES_v4.0.0-rc.1.55.md.
+
+## v4.0.0-rc.1.54
 
 TestLab: las tarjetas de prueba se cargan solo en el agente del banco (se quitó la opción «En la plataforma»). Ver RELEASE_NOTES_v4.0.0-rc.1.54.md.
 

@@ -1,9 +1,10 @@
-/* OSC Academy v4.0.0-rc.1.25 · Red LINK · Mensajería Host to Host ISO 8583 (BASE24).
+/* OSC Academy v4.0.0-rc.1.55 · Red LINK · Mensajería Host to Host ISO 8583 (BASE24).
    Fuentes (manuales LINK cargados en la plataforma, acceso solo administración OSC):
    - C-X-1-2-3 Tipo y formato de mensajes · C-X-4-01 0200 Output · C-X-4-03 0210 Input
    - C-X-5 Códigos de transacciones · C-X-6 Códigos de resultado · C-X-7 Tipos de cuenta
    - Anexo Nuevo Esquema de Transferencias (vigente 22/06/2026): campo 55 y tokens PE / Q7 del campo 126
    - Anexo Técnico II · Adaptación en la mensajería de DEBIN (vigente 29/06/2026): F3XX00 / F400XX, campo 55 (247) y token QS
+   - rc.1.55 · Anexo FCI BCBA · Mensajería HTH y Extract (vigente 09/09/2024): F1XX00 / F200XX, campo 54 redefinido (120) y token RL (TYP1 = M)
    Perspectiva: LINK (BASE24) → Host de la institución (0200 OUTPUT B24) y respuesta del host (0210 INPUT B24).
    Todos los datos son de práctica (PAN, CBU, CUIT y cuentas didácticos). */
 (() => {
@@ -44,8 +45,20 @@
     withdrawal: { code: '01', label: 'Extracción', short: 'EXTRACCIÓN' },
     balance: { code: '31', label: 'Consulta de saldo', short: 'CONSULTA DE SALDO' },
     transfer: { code: '09', label: 'Transferencia interbancaria (09 / 29)', short: 'TRANSFERENCIA' },
-    debin: { code: 'F3', label: 'DEBIN (F3 / F4)', short: 'DEBIN' }
+    debin: { code: 'F3', label: 'DEBIN (F3 / F4)', short: 'DEBIN' },
+    // rc.1.55 · Fondo común de inversión (Anexo FCI BCBA)
+    fci_debit: { code: 'F1', label: 'Débito asociado a FCI (F1XX00)', short: 'DÉBITO FCI' },
+    fci_credit: { code: 'F2', label: 'Crédito asociado a FCI (F200XX)', short: 'CRÉDITO FCI' }
   };
+  // rc.1.55 · Terminales habilitadas para FCI (Anexo FCI, punto 2). Banca Empresa autoriza solo on-line.
+  const FCI_TERMINALS = {
+    B3: { label: 'Homebanking custom (B3)', owner: 'HOME BANKING OSC', onlineOnly: false },
+    D4: { label: 'Homebanking custom (D4)', owner: 'HOME BANKING OSC', onlineOnly: false },
+    D1: { label: 'Billetera (D1)', owner: 'BILLETERA OSC', onlineOnly: false },
+    D0: { label: 'Banca empresa (D0) · solo on-line', owner: 'BANCA EMPRESA OSC', onlineOnly: true },
+    '45': { label: 'Banca empresa (45) · solo on-line', owner: 'BANCA EMPRESA OSC', onlineOnly: true }
+  };
+  const FCI_KINDS = ['fci_debit', 'fci_credit'];
   const RESULT = {
     '00': 'TRANSACCIÓN APROBADA', '05': 'DECLINACIÓN EXTERNA', '12': 'TRANSACCIÓN INVÁLIDA', '13': 'MONTO INVÁLIDO',
     '14': 'TARJETA INVÁLIDA', '51': 'FONDOS INSUFICIENTES', '53': 'SIN CAJA DE AHORROS', '52': 'SIN CUENTA CORRIENTE',
@@ -313,6 +326,74 @@
     return { messages: msgs, code, balanceCents: b[fromTyp], debinId: data.id, summary: code === '00' ? 'Débito F3 en el banco del comprador y crédito F4 en el banco del vendedor' : 'El banco del comprador rechazó el débito F3: no se envía el crédito F4' };
   }
 
+  /* ===================== rc.1.55 · FCI BCBA · F1XX00 (débito) / F200XX (crédito) ===================== */
+  // Campo 54 redefinido (Anexo FCI 4.6): longitud 120 + NRO-SOLICITUD (FIID 4 + CANAL 2 + CODIGO-FCI 5 + TIPO-OPER 1 + FCI-SEQ-NUM 7) + CBU 22 + NRO-CUOTAPARTISTA 40 + FILLER 39.
+  function fciData(ctx) {
+    const d = ctx.fci || {};
+    return { fiid: pad(d.fiid || LINK.issuerFiid, 4), canal: pad(d.canal || 'HB', 2), codigo: pad(d.codigo || 'FCI01', 5), tipoOper: d.tipoOper === 'A' ? 'A' : 'S',
+      seq: num(d.seq || 1, 7), cbu: num(d.cbu || ('311' + '0001' + '1' + num(LINK.accounts[ctx.accountType]?.number || '', 13) + '1'), 22), cuotapartista: pad(d.cuotapartista || '000123456', 40), terminal: FCI_TERMINALS[d.terminal] ? d.terminal : 'B3' };
+  }
+  function field54Fci(d, ref) {
+    const data = d.fiid + d.canal + d.codigo + d.tipoOper + d.seq + d.cbu + d.cuotapartista + pad('', 39);
+    return f(54, '120' + data, 'LLLVAR · longitud 120', ref || 'Anexo FCI 4.6: FIID 4 + CANAL 2 + CODIGO-FCI 5 + TIPO-OPER 1 (S/A) + FCI-SEQ-NUM 7 + CBU 22 + NRO-CUOTAPARTISTA 40 + FILLER 39');
+  }
+  // Token RL (Anexo FCI 4.7): CANT-TAGS "01" + "|" + TAG-ID "TYP1" + TAG-LGTH "01" + TAG-VALUE "M" + "|" + FILLER 1 = 12. Campo 126 completo = 34 (header 12 + token 22).
+  const tokenRL = () => '01' + '|' + 'TYP1' + '01' + 'M' + '|' + ' ';
+  const fciKey = (d) => [d.fiid, d.canal, d.codigo, d.tipoOper, d.seq].join('·');
+  function buildFci(kind, ctx, b) {
+    const debit = kind === 'fci_debit';
+    const t = ctx.accountType, acct = LINK.accounts[t] || LINK.accounts['10'];
+    const cur = acct.currency || '032';
+    const d = fciData(ctx), term = FCI_TERMINALS[d.terminal];
+    const proc = debit ? 'F1' + t + '00' : 'F200' + t;
+    const c = ctx.clock;
+    const termId = pad(ctx.fciTermId || (d.terminal + 'OSC0001'), 16);
+    const m = commonRequest({ ...ctx, termId, terminal: 'POS', merchantName: term.owner }, proc);
+    m[3] = f(3, proc, 'X(6)', debit ? 'Anexo FCI · F1XX00: débito asociado a FCI desde la cuenta XX' : 'Anexo FCI · F200XX: crédito asociado a FCI hacia la cuenta XX');
+    m[4] = f(4, amt12(ctx.amountCents), '9(12)', 'Monto de la operación · 10 enteros + 2 decimales (máximo $ 9.999.999.999,99)');
+    m[42] = f(42, pad('', 15), 'X(15)', 'Sin cambios: blancos (en dispositivos que no son cajeros puede venir CIT)');
+    m[43] = f(43, pad(term.owner, 22) + pad(LINK.locality, 13) + pad(LINK.province, 3) + pad(LINK.country, 2), 'X(40)', 'Sin cambios: nombre 22 + localidad 13 + provincia 3 + país 2');
+    m[49] = f(49, cur, '9(3)', cur === '840' ? '840 = Dólares' : '032 = Pesos');
+    m[52] = f(52, 'FFFFFFFFFFFFFFFF', 'X(16)', 'Anexo FCI: se envían 16 "F" (opcional, se configura por entidad)');
+    m[54] = field54Fci(d);
+    m[62] = f(62, '025' + pad(d.terminal, 2) + pad('', 23), 'LLLVAR g..100', `Tipo de terminal: ${term.label}`);
+    m[102] = f(102, '28' + pad(debit ? acct.number : '', 28), 'LLVAR ..X(28)', debit ? 'Cuenta que recibe el débito (' + acct.label + ')' : 'Sin cuenta desde');
+    m[103] = f(103, '28' + pad(debit ? '' : acct.number, 28), 'LLVAR ..X(28)', debit ? 'Sin cuenta destino' : 'Cuenta destino del crédito (' + acct.label + ')');
+    m[120] = f(120, '033' + pad('CANAL DIGITAL', 25) + '0000' + '0000', 'LLLVAR g..150', 'Sin cambios: longitud 033 + dirección 25 + sucursal 4 + región 4');
+    m[126] = f(126, llvar(tokens([{ id: 'RL', data: tokenRL() }]), 3), 'LLLVAR X(34)', 'Área de tokens: header "& " (12) + token RL (22) con el tag TYP1 = "M" (tipo-tran)');
+    const reqList = [3, 4, 7, 11, 12, 13, 15, 17, 32, 35, 37, 41, 42, 43, 49, 52, 54, 60, 61, 62, 63, 100, 102, 103, 120, 126, 127];
+    const req = message({ mti: '0200', header: '014000050', rows: pick(m, reqList), label: `0200 ${proc.slice(0, 2)} · ${debit ? 'Débito FCI' : 'Crédito FCI'} · LINK → Entidad`, leg: 'Requerimiento (0200)', direction: 'SALIENTE' });
+
+    // Decisión de la entidad. LINK no controla límites ni la relación tarjeta/cuenta (tarjetas virtuales).
+    let code = SCENARIOS.includes(ctx.scenario) ? ctx.scenario : '00';
+    if (['55', '61', '65', '80', '81', '82', '86', '68'].includes(code)) code = '00';
+    if (code === '00' && debit && Number(ctx.amountCents) > Number(b[t] || 0)) code = '51';
+    const key = fciKey(d);
+    b.fciKeys = b.fciKeys || [];
+    const map = Object.fromEntries(req.fields.filter(r => r.de !== 1).map(r => [r.de, { ...r, ref: 'Eco del 0200' }]));
+    map[15] = f(15, c.mmdd, '9(4)', 'LINK responde aquí el mismo valor que en el campo 17');
+    map[39] = f(39, code, '9(2)', 'C-X-6 · ' + (RESULT[code] || ''));
+    map[45] = f(45, '76' + pad('SINTRACK1', 76), 'LLVAR X(76)', 'Sin Track 1: "SINTRACK1" + blancos');
+    map[49] = f(49, code === '00' ? cur : '000', '9(3)', 'Moneda de la cuenta, o ceros si es rechazo');
+    map[54] = { ...map[54], ref: 'Eco del 0200 · redefinición FCI (120)' };
+    map[124] = f(124, '001' + '0', 'LLLVAR', 'Longitud 001 + "0"');
+    map[125] = f(125, '001' + '0', 'LLLVAR', 'Longitud 001 + "0"');
+    // Respuesta: el anexo no lista el 126 en la 0210 del F1 y sí en la del F2.
+    const resList = [3, 4, 7, 11, 12, 13, 15, 17, 32, 35, 37, 39, 41, 45, 49, 54, 60, 61, 102, 103, 120, 124, 125, ...(debit ? [] : [126]), 127];
+    const res = message({ mti: '0210', header: '014000055', rows: pick(map, resList), label: `0210 ${proc.slice(0, 2)} · Respuesta de la entidad`, leg: 'Respuesta (0210)', direction: 'ENTRANTE', responseCode: code });
+    if (code === '00') {
+      if (debit) { b[t] -= Number(ctx.amountCents); addHistory(b, t, 'FCI ' + (d.tipoOper === 'A' ? 'ANULACION' : 'SUSCRIPCION'), Number(ctx.amountCents), -1); }
+      else { b[t] += Number(ctx.amountCents); addHistory(b, t, 'FCI CREDITO', Number(ctx.amountCents), 1); }
+      b.fciKeys = [...b.fciKeys.filter(k => k !== key), key].slice(-200);
+      b.fciSeq = Math.max(Number(b.fciSeq || 0), Number(d.seq));
+    }
+    return { messages: [req, res], code, balanceCents: b[t], currency: cur, debitAccount: t, fci: { ...d, key, terminalLabel: term.label, onlineOnly: term.onlineOnly },
+      summary: code === '00' ? (debit ? `Débito F1 aprobado por la entidad · ${d.tipoOper === 'S' ? 'suscripción' : 'anulación'} · FCI ${d.codigo.trim()} · secuencia ${d.seq}` : `Crédito F2 aprobado por la entidad · FCI ${d.codigo.trim()} · secuencia ${d.seq}`) : 'Rechazada por la entidad' };
+  }
+  // Clave de duplicidad de BASE24 (FIID + CANAL + CODIGO-FCI + TIPO-OPER + FCI-SEQ-NUM): repetir la de una aprobada se rechaza.
+  function fciIsDuplicate(ctx) { const b = balances(); return (b.fciKeys || []).includes(fciKey(fciData(ctx))); }
+  function fciNextSeq() { return num(Number(balances().fciSeq || 0) + 1, 7); }
+
   /* ===================== rc.1.25 · Operaciones ATM, compras Maestro (POS) y reversas 0420/0430 ===================== */
   // Cada operación: código C-X-5, cuenta desde / hacia, efecto en saldos y campos propios (54, 48, 103, 123, 125, 127).
   const OPS = {
@@ -518,7 +599,8 @@
     if (!map[122]) map[122] = f(122, '011' + pad(LINK.issuerFiid, 11), 'LLLVAR g..150', 'Código interno de la institución emisora');
     if (!map[123]) map[123] = f(123, '012' + amt12(0), 'LLLVAR g..455', 'Monto de depósito: ceros');
     const isDebin = /^F[34]/.test(get(3)?.value || '');
-    const list = isDebin ? [2, 3, 4, 7, 11, 12, 13, 17, 22, 32, 35, 37, 39, 41, 43, 49, 54, 55, 60, 61, 90, 102, 103, 126] : [3, 4, 7, 11, 12, 13, 15, 17, 32, 35, 37, 39, 41, 42, 43, 48, 49, 54, 55, 60, 61, 90, 95, 100, 102, 103, 122, 123, 124, 125, 127];
+    const isFci = /^F[12]/.test(get(3)?.value || '');
+    const list = isFci ? [3, 4, 7, 11, 12, 13, 15, 17, 32, 35, 37, 39, 41, 42, 43, 49, 52, 54, 60, 61, 62, 63, 90, 95, 100, 102, 103, 120, 126, 127] : isDebin ? [2, 3, 4, 7, 11, 12, 13, 17, 22, 32, 35, 37, 39, 41, 43, 49, 54, 55, 60, 61, 90, 102, 103, 126] : [3, 4, 7, 11, 12, 13, 15, 17, 32, 35, 37, 39, 41, 42, 43, 48, 49, 54, 55, 60, 61, 90, 95, 100, 102, 103, 122, 123, 124, 125, 127];
     const r0420 = message({ mti: '0420', header: '014000005', rows: pick(map, list), label: `0420 REVERSA · ${REVERSAL[reason] || reason}`, leg: 'Reversa (0420 OUTPUT B24)', direction: 'SALIENTE', responseCode: reason });
     const m2 = Object.fromEntries(['3', '4', '7', '11', '32', '35', '37', '41', '49'].map(n => [n, { ...map[n], ref: 'Eco del 0420' }]));
     m2[39] = f(39, reason, 'X(2)', 'Eco del código de reverso');
@@ -543,7 +625,9 @@
     const rev = buildReversal(ctx, req, reason, dispensed);
     const t = out.debitAccount || ctx.accountType;
     const back = amount - dispensed;
-    const debitLike = o.debit || o.hold || ['withdrawal', 'transfer', 'debin'].includes(kind);
+    const debitLike = o.debit || o.hold || ['withdrawal', 'transfer', 'debin', 'fci_debit'].includes(kind);
+    if (kind === 'fci_credit' && b[t] != null) { b[t] -= back; addHistory(b, t, 'REVERSA ' + reason, back, -1); }
+    if (FCI_KINDS.includes(kind) && out.fci?.key) b.fciKeys = (b.fciKeys || []).filter(k => k !== out.fci.key);
     if (debitLike && b[t] != null) { b[t] += back; addHistory(b, t, 'REVERSA ' + reason, back, 1); if (['withdrawal'].includes(kind)) b.withdrawnToday = Math.max(0, (b.withdrawnToday || 0) - back); }
     if (o.credit && b[t] != null) { b[t] -= back; addHistory(b, t, 'REVERSA ' + reason, back, -1); }
     if (kind === 'deposit' && ctx.depositType !== 'C') b[t] -= back;
@@ -565,8 +649,9 @@
     if (!map[122]) map[122] = f(122, '011' + pad(LINK.issuerFiid, 11), 'LLLVAR g..150', 'Código interno de la institución emisora');
     if (!map[123]) map[123] = f(123, '012' + amt12(0), 'LLLVAR g..455', 'Monto de depósito: ceros');
     const has = de => !!map[de];
-    const list = [3, 4, 7, 11, 12, 13, 15, 17, 32, 35, 37, 39, 41, 42, 43, 48, 49, 54, 55, 60, 61, 62, 63, 90, 100, 102, 103, 122, 123, 124, 125, 127].filter(has);
-    const header = ctx.terminal === 'ATM' ? '014000015' : '014000055';
+    const fci = /^F[12]/.test(map[3]?.value || '');
+    const list = [3, 4, 7, 11, 12, 13, 15, 17, 32, 35, 37, 39, 41, 42, 43, 48, 49, 54, 55, 60, 61, 62, 63, 90, 100, 102, 103, 122, 123, 124, 125, ...(fci ? [126] : []), 127].filter(has);
+    const header = fci ? '014000055' : ctx.terminal === 'ATM' ? '014000015' : '014000055';
     const r0220 = message({ mti: '0220', header, rows: pick(map, list), label: '0220 FORZADA · BASE24 informa la transacción autorizada en STAND-IN', leg: 'Transacción forzada (0220 OUTPUT B24)', direction: 'SALIENTE', responseCode: '00' });
     const m2 = Object.fromEntries([3, 4, 7, 11, 32, 35, 37, 41, 49, 102, 103].filter(has).map(n => [n, { ...map[n], ref: 'Eco del 0220' }]));
     m2[39] = f(39, '00', 'X(2)', 'El host registró la forzada');
@@ -575,11 +660,21 @@
     const r0230 = message({ mti: '0230', header: '014000005', rows: pick(m2, [3, 4, 7, 11, 32, 35, 37, 39, 41, 49, 102, 103]), label: '0230 · El host confirma la forzada', leg: 'Respuesta a la forzada (0230)', direction: 'ENTRANTE', responseCode: '00' });
     out.messages = [req, r0220, r0230];
     out.saf = true;
-    out.summary = 'Host no disponible: BASE24 autorizó en STAND-IN, guardó la transacción en el archivo STORE-AND-FORWARD y, cuando el host volvió, la informó con 0220. El host la registró con 0230.';
+    out.summary = fci ? 'Entidad fuera de línea: LINK autorizó la operación FCI, impactó el saldo del PBF y la grabó en SAF. Cuando el banco volvió a estar en línea, LINK la informó con 0220 (Anexo FCI · SAF).' : 'Host no disponible: BASE24 autorizó en STAND-IN, guardó la transacción en el archivo STORE-AND-FORWARD y, cuando el host volvió, la informó con 0220. El host la registró con 0230.';
     return out;
   }
   function applyAfter(out, ctx, b) {
-    const ev = ctx.after;
+    let ev = ctx.after;
+    if (FCI_KINDS.includes(out.kind)) {
+      // Anexo FCI: solo reversos por time out (no desde el canal). Banca Empresa (D0 / 45) autoriza solo on-line: sin SAF.
+      if (ev === 'cancel' || ev === 'partial' || ev === 'retract') { out.summary += ' · El anexo FCI no acepta reversos desde el canal: solo por time out de la entidad.'; ev = 'none'; }
+      if (ev === 'saf' && out.fci?.onlineOnly) {
+        if (out.code === '00') { const t = out.debitAccount, amt = Number(ctx.amountCents || 0); b[t] += out.kind === 'fci_debit' ? amt : -amt; if (b.history?.length) b.history.pop(); b.fciKeys = (b.fciKeys || []).filter(k => k !== out.fci.key); out.balanceCents = b[t]; }
+        out.messages = [out.messages[0]]; out.code = '91'; out.offlineRejected = true;
+        out.summary = `${out.fci.terminalLabel}: la operación se autoriza solo on-line. Con la entidad fuera de línea LINK no la aprueba ni la graba en SAF (el anexo no define el código; el simulador muestra 91 · proceso autorizador no disponible, C-X-6).`;
+        return out;
+      }
+    }
     if (ev === 'saf') return out.code === '00' && out.messages.length >= 2 ? storeAndForward(out, ctx) : out;
     if (ev === 'retract') return out; // el retracto lo decide el dispensador del ATM después de presentar los billetes
     const rev = reverseOut(out, ctx, b, ev);
@@ -614,13 +709,19 @@
     c.clock = clock();
     c.rrn = c.rrn || (c.clock.mmdd + c.stan + '00').slice(0, 12);
     const b = balances();
-    let out = kind === 'transfer' ? buildTransfer(c, b) : kind === 'debin' ? buildDebin(c, b) : OPS[kind] ? buildOp(kind, c, b) : buildSimple(kind, c, b);
+    if (FCI_KINDS.includes(kind) && (b.fciKeys || []).includes(fciKey(fciData(c)))) {
+      // Control de duplicidad de BASE24: la operación no llega a la entidad.
+      const d = fciData(c);
+      return { kind, ctx: c, messages: [], code: '--', duplicate: true, amountCents: Number(c.amountCents || 0), debitAccount: c.accountType, balanceCents: b[c.accountType], fci: d,
+        resultText: 'RECHAZADA POR BASE24 · CLAVE DUPLICADA', summary: `BASE24 rechazó la operación: la clave FIID ${d.fiid} + CANAL ${d.canal} + CODIGO-FCI ${d.codigo.trim()} + TIPO-OPER ${d.tipoOper} + FCI-SEQ-NUM ${d.seq} ya corresponde a una operación aprobada. No se envía 0200 a la entidad (el anexo no define el código de respuesta).` };
+    }
+    let out = kind === 'transfer' ? buildTransfer(c, b) : kind === 'debin' ? buildDebin(c, b) : FCI_KINDS.includes(kind) ? buildFci(kind, c, b) : OPS[kind] ? buildOp(kind, c, b) : buildSimple(kind, c, b);
     out.kind = kind; out.ctx = c;
     if (out.amountCents == null) out.amountCents = kind === 'balance' ? 0 : Number(c.amountCents || 0);
     if (!out.debitAccount) out.debitAccount = c.accountType;
     out = applyAfter(out, c, b);
     saveBalances(b);
-    out.resultText = out.timeout ? 'SIN RESPUESTA · REVERSADA' : out.reversal ? `APROBADA Y REVERSADA (${out.reversal.reason})` : (RESULT[out.code] || 'RECHAZADA');
+    out.resultText = out.offlineRejected ? 'ENTIDAD FUERA DE LÍNEA · SOLO ON-LINE' : out.saf && FCI_KINDS.includes(kind) ? 'APROBADA POR LINK (SAF)' : out.timeout ? 'SIN RESPUESTA · REVERSADA' : out.reversal ? `APROBADA Y REVERSADA (${out.reversal.reason})` : (RESULT[out.code] || 'RECHAZADA');
     if (out.timeout) out.code = '68';
     return out;
   }
@@ -662,11 +763,12 @@
   const POS_GROUPS = [
     ['Compras con débito (Maestro)', ['purchase', 'cashback', 'pos_balance', 'preauth', 'preauth_complete']],
     ['Anulaciones y devoluciones', ['void', 'refund', 'refund_void', 'cashback_void']],
-    ['Operaciones de cuenta', ['withdrawal', 'balance', 'transfer', 'debin']]
+    ['Operaciones de cuenta', ['withdrawal', 'balance', 'transfer', 'debin']],
+    ['Fondo común de inversión (Anexo FCI)', ['fci_debit', 'fci_credit']]
   ];
   function panelHtml(opts = {}) {
     const pos = opts.mode === 'pos' || opts.withTxButtons;
-    const code = k => (OPS[k] ? OPS[k].proc({ accountType: 'XX', toAccount: 'YY', destination: { toTyp: 'YY' } }) : { withdrawal: '01XX00', balance: '31XX00', transfer: '09XX00 + 2900YY', debin: 'F3XX00 + F400XX' }[k]);
+    const code = k => (OPS[k] ? OPS[k].proc({ accountType: 'XX', toAccount: 'YY', destination: { toTyp: 'YY' } }) : { withdrawal: '01XX00', balance: '31XX00', transfer: '09XX00 + 2900YY', debin: 'F3XX00 + F400XX', fci_debit: 'F1XX00', fci_credit: 'F200XX' }[k]);
     // rc.1.27 · ATM: el alumno elige primero la operación (igual que en el POS) y el panel muestra solo los datos que esa operación usa.
     const ATM_GROUPS = [['Cuenta', ['withdrawal', 'withdrawal_usd', 'cash_advance', 'balance', 'movements', 'deposit', 'deposit_third', 'card_payment', 'card_payment_cash', 'fx_rate', 'pin_change']], ['Transferencias', ['own_transfer', 'transfer', 'debin']], ['Pago de servicios', Object.keys(OPS).filter(k => OPS[k].group === 'services')], ['Plazo fijo', Object.keys(OPS).filter(k => OPS[k].group === 'investments')], ['Gestiones', Object.keys(OPS).filter(k => OPS[k].group === 'admin')], ['Solicitudes a la institución', Object.keys(OPS).filter(k => OPS[k].group === 'requests')]];
     const atmSel = pos ? '' : `<label>Operación LINK<select id="linkAtmTxSelect"><option value="">— Elegir en la pantalla del cajero —</option>${ATM_GROUPS.map(([g, ks]) => `<optgroup label="${g}">${ks.filter(k => TX[k]).map(k => `<option value="${k}">${TX[k].label} · ${code(k)}</option>`).join('')}</optgroup>`).join('')}</select></label>`;
@@ -690,6 +792,15 @@
 <div class="link-row"><label>CUIT vendedor<input id="linkSellerCuit" inputmode="numeric" maxlength="11" value="30712345679"></label>
 <label>Concepto<select id="linkDebinConcepto">${Object.entries(MOTIVOS).map(([k, v]) => `<option value="${k}">${k} · ${v}</option>`).join('')}</select></label></div>
 <label>CBU vendedor (22 dígitos)<input id="linkSellerCbu" inputmode="numeric" maxlength="22" value="0720999988000098765432"></label></div>
+<div id="linkFciBox" style="display:none;gap:6px">
+<label>Terminal (canal)<select id="linkFciTerminal">${Object.entries(FCI_TERMINALS).map(([k, v]) => `<option value="${k}">${v.label}</option>`).join('')}</select></label>
+<div class="link-row"><label>FIID (NRO-SOLICITUD)<input id="linkFciFiid" maxlength="4" value="${LINK.issuerFiid}"></label>
+<label>Canal X(2)<input id="linkFciCanal" maxlength="2" value="HB"></label></div>
+<div class="link-row"><label>Código de FCI X(5)<input id="linkFciCodigo" maxlength="5" value="FCI01"></label>
+<label>Tipo de operación<select id="linkFciTipo"><option value="S">S · Suscripción</option><option value="A">A · Anulación</option></select></label></div>
+<div class="link-row"><label>FCI-SEQ-NUM 9(7)<input id="linkFciSeq" inputmode="numeric" maxlength="7" value=""></label>
+<label>Nro. de cuotapartista X(40)<input id="linkFciCuotapartista" maxlength="40" value="000123456"></label></div>
+<div class="link-note">La clave FIID + canal + código + tipo + secuencia identifica la operación: si repetís la de una aprobada, BASE24 la rechaza. La secuencia se propone sola.</div></div>
 <div id="linkPasBox" style="display:none"><div class="link-row"><label>Ente (PAS)<select id="linkPasEnte">${Object.entries(ENTES).map(([k, v]) => `<option value="${k}">${k} · ${v}</option>`).join('')}</select></label>
 <label>Código de cliente<input id="linkPasCliente" maxlength="19" value="0001234567"></label></div></div>
 <div id="linkPfBox" style="display:none"><div class="link-row"><label>Plazo (días)<select id="linkPfPlazo"><option>30</option><option>60</option><option>90</option><option>180</option><option>365</option></select></label>
@@ -709,7 +820,8 @@ ${pos ? '' : `<details class="link-net"><summary>Gestión de red · 0800 / 0810<
       destination: { cbu: v('linkCbu'), network: v('linkDestNetwork'), toTyp: v('linkToTyp'), mismoTitular: v('linkMismoTitular'), motivo: v('linkMotivo'), name: v('linkDestName') },
       debin: { sellerCuit: v('linkSellerCuit'), sellerCbu: v('linkSellerCbu'), concepto: v('linkDebinConcepto') },
       pas: { ente: v('linkPasEnte') || '002', cliente: v('linkPasCliente') || '0001234567', opcion: 1 },
-      pf: { plazo: Number(v('linkPfPlazo') || 30), tipo: v('linkPfTipo') || 'T', renovacion: v('linkPfRen') || 'N', auto: v('linkPfAuto') || 'A' }
+      pf: { plazo: Number(v('linkPfPlazo') || 30), tipo: v('linkPfTipo') || 'T', renovacion: v('linkPfRen') || 'N', auto: v('linkPfAuto') || 'A' },
+      fci: { terminal: v('linkFciTerminal') || 'B3', fiid: v('linkFciFiid'), canal: v('linkFciCanal'), codigo: v('linkFciCodigo'), tipoOper: v('linkFciTipo') || 'S', seq: v('linkFciSeq') || fciNextSeq(), cuotapartista: v('linkFciCuotapartista') }
     };
   }
   const NOTES = {
@@ -725,7 +837,9 @@ ${pos ? '' : `<details class="link-net"><summary>Gestión de red · 0800 / 0810<
     void: 'Anulación 72XX00: devuelve el importe de una compra aprobada (elegí la compra original).',
     refund: 'Devolución 74XX00: crédito total o parcial. En el campo 48 viajan ORIG-NUM y ORIG-DATE de la compra original.',
     refund_void: 'Anulación de devolución 75XX00: vuelve a debitar una devolución.',
-    cashback_void: 'Anulación de cash-back 77XX00: devuelve compra + efectivo (campo 54 con el efectivo).'
+    cashback_void: 'Anulación de cash-back 77XX00: devuelve compra + efectivo (campo 54 con el efectivo).',
+    fci_debit: 'FCI · Débito F1XX00 (Anexo FCI BCBA): LINK envía el 0200 a la entidad con el campo 54 redefinido (120: solicitud, CBU y cuotapartista) y el token RL (TYP1 = M) en el 126. Sin PIN (16 "F"), sin control de límites ni de tarjeta/cuenta. Pesos o dólares.',
+    fci_credit: 'FCI · Crédito F200XX (Anexo FCI BCBA): mismo armado que el F1; acredita en la cuenta del campo 103. La 0210 del F2 devuelve también el campo 126. Reversos solo por time out; con la entidad fuera de línea LINK autoriza y graba en SAF (0220), salvo Banca Empresa.'
   };
   function syncPanel(kind) {
     const show = (id, on) => { const e = document.getElementById(id); if (e) { e.classList.toggle('hidden', !on); e.style.display = on ? (id === 'linkTransferBox' || id === 'linkDebinBox' ? 'grid' : '') : 'none'; } };
@@ -736,6 +850,16 @@ ${pos ? '' : `<details class="link-net"><summary>Gestión de red · 0800 / 0810<
     show('linkCuotasBox', kind === 'purchase');
     show('linkPasBox', !!OPS[kind]?.req54 && OPS[kind]?.group === 'services' && kind !== 'service_order');
     show('linkPfBox', OPS[kind]?.group === 'investments');
+    // rc.1.55 · FCI: datos del campo 54, cuentas en dólares también en el POS y sin reversa desde el canal.
+    const fci = FCI_KINDS.includes(kind);
+    const fb = document.getElementById('linkFciBox'); if (fb) fb.style.display = fci ? 'grid' : 'none';
+    const seq = document.getElementById('linkFciSeq'); if (seq && fci && !seq.value) seq.value = fciNextSeq();
+    const acc = document.getElementById('linkAccountType');
+    if (acc && !document.getElementById('linkAtmTxSelect')) {
+      const usd = [['15', 'Caja de ahorros U$S (15)'], ['07', 'Cuenta corriente U$S (07)']];
+      usd.forEach(([v, l]) => { const o = acc.querySelector(`option[value="${v}"]`); if (fci && !o) acc.insertAdjacentHTML('beforeend', `<option value="${v}">${l}</option>`); if (!fci && o) { if (acc.value === v) acc.value = '10'; o.remove(); } });
+    }
+    const cancel = document.querySelector('#linkScenario option[value="00|cancel"]'); if (cancel) { cancel.disabled = fci; if (fci && document.getElementById('linkScenario').value === '00|cancel') document.getElementById('linkScenario').value = '00'; }
     const GROUP_NOTES = { services: 'Pago de servicios (PAS): el campo 54 del 0200 lleva ente (3) + código de cliente (19) + opción de deuda; la 0210 repite ente y cliente y suma cuota/año. El ticket vuelve en el campo 125.', investments: 'Plazo fijo: el 0200 lleva en el campo 55 (120) plazo, importe, renovación, auto-renovación y tipo; la 0210 los devuelve en el campo 54 (120) y el comprobante en el 125.', admin: 'Gestión: código C-X-5 en el campo 3; la respuesta trae lo que se imprime en el ticket (campo 125).', requests: 'Mensaje a la institución: código C-X-5 en el campo 3; la confirmación viaja en el campo 125.' };
     const n = document.getElementById('linkNote'); if (n) n.textContent = NOTES[kind] || GROUP_NOTES[OPS[kind]?.group] || '';
   }
@@ -759,7 +883,7 @@ ${pos ? '' : `<details class="link-net"><summary>Gestión de red · 0800 / 0810<
     return d;
   })();
   const HEADERS = { '004000040': 'Mensaje de control (0800 / 0810)', '014000005': 'Reversa / forzada (0420 / 0430 / 0230)', '014000010': 'Requerimiento originado en ATM (0200 OUTPUT B24)', '014000050': 'Requerimiento originado en HOST', '014000070': 'Requerimiento originado en INTERCHANGE', '014000015': 'Respuesta del host a requerimiento de ATM', '014000055': 'Respuesta del host a requerimiento de HOST', '014000075': 'Respuesta del host a requerimiento de INTERCHANGE' };
-  const TCODE = { '11': 'Efectivo rápido COVISUR', '17': 'Compra en ATM (Pay Key)', '18': 'Inversión en plazo fijo', '1C': 'Carga', '21': 'Depósito', '22': 'Depósito a terceros', '33': 'Cambio de CIT', '34': 'Asignación de usuario Home Banking', '35': 'Consulta de tipo de cambio', '37': 'Consulta publicitaria de plazos y tasas', '38': 'Consulta de saldo de plazo fijo', '3A': 'Consulta de estado', '3B': 'Consulta de premios', '3C': 'Emisión de certificados', '3D': 'Cambio de número de base', '50': 'Pago de resumen de tarjeta', '61': 'Mensaje a la institución (solicitudes)', '62': 'Consulta de seguro contra robo en ATM', '63': 'Cambio de cuenta asociada al plazo fijo', '64': 'Adhesión al seguro contra robo en ATM', '66': 'Consulta de últimos débitos automáticos', '68': 'Suspensión / activación de renovación automática', '69': 'Consulta de pago on line', '74': 'Devolución de compra', '75': 'Anulación de devolución', '77': 'Anulación de cash-back', '78': 'Preautorización', '79': 'Preautorización finalizada', '80': 'Consulta / adhesión de vencimiento de servicio', '81': 'Pago automático de servicios con consulta previa', '82': 'Consulta de códigos abreviados', '83': 'Consulta de últimos pagos', '84': 'Consulta de vencimientos pendientes', '85': 'Baja de asociación del servicio', '86': 'Pago rápido sin consulta previa', '87': 'Pago automático de servicios en efectivo', '88': 'Pago de resumen de tarjeta (PAS)', '89': 'Consulta / adhesión de vencimiento (PAS)', '8K': 'Consulta de rubros', '8L': 'Consulta de empresas', '8M': 'Consulta de adhesiones', '8P': 'Baja de adhesión', '90': 'Pago de servicios', '91': 'Mensajes a la institución', '93': 'Mensaje a la institución (extractos, chequeras, boletas)', '01': 'Extracción', '09': 'Débito por transferencia interbancaria', '29': 'Orden de acreditación por transferencia interbancaria', '31': 'Consulta de saldos', '39': 'Verificación de cuenta crédito (transferencias)', '40': 'Transferencia entre cuentas', '71': 'Compra con débito (Maestro)', '72': 'Anulación de compra', '73': 'Consulta de saldos (Maestro)', '76': 'Compra con cash-back', 'F3': 'Débito DEBIN', 'F4': 'Crédito DEBIN', '32': 'Cambio de PIN', '94': 'Últimos movimientos' };
+  const TCODE = { '11': 'Efectivo rápido COVISUR', '17': 'Compra en ATM (Pay Key)', '18': 'Inversión en plazo fijo', '1C': 'Carga', '21': 'Depósito', '22': 'Depósito a terceros', '33': 'Cambio de CIT', '34': 'Asignación de usuario Home Banking', '35': 'Consulta de tipo de cambio', '37': 'Consulta publicitaria de plazos y tasas', '38': 'Consulta de saldo de plazo fijo', '3A': 'Consulta de estado', '3B': 'Consulta de premios', '3C': 'Emisión de certificados', '3D': 'Cambio de número de base', '50': 'Pago de resumen de tarjeta', '61': 'Mensaje a la institución (solicitudes)', '62': 'Consulta de seguro contra robo en ATM', '63': 'Cambio de cuenta asociada al plazo fijo', '64': 'Adhesión al seguro contra robo en ATM', '66': 'Consulta de últimos débitos automáticos', '68': 'Suspensión / activación de renovación automática', '69': 'Consulta de pago on line', '74': 'Devolución de compra', '75': 'Anulación de devolución', '77': 'Anulación de cash-back', '78': 'Preautorización', '79': 'Preautorización finalizada', '80': 'Consulta / adhesión de vencimiento de servicio', '81': 'Pago automático de servicios con consulta previa', '82': 'Consulta de códigos abreviados', '83': 'Consulta de últimos pagos', '84': 'Consulta de vencimientos pendientes', '85': 'Baja de asociación del servicio', '86': 'Pago rápido sin consulta previa', '87': 'Pago automático de servicios en efectivo', '88': 'Pago de resumen de tarjeta (PAS)', '89': 'Consulta / adhesión de vencimiento (PAS)', '8K': 'Consulta de rubros', '8L': 'Consulta de empresas', '8M': 'Consulta de adhesiones', '8P': 'Baja de adhesión', '90': 'Pago de servicios', '91': 'Mensajes a la institución', '93': 'Mensaje a la institución (extractos, chequeras, boletas)', '01': 'Extracción', '09': 'Débito por transferencia interbancaria', '29': 'Orden de acreditación por transferencia interbancaria', '31': 'Consulta de saldos', '39': 'Verificación de cuenta crédito (transferencias)', '40': 'Transferencia entre cuentas', '71': 'Compra con débito (Maestro)', '72': 'Anulación de compra', '73': 'Consulta de saldos (Maestro)', '76': 'Compra con cash-back', 'F3': 'Débito DEBIN', 'F4': 'Crédito DEBIN', 'F1': 'Débito asociado a FCI', 'F2': 'Crédito asociado a FCI', '32': 'Cambio de PIN', '94': 'Últimos movimientos' };
   const ACCT = { '00': 'sin cuenta', '07': 'Cuenta corriente U$S', '10': 'Caja de ahorros $', '15': 'Caja de ahorros U$S', '20': 'Cuenta corriente $', '30': 'Cuenta tarjeta de crédito $' };
   function parts(v, spec) { let i = 0; return spec.map(([name, n]) => { const x = v.slice(i, i + n); i += n; return [name, x]; }); }
   function partsHtml(list) { return '<div style="margin-top:4px;font-size:11px;line-height:1.5;color:#9fb6cb">' + list.map(([k, v]) => `<div><b style="color:#cfe3f5">${esc(k)}</b> ${displayValue(v)}</div>`).join('') + '</div>'; }
@@ -786,13 +910,14 @@ ${pos ? '' : `<details class="link-net"><summary>Gestión de red · 0800 / 0810<
         if (!data.startsWith('& ')) return null;
         const out = [['Header', `${data.slice(0, 2)} cantidad ${data.slice(2, 7)} · longitud ${data.slice(7, 12)}`]];
         let i = 12;
-        while (i < data.length && data.slice(i, i + 2) === '! ') { const id = data.slice(i + 2, i + 4), n = Number(data.slice(i + 4, i + 9)); out.push([`Token ${id} (${n})`, data.slice(i + 10, i + 10 + n)]); i += 10 + n; }
+        while (i < data.length && data.slice(i, i + 2) === '! ') { const id = data.slice(i + 2, i + 4), n = Number(data.slice(i + 4, i + 9)); const td = data.slice(i + 10, i + 10 + n); out.push([`Token ${id} (${n})`, td]); if (id === 'RL') { const tags = []; let j = 3; while (j < td.length && td[j - 1] === '|') { const tid = td.slice(j, j + 4), tl = Number(td.slice(j + 4, j + 6)); if (!tid.trim() || !tl) break; tags.push(`${tid} = "${td.slice(j + 6, j + 6 + tl)}"`); j += 6 + tl + 1; } out.push(['Tags RL', `${td.slice(0, 2)} tag(s) · ${tags.join(' · ')}${tags.includes('TYP1 = "M"') ? ' (tipo-tran M · FCI)' : ''}`]); } i += 10 + n; }
         return { html: partsHtml(out) };
       }
       case 90: return { html: partsHtml(parts(data, [['Tipo de mensaje original', 4], ['Número de secuencia original', 12], ['Fecha de la transacción original (mmdd)', 4], ['Hora de la transacción original', 8], ['Fecha de negocios original (mmdd)', 4], ['Ceros', 10]])) };
       case 95: return { html: partsHtml([['Monto real', money(data.slice(0, 12))], ['Ceros', data.slice(12)]]) };
       case 125: if (data.length !== 372) return null; return { html: partsHtml([['Página', data.slice(0, 2)], ['Fecha AAMMDD', data.slice(2, 8)], ['Líneas de cabecera', data.slice(8, 10)], ['Caracteres por línea', data.slice(10, 12)], ...(data.slice(12).match(/.{1,40}/g) || []).filter(l => l.trim()).map((l, i) => ['Línea ' + (i + 1), l])]) };
       case 54:
+        if (/^F[12]/.test(proc) && data.length === 120) return { html: partsHtml(parts(data, [['FIID', 4], ['CANAL', 2], ['CODIGO-FCI', 5], ['TIPO-OPER (S/A)', 1], ['FCI-SEQ-NUM', 7], ['CBU', 22], ['NRO-CUOTAPARTISTA', 40], ['FILLER', 39]])) };
         if (/^(8[0-9])/.test(proc) && data.length === 23) return { html: partsHtml(parts(data, [['Código de ente', 3], ['Código de cliente', 19], ['Opción de la deuda', 1]])) };
         if (/^(8[0-9])/.test(proc) && data.length === 100) return { html: partsHtml(parts(data, [['Código de ente', 3], ['Código de cliente', 19], ['Cuota y año', 5], ['Filler', 73]])) };
         if (/^(18|37|38|63|68)/.test(proc) && data.length === 120) return { html: partsHtml(parts(data, [['Plazo (días)', 3], ['Importe (2 decimales)', 10], ['Forma de renovación', 1], ['Auto-renovación', 1], ['Tipo de plazo fijo', 1], ['Opción', 28], ['Filler', 76]])) };
@@ -865,7 +990,7 @@ ${pos ? '' : `<details class="link-net"><summary>Gestión de red · 0800 / 0810<
     return { mti, primaryHex, secondaryHex, allBits, fields, errors, warnings, consumed: pos, total: raw.length, linkHeader: header, linkHeaderText: HEADERS[header] || 'Header no reconocido', link: true };
   }
   if (document.readyState !== 'loading') css(); else document.addEventListener('DOMContentLoaded', css);
-  window.OSCLinkHth = { LINK, TX, RESULT, SCENARIOS, build, balances, displayValue, annotated, css, panelHtml, readPanel, syncPanel, accountLabel: t => LINK.accounts[t]?.label || t, parse, OPS, REVERSAL, money, unhtml, rawFromRows, reverseLater, partialCents, CASH_KINDS, buildNetwork, NET_FN,
+  window.OSCLinkHth = { LINK, TX, RESULT, SCENARIOS, build, balances, displayValue, annotated, css, panelHtml, readPanel, syncPanel, accountLabel: t => LINK.accounts[t]?.label || t, parse, OPS, REVERSAL, money, unhtml, rawFromRows, reverseLater, partialCents, CASH_KINDS, buildNetwork, NET_FN, FCI_KINDS, FCI_TERMINALS, fciIsDuplicate, fciNextSeq,
     // rc.1.26 · Desglose de un campo LINK (lo usa el Tutor): mismo criterio que el Parser.
     explainField: (de, value, mti = '', proc = '') => explain(Number(de), unhtml(value), /10$|30$/.test(String(mti)) ? 'res' : 'req', Number(de) === 39 && /^04/.test(String(mti)) ? 'REV' : proc) };
 })();

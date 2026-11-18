@@ -114,7 +114,7 @@
     bitmap: 'C-X-4-03 · Bitmap primario: 1, 3, 4, 7, 11, 12, 13, 15, 17, 32, 35, 37, 39, 41, 42, 44, 49, 54, 60, 61 (+55 interbancarias) · Secundario: 100, 102, 103, 122, 123, 124, 125, 127.'
   };
   const LINK_POS_KINDS = ['purchase', 'void', 'pos_balance', 'refund', 'refund_void', 'cashback', 'cashback_void', 'preauth', 'preauth_complete'];
-  const LINK_MULTI_LEG = ['transfer', 'debin']; // varios mensajes por operación: fuera del alcance de esta versión
+  const LINK_MULTI_LEG = ['transfer', 'debin', 'fci_debit', 'fci_credit']; // varios mensajes por operación o validación propia (FCI · rc.1.55): fuera del alcance de esta versión
 
   const LinkAdapter = {
     network: 'link', label: 'Red LINK', manual: 'LINK Host to Host · C-X-4-03 Mensaje 0210 Input',
@@ -258,7 +258,7 @@
     const network = opts.network || 'link', A = ADAPTERS[network];
     if (!A) throw new Error('Esta versión del TestLab trabaja con la Red LINK.');
     if (!A.ready()) throw new Error('Falta el módulo de mensajería de ' + network.toUpperCase() + '.');
-    if (!A.supports(opts.kind)) throw new Error('Esta operación usa varios mensajes y todavía no está disponible en el TestLab.');
+    if (!A.supports(opts.kind)) throw new Error('Esta operación todavía no está disponible en el TestLab (usa varios mensajes o una validación propia, como FCI).');
     const version = String(opts.version || '').trim(); if (!version) throw new Error('Indicá la versión del desarrollo que estás probando.');
     if (!opts.cardId) throw new Error('Elegí una tarjeta de prueba del banco.');
     let card;

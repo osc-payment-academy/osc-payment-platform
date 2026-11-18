@@ -1876,7 +1876,7 @@ ${rawMessage(msg)}`;
   function linkProc(){
     const p=window.OSCLinkHth?.readPanel()||{accountType:'10'}; const t=p.accountType||'10';
     const o=window.OSCLinkHth?.OPS?.[state.linkTx]; if(o) return o.proc({accountType:t});
-    return {withdrawal:'01'+t+'00',balance:'31'+t+'00',transfer:'09'+t+'00',debin:'F3'+t+'00'}[state.linkTx]||'01'+t+'00';
+    return {withdrawal:'01'+t+'00',balance:'31'+t+'00',transfer:'09'+t+'00',debin:'F3'+t+'00',fci_debit:'F1'+t+'00',fci_credit:'F200'+t}[state.linkTx]||'01'+t+'00';
   }
   function linkPreviewRows(withPin=false){
     const card=selectedCard(), amt=state.linkTx==='balance'?0:Number(state.amountDigits||0);
@@ -1937,11 +1937,13 @@ ${rawMessage(msg)}`;
       out.reversal?['REVERSA 0420',`${out.reversal.reason} · ${out.reversal.text}`]:null,
       kind==='transfer'?['CBU DESTINO',String(out.ctx.destination?.cbu||'').replace(/\D/g,'').slice(0,22)]:null,
       kind==='debin'?['ID DEBIN',out.debinId]:null,
+      out.fci?['FCI',`${String(out.fci.codigo).trim()} · ${out.fci.tipoOper==='A'?'ANULACIÓN':'SUSCRIPCIÓN'} · SEC ${out.fci.seq}`]:null,
+      out.fci?['CANAL',out.fci.terminalLabel||out.fci.terminal]:null,
       ['TARJETA','•••• '+String(out.ctx.pan).slice(-4)],['TERMINAL','POSOSC0001'],['STAN',out.ctx.stan],['RECIBO (DE37)',out.ctx.rrn],
       ok&&out.auth?['AUTORIZACIÓN',out.auth]:null,
       ['RESPUESTA',`${out.code} · ${out.resultText}`],
       out.lab?['TESTLAB',`DESARROLLO · ${out.lab.verdict==='APROBADA'?'Aprobada':out.lab.verdict==='FALLIDA'?'Fallida':'Sin respuesta'}`]:null,
-      ok&&!out.reversal&&kind!=='debin'?['SALDO DISPONIBLE',money(out.balanceCents)]:null
+      ok&&!out.reversal&&kind!=='debin'?['SALDO DISPONIBLE',out.currency==='840'?'U$S '+(Number(out.balanceCents||0)/100).toLocaleString('es-AR',{minimumFractionDigits:2}):money(out.balanceCents)]:null
     ].filter(Boolean);
     return `<div class="ticket-head"><strong>OSC PAYMENT ACADEMY</strong><small>${new Date().toLocaleString('es-AR')}</small></div>`+
       lines.map(([k,v])=>`<div style="display:flex;justify-content:space-between;gap:8px;font-size:11px"><span>${k}</span><b>${v}</b></div>`).join('')+
@@ -1957,7 +1959,7 @@ ${rawMessage(msg)}`;
     const cashbackCents=kind==='cashback'?p.cashbackCents:kind==='cashback_void'&&orig?Number(orig.linkCashCents||0):0;
     const linkCtx={terminal:'POS',amountCents:LINK_NO_AMOUNT.includes(kind)?0:Number(state.amountDigits||0),accountType:p.accountType,scenario:p.scenario,after:p.after,
       installments:kind==='purchase'?p.installments:1,cashbackCents,original,
-      pinBlock:state.pinBlock,pinOk:kind==='debin'?undefined:state.pinDigits==='1234',stan:state.currentStan,destination:p.destination,debin:p.debin,termId:'POSOSC0001',merchantName:'COMERCIO OSC'};
+      pinBlock:state.pinBlock,pinOk:(kind==='debin'||/^fci_/.test(kind))?undefined:state.pinDigits==='1234',stan:state.currentStan,destination:p.destination,debin:p.debin,fci:p.fci,termId:'POSOSC0001',merchantName:'COMERCIO OSC'};
     // rc.1.49 · TestLab · Modo Laboratorio: la 0200 sale al ambiente de DESARROLLO del banco; la respuesta es la del banco.
     if(window.OSCTestLabMode?.active()){
       op.lab=true;
@@ -1976,7 +1978,7 @@ ${rawMessage(msg)}`;
     op.rrn=out.ctx.rrn; op.amountCents=out.amountCents??out.ctx.amountCents; op.linkMmdd=out.ctx.clock.mmdd; op.linkPurchaseCents=Number(state.amountDigits||0); op.linkCashCents=cashbackCents;
     document.querySelector('#step4 small').textContent='LINK · 0200 OUTPUT B24';
     screen('PROCESANDO',`<small>LINK · BASE24</small><strong>0200</strong><span>${OSCLinkHth.TX[kind].short}</span>`);
-    posTech(`LINK · ${OSCLinkHth.TX[kind].label} · DE3=${out.messages[0].fields.find(r=>r.de===3)?.value}`);
+    posTech(out.duplicate?`LINK · ${OSCLinkHth.TX[kind].label} · BASE24 rechaza por clave duplicada (no se envía 0200)`:`LINK · ${OSCLinkHth.TX[kind].label} · DE3=${out.messages[0]?.fields.find(r=>r.de===3)?.value}`);
     const toRows=m=>m.fields.map(r=>field(r.de,r.name,OSCLinkHth.displayValue(r.value),String(r.value.length),r.attr,r.ref));
     let i=0;
     const next=()=>{
@@ -1994,6 +1996,7 @@ ${rawMessage(msg)}`;
       op.status=out.reversal?'REVERSADA':ok?'APROBADA':'RECHAZADA'; op.responseCode=out.code;
       if(ok&&original){const o=state.operations.find(x=>x.id===original.id); if(o){o.linkClosed=true; o.status=({void:'ANULADA',cashback_void:'ANULADA',refund_void:'ANULADA',refund:'DEVUELTA',preauth_complete:'FINALIZADA'})[kind]||o.status;}}
       fillLinkOriginals(); op.auth=out.lab?'-':(out.auth||(ok?random6():'-')); state.currentAuth=op.auth;
+      if(/^fci_/.test(kind)&&ok){const sq=$('linkFciSeq'); if(sq) sq.value=OSCLinkHth.fciNextSeq();}
       $('flowResponse').textContent=`${out.code} - ${out.resultText}`;
       $('resultText').textContent=out.reversal?(out.timeout?'SIN RESPUESTA · REVERSADA':'REVERSADA'):ok?'APROBADA':'RECHAZADA';$('resultCode').textContent=out.reversal?out.reversal.reason:out.code;
       $('resultDetail').textContent=`LINK · ${out.summary}${!out.timeout&&kind!=='debin'?` · Saldo ${formatCents(out.balanceCents)}`:''}`;

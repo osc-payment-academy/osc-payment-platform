@@ -172,6 +172,7 @@
         <ul>
           <li><b>Cobro con Transferencias (A-8406):</b> el campo 52 viaja con 16 «F» (no hay PIN del tarjetahabiente).</li>
           <li><b>DEBIN:</b> en el simulador no se valida PIN (la autorización la da el comprador al aceptar el DEBIN).</li>
+          <li><b>FCI (F1 / F2, Anexo FCI BCBA):</b> el campo 52 viaja con 16 «F» (opcional, se configura por entidad). Las operaciones salen de Homebanking, billetera o Banca empresa con tarjetas virtuales.</li>
         </ul>
         <h4>Códigos de resultado vinculados al PIN (C-X-6)</h4>
         ${table(["Código", "Descripción"], [

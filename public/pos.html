@@ -422,15 +422,15 @@
 <script src="js/switch-store.js?v=4.0.0-rc1.29"></script>
 <script src="js/emv-crypto.js?v=4.0.0-rc1.22"></script>
 <script src="js/iso-network-spec.js?v=4.0.0-rc1.22"></script>
-<script src="js/security-edu.js?v=4.0.0-rc1.26"></script>
-<script src="js/link-hth.js?v=4.0.0-rc1.49"></script>
-<script src="js/testlab-core.js?v=4.0.0-rc1.54"></script>
+<script src="js/security-edu.js?v=4.0.0-rc1.55"></script>
+<script src="js/link-hth.js?v=4.0.0-rc1.55"></script>
+<script src="js/testlab-core.js?v=4.0.0-rc1.55"></script>
 <script src="js/testlab-mode.js?v=4.0.0-rc1.54"></script>
-<script src="js/app.js?v=4.0.0-rc1.49"></script><script src="js/pos-validations.js?v=4.0.0-rc1.27"></script>
+<script src="js/app.js?v=4.0.0-rc1.55"></script><script src="js/pos-validations.js?v=4.0.0-rc1.27"></script>
 <script>document.addEventListener('DOMContentLoaded',()=>{document.querySelectorAll('.pos-scenario-mini button').forEach((b,i)=>b.onclick=()=>{document.querySelectorAll('.pos-scenario-mini button').forEach(x=>x.classList.remove('active'));b.classList.add('active');const original=document.querySelectorAll('#scenarioGrid button')[i];if(original)original.click()});const log=document.getElementById('posTechEvents');const status=document.getElementById('flowResponse');if(log&&status)new MutationObserver(()=>{const d=document.createElement('div');d.textContent=new Date().toLocaleTimeString('es-AR')+' · '+status.textContent;log.prepend(d);while(log.children.length>8)log.lastChild.remove()}).observe(status,{childList:true,subtree:true,characterData:true})});</script>
 <script src="js/permissions.js"></script>
 
 
-<script src="js/help-catalog.js?v=4.0.0-rc1.30"></script><script src="js/field-cards.js?v=4.0.0-rc1.31"></script>
+<script src="js/help-catalog.js?v=4.0.0-rc1.30"></script><script src="js/field-cards.js?v=4.0.0-rc1.55"></script>
 <script src="js/module-guide.js"></script><script src="js/network-access.js?v=4.0.0-rc1.26"></script><script src="js/navigation.js?v=4.0.0-rc1.27"></script><script src="js/osc-learning.js?v=4.0.0-rc1.37" data-module="pos"></script></body>
 </html>
