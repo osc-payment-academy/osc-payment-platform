@@ -3318,7 +3318,7 @@
     <script src="js/emv-crypto.js?v=4.0.0-rc1.22"></script>
     <script src="js/iso-network-spec.js?v=4.0.0-rc1.22"></script>
     <script src="js/security-edu.js?v=4.0.0-rc1.55"></script>
-    <script src="js/switch-store.js?v=4.0.0-rc1.29"></script>
+    <script src="js/switch-store.js?v=4.0.0-rc1.56"></script>
     <script src="js/de-tabs.js?v=4.0.0-rc1.39"></script>
     <script>
       // rc.1.39 · Pestañas del panel Data Elements del ATM (mismo criterio que el POS).
@@ -3519,6 +3519,7 @@
               m.direction || "",
               String(Number(m.amount || 0)), // rc.1.48 · "0" y "000000000000" son el mismo importe (consulta de saldo duplicada)
               m.batch || "000001",
+              m.linkLabel || "", // rc.1.55 · LINK: 0200 09 y 0200 29 (o F3 / F4) comparten STAN e importe
             ].join("|");
 
           const merged = new Map();

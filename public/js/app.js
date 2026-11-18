@@ -1145,11 +1145,23 @@
 
   function persistSwitchTransaction(op){
     if(!window.OSCSwitchStore||!op||op.type==='batch')return;
+    if(op.network==='link') return persistLinkOperation(op); // rc.1.55 · LINK guarda todos sus mensajes
     const detected=window.OSCNetworks&&window.OSCNetworks.detect(op.pan||state.pan);
     const network=(op.network||detected?.id||detected?.key||profile().id||'visa').toUpperCase();
     const req=state.messages.find(m=>m.operationId===op.id && /00$/.test(m.mti));
     const res=state.messages.find(m=>m.operationId===op.id && /10$/.test(m.mti));
     window.OSCSwitchStore.addTransaction({id:op.id,channel:'POS',network,type:op.type,amountCents:op.amountCents,status:op.status||'APPROVED',responseCode:op.responseCode||state.responseCode||'00',stan:op.stan,rrn:op.rrn,auth:op.auth,batch:op.batch,closed:op.closed,clearingStatus:op.closed?'READY':'PENDING',mtiRequest:req?.mti||'0200',mtiResponse:res?.mti||'0210',panLast4:(op.pan||state.pan||'').slice(-4),cardId:op.cardId||state.testCard,product:(TEST_CARDS[op.cardId||state.testCard]?.product)||'',raw:req?rawMessage(req):null,requestFields:req?.fields||null,responseFields:res?.fields||null,operationLabel:op.type||'purchase',dateTime:op.createdAt||new Date().toISOString(),arqcTrace:op.arqcTrace||null,pinTrace:op.pinTrace||null});
+  }
+  // rc.1.55 · Red LINK: el POS guarda la operación con todos sus mensajes para que el historial sobreviva al salir y volver.
+  function persistLinkOperation(op){
+    if(!window.OSCSwitchStore||!op||op.network!=='link') return;
+    const msgs=state.messages.filter(m=>m.operationId===op.id).slice().reverse();
+    if(!msgs.length) return;
+    const req=msgs.find(m=>m.direction==='SALIENTE'), res=msgs.find(m=>m.direction==='ENTRANTE');
+    const keep=m=>({id:m.id,mti:m.mti,operation:m.operation,direction:m.direction,dateTime:m.dateTime,responseCode:m.responseCode||'',fields:m.fields,bitmap:m.bitmap,raw:m.raw||null,linkAnnotated:m.linkAnnotated||null,linkLabel:m.linkLabel||'',amountCents:m.amountCents,stan:m.stan,batch:m.batch});
+    window.OSCSwitchStore.addTransaction({id:op.id,channel:'POS',network:'LINK',type:op.type,amountCents:op.amountCents,status:op.status,responseCode:op.responseCode||'',stan:op.stan,rrn:op.rrn,auth:op.auth,batch:op.batch,closed:op.closed,
+      mtiRequest:req?.mti||'0200',mtiResponse:res?.mti||'',panLast4:String(op.pan||state.pan||'').slice(-4),cardId:op.cardId||state.testCard,raw:req?.raw||null,requestFields:req?.fields||null,responseFields:res?.fields||null,
+      operationLabel:msgs[0].operation,dateTime:op.createdAt,linkKind:op.linkKind,linkMeta:{linkMmdd:op.linkMmdd,linkPurchaseCents:op.linkPurchaseCents,linkCashCents:op.linkCashCents,linkClosed:!!op.linkClosed},linkMessages:msgs.map(keep)});
   }
   function restoreWorkspaceHistory(){
     if(!window.OSCSwitchStore) return;
@@ -1167,6 +1179,12 @@
         cardId:tx.cardId||null,product:tx.product||'',arqcTrace:tx.arqcTrace||null,pinTrace:tx.pinTrace||null
       };
       state.operations.unshift(op);
+      if(Array.isArray(tx.linkMessages)&&tx.linkMessages.length){
+        // rc.1.55 · Operación LINK: se restauran todos sus mensajes (tramas reales, para el Parser) y los datos que usan anulaciones y devoluciones.
+        op.network='link'; op.linkKind=tx.linkKind; Object.assign(op,tx.linkMeta||{});
+        tx.linkMessages.forEach(m=>addMessage({...m,id:'REST-'+m.id,operationId:tx.id}));
+        return;
+      }
       const reqFields=Array.isArray(tx.requestFields)?tx.requestFields:[
         field(3,'Processing Code','000000','6','FIXED','Restaurado'),
         field(4,'Transaction Amount',String(tx.amountCents||0).padStart(12,'0'),'12','FIXED','Restaurado'),
@@ -1996,6 +2014,7 @@ ${rawMessage(msg)}`;
       op.status=out.reversal?'REVERSADA':ok?'APROBADA':'RECHAZADA'; op.responseCode=out.code;
       if(ok&&original){const o=state.operations.find(x=>x.id===original.id); if(o){o.linkClosed=true; o.status=({void:'ANULADA',cashback_void:'ANULADA',refund_void:'ANULADA',refund:'DEVUELTA',preauth_complete:'FINALIZADA'})[kind]||o.status;}}
       fillLinkOriginals(); op.auth=out.lab?'-':(out.auth||(ok?random6():'-')); state.currentAuth=op.auth;
+      persistLinkOperation(op); if(ok&&original) persistLinkOperation(state.operations.find(x=>x.id===original.id));
       if(/^fci_/.test(kind)&&ok){const sq=$('linkFciSeq'); if(sq) sq.value=OSCLinkHth.fciNextSeq();}
       $('flowResponse').textContent=`${out.code} - ${out.resultText}`;
       $('resultText').textContent=out.reversal?(out.timeout?'SIN RESPUESTA · REVERSADA':'REVERSADA'):ok?'APROBADA':'RECHAZADA';$('resultCode').textContent=out.reversal?out.reversal.reason:out.code;

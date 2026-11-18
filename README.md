@@ -1,4 +1,8 @@
-# OSC Payment Academy — v4.0.0-rc.1.55
+# OSC Payment Academy — v4.0.0-rc.1.56
+
+Red LINK: el historial del POS guarda y restaura las operaciones LINK; en el ATM ya no se fusionan los tramos de transferencias y DEBIN. Ver RELEASE_NOTES_v4.0.0-rc.1.56.md.
+
+## v4.0.0-rc.1.55
 
 Red LINK: Fondo común de inversión (F1XX00 débito / F200XX crédito) en el POS, Parser y fichas de campo, según el Anexo FCI BCBA. Ver RELEASE_NOTES_v4.0.0-rc.1.55.md.
 
