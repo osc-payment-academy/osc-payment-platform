@@ -19,6 +19,28 @@ const freeCookie = (token, maxAge = SESSION_DAYS * 86400) => `osc_free_session=$
 const readBody = async (request) => { try { return await request.json(); } catch { return {}; } };
 const esc = (t) => String(t ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
+const SITE = 'https://oscpaymentacademy.com';
+const ROBOTS = `User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /free/
+Allow: /free/x/
+Allow: /free/js/
+Allow: /free/css/
+Allow: /free/assets/
+Disallow: /login
+Disallow: /reset
+Disallow: /expired
+
+Sitemap: ${SITE}/sitemap.xml
+`;
+const SITEMAP = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>${SITE}/</loc><changefreq>monthly</changefreq><priority>1.0</priority></url>
+  <url><loc>${SITE}/parser-iso8583</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>
+</urlset>
+`;
+
 export const FREE_WHATSAPP = '5491132318122';
 const waLink = (text) => `https://wa.me/${FREE_WHATSAPP}?text=${encodeURIComponent(text)}`;
 
@@ -207,6 +229,15 @@ function lockedPage(label, origin) {
 export async function handleFree(request, env, ctx) {
   const url = new URL(request.url);
   const path = url.pathname;
+  // rc.1.60 · SEO: dirección pública del Parser gratuito, robots.txt y sitemap.xml.
+  if (path === '/parser-iso8583' || path === '/parser-iso8583/') {
+    const res = await env.ASSETS.fetch(new Request(new URL('/free/parser', url.origin), request));
+    const headers = new Headers(res.headers);
+    headers.set('cache-control', 'public, max-age=300');
+    return new Response(res.body, { status: res.status, statusText: res.statusText, headers });
+  }
+  if (path === '/robots.txt') return new Response(ROBOTS, { headers: { 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'public, max-age=3600' } });
+  if (path === '/sitemap.xml') return new Response(SITEMAP, { headers: { 'content-type': 'application/xml; charset=utf-8', 'cache-control': 'public, max-age=3600' } });
   if (path.startsWith('/api/free/')) {
     try { return await api(request, env, path, url); }
     catch (e) { console.error('free api', e); return json({ error: 'SERVER_ERROR', message: 'Error interno.' }, 500); }

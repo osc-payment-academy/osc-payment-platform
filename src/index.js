@@ -1544,7 +1544,7 @@ export default {async fetch(request,env,ctx){
     url.hostname='oscpaymentacademy.com';
     return Response.redirect(url.toString(),308);
   }
-  if(path==='/free'||path.startsWith('/free/')||path.startsWith('/api/free/'))return handleFree(request,env,ctx); // rc.1.58
+  if(path==='/free'||path.startsWith('/free/')||path.startsWith('/api/free/')||path==='/parser-iso8583'||path==='/parser-iso8583/'||path==='/robots.txt'||path==='/sitemap.xml')return handleFree(request,env,ctx); // rc.1.58 · rc.1.60 SEO
   if(path.startsWith('/api/'))return api(request,env,path);
   // rc.1.21 · Manuales LINK: CONFIDENCIALES. Solo OSC_ADMIN; nunca listados en Documentación Técnica.
   let linkProbe=path;try{linkProbe=decodeURIComponent(path);}catch(e){}

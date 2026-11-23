@@ -94,7 +94,7 @@
   }
   async function logout() {
     await realFetch("/api/free/logout", { method: "POST", credentials: "same-origin" }).catch(() => null);
-    location.href = "/free/parser.html";
+    location.href = "/parser-iso8583";
   }
   window.OSCFree = { page: PAGE, me, consume, lock, modal, wa, logout, WHATSAPP };
 
@@ -151,7 +151,7 @@
         auth.innerHTML = '<button type="button" class="oscfree-link" id="oscFreeLogout">Salir</button>';
         document.getElementById("oscFreeLogout").onclick = logout;
       } else {
-        const home = document.getElementById("oscFreeHome"); if (home) { home.href = "/free/parser.html"; home.textContent = "◉ Parser gratuito"; }
+        const home = document.getElementById("oscFreeHome"); if (home) { home.href = "/parser-iso8583"; home.textContent = "◉ Parser gratuito"; }
         auth.innerHTML = '<a class="oscfree-link" href="/free/registro.html?modo=ingresar">Ingresar</a><a class="oscfree-cta alt" href="/free/registro.html">Crear cuenta gratis</a>';
       }
       document.dispatchEvent(new CustomEvent("osc-free-ready", { detail: d }));

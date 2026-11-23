@@ -1,0 +1,34 @@
+PUBLICAR EL PARSER GRATUITO EN GOOGLE · Google Search Console
+=============================================================
+
+ANTES: instalar rc.1.60 y comprobar en el navegador:
+  https://oscpaymentacademy.com/parser-iso8583
+  https://oscpaymentacademy.com/robots.txt
+  https://oscpaymentacademy.com/sitemap.xml
+
+1) REGISTRAR EL SITIO (una sola vez)
+   - Entrar a https://search.google.com/search-console con tu cuenta de Google.
+   - "Agregar propiedad" → tipo "Dominio" → escribir: oscpaymentacademy.com
+   - Google muestra un registro TXT (google-site-verification=...).
+   - En Cloudflare: oscpaymentacademy.com → DNS → Records → Add record
+       Type: TXT · Name: @ · Content: (el texto que dio Google) → Save
+   - Volver a Search Console → "Verificar". (Si no verifica al instante, esperar unos minutos y reintentar.)
+
+2) ENVIAR EL SITEMAP
+   - Menú "Sitemaps" → escribir: sitemap.xml → Enviar. Estado esperado: "Correcto" (2 páginas).
+
+3) PEDIR LA INDEXACIÓN DEL PARSER
+   - Barra de arriba "Inspeccionar URL" → pegar https://oscpaymentacademy.com/parser-iso8583
+   - "Probar URL publicada" → debe decir que se puede indexar → "Solicitar indexación".
+   - Repetir con https://oscpaymentacademy.com/
+
+4) COMPROBAR LA VISTA PREVIA AL COMPARTIR
+   - LinkedIn: https://www.linkedin.com/post-inspector/ → pegar la URL → ver título, descripción e imagen.
+
+5) DIFUSIÓN (acelera que Google la encuentre y la posicione)
+   - Publicar el link en LinkedIn (perfil y grupos de medios de pago), en la firma de email y en el material del curso.
+
+QUÉ ESPERAR
+   - Aparece en Google entre unos días y algunas semanas.
+   - Seguimiento: Search Console → "Rendimiento" muestra con qué búsquedas aparece y cuántos clics recibe.
+   - Prueba: buscar en Google  site:oscpaymentacademy.com/parser-iso8583
