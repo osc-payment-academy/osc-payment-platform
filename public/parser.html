@@ -2838,11 +2838,40 @@
                 };
               }
 
+              // rc.1.57 · Validación de MTI: versión (0-2) · clase (1-8) · función (0-5) · origen (0-5).
+              function isValidMti(mti) {
+                return /^[0-2][1-8][0-5][0-5]$/.test(String(mti || ""));
+              }
+              const TRAMA_NO_RECONOCIDA =
+                "Trama no reconocida: debe comenzar con un MTI válido de 4 dígitos (ej.: 0100, 0200, 0400, 0800, 1100).";
+
               function parseTrama(raw) {
+                const text = String(raw || "").replace(/^[\s\x00-\x1F]+/, "");
+                const isLink = window.OSCLinkHth && selectedParserNetwork() === "link";
+                // Pre-chequeo: en Visa / Mastercard / Amex la trama ASCII arranca en el MTI.
+                // Si arranca con letras (ej. "ISO" de un header BASE24) se rechaza sin auto-cambiar de red.
+                if (!isLink && /^[^0-9A-Fa-f]/.test(text)) {
+                  const errs = [TRAMA_NO_RECONOCIDA];
+                  if (/^ISO\d{9}/.test(text))
+                    errs.push('El prefijo "ISO" + 9 dígitos corresponde al header BASE24 de Red LINK. Si es una trama LINK, seleccioná "Red LINK" en el log de la trama.');
+                  return { errors: errs };
+                }
+                const result = parseTramaInner(raw);
+                if (result && result.mti !== undefined && !isValidMti(result.mti)) {
+                  return {
+                    errors: [
+                      TRAMA_NO_RECONOCIDA +
+                        ' Se leyó "' + String(result.mti).replace(/[^0-9A-Za-z ]/g, "·") + '" en la posición del MTI.',
+                    ],
+                  };
+                }
+                return result;
+              }
+
+              function parseTramaInner(raw) {
                 // rc.1.24 · Red LINK: "ISO" + header BASE24 + MTI + bitmap (C-X-1-2-3).
-                const nsel = document.getElementById("parserNetworkSelect");
-                if (window.OSCLinkHth && (selectedParserNetwork() === "link" || /ISO\d{13}[0-9A-Fa-f]{16}/.test(OSCLinkHth.unhtml(raw)))) {
-                  if (nsel && nsel.value !== "link" && [...nsel.options].some((o) => o.value === "link")) nsel.value = "link";
+                // rc.1.57 · Sin auto-detección: el formato LINK solo se aplica con "Red LINK" seleccionada.
+                if (window.OSCLinkHth && selectedParserNetwork() === "link") {
                   return OSCLinkHth.parse(raw);
                 }
                 applyParserFieldProfile();
@@ -3488,28 +3517,6 @@
 
     <script src="js/permissions.js"></script>
 
-    <div
-      id="osc-version-badge"
-      style="
-        position: fixed;
-        right: 14px;
-        bottom: 12px;
-        z-index: 99999;
-        background: #0d2238;
-        border: 1px solid #2f83ff;
-        color: #9fd0ff;
-        padding: 7px 11px;
-        border-radius: 999px;
-        font:
-          600 12px/1.1 Inter,
-          Segoe UI,
-          Arial,
-          sans-serif;
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
-      "
-    >
-      Baseline v3.5.4.23 · REJECT seleccionable en Parser
-    </div>
     <script src="js/module-guide.js"></script>
     <script src="js/network-access.js?v=4.0.0-rc1.26"></script><script src="js/navigation.js?v=4.0.0-rc1.27"></script>
   </body>
