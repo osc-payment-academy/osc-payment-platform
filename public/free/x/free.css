@@ -28,6 +28,7 @@
 
 /* Fichas de campo (manito) y ayudas de manual: no incluidas en la versión gratuita */
 .study-manual-btn,[data-manual-de]{display:none!important}
+button[onclick*="OSCSecurityEdu"],.osc-edu-buttons{display:none!important}
 
 /* ---------- POS ---------- */
 html[data-free-page="pos"] .qr-method-wrap,

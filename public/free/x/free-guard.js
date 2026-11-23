@@ -157,5 +157,14 @@
       document.dispatchEvent(new CustomEvent("osc-free-ready", { detail: d }));
     });
   }
+  // rc.1.58 · Fichas didácticas de ARQC/ARPC (DE 55) y PIN Block/HSM (DE 52): no incluidas en la versión gratuita.
+  function lockSecurityEdu() {
+    const edu = window.OSCSecurityEdu;
+    if (!edu || edu.__free) return;
+    edu.open = () => lock("Ficha no incluida", "Las fichas didácticas de cada campo (ARQC/ARPC del DE 55, PIN Block y HSM del DE 52 y los manuales por campo) forman parte de la plataforma completa.");
+    edu.__free = true;
+  }
+  document.addEventListener("DOMContentLoaded", lockSecurityEdu);
+  window.addEventListener("load", lockSecurityEdu);
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", decorate); else decorate();
 })();
