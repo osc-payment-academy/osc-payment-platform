@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Cuenta gratuita · OSC Payment Academy</title>
+<meta name="description" content="Creá tu cuenta gratuita de OSC Payment Academy: Parser ISO 8583 sin límite, POS y ATM virtuales, Parser Guiado y Curso Interactivo." />
+<style>
+  :root{--bg:#06111d;--panel:#0b1827;--line:#173149;--text:#f5f8fc;--muted:#9dafc2;--blue:#2f83ff;--green:#18d17e}
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;background:radial-gradient(1200px 600px at 20% -10%,#0f2b4a 0,transparent 60%),var(--bg);color:var(--text);font-family:Inter,Segoe UI,Arial,sans-serif}
+  .wrap{max-width:1040px;margin:0 auto;padding:28px 20px 60px;display:grid;grid-template-columns:1.05fr .95fr;gap:28px;align-items:start}
+  .brand{font-weight:800;font-size:1.25rem;text-decoration:none;color:var(--text)}.brand span{color:#38a7ff}
+  h1{font-size:1.9rem;margin:18px 0 8px;line-height:1.2}
+  .lead{color:var(--muted);line-height:1.6;margin:0 0 18px}
+  ul.inc{list-style:none;padding:0;margin:0 0 18px}
+  ul.inc li{padding:9px 0;border-bottom:1px solid #12283d;color:#cfe0f0;font-size:.95rem}
+  ul.inc li b{color:#7be3b2}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:24px;box-shadow:0 30px 80px #0007}
+  .tabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;background:#071522;border:1px solid var(--line);border-radius:10px;padding:4px;margin-bottom:18px}
+  .tabs button{border:0;background:transparent;color:var(--muted);padding:9px;border-radius:7px;font:700 14px inherit;font-family:inherit;cursor:pointer}
+  .tabs button.on{background:#15487a;color:#fff}
+  label{display:block;font-size:.78rem;color:#9fb8cf;margin:10px 0 4px;font-weight:600}
+  input,select{width:100%;background:#061522;border:1px solid #31516d;border-radius:8px;padding:10px 11px;color:var(--text);font:15px Inter,Segoe UI,Arial,sans-serif}
+  input:focus,select:focus{outline:none;border-color:var(--blue)}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .btn{width:100%;margin-top:16px;padding:12px;border:0;border-radius:9px;background:linear-gradient(135deg,#1b6fd8,#1258b3);color:#fff;font:800 15px Inter,Segoe UI,Arial,sans-serif;cursor:pointer}
+  .btn:disabled{opacity:.6;cursor:wait}
+  .msg{margin-top:12px;padding:10px 12px;border-radius:8px;font-size:.88rem;line-height:1.5;display:none}
+  .msg.err{display:block;background:#2a1119;border:1px solid #7a2a3c;color:#ffb3bf}
+  .msg.ok{display:block;background:#0b2a1e;border:1px solid #1c7d55;color:#8fe8bd}
+  .small{font-size:.78rem;color:#7f95a9;margin-top:12px;line-height:1.5}
+  .small a,.link{color:#7fc4ff}
+  .wa{display:inline-block;margin-top:8px;color:#7be3b2;font-weight:700;text-decoration:none}
+  .hidden{display:none!important}
+  @media(max-width:860px){.wrap{grid-template-columns:1fr}.row2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <section>
+    <a class="brand" href="/"><span>OSC</span> PAYMENT ACADEMY</a>
+    <h1>Cuenta gratuita</h1>
+    <p class="lead">Probá el laboratorio de medios de pago con tus propias manos. Sin tarjeta de crédito y sin compromiso.</p>
+    <ul class="inc">
+      <li>◉ <b>Parser ISO 8583</b> sin límite · Visa, Mastercard y American Express</li>
+      <li>▣ <b>POS Virtual</b> · 1 compra de prueba con Visa, y ver su trama en el Parser</li>
+      <li>🏧 <b>ATM Virtual</b> · 1 extracción de prueba</li>
+      <li>🧩 <b>Parser Guiado</b> · decodificá a mano una trama del Nivel 1</li>
+      <li>🎓 <b>Curso Interactivo</b> · láminas 2 y 3</li>
+    </ul>
+    <p class="small">¿Querés la plataforma completa para tu equipo?<br /><a class="wa" target="_blank" rel="noopener" href="https://wa.me/5491132318122?text=Hola%20Oscar%2C%20quiero%20una%20demo%20de%20OSC%20Payment%20Academy%20para%20mi%20empresa.">💬 Solicitar demo por WhatsApp</a></p>
+    <p class="small"><a href="/free/parser.html">← Volver al Parser gratuito</a></p>
+  </section>
+
+  <section class="card">
+    <div class="tabs" role="tablist">
+      <button type="button" id="tabReg" class="on" role="tab">Crear cuenta</button>
+      <button type="button" id="tabLogin" role="tab">Ingresar</button>
+    </div>
+
+    <form id="formReg" autocomplete="on" novalidate>
+      <label for="rName">Nombre y apellido</label><input id="rName" name="name" required maxlength="120" autocomplete="name" />
+      <label for="rEmail">Email</label><input id="rEmail" name="email" type="email" required maxlength="254" autocomplete="email" />
+      <div class="row2">
+        <div><label for="rCompany">Empresa</label><input id="rCompany" name="company" required maxlength="120" autocomplete="organization" /></div>
+        <div><label for="rRole">Rol</label>
+          <select id="rRole" required>
+            <option value="">Elegí…</option>
+            <option>Desarrollador/a</option><option>Analista funcional</option><option>QA / Testing</option><option>Operaciones / Soporte</option>
+            <option>Arquitecto/a</option><option>Líder técnico / Gerente</option><option>Producto / Negocio</option><option>Estudiante</option><option>Otro</option>
+          </select></div>
+      </div>
+      <label for="rCountry">País</label><input id="rCountry" name="country" required maxlength="60" autocomplete="country-name" />
+      <label for="rPass">Contraseña (mínimo 8 caracteres)</label><input id="rPass" type="password" required minlength="8" autocomplete="new-password" />
+      <button class="btn" id="btnReg" type="submit">Crear cuenta gratis</button>
+      <div class="msg" id="msgReg"></div>
+      <button class="btn hidden" id="btnResend" type="button" style="background:#0f3253">Reenviar email de confirmación</button>
+    </form>
+
+    <form id="formLogin" class="hidden" autocomplete="on" novalidate>
+      <label for="lEmail">Email</label><input id="lEmail" type="email" required autocomplete="email" />
+      <label for="lPass">Contraseña</label><input id="lPass" type="password" required autocomplete="current-password" />
+      <button class="btn" id="btnLogin" type="submit">Ingresar</button>
+      <div class="msg" id="msgLogin"></div>
+      <p class="small">¿Sos alumno de la plataforma completa? <a href="/login">Ingresá acá</a>.</p>
+    </form>
+  </section>
+</div>
+<script>
+(function () {
+  const $ = (id) => document.getElementById(id);
+  const q = new URLSearchParams(location.search);
+  const next = (() => { const n = q.get("next") || ""; return /^\/free\/[A-Za-z0-9_\-\/.]*$/.test(n) ? n : "/free/index.html"; })();
+  function tab(login) {
+    $("tabReg").classList.toggle("on", !login); $("tabLogin").classList.toggle("on", login);
+    $("formReg").classList.toggle("hidden", login); $("formLogin").classList.toggle("hidden", !login);
+  }
+  $("tabReg").onclick = () => tab(false); $("tabLogin").onclick = () => tab(true);
+  if (q.get("modo") === "ingresar" || q.get("next")) tab(true);
+  function show(el, text, ok) { el.textContent = text; el.className = "msg " + (ok ? "ok" : "err"); }
+  if (q.get("verificacion") === "invalida") { tab(true); show($("msgLogin"), "El link de confirmación no es válido o venció. Volvé a registrarte para recibir uno nuevo.", false); }
+
+  async function post(url, body) {
+    const r = await fetch(url, { method: "POST", credentials: "same-origin", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+    let d = {}; try { d = await r.json(); } catch (_) {}
+    return { ok: r.ok, status: r.status, d };
+  }
+  $("formReg").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const body = { fullName: $("rName").value.trim(), email: $("rEmail").value.trim(), company: $("rCompany").value.trim(), role: $("rRole").value, country: $("rCountry").value.trim(), password: $("rPass").value };
+    if (!body.fullName || !body.email || !body.company || !body.role || !body.country) return show($("msgReg"), "Completá todos los datos.", false);
+    if (body.password.length < 8) return show($("msgReg"), "La contraseña debe tener al menos 8 caracteres.", false);
+    $("btnReg").disabled = true;
+    const r = await post("/api/free/register", body).catch(() => ({ ok: false, d: { message: "Sin conexión." } }));
+    $("btnReg").disabled = false;
+    if (!r.ok) return show($("msgReg"), r.d.message || "No se pudo crear la cuenta.", false);
+    if (r.d.verificationRequired) { show($("msgReg"), (r.d.message || "Te enviamos un email de confirmación.") + " Abrí el link del email para activar tu cuenta.", true); $("btnResend").classList.remove("hidden"); return; }
+    location.href = next;
+  });
+  $("btnResend").onclick = async () => {
+    $("btnResend").disabled = true;
+    const r = await post("/api/free/resend", { email: $("rEmail").value.trim() }).catch(() => ({ d: {} }));
+    show($("msgReg"), r.d.message || "Listo.", true);
+    setTimeout(() => ($("btnResend").disabled = false), 30000);
+  };
+  $("formLogin").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    $("btnLogin").disabled = true;
+    const r = await post("/api/free/login", { email: $("lEmail").value.trim(), password: $("lPass").value }).catch(() => ({ ok: false, d: { message: "Sin conexión." } }));
+    $("btnLogin").disabled = false;
+    if (!r.ok) return show($("msgLogin"), r.d.message || "No se pudo ingresar.", false);
+    location.href = next;
+  });
+})();
+</script>
+</body>
+</html>

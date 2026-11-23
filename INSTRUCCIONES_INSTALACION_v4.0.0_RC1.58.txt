@@ -1,0 +1,39 @@
+OSC Payment Academy · v4.0.0-rc.1.58 · Versión gratuita
+=======================================================
+
+ARCHIVOS DEL INCREMENTAL
+  NUEVOS
+    src/free.js
+    public/free/            (carpeta completa: parser, registro, inicio, pos, atm, parser_guiado, curso, x/)
+    MIGRATION_v4.0.0-rc.1.58_FREE_TIER.sql
+  MODIFICADOS
+    src/index.js            (+2 líneas: import de free.js y derivación de /free/* y /api/free/*)
+    public/landing.html     (+ botón "Parser Gratuito" en la barra y en el hero)
+
+PASOS
+1) Copiar los archivos respetando las carpetas.
+2) (Opcional) Crear las tablas en D1. src/free.js también las crea solo en el primer uso.
+     npx wrangler d1 execute osc-academy --remote --file=MIGRATION_v4.0.0-rc.1.58_FREE_TIER.sql
+3) Email de confirmación de la cuenta gratuita:
+   - Se usa el mismo webhook de "olvidé mi contraseña" (RESET_WEBHOOK_URL) si ya está configurado.
+     El webhook recibe: { type:"free_verify", email, fullName, verifyUrl, resetUrl, subject }.
+     IMPORTANTE: el flujo que envía el email debe distinguir type:"free_verify" para usar el texto
+     "Confirmá tu cuenta" (si no, va a mandar la plantilla de reseteo de contraseña con el link de confirmación).
+   - Alternativa: un webhook propio con los secretos FREE_VERIFY_WEBHOOK_URL y FREE_VERIFY_WEBHOOK_TOKEN
+     (tiene prioridad sobre RESET_WEBHOOK_URL):
+       npx wrangler secret put FREE_VERIFY_WEBHOOK_URL
+       npx wrangler secret put FREE_VERIFY_WEBHOOK_TOKEN
+   - Si no hay ningún webhook configurado, la cuenta queda activa al registrarse (sin confirmación).
+4) npx wrangler deploy
+
+PRUEBA RÁPIDA EN PRODUCCIÓN
+  - https://oscpaymentacademy.com/free/parser.html  (sin login, "Cargar trama de ejemplo")
+  - Crear cuenta en /free/registro.html, confirmar email, hacer 1 compra en el POS y 1 extracción en el ATM.
+  - Entrar a la plataforma productiva con un alumno y comprobar que todo sigue igual.
+
+VER LOS REGISTROS (LEADS)
+  npx wrangler d1 execute osc-academy --remote --command "SELECT full_name,email,company,job_role,country,status,created_at FROM free_users ORDER BY created_at DESC"
+
+VUELTA ATRÁS
+  Quitar las 2 líneas agregadas en src/index.js y volver a desplegar: /free/ deja de responder y la plataforma
+  queda exactamente como antes. Las tablas free_* pueden quedar o borrarse; no las usa nada más.

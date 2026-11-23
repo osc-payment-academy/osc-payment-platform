@@ -1,0 +1,2148 @@
+/* OSC Payment Academy · v4.0.0-rc.1.58 · Copia congelada de js/app.js para la versión gratuita (1 compra Visa, sin reversas/devoluciones/anulaciones). */
+
+(() => {
+  const $ = id => document.getElementById(id);
+
+  const state = {
+    step:'amount',
+    currentOperation:'purchase',
+    amountDigits:'',
+    pinDigits:'',
+    pinBlock:null,
+    pinTrace:null,
+    emvUn:null,
+    emvAtc:null,
+    lastArqc:null,
+    tamperInTransit:false,
+    installments:{count:1,plan:'merchant'},
+    entryMode:null,
+    responseCode:'00',
+    transactions:0,
+    sessionStarted:Date.now(),
+    currentStan:null,
+    currentAuth:null,
+    messages:[],
+    selectedMessageId:null,
+    terminalModel:'ingenico',
+    batchNumber:1,
+    batchOpen:true,
+    operations:[],
+    selectedSourceOperationId:null,
+    modalMode:null,
+    network:'auto',
+    pan:'4111111111111111',
+    paymentMethod:'card',
+    testCard:'visa-credit',
+    qrType:'mastercard-qr',
+    showIsoTicket:true,
+    autoResponse:localStorage.getItem('oscPosAutoResponse')==='true'
+  };
+
+
+  const TEST_CARDS = {
+    'visa-credit':{id:'visa-credit',label:'Visa Crédito',network:'visa',product:'Crédito',pan:'4111111111111111',expiry:'2912',track2:'4111111111111111=29122011234567890',aid:'A0000000031010'},
+    'visa-debit':{id:'visa-debit',label:'Visa Débito',network:'visa',product:'Débito',pan:'4000000000000002',expiry:'2912',track2:'4000000000000002=29122011234567890',aid:'A0000000032010'},
+    'mc-credit':{id:'mc-credit',label:'Mastercard Crédito',network:'mastercard',product:'Crédito',pan:'5555555555554444',expiry:'2912',track2:'5555555555554444=29122011234567890',aid:'A0000000041010'},
+    'mc-debit':{id:'mc-debit',label:'Mastercard Débito',network:'mastercard',product:'Débito',pan:'2223000048408210',expiry:'2912',track2:'2223000048408210=29122011234567890',aid:'A0000000043060'},
+    'amex-credit':{id:'amex-credit',label:'American Express Crédito',network:'amex',product:'Crédito',pan:'371449635398431',expiry:'2912',track2:'371449635398431=29122011234567890',aid:'A00000002501'},
+    'amex-debit':{id:'amex-debit',label:'American Express Débito',network:'amex',product:'Débito',pan:'341234567890127',expiry:'2912',track2:'341234567890127=29122011234567890',aid:'A00000002501',onlinePin:true},
+    // rc.1.24 · Red LINK (Host to Host BASE24). PAN didáctico, BIN de práctica 990002.
+    'link-debit':{id:'link-debit',label:'LINK Débito',network:'link',product:'Débito',pan:'9900020000000018',expiry:'2912',track2:'9900020000000018=29121200000000000',aid:''}
+  };
+  const QR_PROFILES = {
+    'mastercard-qr':{label:'Mastercard QR',network:'mastercard',card:'mc-credit',mode:'Merchant Presented'},
+    'visa-qr':{label:'Visa QR',network:'visa',card:'visa-credit',mode:'Merchant Presented'}
+  };
+  const selectedCard = () => TEST_CARDS[state.testCard] || TEST_CARDS['visa-credit'];
+  const isDomesticCard = () => selectedCard()?.network==='domestic';
+  const isLink = () => state.paymentMethod==='card' && selectedCard()?.network==='link';
+  state.linkTx='purchase';
+  const LINK_NO_AMOUNT=['balance','pos_balance'], LINK_AUTO_AMOUNT=['void','refund_void','cashback_void'];
+  const isAmexDebit = () => profile().id==='amex' && selectedCard().product==='Débito';
+  const amexDebitOnlinePinRequired = () => isAmexDebit() && ['chip','magstripe'].includes(state.entryMode);
+
+  const selectedQr = () => QR_PROFILES[state.qrType] || QR_PROFILES['mastercard-qr'];
+  function syncPaymentProfile(){
+    const card = state.paymentMethod==='qr' ? TEST_CARDS[selectedQr().card] : selectedCard();
+    state.pan=card.pan; state.network=card.network;
+  }
+
+  // rc.1.24 · Una sola tarjeta Doméstica fija (después de Amex). Usa la tarjeta de débito más reciente emitida en Banco simulado.
+  async function loadDomesticCards(){
+    const tile=document.querySelector('[data-test-card="domestic"]'); if(!tile) return;
+    try{
+      const r=await fetch('/api/bank/pos/cards'); if(!r.ok) return;
+      const d=await r.json(); const c=(d.cards||[])[0]; if(!c) return;
+      TEST_CARDS.domestic={id:'domestic',label:'OSC Doméstica Débito',network:'domestic',product:'Débito',pan:c.card_number,expiry:String(c.expires_at||'').slice(2,7).replace('-',''),track2:`${c.card_number}=31122011234567890`,aid:'A0000000000001',bankCardId:c.id,accountNumber:c.account_number,balance:Number(c.balance||0)};
+      tile.classList.remove('no-card');
+      const sm=tile.querySelector('small'); if(sm) sm.textContent=`${c.masked_card_number} · ${c.account_number}`;
+    }catch(e){console.warn('Banco Virtual no disponible para POS',e)}
+  }
+  function selectTestCard(cardId,{resetFlow=true}={}){
+    if(cardId==='domestic'&&!TEST_CARDS.domestic){
+      const summary=$('selectedTestCardSummary');
+      if(summary) summary.textContent='Doméstica: primero emití una tarjeta de débito en Banco simulado → SOLICITUDES. Después vuelve a aparecer acá con su cuenta vinculada.';
+      return;
+    }
+    if(!TEST_CARDS[cardId]) return;
+    state.testCard=cardId;
+    const card=TEST_CARDS[cardId];
+    state.pan=card.pan;
+    state.network=card.network;
+    document.querySelectorAll('[data-test-card]').forEach(button=>{
+      const active=button.dataset.testCard===cardId;
+      button.classList.toggle('active',active);
+      button.setAttribute('aria-pressed',active?'true':'false');
+    });
+    const summary=$('selectedTestCardSummary');
+    if(summary) summary.textContent=`${card.label} · PAN asignado automáticamente · •••• ${card.pan.slice(-4)} · BIN ${card.pan.slice(0,6)}`;
+    refreshNetworkProfile();
+    refreshInstallmentUi();
+    if(resetFlow) reset();
+    return card;
+  }
+  // Public API used by inline controls. This avoids event-binding/cache issues in deployed static assets.
+  window.OSCSelectTestCard = function(cardId){
+    return selectTestCard(cardId,{resetFlow:true});
+  };
+
+  const entryModes = {
+    chip:{label:'Chip EMV',de22:'051',hasPin:true,hasDE55:true,hasDE35:true,de35Origin:'Track 2 Equivalent Data del chip'},
+    contactless:{label:'Contactless EMV',de22:'071',hasPin:false,hasDE55:true,hasDE35:true,de35Origin:'Track 2 Equivalent Data contactless'},
+    // rc.1.22: banda leída completa = 90 (Visa Field 22 y Mastercard DE 22 subfield 1). El 02 indica pista NO completa.
+    magstripe:{label:'Banda magnética',de22:'901',hasPin:true,hasDE55:false,hasDE35:true,de35Origin:'Track 2 completo leído de la banda (DE 22 = 90)'},
+    manual:{label:'Ingreso manual',de22:'011',hasPin:false,hasDE55:false,hasDE35:false,de35Origin:'No aplica'}
+  };
+  // Visa Field 22 = 4 N: modo de ingreso (2) + capacidad de PIN (1) + relleno en cero (1). Mastercard DE 22 = n-3.
+  const de22For=(base,net)=>net==='visa'?base+'0':base;
+  const de22Len=net=>net==='visa'?'4':'3';
+  // Visa Field 55, Usage 1 (VSDC): Dataset ID 01 + longitud del dataset (2 bytes) + TLV.
+  const visaDataset01=tlv=>'01'+(tlv.length/2).toString(16).padStart(4,'0').toUpperCase()+tlv;
+  // Visa Field 63 (V.I.P. Private-Use): bitmap 63.0 (3 bytes; bits 1 y 3 = Network ID y Message Reason Code)
+  // + 63.1 Network ID (2 bytes BCD, 0002 = Visa) + 63.3 Message Reason Code (2 bytes BCD).
+  const visaField63=(reasonCode,networkId='0002')=>'A00000'+networkId+reasonCode;
+  const field63Row=(reasonCode,origin)=>field(63,'V.I.P. Private-Use Fields · 63.1 Network ID + 63.3 Message Reason Code',visaField63(reasonCode),'7 bytes','LLLVAR',origin);
+
+
+  // American Express Bit 22 = Point of Service Data Code (12 positions).
+  // Values are assembled from the terminal/capture capabilities published in
+  // Codes Reference Guide (Oct 2023). This is the simulator's attended POS profile.
+  function amexPosDataCode(modeKey){
+    const useOnlinePin=amexDebitOnlinePinRequired();
+    const pinCap=useOnlinePin?'6':'0';
+    const common={capture:'1',environment:'1',cardmemberPresent:'0',terminalOutput:'4'};
+    if(modeKey==='chip'){
+      // ICC capable + online PIN in this simulator.
+      return ['5',useOnlinePin?'1':'6',common.capture,common.environment,common.cardmemberPresent,'1','5',useOnlinePin?'1':'0',useOnlinePin?'3':'0','3',common.terminalOutput,pinCap].join('');
+    }
+    if(modeKey==='contactless'){
+      // Expresspay contactless, no PIN requested in the current POS flow.
+      return ['5','6',common.capture,common.environment,common.cardmemberPresent,'X','5','0','0','1',common.terminalOutput,pinCap].join('');
+    }
+    if(modeKey==='magstripe'){
+      // Based on the published 12-position attended magnetic-stripe example profile.
+      return ['2',useOnlinePin?'1':'6',common.capture,common.environment,common.cardmemberPresent,'1','2',useOnlinePin?'1':'0',useOnlinePin?'3':'0','1','2',pinCap].join('');
+    }
+    return ['6','6','0',common.environment,common.cardmemberPresent,'1','6','0','0','1',common.terminalOutput,'0'].join('');
+  }
+
+
+  function hexAmount6(cents){
+    const n=BigInt(Math.max(0,Number(cents||0)));
+    return n.toString(16).toUpperCase().padStart(12,'0').slice(-12);
+  }
+  function amexUnpredictableNumber(){
+    const seed=(state.currentStan||random6()).padStart(6,'0');
+    return Number(seed).toString(16).toUpperCase().padStart(8,'0').slice(-8);
+  }
+  function amexBit55(modeKey){
+    // AEIPS / Expresspay educational ICC data set built as BER-TLV.
+    // Values are deterministic lab values; tag selection follows the AMEX ICC/Expresspay profile.
+    const amt=String(state.amountDigits||'0').padStart(12,'0').slice(-12);
+    const other='000000000000';
+    const date=(()=>{
+      const d=now();
+      return String(d.getFullYear()).slice(-2)+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0');
+    })();
+    const txnType='00'; // purchase
+    const currency='0032'; // ISO 4217 numeric ARS encoded as BCD-style demo
+    const country='0032';
+    const isCl=modeKey==='contactless';
+    // rc.1.22: ARQC calculado (esquema EMV CSK con clave de práctica) y verificable por el emisor simulado.
+    const {atc}=emvSession();
+    const un=amexUnpredictableNumber(), aip=isCl?'1980':'1800', iad=isCl?'06011203A0B800':'06010A03A0B800';
+    let arqc='A1B2C3D4E5F60708';
+    if(window.OSCEmvCrypto){
+      const r=OSCEmvCrypto.computeArqc({pan:state.pan,psn:'01',atc,scheme:'CSK',tags:{'9F02':amt,'9F03':other,'9F1A':country,'95':'0000000000','5F2A':currency,'9A':date,'9C':txnType,'9F37':un,'82':aip,cvr:iad.slice(6)}});
+      arqc=r.arqc; state.lastArqc={...r,pan:state.pan,psn:'01',atc,network:'amex'};
+    }
+    const sentAmt=state.tamperInTransit?String(Number(amt)+100000).padStart(12,'0').slice(-12):amt;
+    const tags=[
+      ['9F02','06',sentAmt],
+      ['9F03','06',other],
+      ['9F1A','02',country],
+      ['5F2A','02',currency],
+      ['9A','03',date],
+      ['9C','01',txnType],
+      ['9F37','04',un],
+      ['82','02',aip],
+      ['9F36','02',atc],
+      ['9F26','08',arqc],
+      ['9F27','01','80'],
+      ['9F10','07',iad],
+      ['9F34','03',isCl?'1F0302':(amexDebitOnlinePinRequired()?'020300':'1E0300')],
+      ['9F33','03','E0F8C8'],
+      ['9F35','01','22'],
+      ['9F1E','08','4F5343414D455831'], // OSCAMEX1
+      ['84','07','A00000002501'],
+      ['9F09','02','0001'],
+      ['5F34','01','01']
+    ];
+    return tags.map(([t,l,v])=>t+l+v).join('');
+  }
+
+  function amexBit55Description(modeKey){
+    return modeKey==='contactless'
+      ? 'American Express Expresspay · BER-TLV ICC data'
+      : 'American Express AEIPS Chip · BER-TLV ICC data';
+  }
+
+  function amex1100RequestFields(opts={}){
+    const mode=entryModes[state.entryMode]||entryModes.chip;
+    const card=selectedCard();
+    const plan=installmentPlanNow();
+    const dppKind=opts.dppKind||(plan?(plan.interest?'issuer-auth-request':'acquirer-auth-request'):null);
+    const rows=[
+      field(2,'Primary Account Number (PAN)',state.pan,String(state.pan.length),'LLVAR','American Express Card'),
+      field(3,'Processing Code','004000','6','FIXED','Card Authorization Request'),
+      amountField(),
+      field(7,'Date and Time, Transmission',de7Now(),'10','FIXED','Acquirer local transmission time'),
+      field(11,'Systems Trace Audit Number',state.currentStan,'6','FIXED','Acquirer STAN'),
+      field(12,'Date and Time, Local Transaction',amexLocalDateTime(),'12','FIXED','YYMMDDhhmmss'),
+      field(14,'Card Expiration Date',card.expiry,'4','FIXED','YYMM'),
+      field(19,'Country Code, Acquiring Institution','032','3','FIXED','Argentina · simulator profile'),
+      field(22,'Point of Service Data Code',amexPosDataCode(state.entryMode),'12','FIXED','AMEX GNS · 12 positions'),
+      field(24,'Function Code',opts.functionCode||'100','3','FIXED',(opts.functionCode||'100')==='108'?'Inquiry · DPP Pre-Authorization (consulta de planes del emisor)':'Original authorization · amount accurate'),
+      field(26,'Card Acceptor Business Code','5812','4','FIXED','MCC · Eating Places / Restaurants'),
+      field(32,'Acquiring Institution Identification (AIN) Code','12345678901','11','LLVAR','Demo AIN del adquirente'),
+      field(37,'Acquirer Reference Number (ARN)',`${state.currentStan}${String(Date.now()).slice(-6)}`.slice(0,12),'12','FIXED','Referencia del adquirente'),
+      field(41,'Card Acceptor Terminal Identification','TERMID01','8','FIXED','Terminal POS'),
+      field(42,'Card Acceptor Identification Code','1234567890     ','15','FIXED','S/E demo · 10 dígitos + 5 espacios'),
+      field(49,'Currency Code, Transaction','032','3','FIXED','ARS')
+    ];
+    if(mode.hasDE35){
+      rows.push(field(35,'Track 2 Data',card.track2,String(card.track2.length),'LLVAR',mode.de35Origin));
+    }
+    if(amexDebitOnlinePinRequired()){
+      rows.push(field(52,'Personal Identification Number (PIN)',state.pinBlock||'A1B2C3D4E5F60708','8 bytes','BINARY','PIN Block ISO formato 0 cifrado con 3DES · PIN online'));
+    }
+    if(dppKind&&plan&&window.OSCIsoSpec) rows.push(OSCIsoSpec.amexBit48Row(dppKind,plan));
+    if(mode.hasDE55 && ['chip','contactless'].includes(state.entryMode)){
+      const icc=amexBit55(state.entryMode);
+      rows.push(field(55,'ICC System Related Data',icc,String(icc.length/2)+' bytes','LLLVAR',amexBit55Description(state.entryMode)));
+    }
+    return rows.sort((a,b)=>Number(a[0])-Number(b[0]));
+  }
+
+
+  const AMEX_ACTION_CODES = {
+    approved:{code:'000',label:'Approved',status:'APROBADA'},
+    deny:{code:'100',label:'Deny',status:'RECHAZADA'},
+    insufficient:{code:'116',label:'Not sufficient funds',status:'RECHAZADA'},
+    expired:{code:'101',label:'Expired Card / Invalid Expiration Date',status:'RECHAZADA'},
+    callIssuer:{code:'107',label:'Please Call Issuer',status:'RECHAZADA'}
+  };
+
+  function amexActionFromScenario(){
+    // rc.1.22: el escenario elegido en el POS (state.responseCode) ahora se respeta también en Amex.
+    const byCode={'00':AMEX_ACTION_CODES.approved,'51':AMEX_ACTION_CODES.insufficient,'54':AMEX_ACTION_CODES.expired,'05':AMEX_ACTION_CODES.deny,
+      '91':{code:'912',label:'Host Unavailable',status:'RECHAZADA'},'TO':{code:'911',label:'Card Issuer Timed Out',status:'RECHAZADA'},
+      '57':{code:'115',label:'Requested Function Not Supported (DPP)',status:'RECHAZADA'}};
+    if(byCode[state.responseCode]) return byCode[state.responseCode];
+    const scenario=(state.responseScenario||state.scenario||'approved').toLowerCase();
+    if(scenario.includes('51') || scenario.includes('fund')) return AMEX_ACTION_CODES.insufficient;
+    if(scenario.includes('54') || scenario.includes('expir')) return AMEX_ACTION_CODES.expired;
+    if(scenario.includes('91') || scenario.includes('unavailable') || scenario.includes('deny')) return AMEX_ACTION_CODES.deny;
+    if(scenario.includes('call')) return AMEX_ACTION_CODES.callIssuer;
+    return AMEX_ACTION_CODES.approved;
+  }
+
+  function makeAmexTid(){
+    // TID is network-generated. 40 digits max; simulator uses a stable 20-digit numeric value.
+    return `${Date.now()}${Math.floor(Math.random()*1e7).toString().padStart(7,'0')}`.slice(-20);
+  }
+
+  function amex1110ResponseFields(sourceOp, action){
+    const req=(state.messages||[]).find(m=>m.operationId===sourceOp.id && m.mti==='1100');
+    const reqFields=req?.fields||[];
+    const get=(de, fallback='') => reqFields.find(r=>String(r[0])===String(de))?.[2] ?? fallback;
+    const tid=sourceOp.amexTid || (sourceOp.amexTid=makeAmexTid());
+    const rows=[
+      field(2,'Primary Account Number (PAN)',get(2,sourceOp.pan||state.pan),String((get(2,sourceOp.pan||state.pan)||'').length),'LLVAR','Echo / Card'),
+      field(3,'Processing Code',get(3,'004000'),'6','FIXED','Mandatory echo'),
+      field(4,'Amount, Transaction',get(4,String(sourceOp.amountCents||0).padStart(12,'0')),'12','FIXED','Transaction amount'),
+      field(7,'Date and Time, Transmission',get(7,de7Now()),'10','FIXED','Echo'),
+      field(11,'Systems Trace Audit Number',get(11,sourceOp.stan||state.currentStan),'6','FIXED','Mandatory echo'),
+      field(12,'Date and Time, Local Transaction',get(12,amexLocalDateTime()),'12','FIXED','Mandatory echo'),
+      field(24,'Function Code',get(24,'100'),'3','FIXED','Conditional echo'),
+      field(31,'Acquirer Reference Data, Transaction Identifier (TID)',tid,String(tid.length),'LLVAR','Generated by American Express Network'),
+      field(32,'Acquiring Institution Identification (AIN) Code',get(32,'12345678901'),String(get(32,'12345678901').length),'LLVAR','Mandatory echo'),
+      field(37,'Acquirer Reference Number (ARN)',get(37,sourceOp.rrn||''),'12','FIXED','Acquirer correlation'),
+      field(39,'Action Code',action.code,'3','FIXED',action.label),
+      field(41,'Card Acceptor Terminal Identification',get(41,'TERMID01'),'8','FIXED','Echo'),
+      field(42,'Card Acceptor Identification Code',get(42,'1234567890     '),'15','FIXED','S/E echo'),
+      field(49,'Currency Code, Transaction',get(49,'032'),'3','FIXED','Echo')
+    ];
+    if(action.code==='000'){
+      const approval=sourceOp.auth || (sourceOp.auth=random6());
+      rows.push(field(38,'Approval Code',approval,'6','FIXED','Issuer approval code'));
+      if(['chip','contactless'].includes(state.entryMode)&&sourceOp.issuerAuth?.tlv){
+        const issuerAuth=sourceOp.issuerAuth.tlv;
+        rows.push(field(55,'ICC System Related Data',issuerAuth,String(issuerAuth.length/2)+' bytes','LLLVAR','Issuer Authentication Data · tag 91 = ARPC Método 1 + ARC 3030'));
+      }
+      if(sourceOp.installments&&window.OSCIsoSpec){
+        rows.push(OSCIsoSpec.amexBit48Row(sourceOp.installments.interest?'issuer-auth-response':'acquirer-auth-response',sourceOp.installments));
+      }
+    }
+    return rows.sort((a,b)=>Number(a[0])-Number(b[0]));
+  }
+
+  function sendAmex1110(){
+    if(profile().id!=='amex' || state.step!=='waiting' || state.currentOperation!=='purchase') return false;
+    const op=state.operations.find(o=>o.id===state.selectedSourceOperationId);
+    if(!op) return false;
+    let action=amexActionFromScenario();
+    const checked=issuerChecks(op,action.code);
+    if(checked!==action.code) action={code:checked,label:checked==='117'?'Incorrect PIN (HSM del emisor)':'Deny · Cryptogram Validation Result 01 (Invalid Cryptogram)',status:'RECHAZADA'};
+    if(op.arqcValidation) op.issuerAuth=issuerAuthenticationData('amex',op.arqcValidation,action.code==='000');
+    const fields=amex1110ResponseFields(op, action);
+    op.status=action.status;
+    op.responseCode=action.code;
+    op.amexActionCode=action.code;
+    op.amexTid=fields.find(r=>String(r[0])==='31')?.[2]||op.amexTid;
+    op.auth=fields.find(r=>String(r[0])==='38')?.[2]||'';
+    addMessage({
+      id:`MSG-${Date.now()}-1110`,operationId:op.id,mti:'1110',operation:'COMPRA',
+      direction:'ENTRANTE',dateTime:dateTimeNow(),responseCode:action.code,fields,
+      bitmap:bitmapHex(fields),amountCents:op.amountCents,stan:op.stan,batch:op.batch
+    });
+    persistSwitchTransaction(op);
+    renderMessage(state.messages[0]);
+    $('flowResponse').textContent=`${action.code} · ${action.label}`;
+    $('resultText').textContent=action.code==='000'?'APROBADA':'RECHAZADA';$('resultCode').textContent=action.code;$('resultDetail').textContent=`American Express · Action Code ${action.code} · ${action.label}`;$('authCode').textContent=op.auth||'------';
+    $('time5').textContent=timeNow();
+    state.step='done';setStep(6);
+    if(action.code==='000'){
+      screen('APROBADA',`<small>AMEX ${selectedCard().product} · 1110</small><strong>${formatCents(op.amountCents)}</strong><span>Action Code 000 · TID ${op.amexTid}</span>`);
+      printReceipt(op);
+    }else{
+      screen('RECHAZADA',`<small>AMEX · 1110</small><strong>${action.code}</strong><span>${action.label}</span>`);
+    }
+    refreshHistoryStatuses();
+    return true;
+  }
+
+  const terminalModels = {
+    ingenico:{brand:'ingenico',model:'ICT250'},
+    verifone:{brand:'VERIFONE',model:'VX520'},
+    pax:{brand:'PAX',model:'A920'},
+    android:{brand:'OSC SMART POS',model:'ANDROID'}
+  };
+
+  const scenarios = {
+    '00':{label:'APROBADA',detail:'TRANSACCIÓN COMPLETADA'},
+    '51':{label:'FONDOS INSUFICIENTES',detail:'TRANSACCIÓN RECHAZADA'},
+    '54':{label:'TARJETA VENCIDA',detail:'TRANSACCIÓN RECHAZADA'},
+    '05':{label:'NO APROBAR',detail:'TRANSACCIÓN RECHAZADA'},
+    '91':{label:'EMISOR NO DISPONIBLE',detail:'TRANSACCIÓN RECHAZADA'},
+    'TO':{label:'SIN RESPUESTA',detail:'TIME OUT'},
+    '57':{label:'NO PERMITIDA AL TITULAR',detail:'PLAN DE CUOTAS NO PERMITIDO PARA LA TARJETA'},
+    '55':{label:'PIN INCORRECTO',detail:'EL HSM DEL EMISOR NO VERIFICÓ EL PIN'},
+    '82':{label:'CRIPTOGRAMA INVÁLIDO',detail:'VISA · NEGATIVE ONLINE CAM (ARQC NO VALIDÓ)'},
+    '88':{label:'FALLA CRIPTOGRÁFICA',detail:'MASTERCARD · CRYPTOGRAPHIC FAILURE (ARQC NO VALIDÓ)'}
+  };
+
+  const operationLabels = {
+    purchase:'COMPRA',
+    reversal:'REVERSA',
+    refund:'DEVOLUCIÓN',
+    void:'ANULACIÓN',
+    batch:'CIERRE'
+  };
+
+  const formatAmount = digits =>
+    (Number(digits || '0') / 100).toLocaleString('es-AR',{style:'currency',currency:'ARS'});
+  const formatCents = cents =>
+    (Number(cents || 0) / 100).toLocaleString('es-AR',{style:'currency',currency:'ARS'});
+
+  const now = () => new Date();
+  const timeNow = () => now().toLocaleTimeString('es-AR',{hour12:false});
+  const dateTimeNow = () => `${now().toLocaleDateString('es-AR')} ${timeNow()}`;
+  const de7Now = () => {
+    const d=now();
+    return [
+      String(d.getMonth()+1).padStart(2,'0'),
+      String(d.getDate()).padStart(2,'0'),
+      String(d.getHours()).padStart(2,'0'),
+      String(d.getMinutes()).padStart(2,'0'),
+      String(d.getSeconds()).padStart(2,'0')
+    ].join('');
+  };
+  const amexLocalDateTime = () => {
+    const d=now();
+    return [
+      String(d.getFullYear()).slice(-2),
+      String(d.getMonth()+1).padStart(2,'0'),
+      String(d.getDate()).padStart(2,'0'),
+      String(d.getHours()).padStart(2,'0'),
+      String(d.getMinutes()).padStart(2,'0'),
+      String(d.getSeconds()).padStart(2,'0')
+    ].join('');
+  };
+
+  const random6 = () => String(Math.floor(100000+Math.random()*900000));
+  /* rc.1.22 · PIN Block ISO 9564 formato 0 cifrado con 3DES (ZPK de práctica) y verificado por un HSM simulado.
+     El PIN de prueba de las tarjetas del laboratorio es 1234. */
+  const TEST_PIN='1234';
+  function createPinBlock(){
+    if(!window.OSCEmvCrypto||!state.pinDigits) return null;
+    const b=OSCEmvCrypto.pinBlockEncrypted(state.pinDigits,state.pan);
+    state.pinTrace={pinLength:state.pinDigits.length,pinFieldMasked:b.pinField.slice(0,2)+'•'.repeat(state.pinDigits.length)+b.pinField.slice(2+state.pinDigits.length),panField:b.panField,encrypted:b.encrypted,zpk:b.zpk};
+    return b.encrypted;
+  }
+  const de53For=net=>net==='mastercard'?(window.OSCIsoSpec?.MC_DE53||'9701100001000000'):(window.OSCIsoSpec?.VISA_DE53||'2001010100000000');
+  const de53Origin=net=>net==='mastercard'?'97 claves indexadas · 01 DES · 10 ISO formato 0 · índice 0001 (CIS DE 53)':'20 Zone Encryption · 01 DES · 01 ISO formato 0 · índice 01 (Visa Field 53)';
+
+  /* rc.1.22 · ARQC real (didáctico) · cada operación usa su propio número impredecible (9F37) y contador (9F36). */
+  function emvSession(){
+    if(!state.emvUn) state.emvUn=Array.from({length:8},()=>Math.floor(Math.random()*16).toString(16).toUpperCase()).join('');
+    if(!state.emvAtc){
+      let n=18; try{n=Number(localStorage.getItem('oscPosAtc')||'18')+1;localStorage.setItem('oscPosAtc',String(n));}catch(_){}
+      state.emvAtc=(n%65535).toString(16).toUpperCase().padStart(4,'0');
+    }
+    return {un:state.emvUn,atc:state.emvAtc};
+  }
+  function arqcSchemeFor(net){return net==='visa'?'UDK':'CSK';}
+  function cvrFromIad(net,iad){return net==='mastercard'?iad.slice(4,16):iad.slice(6);}
+  function parseTlv(hex){
+    const out={};let i=0;hex=String(hex||'');
+    if(/^01[0-9A-F]{4}/.test(hex)&&hex.length>6&&parseInt(hex.slice(2,6),16)*2===hex.length-6) i=6; // Visa Field 55 Dataset 01
+    while(i<hex.length-3){
+      let tag=hex.slice(i,i+2);i+=2;
+      if((parseInt(tag,16)&0x1F)===0x1F){tag+=hex.slice(i,i+2);i+=2;}
+      const len=parseInt(hex.slice(i,i+2),16);i+=2;
+      out[tag]=hex.slice(i,i+len*2);i+=len*2;
+    }
+    return out;
+  }
+  /* El emisor recalcula el ARQC con los datos que recibió en el DE 55 / Bit 55. */
+  function issuerValidateArqc(net,de55){
+    if(!window.OSCEmvCrypto||!de55) return null;
+    const t=parseTlv(de55);
+    const iad=t['9F10']||'';
+    const r=OSCEmvCrypto.computeArqc({pan:state.pan,psn:t['5F34']||'00',atc:t['9F36'],scheme:arqcSchemeFor(net),tags:{'9F02':t['9F02'],'9F03':t['9F03']||'000000000000','9F1A':t['9F1A'],'95':t['95'],'5F2A':t['5F2A'],'9A':t['9A'],'9C':t['9C'],'9F37':t['9F37'],'82':t['82'],cvr:cvrFromIad(net,iad)}});
+    return {ok:r.arqc===t['9F26'],recomputed:r.arqc,received:t['9F26'],key:r.key,reason:r.arqc===t['9F26']?'':'El importe (9F02) cambió después de que la tarjeta firmó'};
+  }
+  function issuerVerifyPin(){
+    if(!window.OSCEmvCrypto||!state.pinBlock) return null;
+    const v=OSCEmvCrypto.hsmVerifyPin(state.pinBlock,state.pan,TEST_PIN);
+    if(state.pinTrace) state.pinTrace.hsm=v;
+    return v;
+  }
+  function issuerAuthenticationData(net,validation,approved){
+    // Visa/MC/Amex: tag 91 = ARPC (8) + ARC (2) solo si el ARQC validó y la respuesta es aprobada (M/Chip RI178.15 / RI209.15).
+    if(!validation?.ok||!approved||!window.OSCEmvCrypto) return null;
+    const arpc=OSCEmvCrypto.computeArpc(validation.key,validation.received,'3030');
+    if(state.lastArqc) state.lastArqc.arpc=arpc;
+    return {arpc,tlv:'910A'+arpc.arpc+arpc.arc};
+  }
+
+  /* rc.1.22 · Controles del emisor simulado: HSM (PIN) y validación del ARQC. Devuelve el código final. */
+  function issuerChecks(op,chosen=state.responseCode){
+    let code=chosen;
+    if(!op) return code;
+    op.issuerAuth=null; op.arqcValidation=null; op.issuerReason='';
+    if(state.paymentMethod==='qr'||isDomesticCard()||code==='TO'||code==='911') return code;
+    const net=op.network||profile().id, ok=net==='amex'?'000':'00';
+    const req=(state.messages||[]).find(m=>m.operationId===op.id&&m.direction==='SALIENTE'&&['0100','0200','1100'].includes(m.mti));
+    const fields=req?.fields||[];
+    if(fields.find(r=>r[0]==='52')){
+      const v=issuerVerifyPin();
+      if(v&&!v.match&&code===ok){code=net==='amex'?'117':'55';op.issuerReason='HSM: PIN incorrecto';}
+    }
+    const de55=fields.find(r=>r[0]==='55')?.[2];
+    if(de55){
+      const val=issuerValidateArqc(net,de55);
+      op.arqcValidation=val;
+      if(state.lastArqc) state.lastArqc.validation=val;
+      if(val&&!val.ok&&code===ok){code=net==='visa'?'82':net==='mastercard'?'88':'100';op.issuerReason='ARQC inválido';}
+      if(val&&net!=='amex') op.issuerAuth=issuerAuthenticationData(net,val,code===ok);
+    }
+    const ev=document.getElementById('posTechEvents');
+    if(ev){
+      const add=t=>{const d=document.createElement('div');d.textContent=new Date().toLocaleTimeString('es-AR')+' · '+t;ev.prepend(d);};
+      if(op.arqcValidation) add(op.arqcValidation.ok?`Emisor: ARQC ${op.arqcValidation.received} validado ✓${op.issuerAuth?' · ARPC '+op.issuerAuth.arpc.arpc:''}`:`Emisor: ARQC no coincide (recalculado ${op.arqcValidation.recomputed}) ✗`);
+      if(state.pinTrace?.hsm&&fields.find(r=>r[0]==='52')) add(state.pinTrace.hsm.match?'HSM del emisor: PIN verificado ✓':'HSM del emisor: PIN incorrecto ✗');
+    }
+    return code;
+  }
+
+  /* rc.1.22 · Cuotas (solo crédito) */
+  function installmentsActive(card=selectedCard()){
+    const product=(card?.product||'').toLowerCase();
+    return state.paymentMethod!=='qr'&&state.currentOperation==='purchase'&&!product.includes('débito')&&!product.includes('debito')&&!isDomesticCard()&&Number(state.installments?.count||1)>1;
+  }
+  function installmentPlanNow(amountCents){
+    if(!installmentsActive()||!window.OSCIsoSpec) return null;
+    return OSCIsoSpec.installmentPlan({totalCents:Number(amountCents||state.amountDigits||0),count:Number(state.installments.count),interest:state.installments.plan==='issuer'});
+  }
+  const profile = () => window.OSCNetworks ? OSCNetworks.resolve(state.network,state.pan) : {id:'visa',name:'Visa',short:'VISA'};
+  const field = (de,name,value,length,format,origin='POS') => [String(de),name,String(value),String(length),format,origin];
+
+  function amountField(amountDigits=state.amountDigits){
+    return field(4,'Transaction Amount',String(amountDigits||'0').padStart(12,'0'),'12','FIXED','Monto de la operación');
+  }
+
+
+  // Visa VSDC / Mastercard M/Chip educational BER-TLV data set.
+  function emvDateYYMMDD(){
+    const d=now();
+    return String(d.getFullYear()).slice(-2)+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0');
+  }
+  function networkEmvDe55({amountDigits=null,modeKey=null,networkId=null,aid=null,txnType='00'}={}){
+    const net=networkId||profile().id;
+    const mode=modeKey||state.entryMode;
+    const cardAid=aid||selectedCard().aid||(net==='mastercard'?'A0000000041010':'A0000000031010');
+    const amt=String(amountDigits??state.amountDigits??'0').padStart(12,'0').slice(-12);
+    const cvm=mode==='contactless'?'1F0302':(entryModes[mode]?.hasPin?'020300':'1E0300');
+    const iad=net==='mastercard'?'0110A00003220000000000000000000000':'06010A03A0B800';
+    // rc.1.22: el ARQC (9F26) se calcula de verdad con la clave de práctica de la tarjeta (ver js/emv-crypto.js).
+    const {un,atc}=emvSession();
+    const date=emvDateYYMMDD();
+    let arqc='A1B2C3D4E5F60708';
+    if(window.OSCEmvCrypto){
+      const r=OSCEmvCrypto.computeArqc({pan:state.pan,psn:'00',atc,scheme:arqcSchemeFor(net),tags:{'9F02':amt,'9F03':'000000000000','9F1A':'0032','95':'0000000000','5F2A':'0032','9A':date,'9C':txnType,'9F37':un,'82':'1800',cvr:cvrFromIad(net,iad)}});
+      arqc=r.arqc;
+      if(txnType==='00') state.lastArqc={...r,pan:state.pan,psn:'00',atc,network:net};
+    }
+    // "Alterar un dato en tránsito": el importe cambia DESPUÉS de que la tarjeta firmó.
+    const sentAmt=state.tamperInTransit&&txnType==='00'?String(Number(amt)+100000).padStart(12,'0').slice(-12):amt;
+    const tags=[
+      ['9F26','08',arqc],['9F27','01','80'],
+      ['9F10',(iad.length/2).toString(16).toUpperCase().padStart(2,'0'),iad],['9F37','04',un], // longitud TLV en hexadecimal (rc.1.22)
+      ['9F36','02',atc],['95','05','0000000000'],['9A','03',date],
+      ['9F02','06',sentAmt],['9C','01',txnType],['5F2A','02','0032'],['82','02','1800'],
+      ['9F1A','02','0032'],['9F34','03',cvm],
+      ['84',(cardAid.length/2).toString(16).toUpperCase().padStart(2,'0'),cardAid],
+      ['9F33','03','E0F8C8'],['9F35','01','22'],['5F34','01','00']
+    ];
+    const tlv=tags.map(([t,l,v])=>t+l+v).join('');
+    return net==='visa'?visaDataset01(tlv):tlv;
+  }
+  function posMessageProfile(card=selectedCard()){
+    if(profile().id==='amex') return {request:'1100',response:'1110',family:'AMEX'};
+    const product=(card?.product||'').toLowerCase();
+    const debit=product.includes('débito')||product.includes('debito');
+    return debit
+      ? {request:'0200',response:'0210',reversal:'0420',reversalResponse:'0430',family:'SMS/FULL-FINANCIAL'}
+      : {request:'0100',response:'0110',reversal:'0400',reversalResponse:'0410',family:'DMS/AUTHORIZATION'};
+  }
+
+  function entryFields(){
+    const mode=entryModes[state.entryMode]||entryModes.chip;
+    const rows=[
+      field(2,'Primary Account Number (PAN)',state.pan,String(state.pan.length),'LLVAR',state.paymentMethod==='qr'?'Credencial/token de la wallet':'Tarjeta'),
+      field(3,'Processing Code','000000','6','FIXED',state.paymentMethod==='qr'?'Wallet / procesador adquirente':'Aplicación POS'),
+      amountField(),
+      field(14,'Expiration Date',selectedCard().expiry,'4','FIXED',state.paymentMethod==='qr'?'Credencial asociada':'Tarjeta'),
+      field(22,'Point of Service Entry Mode',de22For(state.paymentMethod==='qr'?'010':mode.de22,profile().id),de22Len(profile().id),'FIXED',state.paymentMethod==='qr'?'QR educativo / wallet':mode.label),
+      field(25,'Point of Service Condition Code','00','2','FIXED',state.paymentMethod==='qr'?'Procesador adquirente':'Aplicación POS'),
+      field(41,'Terminal ID','TERMID01','8','FIXED','Configuración terminal'),
+      field(42,'Merchant ID','MERCHANT01     ','15','FIXED','Configuración comercio'),
+      field(49,'Transaction Currency Code','032','3','FIXED','Configuración comercio')
+    ];
+    if(state.paymentMethod!=='qr' && mode.hasDE35) rows.push(field(35,'Track 2 Data',selectedCard().track2,String(selectedCard().track2.length),'LLVAR',mode.de35Origin));
+    if(state.paymentMethod!=='qr' && mode.hasDE55){const v=networkEmvDe55({modeKey:state.entryMode,networkId:profile().id,aid:selectedCard().aid});rows.push(field(55,'ICC Data (EMV)',v,String(v.length/2)+' bytes','LLLVAR',`${mode.label} · BER-TLV completo`));}
+    if(state.paymentMethod==='qr') rows.push(field(48,'Additional Data - QR',`QR|${selectedQr().mode}|${profile().name}`,'Variable','LLLVAR','Wallet / procesador QR'));
+    return rows;
+  }
+
+  function purchaseRequestFields(){
+    const mode=entryModes[state.entryMode]||entryModes.chip;
+    const rows=entryFields();
+    rows.splice(3,0,
+      field(7,'Transmission Date & Time',de7Now(),'10','FIXED','Reloj del sistema'),
+      field(11,'System Trace Audit Number (STAN)',state.currentStan,'6','FIXED',state.paymentMethod==='qr'?'Generado por el adquirente/procesador':'Generado por el POS')
+    );
+    if(state.paymentMethod!=='qr' && mode.hasPin){
+      rows.push(field(52,'PIN Data (Encrypted PIN Block)',state.pinBlock||'—','8 bytes','B64','PIN Block ISO formato 0 cifrado con 3DES (ZPK de práctica)'));
+      rows.push(field(53,'Security-Related Control Information',de53For(profile().id),'16','FIXED',de53Origin(profile().id)));
+    }
+    return withNetworkRequestFields(rows);
+  }
+
+  /* rc.1.22 · Completa los campos obligatorios de cada red según su manual (ver js/iso-network-spec.js). */
+  function withNetworkRequestFields(rows){
+    const spec=window.OSCIsoSpec, net=profile().id;
+    if(!spec||state.paymentMethod==='qr'||isDomesticCard()) return rows.sort((a,b)=>Number(a[0])-Number(b[0]));
+    const mode=entryModes[state.entryMode]||entryModes.chip;
+    const chip=['chip','contactless'].includes(state.entryMode);
+    const plan=installmentPlanNow();
+    const isCredit=posMessageProfile().request==='0100';
+    if(net==='visa'){
+      const add=spec.visaRequestAdditions({stan:state.currentStan,channel:'card'});
+      if(chip) add.push(spec.row(23,'Card Sequence Number','000','3','FIXED','PAN Sequence Number del chip (5F34) · Visa Tabla 289: C'));
+      if(plan){add.push(spec.visaInstallmentF104(plan));add.push(spec.visaInstallment126());}
+      return spec.merge(rows,add);
+    }
+    // Mastercard débito viaja por MDS (0200): el MDS no usa el DE 53 (MDS Online Specifications, DE 53).
+    if(net==='mastercard'&&!isCredit) return spec.merge(rows,[],[53]);
+    if(net==='mastercard'&&isCredit){
+      // Mastercard no usa DE 25: lo reemplaza el DE 61 (CIS, DE 61).
+      const add=spec.mcRequestAdditions({stan:state.currentStan,channel:'card',chip:chip&&mode.hasDE55,installments:plan});
+      return spec.merge(rows,add,[25]);
+    }
+    return rows.sort((a,b)=>Number(a[0])-Number(b[0]));
+  }
+
+  function purchaseResponseFields(code, operation){
+    const rows=[
+      field(2,'Primary Account Number (PAN)',state.pan,'16','LLVAR','Eco de solicitud'),
+      field(3,'Processing Code','000000','6','FIXED','Eco de solicitud'),
+      amountField(operation.amountDigits),
+      field(7,'Transmission Date & Time',de7Now(),'10','FIXED','Host'),
+      field(11,'System Trace Audit Number (STAN)',operation.stan,'6','FIXED','Eco de solicitud'),
+      field(37,'Retrieval Reference Number',operation.rrn,'12','FIXED','Host'),
+      field(39,'Response Code',code,'2','FIXED','Host emisor'),
+      field(41,'Terminal ID','TERMID01','8','FIXED','Eco de solicitud'),
+      field(42,'Merchant ID','MERCHANT01     ','15','FIXED','Eco de solicitud'),
+      field(49,'Transaction Currency Code','032','3','FIXED','Eco de solicitud')
+    ];
+    if(code==='00') rows.splice(6,0,field(38,'Authorization Identification Response',operation.auth,'6','FIXED','Host emisor'));
+    return withNetworkResponseFields(rows,code,operation);
+  }
+
+  /* rc.1.22 · Respuesta: ecos obligatorios por red, tag 91 (ARPC) y datos de cuotas. */
+  function withNetworkResponseFields(rows,code,operation){
+    const spec=window.OSCIsoSpec, net=operation.network||profile().id;
+    const req=(state.messages||[]).find(m=>m.operationId===operation.id&&m.direction==='SALIENTE')?.fields||[];
+    let out=rows;
+    if(spec&&state.paymentMethod!=='qr'&&!isDomesticCard()){
+      if(net==='visa'){
+        const add=spec.visaResponseAdditions({request:req});
+        const f104=req.find(r=>r[0]==='104');
+        if(f104){const c=f104.slice();c[5]='Dataset 5D devuelto al adquirente (Visa: "Acquirers that submit this field in the request message receive it in the response")';add.push(c);}
+        out=spec.merge(rows,add);
+      }else if(net==='mastercard'&&(operation.requestMti||'0100')==='0100'){
+        out=spec.merge(rows,spec.mcResponseAdditions({request:req,installments:operation.installments||null}),[42]);
+      }
+    }
+    if(operation.issuerAuth?.tlv){
+      const v=net==='visa'?'01'+(operation.issuerAuth.tlv.length/2).toString(16).padStart(4,'0').toUpperCase()+operation.issuerAuth.tlv:operation.issuerAuth.tlv;
+      out=(spec?spec.merge(out,[field(55,'ICC Data · Issuer Authentication Data (tag 91)',v,String(v.length/2)+' bytes','LLLVAR','ARPC Método 1 + ARC 3030 · el emisor validó el ARQC')]):out);
+    }
+    return out.sort((a,b)=>Number(a[0])-Number(b[0]));
+  }
+
+  function originalDataElements(source, originalMti=null){
+    originalMti=originalMti||source.requestMti||source.mtiRequest||'0200';
+    return `${originalMti}${source.stan}${source.de7}${String(source.acquirerId||'12345678901').padStart(11,'0')}`.padEnd(42,'0').slice(0,42);
+  }
+
+  function reversalRequestFields(source){
+    const rows=[
+      field(2,'Primary Account Number (PAN)',state.pan,'16','LLVAR','Operación original'),
+      field(3,'Processing Code','000000','6','FIXED','Operación original'),
+      amountField(source.amountDigits),
+      field(7,'Transmission Date & Time',de7Now(),'10','FIXED','Reloj del sistema'),
+      field(11,'System Trace Audit Number (STAN)',state.currentStan,'6','FIXED','Nueva reversa'),
+      field(37,'Retrieval Reference Number',source.rrn,'12','FIXED','Operación original'),
+      field(41,'Terminal ID','TERMID01','8','FIXED','Configuración terminal'),
+      field(42,'Merchant ID','MERCHANT01     ','15','FIXED','Configuración comercio'),
+      field(49,'Transaction Currency Code','032','3','FIXED','Operación original'),
+      field(90,'Original Data Elements',originalDataElements(source),'42','FIXED','Relación con 0200 original')
+    ];
+    return withVisaEntryMode(rows,source);
+  }
+
+  // Visa Field 22: obligatorio en las reversas 0400/0420 con el mismo valor del mensaje original; no se devuelve en respuestas.
+  function withVisaEntryMode(rows,source){
+    if((source.network||profile().id)!=='visa') return rows;
+    const mode=entryModes[source.entryMode]||entryModes[state.entryMode]||entryModes.chip;
+    rows.push(field(22,'Point of Service Entry Mode',de22For(mode.de22,'visa'),de22Len('visa'),'FIXED','Eco de la operación original'));
+    return rows.sort((a,b)=>Number(a[0])-Number(b[0]));
+  }
+
+  function reversalResponseFields(source, code){
+    const rows=reversalRequestFields(source).filter(r=>!['90','22'].includes(r[0]));
+    rows.push(field(39,'Response Code',code,'2','FIXED','Host'));
+    return rows.sort((a,b)=>Number(a[0])-Number(b[0]));
+  }
+
+
+  function amexOriginalDataElements(source){
+    const ain=String(source.acquirerId||'12345678901').padStart(11,'0').slice(-11);
+    return `1100${source.stan||'000000'}${source.amexLocalDateTime||source.localDateTime||amexLocalDateTime()}${ain}`.slice(0,35);
+  }
+
+  function amex1420Fields(source,{reason='4000',processingCode='024000'}={}){
+    const originalAmount=String(source.amountCents||0).padStart(12,'0');
+    const tid=source.amexTid||'';
+    return [
+      field(2,'Primary Account Number (PAN)',source.pan||state.pan,String((source.pan||state.pan||'').length),'LLVAR','Original transaction'),
+      field(3,'Processing Code',processingCode,'6','FIXED',processingCode==='024000'?'S/E Initiated Reversal':'System Generated Reversal'),
+      field(4,'Amount, Transaction',originalAmount,'12','FIXED','Original authorized amount'),
+      field(11,'Systems Trace Audit Number',state.currentStan,'6','FIXED','Reversal STAN'),
+      field(12,'Date and Time, Local Transaction',amexLocalDateTime(),'12','FIXED','Reversal local date/time'),
+      field(24,'Function Code','400','3','FIXED','Full Reversal / Void'),
+      field(25,'Message Reason Code',reason,'4','FIXED',reason==='4000'?'Customer cancellation':reason==='4006'?'Response received too late':'Reversal reason'),
+      ...(tid?[field(31,'Acquirer Reference Data, Transaction Identifier (TID)',tid,String(tid.length),'LLVAR','Echo TID from 1110')]:[]),
+      field(32,'Acquiring Institution Identification (AIN) Code',source.acquirerId||'12345678901',String((source.acquirerId||'12345678901').length),'LLVAR','Acquirer'),
+      field(37,'Acquirer Reference Number (ARN)',source.rrn||'','12','FIXED','Original correlation'),
+      ...(source.auth?[field(38,'Approval Code',source.auth,'6','FIXED','Original approval')]:[]),
+      field(42,'Card Acceptor Identification Code','1234567890     ','15','FIXED','Original S/E'),
+      field(49,'Currency Code, Transaction','032','3','FIXED','ARS'),
+      field(56,'Original Data Elements',amexOriginalDataElements(source),String(amexOriginalDataElements(source).length),'LLVAR','Original 1100 data')
+    ].sort((a,b)=>Number(a[0])-Number(b[0]));
+  }
+
+  function amex1430Fields(source,reversalOp){
+    const req=(state.messages||[]).find(m=>m.operationId===reversalOp.id && m.mti==='1420');
+    const reqFields=req?.fields||[];
+    const get=(de,fb='')=>reqFields.find(r=>String(r[0])===String(de))?.[2]??fb;
+    const tid=get(31,source.amexTid||'');
+    return [
+      field(2,'Primary Account Number (PAN)',get(2,source.pan||state.pan),String(get(2,source.pan||state.pan).length),'LLVAR','Mandatory echo'),
+      field(3,'Processing Code',get(3,'024000'),'6','FIXED','Mandatory echo'),
+      field(4,'Amount, Transaction',get(4,String(source.amountCents||0).padStart(12,'0')),'12','FIXED','Mandatory echo'),
+      field(11,'Systems Trace Audit Number',get(11,reversalOp.stan),'6','FIXED','Mandatory echo'),
+      field(12,'Date and Time, Local Transaction',get(12,amexLocalDateTime()),'12','FIXED','Mandatory echo'),
+      ...(tid?[field(31,'Acquirer Reference Data, Transaction Identifier (TID)',tid,String(tid.length),'LLVAR','Echo TID')]:[]),
+      field(32,'Acquiring Institution Identification (AIN) Code',get(32,'12345678901'),String(get(32,'12345678901').length),'LLVAR','Echo'),
+      field(37,'Acquirer Reference Number (ARN)',get(37,source.rrn||''),'12','FIXED','Echo'),
+      field(39,'Action Code','400','3','FIXED','Reversal Accepted'),
+      field(42,'Card Acceptor Identification Code',get(42,'1234567890     '),'15','FIXED','Echo'),
+      field(49,'Currency Code, Transaction',get(49,'032'),'3','FIXED','Echo')
+    ].sort((a,b)=>Number(a[0])-Number(b[0]));
+  }
+
+  function runAmexVoid1420(source){
+    state.currentOperation='void'; state.currentStan=random6();
+    const op=createOperation('void',source);
+    op.rrn=source.rrn; op.auth=source.auth; op.amexTid=source.amexTid; op.network='amex';
+    screen('ANULACIÓN AMEX','<small>POS Authorization Reversal Advice</small><strong>1420</strong><span>Enviando reversa S/E iniciada</span>');
+    const req=amex1420Fields(source,{reason:'4000',processingCode:'024000'});
+    addMessage({id:`MSG-${Date.now()}-1420`,operationId:op.id,mti:'1420',operation:'ANULACIÓN',direction:'SALIENTE',dateTime:dateTimeNow(),responseCode:'',fields:req,bitmap:bitmapHex(req),amountCents:op.amountCents,stan:op.stan,batch:op.batch});
+    setTimeout(()=>{
+      const res=amex1430Fields(source,op);
+      op.status='APROBADA'; op.responseCode='400'; source.status='ANULADA';
+      addMessage({id:`MSG-${Date.now()}-1430`,operationId:op.id,mti:'1430',operation:'ANULACIÓN',direction:'ENTRANTE',dateTime:dateTimeNow(),responseCode:'400',fields:res,bitmap:bitmapHex(res),amountCents:op.amountCents,stan:op.stan,batch:op.batch});
+      persistSwitchTransaction(op); persistSwitchTransaction(source);
+      renderMessage(state.messages[0]);
+      screen('ANULACIÓN ACEPTADA','<small>AMEX · 1430</small><strong>400</strong><span>Reversal Accepted · la compra original no debe ir a settlement</span>');
+      printReceipt(op); refreshHistoryStatuses(); state.step='done';
+    },850);
+  }
+
+  function refundRequestFields(source,refundCents){
+    const digits=String(Math.round(refundCents||0)).padStart(12,'0');
+    const mode=entryModes[source.entryMode]||entryModes[state.entryMode]||entryModes.chip;
+    const rows=[
+      field(2,'Primary Account Number (PAN)',source.pan||state.pan,'16','LLVAR','Compra original'),
+      field(3,'Processing Code','200000','6','FIXED','Purchase Return / Refund'),
+      field(4,'Transaction Amount',digits,'12','FIXED','Importe de devolución'),
+      field(7,'Transmission Date & Time',de7Now(),'10','FIXED','Reloj del sistema'),
+      field(11,'System Trace Audit Number (STAN)',state.currentStan,'6','FIXED','Nueva devolución'),
+      field(22,'Point of Service Entry Mode',de22For(mode.de22,(source.network||profile().id)),de22Len(source.network||profile().id),'FIXED','Entorno de devolución'),
+      field(37,'Retrieval Reference Number',source.rrn,'12','FIXED','Referencia compra original'),
+      field(41,'Terminal ID','TERMID01','8','FIXED','Configuración terminal'),
+      field(42,'Merchant ID','MERCHANT01     ','15','FIXED','Configuración comercio'),
+      field(49,'Transaction Currency Code','032','3','FIXED','Moneda')
+    ];
+    if(mode.hasDE55){const v=networkEmvDe55({amountDigits:digits,modeKey:source.entryMode||state.entryMode,networkId:(source.network||profile().id),aid:(TEST_CARDS[source.cardId]?.aid||selectedCard().aid),txnType:'20'});rows.push(field(55,'ICC Data (EMV)',v,String(v.length/2)+' bytes','LLLVAR','Refund · BER-TLV'));}
+    return rows.sort((a,b)=>Number(a[0])-Number(b[0]));
+  }
+
+  function refundResponseFields(source,refundCents,code,auth){
+    const rows=refundRequestFields(source,refundCents).filter(r=>!['55'].includes(r[0]));
+    if(code==='00') rows.push(field(38,'Authorization Identification Response',auth,'6','FIXED','Host'));
+    rows.push(field(39,'Response Code',code,'2','FIXED','Host'));
+    return rows.sort((a,b)=>Number(a[0])-Number(b[0]));
+  }
+
+  // American Express Authorization on Credit / Refund.
+  // Network Specifications - Authorization + Codes Reference Guide (Oct 2023).
+  // MTI 1100/1110, Processing Code 204000 (Credit/Refund).
+  function amexRefund1100Fields(source,refundCents){
+    const mode=entryModes[source.entryMode]||entryModes[state.entryMode]||entryModes.chip;
+    const pan=source.pan||state.pan;
+    const card=TEST_CARDS[source.cardId]||selectedCard();
+    const amount=String(Math.round(refundCents||0)).padStart(12,'0');
+    const rows=[
+      field(2,'Primary Account Number (PAN)',pan,String(pan.length),'LLVAR','Cuenta usada en el Charge original'),
+      field(3,'Processing Code','204000','6','FIXED','AMEX Credit / Refund'),
+      field(4,'Amount, Transaction',amount,'12','FIXED','Importe del crédito'),
+      field(7,'Date and Time, Transmission',de7Now(),'10','FIXED','Transmisión adquirente'),
+      field(11,'Systems Trace Audit Number',state.currentStan,'6','FIXED','Nuevo STAN del refund'),
+      field(12,'Date and Time, Local Transaction',amexLocalDateTime(),'12','FIXED','YYMMDDhhmmss'),
+      field(14,'Card Expiration Date',card?.expiry||'2912','4','FIXED','Tarjeta original'),
+      field(19,'Country Code, Acquiring Institution','032','3','FIXED','Argentina · perfil simulador'),
+      field(22,'Point of Service Data Code',amexPosDataCode(source.entryMode||state.entryMode),'12','FIXED','AMEX GNS · 12 posiciones'),
+      field(24,'Function Code','100','3','FIXED','Original authorization · amount accurate'),
+      field(26,'Card Acceptor Business Code','5812','4','FIXED','MCC del comercio'),
+      field(32,'Acquiring Institution Identification (AIN) Code',source.acquirerId||'12345678901','11','LLVAR','Adquirente'),
+      field(37,'Acquirer Reference Number (ARN)',`${state.currentStan}${String(Date.now()).slice(-6)}`.slice(0,12),'12','FIXED','Nueva referencia del crédito'),
+      field(41,'Card Acceptor Terminal Identification','TERMID01','8','FIXED','Terminal POS'),
+      field(42,'Card Acceptor Identification Code','1234567890     ','15','FIXED','S/E original'),
+      field(49,'Currency Code, Transaction','032','3','FIXED','Misma moneda del Charge')
+    ];
+    if(mode.hasDE35 && card?.track2){
+      rows.push(field(35,'Track 2 Data',card.track2,String(card.track2.length),'LLVAR','Tarjeta presentada'));
+    }
+    if(mode.hasDE55 && ['chip','contactless'].includes(source.entryMode||state.entryMode)){
+      const savedMode=state.entryMode;
+      state.entryMode=source.entryMode||state.entryMode;
+      const icc=amexBit55(state.entryMode);
+      rows.push(field(55,'ICC System Related Data',icc,String(icc.length/2)+' bytes','LLLVAR',amexBit55Description(state.entryMode)));
+      state.entryMode=savedMode;
+    }
+    return rows.sort((a,b)=>Number(a[0])-Number(b[0]));
+  }
+
+  function amexRefund1110Fields(refundOp, action=AMEX_ACTION_CODES.approved){
+    const req=(state.messages||[]).find(m=>m.operationId===refundOp.id && m.mti==='1100');
+    const reqFields=req?.fields||[];
+    const get=(de,fb='')=>reqFields.find(r=>String(r[0])===String(de))?.[2]??fb;
+    const tid=refundOp.amexTid || (refundOp.amexTid=makeAmexTid());
+    const rows=[
+      field(2,'Primary Account Number (PAN)',get(2,refundOp.pan||state.pan),String(get(2,refundOp.pan||state.pan).length),'LLVAR','Echo'),
+      field(3,'Processing Code',get(3,'204000'),'6','FIXED','Credit / Refund'),
+      field(4,'Amount, Transaction',get(4,String(refundOp.amountCents||0).padStart(12,'0')),'12','FIXED','Echo'),
+      field(7,'Date and Time, Transmission',get(7,de7Now()),'10','FIXED','Echo'),
+      field(11,'Systems Trace Audit Number',get(11,refundOp.stan),'6','FIXED','Echo'),
+      field(12,'Date and Time, Local Transaction',get(12,amexLocalDateTime()),'12','FIXED','Echo'),
+      field(24,'Function Code',get(24,'100'),'3','FIXED','Echo'),
+      field(31,'Acquirer Reference Data, Transaction Identifier (TID)',tid,String(tid.length),'LLVAR','Generado para el ciclo AMEX'),
+      field(32,'Acquiring Institution Identification (AIN) Code',get(32,'12345678901'),'11','LLVAR','Echo'),
+      field(37,'Acquirer Reference Number (ARN)',get(37,refundOp.rrn||''),'12','FIXED','Correlación'),
+      field(39,'Action Code',action.code,'3','FIXED',action.label),
+      field(41,'Card Acceptor Terminal Identification',get(41,'TERMID01'),'8','FIXED','Echo'),
+      field(42,'Card Acceptor Identification Code',get(42,'1234567890     '),'15','FIXED','Echo'),
+      field(49,'Currency Code, Transaction',get(49,'032'),'3','FIXED','Echo')
+    ];
+    if(action.code==='000'){
+      const approval=refundOp.auth || (refundOp.auth=random6());
+      rows.push(field(38,'Approval Code',approval,'6','FIXED','Approval del crédito'));
+    }
+    return rows.sort((a,b)=>Number(a[0])-Number(b[0]));
+  }
+
+  function voidRequestFields(source){
+    return [
+      field(2,'Primary Account Number (PAN)',state.pan,'16','LLVAR','Operación original'),
+      field(3,'Processing Code','020000','6','FIXED','Anulación'),
+      amountField(source.amountDigits),
+      field(7,'Transmission Date & Time',de7Now(),'10','FIXED','Reloj del sistema'),
+      field(11,'System Trace Audit Number (STAN)',state.currentStan,'6','FIXED','Nueva anulación'),
+      field(37,'Retrieval Reference Number',source.rrn,'12','FIXED','Operación original'),
+      field(38,'Authorization Identification Response',source.auth,'6','FIXED','Autorización original'),
+      field(41,'Terminal ID','TERMID01','8','FIXED','Configuración terminal'),
+      field(42,'Merchant ID','MERCHANT01     ','15','FIXED','Configuración comercio'),
+      field(49,'Transaction Currency Code','032','3','FIXED','Operación original'),
+      field(90,'Original Data Elements',originalDataElements(source),'42','FIXED','Relación con 0200 original')
+    ];
+  }
+
+  function voidResponseFields(source,code){
+    const rows=voidRequestFields(source).filter(r=>r[0]!=='90');
+    rows.push(field(39,'Response Code',code,'2','FIXED','Host'));
+    return rows.sort((a,b)=>Number(a[0])-Number(b[0]));
+  }
+
+  function batchRequestFields(summary){
+    return [
+      field(3,'Processing Code','920000','6','FIXED','Cierre de lote'),
+      field(7,'Transmission Date & Time',de7Now(),'10','FIXED','Reloj del sistema'),
+      field(11,'System Trace Audit Number (STAN)',state.currentStan,'6','FIXED','Generado por el POS'),
+      field(41,'Terminal ID','TERMID01','8','FIXED','Configuración terminal'),
+      field(42,'Merchant ID','MERCHANT01     ','15','FIXED','Configuración comercio'),
+      field(48,'Additional Data - Private',`BATCH=${state.batchNumber};COUNT=${summary.approvedCount};TOTAL=${summary.netCents}`,'Variable','LLLVAR','Totales de lote'),
+      field(60,'Additional POS Information (didáctico: número de lote)',String(state.batchNumber).padStart(6,'0'),'Variable','LLLVAR','Número de lote')
+    ];
+  }
+
+  function batchResponseFields(summary,code){
+    return [
+      field(3,'Processing Code','920000','6','FIXED','Eco de solicitud'),
+      field(7,'Transmission Date & Time',de7Now(),'10','FIXED','Host'),
+      field(11,'System Trace Audit Number (STAN)',state.currentStan,'6','FIXED','Eco de solicitud'),
+      profile().id==='amex'?field(39,'Action Code','000','3','FIXED','Host · AMEX Action Code (3 dígitos)'):field(39,'Response Code',code,'2','FIXED','Host'),
+      field(41,'Terminal ID','TERMID01','8','FIXED','Eco de solicitud'),
+      field(48,'Additional Data - Private',`BATCH=${state.batchNumber};STATUS=CLOSED;NET=${summary.netCents}`,'Variable','LLLVAR','Confirmación de cierre'),
+      field(60,'Additional POS Information (didáctico: número de lote)',String(state.batchNumber).padStart(6,'0'),'Variable','LLLVAR','Número de lote')
+    ];
+  }
+
+  function activeBits(fields){return new Set(fields.map(r=>Number(r[0])))}
+  function bitmapHex(fields){
+    document.querySelectorAll('#deTable .de-learning-row').forEach(row=>{if(row.dataset.eduBound)return;row.dataset.eduBound='1';row.addEventListener('click',e=>{if(e.target.closest('.osc-de-help'))return;openFieldLearning(row.dataset.de)})});
+    const bits=activeBits(fields);
+    const hasSecondary=[...bits].some(bit=>bit>64);
+    if(hasSecondary) bits.add(1);
+    const limit=hasSecondary?128:64;
+    let binary='';
+    for(let i=1;i<=limit;i++) binary+=bits.has(i)?'1':'0';
+    return binary.match(/.{4}/g).map(n=>parseInt(n,2).toString(16).toUpperCase()).join('');
+  }
+
+
+  function bitmapBitsHtml(fields,startBit=1,count=64){
+    const bits=activeBits(fields);
+    if([...bits].some(bit=>bit>64)) bits.add(1);
+    return Array.from({length:count},(_,index)=>{
+      const bit=startBit+index;
+      return `<i data-bit="${bit}" class="${bits.has(bit)?'on':''}" title="Bit ${bit}${bits.has(bit)?' presente':' ausente'}"></i>`;
+    }).join('');
+  }
+
+  function fieldsLabel(fields){
+    if(!fields?.length)return 'Sin campos';
+    return fields.map(row=>`DE${row[0]}`).join(' · ');
+  }
+
+  function latestMessage(mti){
+    return state.messages.find(message=>message.mti===mti);
+  }
+
+  function updateDualBitmaps(forceBlank=false){
+    // Al entrar al POS se restaura el historial, pero NO debe seleccionarse
+    // automáticamente la última trama. La pantalla técnica arranca apagada,
+    // igual que ATM, hasta que el alumno genere o seleccione un mensaje.
+    const selected=state.messages.find(item=>item.id===state.selectedMessageId);
+    const message=forceBlank ? null : (selected || (state.step==='amount' ? null : state.messages[0]));
+    const fields=message?.fields||[];
+    const hasSecondary=fields.some(row=>Number(row[0])>64);
+    const primaryHex=message?.bitmap?.slice(0,16)||'0000000000000000';
+    const secondaryHex=hasSecondary?(message?.bitmap?.slice(16,32)||'0000000000000000'):'0000000000000000';
+    const primary=document.getElementById('selectedBitmapPrimaryBits');
+    if(primary) primary.innerHTML=bitmapBitsHtml(fields,1,64);
+    const secondary=document.getElementById('selectedBitmapSecondaryBits');
+    if(secondary) secondary.innerHTML=bitmapBitsHtml(fields,65,64);
+    const wrap=document.getElementById('selectedBitmapSecondaryWrap');
+    if(wrap) wrap.classList.add('hidden');
+    const pHex=document.getElementById('selectedBitmapPrimaryHex');
+    if(pHex) pHex.textContent=primaryHex;
+    const sHex=document.getElementById('selectedBitmapSecondaryHex');
+    if(sHex) sHex.textContent=secondaryHex;
+    const label=document.getElementById('selectedBitmapFields');
+    if(label) label.textContent=message?`${message.mti} · ${fields.length} campos presentes`:'Sin mensaje seleccionado';
+  }
+
+  function highlightDataElement(de){
+    document.querySelectorAll('#deTable tr').forEach(row=>{
+      row.classList.toggle('de-highlight',row.firstElementChild?.textContent===String(de));
+    });
+    document.querySelectorAll('.ticket-link').forEach(el=>el.classList.toggle('active',el.dataset.de===String(de)));
+    const row=[...document.querySelectorAll('#deTable tr')].find(item=>item.firstElementChild?.textContent===String(de));
+    row?.scrollIntoView({behavior:'smooth',block:'nearest'});
+  }
+
+  function ticketHtml(op){
+    const source=op.sourceOperationId?state.operations.find(item=>item.id===op.sourceOperationId):null;
+    const mode=entryModes[op.entryMode||state.entryMode]||entryModes.chip;
+    const status=op.status==='APROBADA'?'APROBADO':op.status;
+    const date=new Date(op.createdAt||Date.now());
+    const card=TEST_CARDS[op.cardId]||selectedCard();
+    const p=window.OSCNetworks?OSCNetworks.profiles[op.network]||profile():profile();
+    const isQr=op.paymentMethod==='qr';
+    const paymentLabel=isQr?(QR_PROFILES[op.qrType]?.label||'QR'):`${card.label}`;
+    const readingLabel=isQr?'QR · WALLET':mode.label.toUpperCase();
+    const aid=isQr?'NO APLICA':(mode.hasDE55?card.aid:'NO APLICA');
+    const selectedMessage=state.messages.find(m=>m.operationId===op.id && m.mti===(op.responseMti||'0210'))||state.messages.find(m=>m.operationId===op.id);
+    const isoRows=(selectedMessage?.fields||[]).filter(r=>['2','3','4','7','11','14','22','35','37','38','39','48','55','104','112'].includes(String(r[0])));
+    const inst=op.installments;
+    const installmentsLine=inst?`${inst.count} x ${formatCents(inst.installmentCents)}${inst.interest?` · TOTAL FINANCIADO ${formatCents(inst.financedCents)} · CON INTERÉS (${String(inst.rate).replace('.',',')}% MENSUAL)`:' · SIN INTERÉS'}`:`1 x ${formatCents(op.amountCents)}`;
+    const isoBlock=state.showIsoTicket?`<div class="ticket-iso"><strong>INFORMACIÓN ISO8583</strong>${selectedMessage?`<div><span>MTI</span><b>${selectedMessage.mti}</b></div>`:''}${isoRows.map(r=>`<div><span>DE${r[0]}</span><b>${r[0]==='2'?String(r[2]).replace(/.(?=.{4})/g,'•'):r[2]}</b></div>`).join('')}</div>`:'';
+    const brandClass=isQr?'qr':p.id;
+    const brandMain=isQr?'QR':p.short;
+    const brandSub=isQr?paymentLabel:p.name;
+    const operationLabel=op.type==='purchase'?(card.product==='Débito'?'COMPRA DÉBITO':'COMPRA CRÉDITO'):(operationLabels[op.type]||'OPERACIÓN');
+    return `
+      <div class="ticket-network ticket-network-${brandClass}"><span>${brandMain}</span><small>${brandSub}</small></div>
+      <div class="ticket-merchant">
+        <strong>LA PERLA COFFEE</strong>
+        <span>CUIT: 30-23566776-5</span>
+        <span>Olazábal 3020</span>
+        <span>Recoleta · Capital Federal · Argentina</span>
+      </div>
+      <div class="ticket-separator"></div>
+      <div class="ticket-kv"><span>FECHA</span><b>${date.toLocaleDateString('es-AR')}</b></div>
+      <div class="ticket-kv"><span>HORA</span><b>${date.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}</b></div>
+      <div class="ticket-kv"><span>TICKET N°</span><b>${String(date.getTime()).slice(-6)}</b></div>
+      <div class="ticket-kv"><span>TERMINAL</span><b>TERMID01</b></div>
+      <div class="ticket-kv"><span>LOTE</span><b>${String(op.batch).padStart(4,'0')}</b></div>
+      <div class="ticket-separator"></div>
+      <div class="ticket-operation">${operationLabel}</div>
+      <div class="ticket-box">
+        <div class="ticket-total"><strong>Total</strong><b class="ticket-link" data-de="4">${formatCents(op.amountCents)}</b></div>
+        <div class="ticket-installments">Cuotas <span>(${installmentsLine})</span></div>
+        <div class="ticket-status ticket-link" data-de="39">${status}</div>
+      </div>
+      <div class="ticket-card-block">
+        <strong>${paymentLabel.toUpperCase()}</strong>
+        <b>•••• •••• •••• ${String(op.pan||card.pan).slice(-4)}</b>
+      </div>
+      <div class="ticket-kv"><span>MODO DE LECTURA</span><b>${readingLabel}</b></div>
+      <div class="ticket-kv"><span>AID</span><b>${aid}</b></div>
+      <div class="ticket-kv"><span>TVR</span><b>${isQr?'NO APLICA':'0000000000'}</b></div>
+      <div class="ticket-kv"><span>TSI</span><b>${isQr?'NO APLICA':'E800'}</b></div>
+      <div class="ticket-kv"><span>CVM</span><b>${isQr?'WALLET':'1A0300'}</b></div>
+      <div class="ticket-separator"></div>
+      <div class="ticket-auth"><span>Autorización</span><b class="ticket-link" data-de="38">${op.auth||'—'}</b></div>
+      <div class="ticket-auth"><span>STAN</span><b class="ticket-link" data-de="11">${op.stan||'—'}</b></div>
+      <div class="ticket-auth"><span>RRN</span><b class="ticket-link" data-de="37">${op.rrn||'—'}</b></div>
+      ${source?`<div class="ticket-auth"><span>Original</span><b>${source.stan}</b></div>`:''}
+      <div class="ticket-thanks"><strong>¡GRACIAS!</strong><span>CONSERVE ESTE COMPROBANTE</span></div>
+      ${isoBlock}
+      <div class="ticket-disclaimer">POS Virtual · Ticket educativo · Datos ficticios</div>`;
+  }
+
+  function downloadTicket(){
+    const paper=$('receiptPaper');
+    if(!paper.innerHTML.trim()){alert('Primero complete una operación.');return}
+    const documentHtml=`<!doctype html><html><head><meta charset="utf-8"><title>Ticket OSC Academy</title>
+    <style>body{font-family:Arial;padding:30px}.ticket{width:310px;margin:auto;border:1px solid #aaa;padding:20px}
+    .ticket-head,.ticket-total{display:flex;justify-content:space-between}.ticket-box{border:1px solid #555;margin:12px 0}
+    .ticket-total,.ticket-installments,.ticket-status{padding:9px}.ticket-status{text-align:center;border-top:1px solid #555;font-weight:bold}
+    .ticket-meta,.ticket-foot{font-size:12px;line-height:1.5}.ticket-badge{background:#111;color:#fff;padding:4px}</style></head>
+    <body><div class="ticket">${paper.innerHTML}</div></body></html>`;
+    const blob=new Blob([documentHtml],{type:'text/html;charset=utf-8'});
+    const anchor=document.createElement('a');
+    anchor.href=URL.createObjectURL(blob);
+    anchor.download=`ticket-osc-${Date.now()}.html`;
+    anchor.click();
+    URL.revokeObjectURL(anchor.href);
+  }
+
+
+  const discoveryConcepts={
+    '55':{title:'DE55 — ICC System Related Data',summary:'Contiene datos EMV codificados en formato TLV. Puede incluir tags como 9F26, 95, 82, 9F10, 9F36 y 9F37.',lab:'Contactless, DE55 y ARQC'},
+    '52':{title:'DE52 — Personal Identification Number Data',summary:'Transporta el PIN Block cifrado. Su construcción y protección se relacionan con HSM, llaves y PCI PIN.',lab:'Seguridad, HSM y PIN Block'},
+    '35':{title:'DE35 — Track 2 Data',summary:'Representa datos capturados de banda o equivalentes y requiere tratamiento seguro por contener información sensible.',lab:'Seguridad de datos de tarjeta'},
+    '38':{title:'DE38 — Authorization Identification Response',summary:'Código asignado en una aprobación y utilizado posteriormente para trazabilidad y clearing.',lab:'Ciclo completo de una transacción'},
+    '39':{title:'DE39 — Response Code',summary:'Expresa la decisión de autorización o el resultado del procesamiento.',lab:'Escenarios y respuestas'}
+  };
+  function ensureDiscoveryModal(){
+    let modal=document.getElementById('conceptDiscoveryModal');if(modal)return modal;
+    modal=document.createElement('div');modal.id='conceptDiscoveryModal';modal.className='concept-discovery hidden';
+    modal.innerHTML=`<div class="concept-dialog"><button class="concept-close" type="button">✕</button><span class="concept-kicker">🔬 NUEVO CONCEPTO DESCUBIERTO</span><h2 id="conceptTitle"></h2><p id="conceptSummary"></p><div class="concept-lab"><span>Próximo nivel</span><strong id="conceptLab"></strong><small>Este tema forma parte del Laboratorio de Investigación.</small></div><div class="concept-actions"><button id="conceptInterest" type="button">👍 Me interesa</button><a href="research.html">Ver investigación →</a></div></div>`;
+    document.body.appendChild(modal);modal.querySelector('.concept-close').onclick=()=>modal.classList.add('hidden');modal.onclick=e=>{if(e.target===modal)modal.classList.add('hidden')};return modal;
+  }
+  // rc.1.29 · ARQC/ARPC y PIN Block/HSM viven en su campo (DE 55 / DE 23 y DE 52 / DE 53) y muestran los datos
+  // de la operación del mensaje seleccionado (también después de recargar: la traza se guarda con la operación).
+  const EDU_FIELDS={'55':'arqc','23':'arqc','52':'pin','53':'pin'};
+  function traceFor(kind){
+    const msg=state.messages.find(m=>m.id===state.selectedMessageId);
+    const op=msg&&state.operations.find(o=>o.id===msg.operationId);
+    if(op) return kind==='pin'?(op.pinTrace||null):(op.arqcTrace||null);
+    return kind==='pin'?state.pinTrace:state.lastArqc;
+  }
+  function openSecurityEdu(kind){const t=traceFor(kind);window.OSCSecurityEdu?.open(kind,t,t?'trace':'simple');}
+  function openFieldLearning(de){const k=EDU_FIELDS[String(de)];if(k&&window.OSCSecurityEdu)return openSecurityEdu(k);openConceptDiscovery(de);}
+  function decorateEduRows(){
+    document.querySelectorAll('#deTable .de-learning-row').forEach(row=>{
+      const k=EDU_FIELDS[row.dataset.de],cell=row.cells[1];if(!k||!cell||cell.querySelector('.de-edu-chip'))return;
+      const b=document.createElement('button');b.type='button';b.className='de-edu-chip';b.textContent=k==='pin'?'🔑 PIN Block y HSM':'🔐 ARQC / ARPC';
+      b.onclick=e=>{e.stopPropagation();openSecurityEdu(k)};cell.appendChild(b);
+    });
+  }
+  function openConceptDiscovery(de){
+    const concept=discoveryConcepts[String(de)];if(!concept)return;
+    const modal=ensureDiscoveryModal();modal.querySelector('#conceptTitle').textContent=concept.title;modal.querySelector('#conceptSummary').textContent=concept.summary;modal.querySelector('#conceptLab').textContent=concept.lab;
+    const interest=modal.querySelector('#conceptInterest');interest.textContent='👍 Me interesa';interest.disabled=false;interest.onclick=()=>{const key='oscConceptInterest'+de;localStorage.setItem(key,String(Number(localStorage.getItem(key)||0)+1));interest.textContent='✓ Interés registrado';interest.disabled=true};modal.classList.remove('hidden');
+  }
+
+  function renderFields(fields){
+    $('deTable').innerHTML=fields.length
+      ?fields.map(r=>`<tr data-de="${String(r[0]).replace('DE','')}" class="de-learning-row">${r.map(c=>`<td>${c}</td>`).join('')}</tr>`).join('')
+      :`<tr><td colspan="6" style="text-align:center;color:#7f93a8;padding:22px">Los campos se activarán paso a paso durante la operación.</td></tr>`;
+    decorateEduRows();
+    $('deCount').textContent=fields.length; const fc=document.getElementById('fieldCount'); if(fc) fc.textContent=fields.length;
+    $('totalLength').textContent=fields.length?`${fields.reduce((a,r)=>a+(parseInt(r[3])||8),0)} bytes`:'0 bytes';
+    const bits=activeBits(fields);
+    const shown=[1,2,3,4,7,11,14,22,25,35,37,38,39,41,42,48,49,52,53,55,60,64,90];
+    $('bitmap').textContent=fields.length?bitmapHex(fields):'0000000000000000';
+  }
+
+  function renderMessage(message){
+    if(!message)return;
+    state.selectedMessageId=message.id;
+    $('mti').textContent=message.mti;
+    $('messageSubtitle').textContent=`${message.mti} - ${message.operation} ${message.direction==='SALIENTE'?'Request':'Response'}`;
+    if(message.linkLabel) $('messageSubtitle').textContent=message.linkLabel;
+    renderFields(message.fields);
+    $('bitmap').textContent=message.bitmap;
+    document.querySelectorAll('#historyBody tr').forEach(tr=>tr.classList.toggle('selected',tr.dataset.id===message.id));
+    updateDualBitmaps();
+    window.OSCPosTabs?.refresh();
+  }
+
+  // rc.1.27 · Datos del mensaje seleccionado para las pestañas Vista TLV / Explicación / Validaciones (js/pos-validations.js).
+  window.OSCPosInspect=function(){
+    const message=state.messages.find(m=>m.id===state.selectedMessageId)||null;
+    if(!message)return null;
+    const related=state.messages.filter(m=>m.operationId&&m.operationId===message.operationId);
+    const op=state.operations.find(o=>o.id===message.operationId)||null;
+    const card=TEST_CARDS[op?.cardId||state.testCard]||selectedCard();
+    return {message,related,op,card,installments:op?.installments||(Number(state.installments?.count||1)>1?{count:Number(state.installments.count),interest:state.installments.plan==='issuer'}:null)};
+  };
+  function networkLogo(network,size=''){
+    const id=String(network||'visa').toLowerCase();
+    const p=window.OSCNetworks?.profiles?.[id]||window.OSCNetworks?.profiles?.visa;
+    return window.OSCNetworks?.logo?.(p,size)||`<strong>${p?.name||'Visa'}</strong>`;
+  }
+  function addMessage(message){
+    state.messages.unshift(message);
+    const tr=document.createElement('tr');
+    tr.dataset.id=message.id;
+    const op=state.operations.find(o=>o.id===message.operationId);
+    if(op&&message.direction==='SALIENTE'&&!String(message.id).startsWith('REST-')){
+      const has=(n)=>(message.fields||[]).some(r=>String(r[0]).replace('DE','')===n);
+      if(has('55')&&state.lastArqc) op.arqcTrace=state.lastArqc;
+      if(has('52')&&state.pinTrace) op.pinTrace=state.pinTrace;
+    }
+    tr.innerHTML=`
+      <td>${message.dateTime}</td>
+      <td>${networkLogo(op?.network||'visa')}</td>
+      <td class="${message.direction==='SALIENTE'?'direction-out':'direction-in'}">${message.direction}</td>
+      <td><span class="message-badge">${message.mti}</span></td>
+      <td><span class="operation-tag">${message.operation}</span></td>
+      <td>${message.amountCents!=null?formatCents(message.amountCents):'—'}</td>
+      <td>${message.responseCode||'—'}</td>
+      <td>${message.stan||'—'}</td>
+      <td>${message.batch||state.batchNumber}</td>
+      <td class="${statusClass(op?.status)}">${op?.status||'EN PROCESO'}</td>`;
+    tr.addEventListener('click',()=>renderMessage(message));
+    $('historyBody').prepend(tr);
+    updateDualBitmaps();
+  }
+
+  function refreshHistoryStatuses(){
+    document.querySelectorAll('#historyBody tr').forEach(tr=>{
+      const msg=state.messages.find(m=>m.id===tr.dataset.id);
+      const op=msg?state.operations.find(o=>o.id===msg.operationId):null;
+      const cell=tr.children[9];
+      if(cell&&op){cell.textContent=op.status;cell.className=statusClass(op.status);}
+    });
+  }
+
+  function statusClass(status){
+    if(status==='APROBADA')return'status-approved';
+    if(status==='REVERSADA')return'status-reversed';
+    if(status==='ANULADA')return'status-voided';
+    if(status==='LOTE CERRADO')return'status-closed';
+    return'';
+  }
+
+  function persistSwitchTransaction(op){
+    if(!window.OSCSwitchStore||!op||op.type==='batch')return;
+    if(op.network==='link') return persistLinkOperation(op); // rc.1.55 · LINK guarda todos sus mensajes
+    const detected=window.OSCNetworks&&window.OSCNetworks.detect(op.pan||state.pan);
+    const network=(op.network||detected?.id||detected?.key||profile().id||'visa').toUpperCase();
+    const req=state.messages.find(m=>m.operationId===op.id && /00$/.test(m.mti));
+    const res=state.messages.find(m=>m.operationId===op.id && /10$/.test(m.mti));
+    window.OSCSwitchStore.addTransaction({id:op.id,channel:'POS',network,type:op.type,amountCents:op.amountCents,status:op.status||'APPROVED',responseCode:op.responseCode||state.responseCode||'00',stan:op.stan,rrn:op.rrn,auth:op.auth,batch:op.batch,closed:op.closed,clearingStatus:op.closed?'READY':'PENDING',mtiRequest:req?.mti||'0200',mtiResponse:res?.mti||'0210',panLast4:(op.pan||state.pan||'').slice(-4),cardId:op.cardId||state.testCard,product:(TEST_CARDS[op.cardId||state.testCard]?.product)||'',raw:req?rawMessage(req):null,requestFields:req?.fields||null,responseFields:res?.fields||null,operationLabel:op.type||'purchase',dateTime:op.createdAt||new Date().toISOString(),arqcTrace:op.arqcTrace||null,pinTrace:op.pinTrace||null});
+  }
+  // rc.1.55 · Red LINK: el POS guarda la operación con todos sus mensajes para que el historial sobreviva al salir y volver.
+  function persistLinkOperation(op){
+    if(!window.OSCSwitchStore||!op||op.network!=='link') return;
+    const msgs=state.messages.filter(m=>m.operationId===op.id).slice().reverse();
+    if(!msgs.length) return;
+    const req=msgs.find(m=>m.direction==='SALIENTE'), res=msgs.find(m=>m.direction==='ENTRANTE');
+    const keep=m=>({id:m.id,mti:m.mti,operation:m.operation,direction:m.direction,dateTime:m.dateTime,responseCode:m.responseCode||'',fields:m.fields,bitmap:m.bitmap,raw:m.raw||null,linkAnnotated:m.linkAnnotated||null,linkLabel:m.linkLabel||'',amountCents:m.amountCents,stan:m.stan,batch:m.batch});
+    window.OSCSwitchStore.addTransaction({id:op.id,channel:'POS',network:'LINK',type:op.type,amountCents:op.amountCents,status:op.status,responseCode:op.responseCode||'',stan:op.stan,rrn:op.rrn,auth:op.auth,batch:op.batch,closed:op.closed,
+      mtiRequest:req?.mti||'0200',mtiResponse:res?.mti||'',panLast4:String(op.pan||state.pan||'').slice(-4),cardId:op.cardId||state.testCard,raw:req?.raw||null,requestFields:req?.fields||null,responseFields:res?.fields||null,
+      operationLabel:msgs[0].operation,dateTime:op.createdAt,linkKind:op.linkKind,linkMeta:{linkMmdd:op.linkMmdd,linkPurchaseCents:op.linkPurchaseCents,linkCashCents:op.linkCashCents,linkClosed:!!op.linkClosed},linkMessages:msgs.map(keep)});
+  }
+  function restoreWorkspaceHistory(){
+    if(!window.OSCSwitchStore) return;
+    const db=window.OSCSwitchStore.read();
+    const txs=(db.transactions||[]).filter(t=>t.channel==='POS').slice().reverse();
+    if(!txs.length) return;
+    state.operations=[]; state.messages=[]; $('historyBody').innerHTML='';
+    txs.forEach((tx,index)=>{
+      const op={
+        id:tx.id,type:tx.type||'purchase',amountDigits:String(tx.amountCents||0),amountCents:Number(tx.amountCents||0),
+        stan:tx.stan||'',auth:tx.auth||'',rrn:tx.rrn||'',batch:Number(tx.batch||1),
+        status:tx.status==='APPROVED'?'APROBADA':(tx.status||'APROBADA'),closed:Boolean(tx.closed),
+        createdAt:tx.createdAt||tx.dateTime||new Date().toISOString(),responseCode:tx.responseCode||'00',
+        network:String(tx.network||'visa').toLowerCase(),pan:tx.panLast4?`00000000000${tx.panLast4}`:'',
+        cardId:tx.cardId||null,product:tx.product||'',arqcTrace:tx.arqcTrace||null,pinTrace:tx.pinTrace||null
+      };
+      state.operations.unshift(op);
+      if(Array.isArray(tx.linkMessages)&&tx.linkMessages.length){
+        // rc.1.55 · Operación LINK: se restauran todos sus mensajes (tramas reales, para el Parser) y los datos que usan anulaciones y devoluciones.
+        op.network='link'; op.linkKind=tx.linkKind; Object.assign(op,tx.linkMeta||{});
+        tx.linkMessages.forEach(m=>addMessage({...m,id:'REST-'+m.id,operationId:tx.id}));
+        return;
+      }
+      const reqFields=Array.isArray(tx.requestFields)?tx.requestFields:[
+        field(3,'Processing Code','000000','6','FIXED','Restaurado'),
+        field(4,'Transaction Amount',String(tx.amountCents||0).padStart(12,'0'),'12','FIXED','Restaurado'),
+        field(11,'System Trace Audit Number (STAN)',tx.stan||'','6','FIXED','Restaurado'),
+        field(37,'Retrieval Reference Number',tx.rrn||'','12','FIXED','Restaurado'),
+        field(39,'Response Code',tx.responseCode||'00','2','FIXED','Restaurado')
+      ];
+      const resFields=Array.isArray(tx.responseFields)?tx.responseFields:reqFields;
+      const dateLabel=new Date(tx.createdAt||Date.now()).toLocaleString('es-AR');
+      const req={id:`REST-${tx.id}-REQ`,operationId:tx.id,mti:tx.mtiRequest||'0200',operation:(tx.type||'purchase').toUpperCase(),direction:'SALIENTE',dateTime:dateLabel,responseCode:'',fields:reqFields,bitmap:bitmapHex(reqFields),amountCents:tx.amountCents,stan:tx.stan,batch:tx.batch};
+      const res={id:`REST-${tx.id}-RES`,operationId:tx.id,mti:tx.mtiResponse||'0210',operation:(tx.type||'purchase').toUpperCase(),direction:'ENTRANTE',dateTime:dateLabel,responseCode:tx.responseCode||'00',fields:resFields,bitmap:bitmapHex(resFields),amountCents:tx.amountCents,stan:tx.stan,batch:tx.batch};
+      state.messages.unshift(req,res); addMessage(req); addMessage(res);
+    });
+    state.batchNumber=Math.max(1,...txs.map(t=>Number(t.batch||1)));
+    $('sessionTx').textContent=txs.length;
+    // Historial restaurado sin cargar automáticamente la última trama.
+  }
+
+  function createOperation(type,source=null){
+    const amountDigits=source?source.amountDigits:state.amountDigits;
+    const op={
+      id:`OP-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+      type,
+      amountDigits,
+      amountCents:Number(amountDigits||0),
+      stan:state.currentStan,
+      auth:state.currentAuth||'',
+      rrn:source?.rrn||`${state.currentStan}${String(Date.now()).slice(-6)}`.slice(0,12),
+      de7:de7Now(),
+      acquirerId:'12345678901',
+      batch:state.batchNumber,
+      status:'EN PROCESO',
+      sourceOperationId:source?.id||null,
+      createdAt:new Date().toISOString(),
+      paymentMethod:state.paymentMethod,
+      cardId:state.testCard,
+      qrType:state.qrType,
+      network:source?.network||profile().id,
+      pan:source?.pan||state.pan,
+      entryMode:source?.entryMode||state.entryMode
+    };
+    state.operations.push(op);
+    return op;
+  }
+
+  function setStep(n){
+    document.querySelectorAll('.flow-list article').forEach((el,index)=>{
+      el.classList.toggle('active',index===n-1);
+      el.classList.toggle('done',index<n-1);
+    });
+  }
+
+  function screen(title,html){
+    $('screenTitle').textContent=title;
+    $('screenContent').innerHTML=html;
+  }
+
+  function updateAmount(){
+    const amount=formatAmount(state.amountDigits);
+    const el=$('screenAmount');if(el)el.textContent=amount;
+    $('flowAmount').textContent=amount;
+    const isAmex=profile().id==='amex';
+    if(isLink()){renderFields(state.amountDigits||state.linkTx==='balance'?linkPreviewRows().filter(r=>['3','4'].includes(r[0])):[]);return;}
+    renderFields(state.amountDigits?[field(3,'Processing Code',isAmex?'004000':'000000','6','FIXED',isAmex?'AMEX Card Authorization Request':'Aplicación POS'),amountField()]:[]);
+  }
+
+  function pressNumber(key){
+    if(state.step==='amount'){
+      if(state.amountDigits.length<10)state.amountDigits+=key;
+      updateAmount();
+    }else if(state.step==='pin'){
+      if(state.pinDigits.length<6)state.pinDigits+=key;
+      state.pinBlock=createPinBlock(); // rc.1.22: PIN Block ISO 0 real, recalculado con cada dígito
+      screen('PIN',`<small>Ingrese PIN</small><strong>${'•'.repeat(state.pinDigits.length)}</strong><span>Presione VERDE para continuar</span>`);
+      $('flowPin').textContent='•'.repeat(state.pinDigits.length);
+      if(isLink()){renderFields(linkPreviewRows(true));return;}
+      const f=entryFields();
+      f.push(field(52,profile().id==='amex'?'Personal Identification Number (PIN)':'PIN Data (Encrypted PIN Block)',state.pinBlock,'8 bytes','B64',profile().id==='amex'?'AMEX Bit 52 · PIN cifrado':'PIN cifrado'));
+      if(profile().id!=='amex'&&!(profile().id==='mastercard'&&posMessageProfile().request==='0200')) f.push(field(53,'Security-Related Control Information',de53For(profile().id),'16','FIXED',de53Origin(profile().id)));
+      renderFields(f.sort((a,b)=>Number(a[0])-Number(b[0])));
+    }
+  }
+
+  function accept(){
+    if(state.currentOperation!=='purchase')return;
+    if(state.step==='amount'&&isLink()){
+      const kind=state.linkTx;
+      const needsOriginal=!!window.OSCLinkHth?.OPS?.[kind]?.original, orig=selectedLinkOriginal();
+      if(needsOriginal&&!orig){screen('SIN OPERACIÓN ORIGINAL','<small>LINK</small><strong>ELEGÍ LA ORIGINAL</strong><span>Hacé primero la operación a referenciar</span>');return;}
+      if(LINK_AUTO_AMOUNT.includes(kind)) state.amountDigits=String(orig.linkPurchaseCents??orig.amountCents);
+      if(!LINK_NO_AMOUNT.includes(kind)&&(!state.amountDigits||Number(state.amountDigits)===0))return;
+      if(kind==='refund'&&Number(state.amountDigits)>Number(orig.linkPurchaseCents??orig.amountCents)){screen('IMPORTE INVÁLIDO','<small>Devolución</small><strong>SUPERA LA COMPRA</strong><span>Corregí el importe</span>');setTimeout(reset,1600);return;}
+      if(LINK_NO_AMOUNT.includes(kind)) state.amountDigits='';
+      $('time1').textContent=timeNow();
+      if(kind==='debin'){
+        // DEBIN: no hay captura de tarjeta ni PIN. El comprador acepta la solicitud en su banco/billetera y COELSA la cursa.
+        state.step='debin';setStep(2);
+        document.querySelector('#step2 strong').textContent='Aceptación del DEBIN';
+        document.querySelector('#step2 small').textContent='El comprador acepta en su home banking';
+        screen('DEBIN',`<small>Solicitud enviada al comprador</small><strong>${formatAmount(state.amountDigits)}</strong><span>Esperando aceptación…</span>`);
+        setTimeout(()=>{$('time2').textContent=timeNow();$('flowPin').textContent='No requerido';$('time3').textContent=timeNow();sendLinkTransaction();},1400);
+        return;
+      }
+      state.step='entry';
+      $('entryModePanel').classList.remove('hidden');
+      screen('FORMA DE CAPTURA','<small>LINK · Track 2</small><strong>TIPO DE ENTRADA</strong><span>Chip o banda magnética</span>');
+      setStep(2);
+      return;
+    }
+    if(state.step==='amount'){
+      if(!state.amountDigits||Number(state.amountDigits)===0)return;
+      $('time1').textContent=timeNow();
+      if(state.paymentMethod==='qr'){
+        startQrPayment();
+      }else{
+        state.step='entry';
+        $('entryModePanel').classList.remove('hidden');
+        screen('FORMA DE CAPTURA','<small>Seleccione</small><strong>TIPO DE ENTRADA</strong><span>Use las opciones debajo</span>');
+        setStep(2);
+      }
+    }else if(state.step==='pin'&&state.pinDigits.length>=4){
+      $('time3').textContent=timeNow();
+      sendPurchase0200();
+    }
+  }
+
+  function startQrPayment(){
+    state.step='qr'; state.entryMode='qr';
+    $('entryModePanel').classList.add('hidden');
+    const qr=$('qrStage'); qr.classList.remove('hidden');
+    $('qrStageNetwork').textContent=selectedQr().label;
+    $('qrStageStatus').textContent='Esperando escaneo desde la wallet…';
+    screen('PAGO CON QR',`<small>${selectedQr().mode}</small><strong>${selectedQr().label}</strong><span>Escanee y confirme desde la wallet</span>`);
+    setStep(2);
+    setTimeout(()=>{
+      $('qrStageStatus').textContent='QR escaneado · El cliente confirma en la wallet…';
+      document.querySelector('#step2 strong').textContent='Lectura / Escaneo';
+      document.querySelector('#step2 small').textContent=`${selectedQr().label} · Wallet`;
+      $('time2').textContent=timeNow();
+      $('flowPin').textContent='No requerido'; $('time3').textContent=timeNow();
+      renderFields(entryFields().sort((a,b)=>Number(a[0])-Number(b[0])));
+      setTimeout(()=>{
+        $('qrStageStatus').textContent='Wallet inició el pago · Adquirente/procesador prepara la autorización…';
+        setTimeout(()=>{ qr.classList.add('hidden'); sendPurchase0200(); },1200);
+      },1100);
+    },1800);
+  }
+
+  function startCaptureAnimation(modeKey){
+    document.querySelectorAll('[data-entry]').forEach(b=>b.classList.toggle('active',b.dataset.entry===modeKey));
+    state.step='capturing';state.entryMode=modeKey;$('entryModePanel').classList.add('hidden');
+    const stage=$('captureStage');stage.classList.remove('hidden','success');
+    ['captureChip','captureContactless','captureMagstripe','captureManual'].forEach(id=>$(id).classList.add('hidden'));
+    const map={chip:['captureChip','Insertando tarjeta con chip…'],contactless:['captureContactless','Leyendo tarjeta contactless…'],magstripe:['captureMagstripe','Leyendo banda magnética…'],manual:['captureManual','Validando datos ingresados…']};
+    const [scene,status]=map[modeKey];$(scene).classList.remove('hidden');$('captureStatusText').textContent=status;
+    screen('LEYENDO TARJETA',`<small>${entryModes[modeKey].label}</small><strong>...</strong><span>No retire la tarjeta</span>`);
+    setTimeout(()=>{
+      stage.classList.add('success');$('captureStatusText').textContent='Lectura completada';
+      const mode=entryModes[modeKey];$('time2').textContent=timeNow();document.querySelector('#step2 small').textContent=`${profile().name} · ${mode.label}`;
+      renderFields(isLink()?linkPreviewRows():entryFields().sort((a,b)=>Number(a[0])-Number(b[0])));
+      setTimeout(()=>{
+        stage.classList.add('hidden');
+        if(isLink()){state.step='pin';setStep(3);screen('PIN','<small>LINK · Ingrese PIN</small><strong></strong><span>Presione VERDE para continuar</span>');}
+        else if(profile().id==='amex' && amexDebitOnlinePinRequired()){
+          state.step='pin';setStep(3);
+          $('flowPin').textContent='AMEX Débito · Online PIN';
+          screen('PIN','<small>American Express Débito</small><strong></strong><span>PIN online · Bit 52 en 1100</span>');
+        }else if(profile().id==='amex'){
+          $('flowPin').textContent='No requerido';$('time3').textContent=timeNow();sendPurchase0200();
+        }else if(mode.hasPin){state.step='pin';setStep(3);screen('PIN','<small>Ingrese PIN</small><strong></strong><span>Presione VERDE para continuar</span>')}
+        else{$('flowPin').textContent='No requerido';$('time3').textContent=timeNow();sendPurchase0200()}
+      },650);
+    },1500);
+  }
+
+  function sendPurchase0200(){
+    // rc.1.58 · Versión gratuita: la compra de prueba se valida contra el cupo del servidor.
+    if(!window.__oscFreeGo){window.OSCFree.consume('pos').then(ok=>{if(ok){window.__oscFreeGo=true;sendPurchase0200();}else{reset();}});return;}
+    window.__oscFreeGo=false;
+    if(isLink()) return sendLinkTransaction();
+    state.step='processing';state.currentStan=random6();state.currentAuth='';setStep(4);
+    const op=createOperation('purchase');
+    const isAmex=profile().id==='amex';
+    const msgProfile=posMessageProfile();
+    const requestMti=msgProfile.request;
+    op.requestMti=requestMti;op.responseMti=msgProfile.response;op.messageFamily=msgProfile.family;
+    op.installments=installmentPlanNow(op.amountCents);
+    if(op.installments) op.installments.network=profile().id;
+    // Amex · plan del emisor: primero 1100 con función 108 (consulta) y 1110 con los planes (Network Spec. Authorization, Tabla 2-19).
+    if(isAmex&&op.installments?.interest&&window.OSCIsoSpec){
+      const pre=amex1100RequestFields({functionCode:'108',dppKind:'issuer-preauth-request'});
+      addMessage({id:`MSG-${Date.now()}-1100-108`,operationId:op.id,mti:'1100',operation:'CONSULTA PLANES DPP',direction:'SALIENTE',dateTime:dateTimeNow(),responseCode:'',fields:pre,bitmap:bitmapHex(pre),amountCents:op.amountCents,stan:op.stan,batch:op.batch});
+      const get=de=>pre.find(r=>r[0]===String(de))?.[2]||'';
+      const preRes=[2,3,4,7,11,12].map(de=>pre.find(r=>r[0]===String(de))).filter(Boolean).map(r=>{const c=r.slice();c[5]='Eco';return c;});
+      preRes.push(field(24,'Function Code','108','3','FIXED','Eco'),field(32,'Acquiring Institution Identification (AIN) Code',get(32),String(get(32).length),'LLVAR','Eco'),field(37,'Acquirer Reference Number (ARN)',get(37),'12','FIXED','Eco'),field(39,'Action Code','000','3','FIXED','Planes disponibles'),OSCIsoSpec.amexBit48Row('issuer-preauth-response',op.installments),field(49,'Currency Code, Transaction','032','3','FIXED','Eco'));
+      addMessage({id:`MSG-${Date.now()}-1110-108`,operationId:op.id,mti:'1110',operation:'PLANES DPP DEL EMISOR',direction:'ENTRANTE',dateTime:dateTimeNow(),responseCode:'000',fields:preRes.sort((a,b)=>Number(a[0])-Number(b[0])),bitmap:bitmapHex(preRes),amountCents:op.amountCents,stan:op.stan,batch:op.batch});
+    }
+    const fields=isAmex?amex1100RequestFields():purchaseRequestFields();
+    const r37=fields.find(r=>r[0]==='37'); if(r37&&!isAmex) op.rrn=r37[2];
+    renderFields(fields);
+    screen('PROCESANDO',`<small>${state.paymentMethod==='qr'?'Procesador envía':'Enviando'} ${requestMti}</small><strong>...</strong><span>${isAmex?'American Express GNS':state.paymentMethod==='qr'?'Hacia la red y el emisor':'Aguarde'}</span>`);
+    // rc.1.27 · El paso 4 del flujo muestra el MTI real (0100 / 0200 / 1100), no siempre 0200.
+    { const st4=document.querySelector('#step4 small'); if(st4) st4.textContent=`Enviando ${requestMti}`; }
+    setTimeout(()=>{
+      $('time4').textContent=timeNow();
+      addMessage({
+        id:`MSG-${Date.now()}-${requestMti}`,operationId:op.id,mti:requestMti,operation:'COMPRA',
+        direction:'SALIENTE',dateTime:dateTimeNow(),responseCode:'',fields,bitmap:bitmapHex(fields),
+        amountCents:op.amountCents,stan:op.stan,batch:op.batch
+      });
+      state.selectedSourceOperationId=op.id;state.step='waiting';setStep(5);
+      if(isAmex){
+        op.status='PENDIENTE';
+        screen('1100 ENVIADO',`<small>POS Authorization Request · ${selectedCard().product}</small><strong>AMEX</strong><span>Esperando 1110 del emisor vía American Express Network</span>`);
+        $('flowResponse').textContent='Esperando 1110';
+        renderMessage(state.messages[0]);
+        refreshHistoryStatuses();
+      }else{
+        screen('PROCESANDO',`<small>Esperando ${op.responseMti||'0210'}</small><strong>...</strong><span>${op.messageFamily||'ISO8583'}</span>`);
+      }
+      if(isDomesticCard()) setTimeout(()=>authorizeDomesticPurchase(op),450);
+      else if(state.autoResponse) setTimeout(sendPurchaseResponse,700);
+    },800);
+  }
+
+  async function authorizeDomesticPurchase(op){
+    const card=selectedCard();
+    $('flowResponse').textContent='Ruteo doméstico · Banco Virtual';
+    screen('RUTEO DOMÉSTICO',`<small>BIN ${card.pan.slice(0,6)} reconocido</small><strong>BANCO VIRTUAL OSC</strong><span>Consultando saldo de ${card.accountNumber||'cuenta vinculada'}</span>`);
+    try{
+      const r=await fetch('/api/bank/pos/authorize',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({cardId:card.bankCardId,amountCents:Number(op.amountCents||0),stan:op.stan})});
+      const d=await r.json();
+      if(!r.ok) throw new Error(d.message||'No se pudo autorizar');
+      state.responseCode=d.responseCode||'05';
+      op.domestic={accountNumber:d.accountNumber,previousBalance:d.previousBalance,balance:d.balance,reference:d.reference};
+      sendPurchaseResponse();
+    }catch(e){
+      state.responseCode='91';
+      op.domestic={error:String(e.message||e)};
+      sendPurchaseResponse();
+    }
+  }
+  function sendPurchaseResponse(){
+    if(state.step!=='waiting'||state.currentOperation!=='purchase')return;
+    if(profile().id==='amex'){
+      sendAmex1110();
+      return;
+    }
+    const op=state.operations.find(o=>o.id===state.selectedSourceOperationId);
+    const chosenCode=state.responseCode;
+    state.responseCode=issuerChecks(op);
+    const response=scenarios[state.responseCode]||{label:'RECHAZADA',detail:'TRANSACCIÓN RECHAZADA'};
+    state.currentAuth=state.responseCode==='00'?random6():'-';
+    op.auth=state.currentAuth;op.status=state.responseCode==='00'?'APROBADA':'RECHAZADA';
+    $('time5').textContent=timeNow();$('flowResponse').textContent=`${state.responseCode} - ${response.label}`;
+    $('resultText').textContent=response.label;$('resultCode').textContent=state.responseCode;$('resultDetail').textContent=isDomesticCard()&&op.domestic?.accountNumber?`${response.detail} · ${op.domestic.accountNumber} · Saldo ${formatCents(Math.round(Number(op.domestic.balance||0)*100))}`:response.detail;$('authCode').textContent=state.currentAuth;
+    screen(op.status==='APROBADA'?'APROBADA':'RECHAZADA',`<small>${response.label}</small><strong>${state.responseCode}</strong><span>${op.status==='APROBADA'?(state.paymentMethod==='qr'?'Wallet y comercio notificados':'Retire tarjeta'):'Operación finalizada'}</span>`);
+    if(state.responseCode!=='TO'){
+      const fields=purchaseResponseFields(state.responseCode,op);
+      const responseMti=op.responseMti||posMessageProfile(TEST_CARDS[op.cardId||state.testCard]).response;
+      addMessage({
+        id:`MSG-${Date.now()}-${responseMti}`,operationId:op.id,mti:responseMti,operation:'COMPRA',
+        direction:'ENTRANTE',dateTime:dateTimeNow(),responseCode:state.responseCode,fields,bitmap:bitmapHex(fields),
+        amountCents:op.amountCents,stan:op.stan,batch:op.batch
+      });
+      renderMessage(state.messages[0]);
+    }else{
+      op.status='TIMEOUT';
+      setTimeout(()=>runAutomaticTimeoutReversal(op),350);
+    }
+    op.responseCode=state.responseCode;
+    if(op.issuerReason) $('resultDetail').textContent=`${response.detail} · ${op.issuerReason}`;
+    state.responseCode=chosenCode; // el escenario elegido por el alumno no cambia
+    setStep(6);
+    setTimeout(()=>{$('time6').textContent=timeNow();printReceipt(op);state.transactions++;$('sessionTx').textContent=state.transactions;state.step='done';refreshHistoryStatuses()},600);
+  }
+
+  function eligibleOperations(mode){
+    return state.operations.filter(op=>{
+      if(mode==='refund'){
+        if(!(op.status==='APROBADA'&&op.type==='purchase')) return false;
+        const refunded=state.operations.filter(r=>r.type==='refund'&&r.sourceOperationId===op.id&&r.status==='APROBADA').reduce((a,r)=>a+(r.amountCents||0),0);
+        return refunded < (op.amountCents||0);
+      }
+      if(mode==='void')return op.batch===state.batchNumber&&op.status==='APROBADA'&&op.type==='purchase';
+      return false;
+    });
+  }
+
+
+  function transactionBrand(op){
+    const net=String(op.network||'').toLowerCase();
+    return networkLogo(net,'large');
+  }
+  function transactionMaskedPan(op){
+    const card=TEST_CARDS[op.cardId||''];
+    const pan=String(op.pan||card?.pan||'');
+    const last4=pan.slice(-4)||'••••';
+    return `•••• ${last4}`;
+  }
+
+  function openTransactionModal(mode){
+    window.OSCFree.lock('Operación no incluida','La versión gratuita incluye solo una compra de prueba. Anulaciones, devoluciones, reversas, consultas y cierre de lote forman parte de la plataforma completa.');return;
+    state.modalMode=mode;state.selectedSourceOperationId=null;
+    const list=eligibleOperations(mode);
+    const isRefund=mode==='refund';
+    $('transactionModalTitle').textContent=isRefund?'Seleccionar compra para devolver':'Seleccionar compra para anular';
+    $('transactionModalSubtitle').textContent=isRefund?'Seleccione una compra aprobada. Puede devolver el total o una parte del saldo disponible.':'Solo compras aprobadas del lote abierto.';
+    $('refundControls')?.classList.toggle('hidden',!isRefund);
+    if(isRefund){$('refundMode').value='full';$('refundAmount').value='';$('refundAmountWrap').classList.add('hidden')}
+    $('transactionSelectionList').innerHTML=list.length?list.map(op=>`
+      <div class="transaction-choice" data-op="${op.id}">
+        <span>○</span>${transactionBrand(op)}<div><small>${new Date(op.createdAt).toLocaleString('es-AR')} · STAN ${op.stan}</small><strong>${formatCents(op.amountCents)} · Aut. ${op.auth||'—'}</strong><span class="tx-pan">${transactionMaskedPan(op)}</span></div><b>${op.status}</b>
+      </div>`).join(''):'<div class="transaction-choice"><div></div><div></div><div><strong>No hay operaciones elegibles.</strong><small>Primero genere una compra aprobada.</small></div></div>';
+    $('transactionModal').classList.remove('hidden');
+    document.querySelectorAll('.transaction-choice[data-op]').forEach(el=>el.addEventListener('click',()=>{
+      document.querySelectorAll('.transaction-choice').forEach(x=>x.classList.remove('selected'));
+      el.classList.add('selected');state.selectedSourceOperationId=el.dataset.op;
+    }));
+  }
+
+  function confirmSelectedOperation(){
+    const source=state.operations.find(o=>o.id===state.selectedSourceOperationId);
+    if(!source){alert('Seleccione una operación.');return}
+    $('transactionModal').classList.add('hidden');
+    if(state.modalMode==='refund')runRefund(source);else runVoid(source);
+  }
+
+
+  function technicalReversalFields(source){
+    const rows=[
+      field(2,'Primary Account Number (PAN)',source.pan||state.pan,String((source.pan||state.pan||'').length),'LLVAR','Operación original'),
+      field(3,'Processing Code','000000','6','FIXED','Operación original'),
+      field(4,'Transaction Amount',String(source.amountDigits||source.amountCents||0).padStart(12,'0').slice(-12),'12','FIXED','Importe original'),
+      field(7,'Transmission Date & Time',de7Now(),'10','FIXED','Nueva reversa técnica'),
+      field(11,'System Trace Audit Number (STAN)',random6(),'6','FIXED','STAN de reversa'),
+      field(32,'Acquiring Institution Identification Code',source.acquirerId||'12345678901','11','LLVAR','Adquirente'),
+      field(37,'Retrieval Reference Number',source.rrn||'','12','FIXED','Correlación'),
+      field(41,'Terminal ID','TERMID01','8','FIXED','Terminal'),
+      field(42,'Merchant ID','MERCHANT01     ','15','FIXED','Comercio'),
+      field(49,'Transaction Currency Code','032','3','FIXED','ARS'),
+      field(90,'Original Data Elements',originalDataElements(source),'42','FIXED','Mensaje original')
+    ];
+    withVisaEntryMode(rows,source);
+    if((source.network||profile().id)==='visa'){
+      rows.push(field63Row('2502','2502 · Transaction has not completed (timeout o falla del POS)'));
+    }
+    return rows.sort((a,b)=>Number(a[0])-Number(b[0]));
+  }
+  function runAutomaticTimeoutReversal(source){
+    window.OSCFree.lock('Operación no incluida','La versión gratuita incluye solo una compra de prueba. Anulaciones, devoluciones, reversas, consultas y cierre de lote forman parte de la plataforma completa.');return;
+    if((source.network||'').toLowerCase()==='amex') return;
+    const p=posMessageProfile(TEST_CARDS[source.cardId||state.testCard]);
+    const req=technicalReversalFields(source);
+    const revOp=createOperation('reversal',source);
+    revOp.status='APROBADA';revOp.network=source.network;revOp.requestMti=p.reversal;revOp.responseMti=p.reversalResponse;
+    addMessage({id:`MSG-${Date.now()}-${p.reversal}`,operationId:revOp.id,mti:p.reversal,operation:'REVERSA AUTOMÁTICA - TIMEOUT',direction:'SALIENTE',dateTime:dateTimeNow(),responseCode:'',fields:req,bitmap:bitmapHex(req),amountCents:source.amountCents,stan:req.find(r=>r[0]==='11')?.[2]||revOp.stan,batch:source.batch});
+    const res=req.filter(r=>![90,63,22].includes(Number(r[0])));
+    res.push(field(39,'Response Code','00','2','FIXED','Reversa aceptada'));
+    res.sort((a,b)=>Number(a[0])-Number(b[0]));
+    setTimeout(()=>{
+      addMessage({id:`MSG-${Date.now()}-${p.reversalResponse}`,operationId:revOp.id,mti:p.reversalResponse,operation:'RESPUESTA REVERSA AUTOMÁTICA',direction:'ENTRANTE',dateTime:dateTimeNow(),responseCode:'00',fields:res,bitmap:bitmapHex(res),amountCents:source.amountCents,stan:revOp.stan,batch:source.batch});
+      source.status='REVERSADA';source.responseCode='TO';persistSwitchTransaction(source);persistSwitchTransaction(revOp);renderMessage(state.messages[0]);refreshHistoryStatuses();
+      screen('TIMEOUT GESTIONADO',`<small>${p.reversal} → ${p.reversalResponse}</small><strong>REVERSA</strong><span>El Switch Adquirente cerró la incertidumbre técnica</span>`);
+    },450);
+  }
+
+  function runReversal(source){
+    window.OSCFree.lock('Operación no incluida','La versión gratuita incluye solo una compra de prueba. Anulaciones, devoluciones, reversas, consultas y cierre de lote forman parte de la plataforma completa.');return;
+    state.currentOperation='reversal';state.currentStan=random6();
+    screen('REVERSA','<small>Generando 0400</small><strong>...</strong><span>Aguarde</span>');
+    const op=createOperation('reversal',source);op.rrn=source.rrn;
+    const req=reversalRequestFields(source);
+    addMessage({
+      id:`MSG-${Date.now()}-0400`,operationId:op.id,mti:'0400',operation:'REVERSA',
+      direction:'SALIENTE',dateTime:dateTimeNow(),responseCode:'',fields:req,bitmap:bitmapHex(req),
+      amountCents:op.amountCents,stan:op.stan,batch:op.batch
+    });
+    setTimeout(()=>{
+      const code='00';op.status='APROBADA';source.status='REVERSADA';
+      const res=reversalResponseFields(source,code);
+      addMessage({
+        id:`MSG-${Date.now()}-0410`,operationId:op.id,mti:'0410',operation:'REVERSA',
+        direction:'ENTRANTE',dateTime:dateTimeNow(),responseCode:code,fields:res,bitmap:bitmapHex(res),
+        amountCents:op.amountCents,stan:op.stan,batch:op.batch
+      });
+      renderMessage(state.messages[0]);
+      screen('REVERSA APROBADA','<small>Operación original reversada</small><strong>00</strong><span>Proceso finalizado</span>');
+      printReceipt(op);refreshHistoryStatuses();state.step='done';
+    },850);
+  }
+
+  function runRefund(source){
+    window.OSCFree.lock('Operación no incluida','La versión gratuita incluye solo una compra de prueba. Anulaciones, devoluciones, reversas, consultas y cierre de lote forman parte de la plataforma completa.');return;
+    const mode=$('refundMode')?.value||'full';
+    const priorRefunds=state.operations.filter(o=>o.type==='refund'&&o.sourceOperationId===source.id&&o.status==='APROBADA').reduce((a,o)=>a+(o.amountCents||0),0);
+    const available=Math.max(0,(source.amountCents||0)-priorRefunds);
+    let refundCents=available;
+    if(mode==='partial') refundCents=Math.round(Number($('refundAmount')?.value||0)*100);
+    if(!refundCents||refundCents<=0){alert('Ingrese un importe de devolución válido.');return}
+    if(refundCents>available){alert(`El importe supera el saldo disponible para devolver: ${formatCents(available)}`);return}
+
+    const isAmex=(source.network||source.cardBrand||'').toLowerCase()==='amex';
+    state.currentOperation='refund';state.currentStan=random6();state.amountDigits=String(refundCents);
+    const op=createOperation('refund',source);
+    op.amountCents=refundCents;op.amountDigits=String(refundCents);
+    op.refundMode=refundCents===available?'TOTAL':'PARCIAL';
+    op.network=isAmex?'amex':op.network;
+
+    if(isAmex){
+      screen('DEVOLUCIÓN AMEX','<small>Authorization on Credit</small><strong>1100</strong><span>Processing Code 204000 · Credit / Refund</span>');
+      const req=amexRefund1100Fields(source,refundCents);
+      op.rrn=req.find(r=>r[0]==='37')?.[2]||op.rrn;
+      addMessage({id:`MSG-${Date.now()}-AMEX-REF-1100`,operationId:op.id,mti:'1100',operation:`DEVOLUCIÓN AMEX ${op.refundMode}`,direction:'SALIENTE',dateTime:dateTimeNow(),responseCode:'',fields:req,bitmap:bitmapHex(req),amountCents:refundCents,stan:op.stan,batch:op.batch});
+      setTimeout(()=>{
+        const action=AMEX_ACTION_CODES.approved;
+        op.status='APROBADA'; op.responseCode=action.code;
+        const res=amexRefund1110Fields(op,action);
+        op.auth=res.find(r=>r[0]==='38')?.[2]||op.auth;
+        op.amexTid=res.find(r=>r[0]==='31')?.[2]||op.amexTid;
+        addMessage({id:`MSG-${Date.now()}-AMEX-REF-1110`,operationId:op.id,mti:'1110',operation:`DEVOLUCIÓN AMEX ${op.refundMode}`,direction:'ENTRANTE',dateTime:dateTimeNow(),responseCode:action.code,fields:res,bitmap:bitmapHex(res),amountCents:refundCents,stan:op.stan,batch:op.batch});
+        persistSwitchTransaction(op);
+        renderMessage(state.messages[0]);
+        screen('DEVOLUCIÓN AMEX APROBADA',`<small>${op.refundMode} · Authorization on Credit</small><strong>${formatCents(refundCents)}</strong><span>1100 → 1110 · DE3 204000 · Action Code 000</span>`);
+        printReceipt(op);refreshHistoryStatuses();state.step='done';
+      },850);
+      return;
+    }
+
+    screen('DEVOLUCIÓN','<small>Purchase Return / Refund</small><strong>...</strong><span>Generando crédito</span>');
+    op.rrn=source.rrn;
+    const req=refundRequestFields(source,refundCents);
+    addMessage({id:`MSG-${Date.now()}-REFREQ`,operationId:op.id,mti:'0200',operation:`DEVOLUCIÓN ${op.refundMode}`,direction:'SALIENTE',dateTime:dateTimeNow(),responseCode:'',fields:req,bitmap:bitmapHex(req),amountCents:refundCents,stan:op.stan,batch:op.batch});
+    setTimeout(()=>{
+      const code='00',auth=random6();op.auth=auth;op.status='APROBADA';
+      const res=refundResponseFields(source,refundCents,code,auth);
+      addMessage({id:`MSG-${Date.now()}-REFRES`,operationId:op.id,mti:'0210',operation:`DEVOLUCIÓN ${op.refundMode}`,direction:'ENTRANTE',dateTime:dateTimeNow(),responseCode:code,fields:res,bitmap:bitmapHex(res),amountCents:refundCents,stan:op.stan,batch:op.batch});
+      persistSwitchTransaction(op);
+      renderMessage(state.messages[0]);
+      screen('DEVOLUCIÓN APROBADA',`<small>${op.refundMode} · crédito al tarjetahabiente</small><strong>${formatCents(refundCents)}</strong><span>DE3 = 20 · Purchase Return / Refund</span>`);
+      printReceipt(op);refreshHistoryStatuses();state.step='done';
+    },850);
+  }
+
+  function runVoid(source){
+    window.OSCFree.lock('Operación no incluida','La versión gratuita incluye solo una compra de prueba. Anulaciones, devoluciones, reversas, consultas y cierre de lote forman parte de la plataforma completa.');return;
+    if((source.network||'').toLowerCase()==='amex'){runAmexVoid1420(source);return}
+    state.currentOperation='void';state.currentStan=random6();
+    const p=posMessageProfile(TEST_CARDS[source.cardId||state.testCard]);
+    screen('ANULACIÓN',`<small>Enviando ${p.reversal}</small><strong>...</strong><span>Reversa de la operación aprobada</span>`);
+    const op=createOperation('void',source);op.rrn=source.rrn;op.auth=source.auth;op.requestMti=p.reversal;op.responseMti=p.reversalResponse;
+    const req=reversalRequestFields(source);
+    if((source.network||profile().id)==='visa') req.push(field63Row('2501','2501 · Transaction voided by customer'));
+    req.sort((a,b)=>Number(a[0])-Number(b[0]));
+    addMessage({
+      id:`MSG-${Date.now()}-${p.reversal}`,operationId:op.id,mti:p.reversal,operation:'ANULACIÓN',
+      direction:'SALIENTE',dateTime:dateTimeNow(),responseCode:'',fields:req,bitmap:bitmapHex(req),
+      amountCents:op.amountCents,stan:op.stan,batch:op.batch
+    });
+    setTimeout(()=>{
+      const code='00';op.status='APROBADA';source.status='ANULADA';
+      const res=req.filter(r=>![90,63,22].includes(Number(r[0])));
+      res.push(field(39,'Response Code',code,'2','FIXED','Reversa/anulación aceptada'));
+      res.sort((a,b)=>Number(a[0])-Number(b[0]));
+      addMessage({
+        id:`MSG-${Date.now()}-${p.reversalResponse}`,operationId:op.id,mti:p.reversalResponse,operation:'ANULACIÓN',
+        direction:'ENTRANTE',dateTime:dateTimeNow(),responseCode:code,fields:res,bitmap:bitmapHex(res),
+        amountCents:op.amountCents,stan:op.stan,batch:op.batch
+      });
+      persistSwitchTransaction(op);persistSwitchTransaction(source);
+      renderMessage(state.messages[0]);
+      screen('ANULACIÓN APROBADA',`<small>${p.reversal} → ${p.reversalResponse}</small><strong>00</strong><span>Compra anulada</span>`);
+      printReceipt(op);refreshHistoryStatuses();state.step='done';
+    },850);
+  }
+
+  function batchSummary(){
+    const batchOps=state.operations.filter(o=>o.batch===state.batchNumber);
+    const purchases=batchOps.filter(o=>o.type==='purchase');
+    const refunds=batchOps.filter(o=>o.type==='refund'&&o.status==='APROBADA');
+    const approved=purchases.filter(o=>o.status==='APROBADA');
+    const voided=purchases.filter(o=>o.status==='ANULADA');
+    const reversed=purchases.filter(o=>o.status==='REVERSADA');
+    const sum=items=>items.reduce((a,o)=>a+(o.amountCents||0),0);
+    const byNetwork=network=>{
+      const rows=purchases.filter(o=>(o.network||o.cardBrand||'VISA').toUpperCase()===network);
+      const rf=refunds.filter(o=>(o.network||o.cardBrand||'VISA').toUpperCase()===network);
+      const ok=rows.filter(o=>o.status==='APROBADA');
+      const an=rows.filter(o=>o.status==='ANULADA');
+      const rv=rows.filter(o=>o.status==='REVERSADA');
+      return {network,approvedCount:ok.length,approvedCents:sum(ok),refundCount:rf.length,refundCents:sum(rf),voidedCount:an.length,voidedCents:sum(an),reversedCount:rv.length,reversedCents:sum(rv),netCents:sum(ok)-sum(rf)};
+    };
+    const approvedCents=sum(approved),refundCents=sum(refunds),voidedCents=sum(voided),reversedCents=sum(reversed);
+    return{
+      approvedCount:approved.length,refundCount:refunds.length,voidedCount:voided.length,reversedCount:reversed.length,
+      approvedCents,refundCents,voidedCents,reversedCents,netCents:approvedCents-refundCents,
+      totalMessages:state.messages.filter(m=>m.batch===state.batchNumber).length,
+      networks:[byNetwork('VISA'),byNetwork('MASTERCARD'),byNetwork('AMEX')],
+      detail:[...purchases,...refunds].slice().sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||''))
+    };
+  }
+
+  function openBatchModal(){
+    window.OSCFree.lock('Operación no incluida','La versión gratuita incluye solo una compra de prueba. Anulaciones, devoluciones, reversas, consultas y cierre de lote forman parte de la plataforma completa.');return;
+    const s=batchSummary(),d=new Date();
+    const networkRows=s.networks.map(n=>`<div class="batch-network-block"><div class="batch-network-name">${n.network}</div><div class="batch-ticket-row"><span>Aprobadas</span><b>${n.approvedCount} · ${formatCents(n.approvedCents)}</b></div><div class="batch-ticket-row"><span>Devoluciones</span><b>${n.refundCount} · ${formatCents(n.refundCents)}</b></div><div class="batch-ticket-row"><span>Anuladas</span><b>${n.voidedCount} · ${formatCents(n.voidedCents)}</b></div><div class="batch-ticket-row"><span>Reversadas</span><b>${n.reversedCount} · ${formatCents(n.reversedCents)}</b></div><div class="batch-ticket-row batch-network-net"><span>Neto</span><b>${formatCents(n.netCents)}</b></div></div>`).join('');
+    $('batchSummary').innerHTML=`
+      <h3>OSC ACADEMY</h3><h4>CIERRE DE LOTE POS</h4>
+      <div class="batch-ticket-row"><span>Terminal</span><b>TERMID01</b></div>
+      <div class="batch-ticket-row"><span>Número de lote</span><b>${String(state.batchNumber).padStart(4,'0')}</b></div>
+      <div class="batch-ticket-row"><span>Fecha</span><b>${d.toLocaleDateString('es-AR')}</b></div>
+      <div class="batch-ticket-row"><span>Hora</span><b>${d.toLocaleTimeString('es-AR',{hour12:false})}</b></div>
+      <div class="batch-ticket-rule"></div>
+      ${networkRows}
+      <div class="batch-ticket-rule"></div>
+      <div class="batch-ticket-row"><span>Compras aprobadas</span><b>${s.approvedCount} · ${formatCents(s.approvedCents)}</b></div>
+      <div class="batch-ticket-row"><span>Devoluciones</span><b>${s.refundCount} · ${formatCents(s.refundCents)}</b></div>
+      <div class="batch-ticket-row"><span>Anuladas</span><b>${s.voidedCount} · ${formatCents(s.voidedCents)}</b></div>
+      <div class="batch-ticket-row"><span>Reversadas</span><b>${s.reversedCount} · ${formatCents(s.reversedCents)}</b></div>
+      <div class="batch-ticket-row"><span>Mensajes generados</span><b>${s.totalMessages}</b></div>
+      <div class="batch-ticket-rule"></div>
+      <div class="batch-ticket-row batch-grand-total"><span>TOTAL NETO DEL LOTE</span><b>${formatCents(s.netCents)}</b></div>
+      <div class="batch-ticket-status">✓ LISTO PARA CIERRE</div>
+      <div class="batch-ticket-rule"></div>
+      <div class="batch-ticket-iso">Se generarán los mensajes<br><b>0500 → 0510</b></div>`;
+    const detail=$('batchTxDetail');
+    if(detail) detail.innerHTML=s.detail.length?`<table><thead><tr><th>RED</th><th>STAN</th><th>IMPORTE</th><th>ESTADO</th></tr></thead><tbody>${s.detail.map(t=>`<tr><td>${(t.network||t.cardBrand||'VISA').toUpperCase()}</td><td>${t.stan||'—'}</td><td>${formatCents(t.amountCents||0)}</td><td>${t.status||'—'}</td></tr>`).join('')}</tbody></table>`:'<p>No hay transacciones en el lote actual.</p>';
+    $('batchModal').classList.remove('hidden');
+  }
+
+  function closeBatch(){
+    const s=batchSummary();state.currentOperation='batch';state.currentStan=random6();
+    $('batchModal').classList.add('hidden');
+    screen('CIERRE DE LOTE','<small>Enviando cierre</small><strong>...</strong><span>Aguarde</span>');
+    const op=createOperation('batch');op.amountCents=s.netCents;op.amountDigits=String(s.netCents).padStart(12,'0');
+    const req=batchRequestFields(s);
+    addMessage({
+      id:`MSG-${Date.now()}-BATCHREQ`,operationId:op.id,mti:'0500',operation:'CIERRE',
+      direction:'SALIENTE',dateTime:dateTimeNow(),responseCode:'',fields:req,bitmap:bitmapHex(req),
+      amountCents:s.netCents,stan:op.stan,batch:state.batchNumber
+    });
+    setTimeout(()=>{
+      const res=batchResponseFields(s,'00');op.status='LOTE CERRADO';
+      addMessage({
+        id:`MSG-${Date.now()}-BATCHRES`,operationId:op.id,mti:'0510',operation:'CIERRE',
+        direction:'ENTRANTE',dateTime:dateTimeNow(),responseCode:'00',fields:res,bitmap:bitmapHex(res),
+        amountCents:s.netCents,stan:op.stan,batch:state.batchNumber
+      });
+      state.operations.filter(o=>o.batch===state.batchNumber&&o.id!==op.id).forEach(o=>{o.closed=true;persistSwitchTransaction(o)});
+      if(window.OSCSwitchStore) window.OSCSwitchStore.closeBatch({channel:'POS',batch:state.batchNumber});
+      renderMessage(state.messages[0]);screen('LOTE CERRADO','<small>Cierre confirmado</small><strong>00</strong><span>Nuevo lote habilitado</span>');
+      printReceipt(op);refreshHistoryStatuses();
+      state.batchNumber++;state.batchOpen=true;state.step='done';
+    },900);
+  }
+
+  function printReceipt(op){
+    persistSwitchTransaction(op);
+    const paper=$('receiptPaper');
+    paper.innerHTML=ticketHtml(op);
+    paper.querySelectorAll('.ticket-link[data-de]').forEach(element=>{
+      element.addEventListener('click',()=>highlightDataElement(element.dataset.de));
+    });
+    paper.classList.remove('printing');
+    requestAnimationFrame(()=>paper.classList.add('printing'));
+  }
+
+
+  function clearTechnicalMessagePanel(){
+    state.selectedMessageId=null;
+    const mti=$('mti'); if(mti) mti.textContent='----';
+    const sub=$('messageSubtitle'); if(sub) sub.textContent='Esperando operación';
+    const bm=$('bitmap'); if(bm) bm.textContent='0000000000000000';
+    renderFields([]);
+    document.querySelectorAll('#historyBody tr').forEach(tr=>tr.classList.remove('selected'));
+    updateDualBitmaps(true);
+  }
+
+  function reset(){
+    { const sel=document.getElementById('posOperationSelect'); if(sel){ sel.value='purchase'; const h=document.getElementById('posOperationHint'); if(h) h.textContent='Compra: ingresá el importe en el POS y elegí la forma de lectura.'; } }
+    state.currentOperation='purchase';state.step='amount';state.amountDigits='';state.pinDigits='';state.pinBlock=null;state.pinTrace=null;state.emvUn=null;state.emvAtc=null;state.entryMode=null;state.currentStan=null;state.currentAuth=null;state.selectedMessageId=null;state.selectedSourceOperationId=null;
+    $('entryModePanel').classList.add('hidden');$('qrStage')?.classList.add('hidden');$('captureStage').classList.add('hidden');$('captureStage').classList.remove('success');
+    ['captureChip','captureContactless','captureMagstripe','captureManual'].forEach(id=>$(id).classList.add('hidden'));
+    $('receiptPaper').classList.remove('printing');$('receiptPaper').textContent='';
+    screen('COMPRA','<small>Ingrese Importe</small><strong id="screenAmount">$ 0,00</strong><span>Presione VERDE para continuar</span>');
+    if(isLink()&&window.OSCLinkHth){const k=state.linkTx,orig=selectedLinkOriginal();
+      if(LINK_NO_AMOUNT.includes(k)) screen(OSCLinkHth.TX[k].short,'<small>LINK · Consulta</small><strong>SIN IMPORTE</strong><span>Presione VERDE para continuar</span>');
+      else if(LINK_AUTO_AMOUNT.includes(k)) screen(OSCLinkHth.TX[k].short,orig?`<small>Importe de la operación original</small><strong>${formatCents(orig.linkPurchaseCents??orig.amountCents)}</strong><span>Presione VERDE para continuar</span>`:'<small>LINK</small><strong>SIN ORIGINAL</strong><span>Elegí la operación original</span>');
+      else screen(OSCLinkHth.TX[k].short,`<small>LINK · ${k==='refund'?'Importe a devolver':k==='preauth_complete'?'Importe final':'Ingrese importe'}</small><strong id="screenAmount">$ 0,00</strong><span>Presione VERDE para continuar</span>`);}
+    setStep(1);['time1','time2','time3','time4','time5','time6'].forEach(id=>$(id).textContent='—');
+    $('flowAmount').textContent='$ 0,00';$('flowPin').textContent='••••';$('flowResponse').textContent='Pendiente';
+    $('resultText').textContent='EN ESPERA';$('resultCode').textContent='--';$('resultDetail').textContent='Ingrese una compra para comenzar.';$('authCode').textContent='------';
+    renderFields([]);
+    updateDualBitmaps();
+    document.getElementById('comparePanel')?.classList.add('hidden');
+    document.querySelectorAll('.operation-card').forEach(b=>b.classList.toggle('active',b.dataset.operation==='purchase'));
+  }
+
+  function serializeField(row){
+    const v=String(row[2]);const f=row[4];
+    if(f==='LLVAR')return String(v.length).padStart(2,'0')+v;
+    if(f==='LLLVAR')return String(v.length).padStart(3,'0')+v;
+    return v;
+  }
+  function annotatedMessage(message){if(message.linkAnnotated)return message.linkAnnotated;return`${message.mti}|${message.bitmap}|${message.fields.map(r=>`${r[0]}=${r[2]}`).join('|')}`}
+  function rawMessage(message){if(message.raw)return message.raw;return message.mti+message.bitmap+message.fields.map(serializeField).join('')}
+  function copySelectedMessage(){
+    const msg=state.messages.find(m=>m.id===state.selectedMessageId);if(!msg)return;
+    const payload=`TRAMA DIDÁCTICA - CON POSICIONES Y SEPARADORES
+${annotatedMessage(msg)}
+
+TRAMA COMO VIAJA EN EL MENSAJE
+(SIN PIPE, SIN NÚMERO DE CAMPO Y SIN SIGNO IGUAL)
+${rawMessage(msg)}`;
+    navigator.clipboard?.writeText(payload);$('copyBtn').textContent='✓ Copiado';setTimeout(()=>$('copyBtn').textContent='Copiar trama',1200);
+  }
+  function openSelectedInParser(){
+    const msg=state.messages.find(m=>m.id===state.selectedMessageId);if(!msg){alert('Seleccione un mensaje del historial.');return}
+    localStorage.setItem('oscAcademyParserPayload',JSON.stringify({source:'POS Virtual',mti:msg.mti,annotated:annotatedMessage(msg),raw:rawMessage(msg),createdAt:new Date().toISOString(),network:(state.operations.find(o=>o.id===msg.operationId)?.network||profile().id)}));
+    location.href='parser.html';
+  }
+
+  function applyTerminalModel(key){
+    state.terminalModel=key;const terminal=document.querySelector('.terminal');
+    terminal.classList.remove('ingenico','verifone','pax','android');terminal.classList.add(key);
+    $('terminalBrand').textContent=terminalModels[key].brand;document.querySelector('.model').textContent=terminalModels[key].model;
+  }
+
+  const OP_HINTS={purchase:'Compra: ingresá el importe en el POS y elegí la forma de lectura.',void:'Anulación: elegí la compra aprobada a anular.',refund:'Devolución: elegí la compra original y el importe (total o parcial).',query:'Consulta: estado del lote abierto y de la terminal.',batch:'Cierre de lote: el POS envía el 0500 con los totales y recibe el 0510.',reprint:'Reimpresión: elegí el ticket del historial.',lastTicket:'Último ticket: abre el último comprobante emitido.'};
+  function selectOperation(type){
+    if(type!=='purchase'){window.OSCFree.lock('Operación no incluida','La versión gratuita incluye solo una compra de prueba. Anulaciones, devoluciones, reversas, consultas y cierre de lote forman parte de la plataforma completa.');backToPurchase();return;}
+    $('operationDrawer')?.classList.add('hidden');
+    const sel=$('posOperationSelect'); if(sel&&sel.value!==type) sel.value=type;
+    if($('posOperationHint')) $('posOperationHint').textContent=OP_HINTS[type]||'';
+    document.querySelectorAll('.operation-card').forEach(b=>b.classList.toggle('active',b.dataset.operation===type));
+    if(type==='purchase')reset();
+    else if(type==='refund')openTransactionModal('refund');
+    else if(type==='void')openTransactionModal('void');
+    else if(type==='batch')openBatchModal();
+    else if(type==='query'){alert(`Lote actual ${state.batchNumber} · ${state.operations.filter(o=>o.batch===state.batchNumber).length} operaciones registradas.`);backToPurchase();}
+    else if(type==='reprint')openTransactionModal('reprint');
+    else if(type==='lastTicket'){const op=state.operations.find(o=>o.type!=='batch');if(op)printReceipt(op);else alert('Todavía no hay tickets.');backToPurchase();}
+  }
+  // Las acciones inmediatas (consulta, último ticket) dejan el selector otra vez en Compra.
+  function backToPurchase(){setTimeout(()=>{const sel=$('posOperationSelect');if(sel){sel.value='purchase';if($('posOperationHint'))$('posOperationHint').textContent=OP_HINTS.purchase;}},300);}
+  $('posOperationSelect')?.addEventListener('change',e=>selectOperation(e.target.value));
+
+  document.querySelectorAll('[data-key]').forEach(btn=>btn.addEventListener('click',()=>{if(/^\d$/.test(btn.dataset.key))pressNumber(btn.dataset.key)}));
+  document.querySelector('[data-action="accept"]').addEventListener('click',accept);
+  document.querySelector('[data-action="clear"]').addEventListener('click',()=>{if(state.step==='amount'){state.amountDigits=state.amountDigits.slice(0,-1);updateAmount()}});
+  document.querySelector('[data-action="cancel"]').addEventListener('click',reset);
+  document.querySelectorAll('[data-entry]').forEach(btn=>btn.addEventListener('click',()=>startCaptureAnimation(btn.dataset.entry)));
+  document.querySelectorAll('[data-code]').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('[data-code]').forEach(b=>b.classList.remove('selected'));btn.classList.add('selected');state.responseCode=btn.dataset.code}));
+  $('sendResponse').addEventListener('click',sendPurchaseResponse);
+  $('newTest').addEventListener('click',reset);
+
+  /* rc.1.22 · Cuotas, prueba de ARQC y ayudas educativas */
+  function refreshInstallmentUi(){
+    const box=$('installmentConfig'); if(!box) return;
+    const product=(selectedCard()?.product||'').toLowerCase();
+    const credit=!product.includes('débito')&&!product.includes('debito')&&!isDomesticCard()&&state.paymentMethod!=='qr';
+    box.classList.toggle('hidden',!credit);
+    if(!credit){state.installments={count:1,plan:'merchant'};if($('installmentCount'))$('installmentCount').value='1';}
+    const count=Number($('installmentCount')?.value||1), plan=$('installmentPlan')?.value||'merchant';
+    state.installments={count,plan};
+    if($('installmentPlan')) $('installmentPlan').disabled=count<=1;
+    const net=profile().id;
+    const how=net==='visa'?'Visa · Field 104 Dataset 5D + 126.13 = I':net==='mastercard'?'Mastercard · DE 48 SE 95 = ARGCTA + DE 112 SE 001':'Amex · Bit 48 DPP'+(plan==='issuer'?' (plan del emisor: consulta 108 + autorización 100)':' (plan del adquirente)');
+    if($('installmentSummary')) $('installmentSummary').textContent=count<=1?'Pago en 1 cuota (sin datos de cuotas en el mensaje)':`${count} cuotas ${plan==='issuer'?'con interés (financia el emisor)':'sin interés (financia el comercio)'} · ${how}`;
+  }
+  $('installmentCount')?.addEventListener('change',refreshInstallmentUi);
+  $('installmentPlan')?.addEventListener('change',refreshInstallmentUi);
+  document.querySelectorAll('[data-test-card],[data-payment-method]').forEach(b=>b.addEventListener('click',()=>setTimeout(refreshInstallmentUi,0)));
+  window.OSCRefreshInstallments=refreshInstallmentUi;
+  setTimeout(refreshInstallmentUi,0);
+  $('tamperInTransit')?.addEventListener('change',e=>{state.tamperInTransit=e.target.checked;});
+  $('installmentHelp')?.addEventListener('click',()=>window.OSCSecurityEdu?.open('cuotas'));
+  $('eduArqc')?.addEventListener('click',()=>openSecurityEdu('arqc'));
+  $('eduPin')?.addEventListener('click',()=>openSecurityEdu('pin'));
+  $('eduCuotas')?.addEventListener('click',()=>{
+    const op=[...state.operations].reverse().find(o=>o.installments);
+    const inst=op?.installments;
+    const msg=op&&state.messages.find(m=>m.operationId===op.id&&m.direction==='SALIENTE'&&m.fields.some(r=>['48','104','112'].includes(r[0])));
+    window.OSCSecurityEdu?.open('cuotas',inst?{network:(op.network||'').toUpperCase(),count:inst.count,interest:inst.interest,installmentLabel:formatCents(inst.installmentCents),totalLabel:formatCents(inst.financedCents),fields:(msg?.fields||[]).filter(r=>['48','104','112','126'].includes(r[0])).map(r=>[r[0],r[2]])}:null,inst?'trace':'simple');
+  });
+  $('printAgain').addEventListener('click',()=>{const op=state.operations.find(o=>o.id===state.selectedSourceOperationId)||state.operations.find(o=>o.type!=='batch');if(op)printReceipt(op);else alert('Todavía no hay un ticket disponible para reimprimir. Realizá primero una operación.');});
+  $('copyBtn')?.addEventListener('click',copySelectedMessage);
+  $('analyzeBtn')?.addEventListener('click',openSelectedInParser);
+  $('terminalModel').addEventListener('change',e=>applyTerminalModel(e.target.value));
+  $('operationMenuButton')?.addEventListener('click',()=>{const d=$('operationDrawer');if(d)d.classList.toggle('hidden')});
+  $('closeOperationDrawer')?.addEventListener('click',()=>$('operationDrawer')?.classList.add('hidden'));
+  document.querySelectorAll('[data-operation]').forEach(btn=>btn.addEventListener('click',()=>selectOperation(btn.dataset.operation)));
+  $('closeTransactionModal').addEventListener('click',()=>{$('transactionModal').classList.add('hidden');backToPurchase();});
+  $('cancelTransactionSelection').addEventListener('click',()=>{$('transactionModal').classList.add('hidden');backToPurchase();});
+  $('confirmTransactionSelection').addEventListener('click',confirmSelectedOperation);
+  $('refundMode')?.addEventListener('change',e=>$('refundAmountWrap')?.classList.toggle('hidden',e.target.value!=='partial'));
+  $('closeBatchModal').addEventListener('click',()=>{$('batchModal').classList.add('hidden');backToPurchase();});
+  $('cancelBatchClose').addEventListener('click',()=>$('batchModal').classList.add('hidden'));
+  $('confirmBatchClose').addEventListener('click',closeBatch);
+  document.getElementById('compareMessagesBtn')?.addEventListener('click',()=>document.getElementById('comparePanel')?.classList.toggle('hidden'));
+  $('downloadTicket').addEventListener('click',downloadTicket);
+
+  setInterval(()=>{
+    $('posClock').textContent=timeNow();
+    const e=Math.floor((Date.now()-state.sessionStarted)/1000);
+    $('sessionTime').textContent=[Math.floor(e/3600),Math.floor((e%3600)/60),e%60].map(v=>String(v).padStart(2,'0')).join(':');
+  },1000);
+
+  applyTerminalModel('ingenico');reset();clearTechnicalMessagePanel();
+  (window.OSCSwitchStore?.ready||Promise.resolve()).then(()=>restoreWorkspaceHistory());
+  /* ===================== rc.1.24 · Red LINK (Host to Host BASE24) ===================== */
+  function posTech(text){
+    const ev=document.getElementById('posTechEvents'); if(!ev) return;
+    const d=document.createElement('div'); d.textContent=new Date().toLocaleTimeString('es-AR')+' · '+text; ev.prepend(d);
+    while(ev.children.length>12) ev.lastElementChild.remove();
+  }
+  function linkProc(){
+    const p=window.OSCLinkHth?.readPanel()||{accountType:'10'}; const t=p.accountType||'10';
+    const o=window.OSCLinkHth?.OPS?.[state.linkTx]; if(o) return o.proc({accountType:t});
+    return {withdrawal:'01'+t+'00',balance:'31'+t+'00',transfer:'09'+t+'00',debin:'F3'+t+'00',fci_debit:'F1'+t+'00',fci_credit:'F200'+t}[state.linkTx]||'01'+t+'00';
+  }
+  function linkPreviewRows(withPin=false){
+    const card=selectedCard(), amt=state.linkTx==='balance'?0:Number(state.amountDigits||0);
+    const rows=[
+      field(3,'proc-cde · Código de transacción',linkProc(),'6','g 9(6)','C-X-5 · LINK'),
+      field(4,'tran-amt · Monto de la transacción',String(amt).padStart(12,'0'),'12','9(12)','10 enteros + 2 decimales')
+    ];
+    if(state.entryMode){
+      const t2=(card.track2||'').padEnd(37,' ');
+      rows.push(field(35,'track 2','37'+window.OSCLinkHth.displayValue(t2),'39','LLVAR ..X(37)',`Leído por ${(entryModes[state.entryMode]||entryModes.chip).label}`));
+      rows.push(field(41,'term-id · Terminal',window.OSCLinkHth.displayValue('POSOSC0001'.padEnd(16,' ')),'16','X(16)','Configuración terminal'));
+      rows.push(field(49,'crncy-cde · Moneda','032','3','9(3)','032 = Pesos'));
+    }
+    if(withPin&&state.pinBlock) rows.push(field(52,'pin · PIN cifrado',String(state.pinBlock).slice(0,16),'16','X(16)','PIN Block ISO 9564 formato 0 (ZPK de práctica)'));
+    return rows.sort((a,b)=>Number(a[0])-Number(b[0]));
+  }
+  function refreshLinkUi(){
+    const panel=$('linkPanel'); const on=isLink();
+    $('posOperationBox')?.classList.toggle('hidden',on);
+    if(panel){
+      panel.classList.toggle('hidden',!on);
+      if(on&&!panel.dataset.ready&&window.OSCLinkHth){
+        OSCLinkHth.css();
+        panel.innerHTML=OSCLinkHth.panelHtml({mode:'pos'});
+        panel.dataset.ready='1';
+        const sel=$('linkTxSelect'); if(sel){sel.value=state.linkTx; sel.addEventListener('change',()=>{state.linkTx=sel.value;OSCLinkHth.syncPanel(state.linkTx);fillLinkOriginals();reset();});}
+        $('linkOriginal')?.addEventListener('change',()=>{if(state.step==='amount')reset();});
+        $('linkAccountType')?.addEventListener('change',()=>{if(state.step==='amount')updateAmount();});
+        OSCLinkHth.syncPanel(state.linkTx);
+      }
+      if(on) fillLinkOriginals();
+    }
+    // LINK HTH viaja con Track 2 (campo 35): sin datos EMV en el mensaje. Se ocultan Contactless y Manual.
+    document.querySelectorAll('[data-entry="contactless"],[data-entry="manual"]').forEach(b=>b.style.display=on?'none':'');
+    // Los escenarios de respuesta de LINK se eligen en el panel (códigos C-X-6); se ocultan los de Visa/Mastercard/Amex.
+    document.querySelectorAll('.pos-scenario-full').forEach(sec=>sec.style.display=on?'none':'');
+  }
+  // Operaciones LINK aprobadas que pueden referenciarse (anulación, devolución, finalización de preautorización).
+  function linkOriginalCandidates(kind=state.linkTx){
+    const need=window.OSCLinkHth?.OPS?.[kind]?.original; if(!need) return [];
+    return state.operations.filter(o=>o.network==='link'&&o.linkKind===need&&o.status==='APROBADA'&&!o.linkClosed).reverse();
+  }
+  function fillLinkOriginals(){
+    const sel=$('linkOriginal'); if(!sel) return;
+    const list=linkOriginalCandidates();
+    sel.innerHTML=list.length?list.map(o=>`<option value="${o.id}">${OSCLinkHth.TX[o.linkKind].short} · ${formatCents(o.amountCents)} · RRN ${o.rrn} · ${new Date(o.createdAt).toLocaleTimeString('es-AR')}</option>`).join(''):'<option value="">— No hay operaciones aprobadas para referenciar —</option>';
+  }
+  function selectedLinkOriginal(){const idv=$('linkOriginal')?.value;return idv?state.operations.find(o=>o.id===idv):null;}
+  function linkTicketHtml(op,out){
+    const T=window.OSCLinkHth, kind=op.linkKind, ok=out.code==='00';
+    const money=c=>formatCents(Number(c||0));
+    const lines=[
+      ['RED','LINK · BASE24 HTH'],['OPERACIÓN',T.TX[kind].short],['CUENTA',T.accountLabel(out.ctx.accountType)],
+      LINK_NO_AMOUNT.includes(kind)?null:['IMPORTE',money(out.amountCents??out.ctx.amountCents)],
+      out.ctx.cashbackCents&&T.OPS[kind]?.cashback?['EFECTIVO (CASH-BACK)',money(out.ctx.cashbackCents)]:null,
+      out.ctx.original?['OPERACIÓN ORIGINAL','RRN '+out.ctx.original.rrn]:null,
+      kind==='purchase'&&out.ctx.installments>1?['CUOTAS',String(out.ctx.installments)]:null,
+      out.reversal?['REVERSA 0420',`${out.reversal.reason} · ${out.reversal.text}`]:null,
+      kind==='transfer'?['CBU DESTINO',String(out.ctx.destination?.cbu||'').replace(/\D/g,'').slice(0,22)]:null,
+      kind==='debin'?['ID DEBIN',out.debinId]:null,
+      out.fci?['FCI',`${String(out.fci.codigo).trim()} · ${out.fci.tipoOper==='A'?'ANULACIÓN':'SUSCRIPCIÓN'} · SEC ${out.fci.seq}`]:null,
+      out.fci?['CANAL',out.fci.terminalLabel||out.fci.terminal]:null,
+      ['TARJETA','•••• '+String(out.ctx.pan).slice(-4)],['TERMINAL','POSOSC0001'],['STAN',out.ctx.stan],['RECIBO (DE37)',out.ctx.rrn],
+      ok&&out.auth?['AUTORIZACIÓN',out.auth]:null,
+      ['RESPUESTA',`${out.code} · ${out.resultText}`],
+      out.lab?['TESTLAB',`DESARROLLO · ${out.lab.verdict==='APROBADA'?'Aprobada':out.lab.verdict==='FALLIDA'?'Fallida':'Sin respuesta'}`]:null,
+      ok&&!out.reversal&&kind!=='debin'?['SALDO DISPONIBLE',out.currency==='840'?'U$S '+(Number(out.balanceCents||0)/100).toLocaleString('es-AR',{minimumFractionDigits:2}):money(out.balanceCents)]:null
+    ].filter(Boolean);
+    return `<div class="ticket-head"><strong>OSC PAYMENT ACADEMY</strong><small>${new Date().toLocaleString('es-AR')}</small></div>`+
+      lines.map(([k,v])=>`<div style="display:flex;justify-content:space-between;gap:8px;font-size:11px"><span>${k}</span><b>${v}</b></div>`).join('')+
+      `<div style="text-align:center;margin-top:8px;font-weight:800">${out.reversal?'REVERSADA':ok?'APROBADA':'RECHAZADA'}</div>`;
+  }
+  function sendLinkTransaction(){
+    if(!window.OSCLinkHth){alert('Falta el módulo LINK.');return;}
+    state.step='processing';state.currentStan=random6();state.currentAuth='';setStep(4);
+    const kind=state.linkTx, p=OSCLinkHth.readPanel();
+    const op=createOperation('link-'+kind); op.network='link'; op.linkKind=kind; op.status='EN PROCESO';
+    const orig=selectedLinkOriginal();
+    const original=orig&&OSCLinkHth.OPS[kind]?.original?{id:orig.id,amountCents:orig.linkPurchaseCents??orig.amountCents,rrn:orig.rrn,mmdd:orig.linkMmdd}:null;
+    const cashbackCents=kind==='cashback'?p.cashbackCents:kind==='cashback_void'&&orig?Number(orig.linkCashCents||0):0;
+    const linkCtx={terminal:'POS',amountCents:LINK_NO_AMOUNT.includes(kind)?0:Number(state.amountDigits||0),accountType:p.accountType,scenario:p.scenario,after:p.after,
+      installments:kind==='purchase'?p.installments:1,cashbackCents,original,
+      pinBlock:state.pinBlock,pinOk:(kind==='debin'||/^fci_/.test(kind))?undefined:state.pinDigits==='1234',stan:state.currentStan,destination:p.destination,debin:p.debin,fci:p.fci,termId:'POSOSC0001',merchantName:'COMERCIO OSC'};
+    // rc.1.49 · TestLab · Modo Laboratorio: la 0200 sale al ambiente de DESARROLLO del banco; la respuesta es la del banco.
+    if(window.OSCTestLabMode?.active()){
+      op.lab=true;
+      screen('LABORATORIO',`<small>LINK · ambiente de desarrollo</small><strong>0200</strong><span>${OSCLinkHth.TX[kind]?.short||kind} · enviando…</span>`);
+      posTech('TestLab · la trama sale al ambiente de DESARROLLO con la tarjeta del perfil');
+      const {scenario,after,pinBlock,pinOk,...labCtx}=linkCtx;
+      OSCTestLabMode.runFromSimulator({kind,terminal:'POS',ctx:labCtx}).then(proceedLink).catch(e=>{
+        op.status='NO ENVIADA'; state.step='done';
+        screen('TESTLAB',`<small>No se envió</small><strong>—</strong><span>${String(e.message||e).replace(/</g,'&lt;')}</span>`);
+        posTech('TestLab · '+(e.message||e)); OSCTestLabMode.errorToast(e.message||String(e));
+      });
+      return;
+    }
+    proceedLink(OSCLinkHth.build(kind,linkCtx));
+    function proceedLink(out){
+    op.rrn=out.ctx.rrn; op.amountCents=out.amountCents??out.ctx.amountCents; op.linkMmdd=out.ctx.clock.mmdd; op.linkPurchaseCents=Number(state.amountDigits||0); op.linkCashCents=cashbackCents;
+    document.querySelector('#step4 small').textContent='LINK · 0200 OUTPUT B24';
+    screen('PROCESANDO',`<small>LINK · BASE24</small><strong>0200</strong><span>${OSCLinkHth.TX[kind].short}</span>`);
+    posTech(out.duplicate?`LINK · ${OSCLinkHth.TX[kind].label} · BASE24 rechaza por clave duplicada (no se envía 0200)`:`LINK · ${OSCLinkHth.TX[kind].label} · DE3=${out.messages[0]?.fields.find(r=>r.de===3)?.value}`);
+    const toRows=m=>m.fields.map(r=>field(r.de,r.name,OSCLinkHth.displayValue(r.value),String(r.value.length),r.attr,r.ref));
+    let i=0;
+    const next=()=>{
+      const m=out.messages[i++];
+      if(!m) return finish();
+      if(m.direction==='ENTRANTE'){setStep(5);$('time5').textContent=timeNow();}else{$('time4').textContent=timeNow();}
+      addMessage({id:`MSG-${Date.now()}-${i}-${m.mti}`,operationId:op.id,mti:m.mti,operation:`LINK ${OSCLinkHth.TX[kind].short}`,direction:m.direction,dateTime:dateTimeNow(),responseCode:m.responseCode,
+        fields:toRows(m),bitmap:m.bitmap,raw:m.raw,linkAnnotated:OSCLinkHth.annotated(m),linkLabel:m.label,amountCents:op.amountCents,stan:op.stan,batch:op.batch});
+      renderMessage(state.messages[0]);
+      posTech(`${m.label}${m.responseCode?' · DE39='+m.responseCode:''}`);
+      setTimeout(next,650);
+    };
+    const finish=()=>{
+      const ok=out.code==='00'&&!out.reversal;
+      op.status=out.reversal?'REVERSADA':ok?'APROBADA':'RECHAZADA'; op.responseCode=out.code;
+      if(ok&&original){const o=state.operations.find(x=>x.id===original.id); if(o){o.linkClosed=true; o.status=({void:'ANULADA',cashback_void:'ANULADA',refund_void:'ANULADA',refund:'DEVUELTA',preauth_complete:'FINALIZADA'})[kind]||o.status;}}
+      fillLinkOriginals(); op.auth=out.lab?'-':(out.auth||(ok?random6():'-')); state.currentAuth=op.auth;
+      persistLinkOperation(op); if(ok&&original) persistLinkOperation(state.operations.find(x=>x.id===original.id));
+      if(/^fci_/.test(kind)&&ok){const sq=$('linkFciSeq'); if(sq) sq.value=OSCLinkHth.fciNextSeq();}
+      $('flowResponse').textContent=`${out.code} - ${out.resultText}`;
+      $('resultText').textContent=out.reversal?(out.timeout?'SIN RESPUESTA · REVERSADA':'REVERSADA'):ok?'APROBADA':'RECHAZADA';$('resultCode').textContent=out.reversal?out.reversal.reason:out.code;
+      $('resultDetail').textContent=`LINK · ${out.summary}${!out.timeout&&kind!=='debin'?` · Saldo ${formatCents(out.balanceCents)}`:''}`;
+      $('authCode').textContent=ok?op.auth:'------';
+      screen(out.reversal?'REVERSADA':ok?'APROBADA':'RECHAZADA',`<small>${out.resultText}</small><strong>${out.reversal?out.reversal.reason:out.code}</strong><span>${LINK_NO_AMOUNT.includes(kind)&&ok?'Saldo '+formatCents(out.balanceCents):out.reversal?'Reversa 0420 confirmada con 0430':ok?'Operación finalizada':'Operación rechazada'}</span>`);
+      if(out.summary) posTech(out.summary);
+      refreshHistoryStatuses();
+      setStep(6);
+      setTimeout(()=>{
+        $('time6').textContent=timeNow();
+        const paper=$('receiptPaper'); paper.innerHTML=linkTicketHtml(op,out); paper.classList.remove('printing'); requestAnimationFrame(()=>paper.classList.add('printing'));
+        state.transactions++; const st=$('sessionTx'); if(st) st.textContent=state.transactions; state.step='done';
+      },500);
+    };
+    setTimeout(next,700);
+    }
+  }
+  function refreshNetworkProfile(){
+    if(!window.OSCNetworks) return;
+    syncPaymentProfile();
+    const p=profile();
+    const badge=$('posNetworkBadge'), validation=$('posNetworkValidation');
+    if(badge) badge.innerHTML=OSCNetworks.badge(p);
+    if(validation){
+      const ok=OSCNetworks.luhn(state.pan);
+      validation.textContent=state.paymentMethod==='qr'
+        ?`${selectedQr().label} · ${selectedQr().mode} · Perfil ${p.name}`
+        :`${selectedCard().label} · BIN ${state.pan.slice(0,6)} · Luhn ${ok?'válido':'demo/no válido'}`;
+      validation.className='network-validation '+(ok?'ok':'warn');
+    }
+    document.querySelectorAll('.card-demo strong,.capture-card strong,.virtual-card strong').forEach(el=>el.textContent=p.short);
+    document.querySelectorAll('[data-test-card]').forEach(button=>button.classList.toggle('active',button.dataset.testCard===state.testCard));
+    const summary=$('selectedTestCardSummary');
+    if(summary && state.paymentMethod==='card') summary.textContent=`${selectedCard().label} · PAN de prueba asignado automáticamente · •••• ${state.pan.slice(-4)} · ${p.name}`;
+    const step=document.querySelector('#step2 small');
+    if(step && state.entryMode){
+      const cap=(entryModes[state.entryMode]||entryModes.chip).label;
+      step.textContent=state.paymentMethod==='qr'?`${selectedQr().label} · Wallet`:
+        (p.id==='amex' && state.entryMode==='contactless'?`${p.name} · Expresspay`:
+        (p.id==='amex' && state.entryMode==='chip'?`${p.name} · AEIPS Chip`:`${p.name} · ${cap}`));
+    }
+    refreshLinkUi();
+    const sendBtn=$('sendResponse');
+    if(sendBtn){
+      sendBtn.disabled=false;
+      sendBtn.title=p.id==='amex'?'Generar POS Authorization Response 1110 AMEX':'';
+    }
+  }
+  function setPaymentMethod(method){
+    state.paymentMethod=method;
+    $('qrEducationHelp')?.classList.remove('visible');
+    document.querySelectorAll('[data-payment-method]').forEach(b=>b.classList.toggle('active',b.dataset.paymentMethod===method));
+    $('cardPaymentConfig').classList.toggle('hidden',method!=='card');
+    $('qrPaymentConfig').classList.toggle('hidden',method!=='qr');
+    refreshNetworkProfile(); reset();
+  }
+  function openQrEducationModal(){
+    const modal=$('qrEducationModal');
+    if(modal) modal.classList.remove('hidden');
+  }
+  function closeQrEducationModal(){
+    const modal=$('qrEducationModal');
+    if(modal) modal.classList.add('hidden');
+    $('qrEducationHelp')?.classList.remove('visible');
+  }
+  document.addEventListener('DOMContentLoaded',()=>{
+    document.querySelectorAll('[data-payment-method]').forEach(btn=>btn.addEventListener('click',()=>setPaymentMethod(btn.dataset.paymentMethod)));
+    const qr=$('qrTypeSelect'), iso=$('showIsoTicket');
+    const testCardGrid=$('testCardGrid');
+    if(testCardGrid){
+      testCardGrid.addEventListener('click',event=>{
+        const cardButton=event.target.closest('[data-test-card]');
+        if(!cardButton || cardButton.disabled) return;
+        event.preventDefault();
+        event.stopPropagation();
+        selectTestCard(cardButton.dataset.testCard);
+      });
+    }
+    if(qr){qr.value=state.qrType;qr.addEventListener('change',()=>{state.qrType=qr.value;$('qrEducationHelp')?.classList.remove('visible');refreshNetworkProfile();reset();});}
+    if(iso){iso.checked=state.showIsoTicket;iso.addEventListener('change',()=>{state.showIsoTicket=iso.checked;const op=state.operations.find(o=>o.id===state.selectedSourceOperationId);if(op&&$('receiptPaper').innerHTML.trim())$('receiptPaper').innerHTML=ticketHtml(op);});}
+    const qrEducation=$('qrEducationModal'), closeQrEducation=$('closeQrEducationModal'), startQrEducation=$('startQrEducationSimulation'), toggleQrFlow=$('toggleQrEducationFlow'), qrFlow=$('qrEducationFlow');
+    const qrMethod=document.querySelector('[data-payment-method="qr"]'), qrHelp=$('qrEducationHelp'), qrHoverArea=qrMethod?.closest('.qr-method-wrap')||qrMethod;
+    let qrHelpTimer=null,qrHelpHideTimer=null;
+    if(qrMethod&&qrHelp){
+      const showQrHelp=()=>{clearTimeout(qrHelpTimer);clearTimeout(qrHelpHideTimer);qrHelpTimer=setTimeout(()=>qrHelp.classList.add('visible'),1800)};
+      const hideQrHelp=()=>{clearTimeout(qrHelpTimer);clearTimeout(qrHelpHideTimer);qrHelpHideTimer=setTimeout(()=>qrHelp.classList.remove('visible'),650)};
+      qrHoverArea.addEventListener('mouseenter',showQrHelp);
+      qrHoverArea.addEventListener('mouseleave',hideQrHelp);
+      qrMethod.addEventListener('focus',showQrHelp);
+      qrMethod.addEventListener('blur',hideQrHelp);
+      qrHelp.addEventListener('mouseenter',()=>clearTimeout(qrHelpHideTimer));
+      qrHelp.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();qrHelp.classList.remove('visible');openQrEducationModal();});
+    }
+    if(closeQrEducation) closeQrEducation.addEventListener('click',closeQrEducationModal);
+    if(startQrEducation) startQrEducation.addEventListener('click',closeQrEducationModal);
+    if(qrEducation) qrEducation.addEventListener('click',event=>{if(event.target===qrEducation) closeQrEducationModal();});
+    if(toggleQrFlow&&qrFlow) toggleQrFlow.addEventListener('click',()=>{const hidden=qrFlow.classList.toggle('hidden');toggleQrFlow.textContent=hidden?'Ver flujo':'Ocultar flujo';if(!hidden)qrFlow.scrollIntoView({behavior:'smooth',block:'nearest'});});
+    const autoResponse=$('autoResponse');
+    if(autoResponse){autoResponse.checked=state.autoResponse;autoResponse.addEventListener('change',()=>{state.autoResponse=autoResponse.checked;localStorage.setItem('oscPosAutoResponse',String(state.autoResponse));});}
+    loadDomesticCards();
+    selectTestCard(state.testCard,{resetFlow:false});
+  });
+
+
+  // Tutor OSC v1.0 blueprint context provider.
+  window.OSCTutorContext = function(){
+    const selected=state.messages.find(m=>m.id===state.selectedMessageId);
+    let op=selected?state.operations.find(o=>o.id===selected.operationId):null;
+    if(!op) op=state.operations.slice().reverse().find(o=>o.type!=='batch')||null;
+    if(!op) return {module:'pos',channel:'POS',brand:(profile()?.id||state.network||'').toUpperCase(),transaction:null};
+    const req=state.messages.find(m=>m.operationId===op.id&&String(m.direction).toUpperCase()==='SALIENTE')||state.messages.find(m=>m.operationId===op.id&&/00$/.test(m.mti));
+    const res=state.messages.find(m=>m.operationId===op.id&&String(m.direction).toUpperCase()==='ENTRANTE')||state.messages.find(m=>m.operationId===op.id&&/10$/.test(m.mti));
+    const card=TEST_CARDS[op.cardId||state.testCard]||selectedCard();
+    const scenario=op.responseCode||state.responseCode||res?.responseCode||'';
+    const timeout=String(scenario).toUpperCase()==='TO'||/TIME.?OUT|SIN RESPUESTA/i.test(op.status||'');
+    return {module:'pos',channel:'POS',brand:String(op.network||card?.network||profile()?.id||'').toUpperCase(),transaction:{id:op.id,operation:String(op.type||'operación').replace(/_/g,' '),cardLabel:card?.label||'',amountCents:op.amountCents,result:timeout?'TIMEOUT / SIN RESPUESTA':(op.status||'—'),scenario,request:req?{mti:req.mti,bitmap:req.bitmap,fields:req.fields||[]}:null,response:res?{mti:res.mti,bitmap:res.bitmap,fields:res.fields||[]}:null,responseCode:res?.responseCode||op.responseCode||'',eventType:timeout?'TIMEOUT':(res?'TRANSACTION_RESPONSE':'OTHER')}};
+  };
+
+})();

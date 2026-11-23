@@ -1,0 +1,49 @@
+/* OSC Payment Academy · v4.0.0-rc.1.58 · Estilos de la versión gratuita */
+.oscfree-bar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:8px 18px;background:linear-gradient(90deg,#0b2a1e,#0b2238);border-bottom:1px solid #1c7d55;font:600 12.5px/1.3 Inter,Segoe UI,Arial,sans-serif;color:#cfe3f7;position:relative;z-index:50}
+.oscfree-home{color:#dbe9f7!important;text-decoration:none!important;border:1px solid #2a5a86;border-radius:8px;padding:5px 10px;white-space:nowrap}.oscfree-home:hover{background:#12355a}
+.osc-back-platform{display:none!important}
+.oscfree-tag{background:#18d17e;color:#03170d;padding:3px 9px;border-radius:999px;font-weight:800;letter-spacing:.06em;font-size:11px}
+.oscfree-who{color:#9dc3e6;flex:1;min-width:120px}
+.oscfree-cta{background:#18b65a;color:#fff!important;text-decoration:none!important;padding:6px 12px;border-radius:8px;font-weight:800;white-space:nowrap}
+.oscfree-cta.alt{background:#1b6fd8;margin-left:8px}
+.oscfree-link{background:none;border:0;color:#9fd0ff!important;cursor:pointer;font:inherit;text-decoration:underline!important;padding:0 4px}
+.oscfree-nav .oscfree-section{margin:14px 8px 4px;color:#6f8fae;font:800 10.5px Inter,Segoe UI,Arial,sans-serif;letter-spacing:.09em}
+.oscfree-nav a.oscfree-item{display:flex!important;align-items:center;gap:8px;text-decoration:none}
+.oscfree-nav a.oscfree-item span{flex:1}
+.oscfree-nav a.oscfree-item small{display:block;color:#7fd6a8;font-size:10px;font-weight:600;margin-top:1px}
+.oscfree-nav a.oscfree-item em{font-style:normal;font-size:11px;opacity:.85}
+.oscfree-nav a.oscfree-item.locked{opacity:.55}
+.oscfree-nav a.oscfree-item.locked:hover{opacity:.85}
+.oscfree-demo{display:block;margin:16px 6px 6px;padding:10px 12px;border-radius:9px;background:#18b65a;color:#fff!important;text-align:center;font:800 13px Inter,Segoe UI,Arial,sans-serif;text-decoration:none!important}
+.oscfree-modal{position:fixed;inset:0;background:#000b;z-index:200000;display:flex;align-items:center;justify-content:center;padding:16px}
+.oscfree-card{max-width:480px;width:100%;background:#0b1827;border:1px solid #2f83ff;border-radius:16px;padding:26px;text-align:center;color:#f5f8fc;font-family:Inter,Segoe UI,Arial,sans-serif;box-shadow:0 30px 80px #000a}
+.oscfree-card h2{margin:6px 0 10px;font-size:1.2rem}
+.oscfree-card p{color:#b9c8d8;line-height:1.6;font-size:.92rem;margin:0 0 6px}
+.oscfree-icon{font-size:40px}
+.oscfree-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:16px}
+.oscfree-btn{display:inline-block;padding:10px 16px;border-radius:9px;font:700 14px Inter,Segoe UI,Arial,sans-serif;text-decoration:none!important;cursor:pointer;border:1px solid transparent}
+.oscfree-btn.wa{background:#18b65a;color:#fff!important}
+.oscfree-btn.primary{background:#1b6fd8;color:#fff!important}
+.oscfree-btn.ghost{background:transparent;border-color:#33506a;color:#a8bccf!important}
+
+/* Fichas de campo (manito) y ayudas de manual: no incluidas en la versión gratuita */
+.study-manual-btn,[data-manual-de]{display:none!important}
+
+/* ---------- POS ---------- */
+html[data-free-page="pos"] .qr-method-wrap,
+html[data-free-page="pos"] #posOperationBox,
+html[data-free-page="pos"] #installmentConfig,
+html[data-free-page="pos"] #linkPanel,
+html[data-free-page="pos"] .btn-switch-link,
+html[data-free-page="pos"] #scenarioGrid button:not([data-code="00"]){display:none!important}
+html[data-free-page="pos"] .oscfree-pos-note{margin:10px 0;padding:10px 12px;border-radius:9px;background:#0b2a1e;border:1px solid #1c7d55;color:#8fe8bd;font:600 12.5px/1.5 Inter,Segoe UI,Arial,sans-serif}
+
+/* ---------- ATM ---------- */
+html[data-free-page="atm"] #partialCash,
+html[data-free-page="atm"] #leaveCash,
+html[data-free-page="atm"] #reconcileAtm,
+html[data-free-page="atm"] [data-scenario]:not([data-scenario="approved"]){display:none!important}
+
+/* ---------- Parser Guiado ---------- */
+html[data-free-page="parser_guiado"] .lvl[data-lvl="2"],html[data-free-page="parser_guiado"] .lvl[data-lvl="3"]{opacity:.55;position:relative}
+html[data-free-page="parser_guiado"] .lvl[data-lvl="2"]::after,html[data-free-page="parser_guiado"] .lvl[data-lvl="3"]::after{content:"🔒 Plataforma completa";position:absolute;top:10px;right:12px;font-size:.65rem;color:#ffd27a}

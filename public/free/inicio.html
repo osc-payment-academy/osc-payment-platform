@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="es">
+<head><script src="/free/x/free-guard.js?v=rc1.58" data-page="inicio" data-networks="visa"></script><link rel="stylesheet" href="/free/x/free.css?v=rc1.58">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Gratis · Inicio · OSC Payment Academy</title>
+<style>
+  :root{--bg:#06111d;--panel:#0b1827;--line:#173149;--text:#f5f8fc;--muted:#9dafc2}
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,Segoe UI,Arial,sans-serif}
+  .app{display:grid;grid-template-columns:240px minmax(0,1fr);min-height:calc(100vh - 42px)}
+  aside{padding:19px 14px;background:linear-gradient(180deg,#071522,#06131f);border-right:1px solid var(--line)}
+  .brand{padding:2px 7px 14px;font-size:1.15rem;font-weight:800}.brand span{color:#38a7ff}.brand small{display:block;color:#b5c4d2;font-size:.7rem;font-weight:500;margin-top:4px}
+  aside nav a{padding:9px 10px;border-radius:8px;color:#dce7f1;font-size:.84rem}
+  aside nav a:hover{background:#10263b}aside nav a.active{background:linear-gradient(135deg,#153b68,#19579b)}
+  main{padding:26px 30px 60px;max-width:1150px}
+  h1{margin:0 0 6px;font-size:1.6rem}.sub{color:var(--muted);margin:0 0 22px;line-height:1.6}
+  .welcome{display:none;margin:0 0 18px;padding:12px 14px;border-radius:10px;background:#0b2a1e;border:1px solid #1c7d55;color:#8fe8bd}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
+  .m{display:flex;flex-direction:column;gap:6px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;color:var(--text);text-decoration:none;transition:.15s;position:relative}
+  .m:hover{border-color:#2f83ff;transform:translateY(-2px)}
+  .m .i{font-size:1.5rem}.m b{font-size:1rem}.m small{color:var(--muted);line-height:1.5;font-size:.8rem}
+  .m .st{align-self:flex-start;margin-top:4px;font-size:.7rem;font-weight:800;padding:3px 9px;border-radius:999px;background:#0b2a1e;color:#7be3b2;border:1px solid #1c7d55}
+  .m .st.used{background:#2a2108;color:#ffd27a;border-color:#735b28}
+  .m.lock{opacity:.6}.m.lock .st{background:#1a1f2a;color:#a8b4c4;border-color:#33465c}
+  h2{font-size:.78rem;letter-spacing:.09em;color:#75bcff;margin:28px 0 10px}
+  .demo{margin-top:30px;padding:20px;border-radius:14px;background:linear-gradient(135deg,#0b2238,#0b2a1e);border:1px solid #1c7d55;display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+  .demo p{margin:0;flex:1;min-width:240px;color:#cfe0f0;line-height:1.6}
+  .demo a{background:#18b65a;color:#fff;text-decoration:none;padding:11px 18px;border-radius:9px;font-weight:800}
+  @media(max-width:860px){.app{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside>
+    <div class="brand"><span>OSC</span> PAYMENT ACADEMY<small>Laboratorio de Medios de Pago</small></div>
+    <nav></nav>
+  </aside>
+  <main>
+    <div class="welcome" id="welcome">✓ Tu cuenta gratuita está activa. ¡Bienvenido/a!</div>
+    <h1 id="hello">Tu laboratorio gratuito</h1>
+    <p class="sub">Probá cómo viaja una transacción real: hacé una compra en el POS, una extracción en el ATM y mirá sus tramas en el Parser.</p>
+
+    <h2>INCLUIDO EN TU CUENTA GRATUITA</h2>
+    <div class="grid">
+      <a class="m" href="/free/pos.html"><span class="i">▣</span><b>POS Virtual</b><small>Hacé una compra con tarjeta Visa y analizá la trama 0200/0210 en el Parser.</small><span class="st" id="stPos">1 compra disponible</span></a>
+      <a class="m" href="/free/atm.html"><span class="i">🏧</span><b>ATM Virtual</b><small>Hacé una extracción de prueba y seguí el flujo del mensaje.</small><span class="st" id="stAtm">1 extracción disponible</span></a>
+      <a class="m" href="/free/parser.html"><span class="i">◉</span><b>Parser ISO 8583</b><small>Decodificá tramas Visa, Mastercard y American Express.</small><span class="st">Sin límite</span></a>
+      <a class="m" href="/free/parser_guiado.html"><span class="i">🧩</span><b>Parser Guiado</b><small>Decodificá a mano, paso a paso, una trama del Nivel 1.</small><span class="st">1 trama</span></a>
+      <a class="m" href="/free/curso.html"><span class="i">🎓</span><b>Curso Interactivo</b><small>¿Qué es ISO 8583? y el circuito de medios de pago.</small><span class="st">Láminas 2 y 3</span></a>
+    </div>
+
+    <h2>EN LA PLATAFORMA COMPLETA</h2>
+    <div class="grid">
+      <a class="m lock" href="/free/constructor.html"><span class="i">⌘</span><b>Constructor ISO 8583</b><small>Armá mensajes campo por campo, con validaciones y REJECT.</small><span class="st">🔒 Plataforma completa</span></a>
+      <a class="m lock" href="/free/ecommerce.html"><span class="i">🛒</span><b>E-Commerce / 3DS</b><small>Compras no presenciales y autenticación 3-D Secure.</small><span class="st">🔒 Plataforma completa</span></a>
+      <a class="m lock" href="/free/wallet.html"><span class="i">📱</span><b>Wallet / Tokenización</b><small>Tokens, criptogramas y billeteras.</small><span class="st">🔒 Plataforma completa</span></a>
+      <a class="m lock" href="/free/switch.html"><span class="i">🏦</span><b>Switch del Adquirente</b><small>Lotes, compensación Visa BASE II y Mastercard IPM.</small><span class="st">🔒 Plataforma completa</span></a>
+      <a class="m lock" href="/free/ebook.html"><span class="i">📖</span><b>eBook + Evaluaciones</b><small>Teoría completa de ISO 8583 y evaluaciones por etapa.</small><span class="st">🔒 Plataforma completa</span></a>
+    </div>
+
+    <div class="demo"><p><b>¿Querés la plataforma completa para tu equipo?</b><br />Todas las marcas (Visa, Mastercard, Amex, Red LINK), reversas, devoluciones, Constructor, Switch, Curso completo y fichas de cada campo.</p>
+      <a target="_blank" rel="noopener" href="https://wa.me/5491132318122?text=Hola%20Oscar%2C%20estoy%20usando%20la%20cuenta%20gratuita%20de%20OSC%20Payment%20Academy%20y%20quiero%20una%20demo%20para%20mi%20empresa.">💬 Solicitar demo por WhatsApp</a></div>
+  </main>
+</div>
+<script>
+  if (new URLSearchParams(location.search).get("bienvenido")) document.getElementById("welcome").style.display = "block";
+  document.addEventListener("osc-free-ready", (e) => {
+    const d = e.detail; if (!d || !d.user) return;
+    document.getElementById("hello").textContent = "Hola, " + d.user.fullName.split(" ")[0];
+    const set = (id, u, txt) => { const el = document.getElementById(id); if (u && u.remaining === 0) { el.textContent = txt; el.classList.add("used"); } };
+    set("stPos", d.usage && d.usage.pos, "Compra de prueba usada");
+    set("stAtm", d.usage && d.usage.atm, "Extracción de prueba usada");
+  });
+</script>
+</body>
+</html>

@@ -1,4 +1,5 @@
 import {STAGES,generateExam,publicExam,scoreAttempt,DE3_OPTIONS} from './assessments.js';
+import {handleFree} from './free.js'; // rc.1.58 · versión gratuita aislada (/free/*, /api/free/*)
 const enc = new TextEncoder();
 const json = (data, status = 200, headers = {}) => new Response(JSON.stringify(data), {status, headers:{'content-type':'application/json; charset=utf-8',...headers}});
 const now = () => new Date().toISOString();
@@ -1543,6 +1544,7 @@ export default {async fetch(request,env,ctx){
     url.hostname='oscpaymentacademy.com';
     return Response.redirect(url.toString(),308);
   }
+  if(path==='/free'||path.startsWith('/free/')||path.startsWith('/api/free/'))return handleFree(request,env,ctx); // rc.1.58
   if(path.startsWith('/api/'))return api(request,env,path);
   // rc.1.21 · Manuales LINK: CONFIDENCIALES. Solo OSC_ADMIN; nunca listados en Documentación Técnica.
   let linkProbe=path;try{linkProbe=decodeURIComponent(path);}catch(e){}
