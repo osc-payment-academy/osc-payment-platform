@@ -35,6 +35,8 @@ const PAGE_MODULES={
 const MODULE_DAY={course_iso8583:1,pos:1,parser:1,constructor:1,atm:2,ecommerce:3,wallet:4,switch_emisor:5};
 // Solo administración (rc.1.22): Documentación Técnica (los alumnos llegan a los PDF desde la manito) e Investigación.
 const ADMIN_ONLY_PAGES=new Set(['documentacion.html','research.html']);
+// rc.1.61 · Videos de ayuda. Debe coincidir con OSC_VIDEOS de public/js/osc-videos.js.
+const VIDEO_IDS={plataforma:'Recorrido de la plataforma'};
 const ACTIVITY_PAGES={'index.html':'dashboard','account.html':'cuenta','authorization-analytics.html':'analisis_diario','monitoreo-vivo.html':'monitoreo_vivo','evaluacion.html':'evaluaciones'};
 const TUTOR_MODULES=['course_iso8583','pos','atm','constructor','wallet','ecommerce'];
 const TUTOR_SEED=[
@@ -204,6 +206,11 @@ async function networkAccess(env,user){
 async function tenantAdminTenants(env,user){
   if(user.platform_role==='OSC_ADMIN')return null; // null = todas
   return (await env.DB.prepare(`SELECT t.id,t.name FROM memberships m JOIN tenants t ON t.id=m.tenant_id WHERE m.user_id=? AND m.status='ACTIVE' AND m.role='TENANT_ADMIN' AND t.tenant_type='CONSULTANCY' AND t.status='ACTIVE'`).bind(user.id).all()).results;
+}
+async function ensureVideoSchema(env){
+  await env.DB.prepare(`CREATE TABLE IF NOT EXISTS user_video_views (
+    user_id TEXT NOT NULL,video_id TEXT NOT NULL,first_seen_at TEXT,watched_90 INTEGER NOT NULL DEFAULT 0,dont_show INTEGER NOT NULL DEFAULT 0,updated_at TEXT NOT NULL,
+    PRIMARY KEY(user_id,video_id),FOREIGN KEY(user_id) REFERENCES users(id))`).run();
 }
 async function ensureActivitySchema(env){
   await env.DB.prepare(`CREATE TABLE IF NOT EXISTS user_activity (
@@ -435,6 +442,27 @@ async function ensureBankCardSchema(env){
 const luhnCheckDigit=base=>{let sum=0,alt=true;for(let i=base.length-1;i>=0;i--){let n=Number(base[i]);if(alt){n*=2;if(n>9)n-=9}sum+=n;alt=!alt}return String((10-(sum%10))%10)};
 const maskCard=pan=>`${pan.slice(0,6)}******${pan.slice(-4)}`;
 async function api(request,env,path){
+  // rc.1.61 · Videos de ayuda: estado de la bienvenida por usuario (D1, no localStorage).
+  if(path==='/api/videos/state'&&request.method==='GET'){
+    const auth=await requireUser(request,env); if(auth.error)return auth.error;
+    await ensureVideoSchema(env);
+    const rows=(await env.DB.prepare('SELECT video_id,watched_90,dont_show FROM user_video_views WHERE user_id=?').bind(auth.user.id).all()).results||[];
+    const views={};rows.forEach(r=>{views[r.video_id]={watched90:!!r.watched_90,dontShow:!!r.dont_show}});
+    return json({admin:auth.user.platform_role==='OSC_ADMIN',views},200,{'cache-control':'no-store'});
+  }
+  if(path==='/api/videos/event'&&request.method==='POST'){
+    const auth=await requireUser(request,env); if(auth.error)return auth.error;
+    const b=await readBody(request),videoId=String(b.videoId||''),action=String(b.action||'');
+    if(!Object.prototype.hasOwnProperty.call(VIDEO_IDS,videoId)||!['play','watched90','dont_show','show_again'].includes(action))return json({error:'INVALID_VIDEO_EVENT'},400);
+    await ensureVideoSchema(env);
+    const ts=now();
+    await env.DB.prepare(`INSERT INTO user_video_views(user_id,video_id,first_seen_at,watched_90,dont_show,updated_at) VALUES(?,?,?,?,?,?)
+      ON CONFLICT(user_id,video_id) DO UPDATE SET first_seen_at=COALESCE(first_seen_at,excluded.first_seen_at),watched_90=MAX(watched_90,excluded.watched_90),
+      dont_show=CASE WHEN ?='dont_show' THEN 1 WHEN ?='show_again' THEN 0 ELSE dont_show END,updated_at=excluded.updated_at`)
+      .bind(auth.user.id,videoId,ts,action==='watched90'?1:0,action==='dont_show'?1:0,ts,action,action).run();
+    if(action==='play')await trackActivity(env,auth.user,'video_'+videoId);
+    return json({ok:true});
+  }
   if(path==='/api/tutor/query'&&request.method==='POST'){
     const auth=await requireUser(request,env); if(auth.error)return auth.error;
     await ensureTutorSchema(env);
@@ -1122,7 +1150,7 @@ async function api(request,env,path){
     rows.sort((a,b)=>order[a.status]-order[b.status]||((b.days_since??-1)-(a.days_since??-1))||String(a.full_name).localeCompare(String(b.full_name)));
     const summary={assigned:rows.length,never:rows.filter(r=>r.status==='never').length,active7:rows.filter(r=>r.status==='active').length,inactive:rows.filter(r=>r.status==='warning'||r.status==='inactive').length};
     const seats={};for(const g of scope.groups)if(g.type==='CONSULTANCY'){const si=await seatInfo(g.id);if(si){const {detail,...x}=si;seats[g.id]=x;}}
-    return json({isAdmin:scope.isAdmin,groups:scope.groups,summary,seats,users:rows,moduleLabels:{...MODULE_LABELS,dashboard:'Inicio',cuenta:'Mi cuenta',analisis_diario:'Análisis Diario',monitoreo_vivo:'Monitoreo en Vivo',evaluaciones:'Evaluaciones'}});
+    return json({isAdmin:scope.isAdmin,groups:scope.groups,summary,seats,users:rows,moduleLabels:{...MODULE_LABELS,dashboard:'Inicio',cuenta:'Mi cuenta',analisis_diario:'Análisis Diario',monitoreo_vivo:'Monitoreo en Vivo',evaluaciones:'Evaluaciones',...Object.fromEntries(Object.entries(VIDEO_IDS).map(([k,v])=>['video_'+k,'Video: '+v]))}});
   }
   const usageUserMatch=path.match(/^\/api\/usage\/users\/([^/]+)$/);
   if(usageUserMatch&&request.method==='GET'){
@@ -1568,6 +1596,30 @@ export default {async fetch(request,env,ctx){
     const headers=new Headers(response.headers);
     headers.set('content-disposition','attachment; filename="ISO_8583_Desde_Cero_Oscar_Sanchez_Castro.epub"');
     headers.set('cache-control','private, no-store');
+    return new Response(response.body,{status:response.status,statusText:response.statusText,headers});
+  }
+  // rc.1.61 · Videos de ayuda: solo con sesión iniciada. Soporta Range (206) para adelantar/retroceder.
+  if(/^\/+media\/+videos\//i.test(path)){
+    const user=await currentUser(request,env);
+    const deny={'cache-control':'no-store','x-robots-tag':'noindex, nofollow'};
+    if(!user)return new Response('Iniciá sesión para ver el video.',{status:401,headers:{...deny,'content-type':'text/plain; charset=utf-8'}});
+    const response=await env.ASSETS.fetch(request);
+    const headers=new Headers(response.headers);
+    headers.set('cache-control','private, no-store');
+    headers.set('x-robots-tag','noindex, nofollow');
+    headers.set('accept-ranges','bytes');
+    const range=request.headers.get('range');
+    if(response.status===200&&range&&request.method==='GET'){
+      const m=/^bytes=(\d*)-(\d*)$/.exec(range.trim());
+      const buf=await response.arrayBuffer(),size=buf.byteLength;
+      let start=m&&m[1]!==''?Number(m[1]):NaN,end=m&&m[2]!==''?Number(m[2]):NaN;
+      if(m&&m[1]===''&&m[2]!==''){start=Math.max(0,size-Number(m[2]));end=size-1;}
+      if(!Number.isFinite(end)||end>=size)end=size-1;
+      if(!m||!Number.isFinite(start)||start>end||start>=size){headers.set('content-range',`bytes */${size}`);headers.delete('content-length');return new Response(null,{status:416,headers});}
+      headers.set('content-range',`bytes ${start}-${end}/${size}`);
+      headers.set('content-length',String(end-start+1));
+      return new Response(buf.slice(start,end+1),{status:206,headers});
+    }
     return new Response(response.body,{status:response.status,statusText:response.statusText,headers});
   }
   if(path==='/'||path==='/index.html'){

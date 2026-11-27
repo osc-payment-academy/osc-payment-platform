@@ -1,4 +1,8 @@
-# OSC Payment Academy — v4.0.0-rc.1.56
+# OSC Payment Academy — v4.0.0-rc.1.61
+
+Videos de ayuda: bienvenida con el video "Recorrido de la plataforma" en el primer ingreso y botón permanente en el banner del Dashboard. Ver RELEASE_NOTES_v4.0.0-rc.1.61.md.
+
+## v4.0.0-rc.1.56
 
 Red LINK: el historial del POS guarda y restaura las operaciones LINK; en el ATM ya no se fusionan los tramos de transferencias y DEBIN. Ver RELEASE_NOTES_v4.0.0-rc.1.56.md.
 

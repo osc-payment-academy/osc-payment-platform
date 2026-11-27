@@ -1,0 +1,36 @@
+OSC Payment Academy · v4.0.0-rc.1.61 · Videos de ayuda
+======================================================
+
+ARCHIVOS DEL INCREMENTAL
+  NUEVOS
+    public/js/osc-videos.js
+    public/media/videos/plataforma.mp4
+    public/media/videos/plataforma-poster.jpg
+    MIGRATION_v4.0.0-rc.1.61_VIDEOS.sql
+  MODIFICADOS
+    src/index.js            (rutas /media/videos/* con sesión y Range; /api/videos/state y /api/videos/event)
+    public/index.html       (botón del video en el banner + carga de js/osc-videos.js)
+    README.md, package.json
+
+PASOS
+1) Copiar los archivos respetando las carpetas, sobre la versión rc.1.60.
+2) (Opcional) Crear la tabla en D1. src/index.js también la crea sola en el primer uso.
+     npx wrangler d1 execute osc-academy --remote --file=MIGRATION_v4.0.0-rc.1.61_VIDEOS.sql
+3) npx wrangler deploy
+
+No hace falta R2 ni configuración nueva en Cloudflare: el video viaja con el deploy (6,5 MB,
+debajo del límite de 25 MiB por archivo) y el Worker lo protege con la sesión.
+
+PRUEBA RÁPIDA EN PRODUCCIÓN
+  - Abrir en una ventana de incógnito https://oscpaymentacademy.com/media/videos/plataforma.mp4
+    → tiene que decir "Iniciá sesión para ver el video." (401).
+  - Entrar con un alumno que nunca vio el video → se abre la bienvenida. Adelantar y retroceder.
+  - Marcar "No volver a mostrar", cerrar y recargar → no se abre solo. El botón del banner sigue funcionando.
+  - Administrador OSC: no se abre solo; el botón sí aparece.
+
+VOLVER A MOSTRAR LA BIENVENIDA A UN USUARIO (soporte)
+  npx wrangler d1 execute osc-academy --remote --command "DELETE FROM user_video_views WHERE user_id=(SELECT id FROM users WHERE lower(email)='correo@dominio.com')"
+
+VUELTA ATRÁS
+  Restaurar src/index.js y public/index.html de rc.1.60 y volver a desplegar. La tabla user_video_views
+  puede quedar; no la usa nada más.
