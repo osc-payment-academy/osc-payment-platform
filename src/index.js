@@ -36,7 +36,7 @@ const MODULE_DAY={course_iso8583:1,pos:1,parser:1,constructor:1,atm:2,ecommerce:
 // Solo administración (rc.1.22): Documentación Técnica (los alumnos llegan a los PDF desde la manito) e Investigación.
 const ADMIN_ONLY_PAGES=new Set(['documentacion.html','research.html']);
 // rc.1.61 · Videos de ayuda. Debe coincidir con OSC_VIDEOS de public/js/osc-videos.js.
-const VIDEO_IDS={plataforma:'Recorrido de la plataforma'};
+const VIDEO_IDS={plataforma:'Recorrido de la plataforma','pos-pantalla':'POS · La pantalla del POS','pos-credito-chip':'POS · Compra de crédito con chip','pos-credito-chip-rechazada':'POS · Compra de crédito con chip rechazada','pos-qr':'POS · Compra con QR'};
 const ACTIVITY_PAGES={'index.html':'dashboard','account.html':'cuenta','authorization-analytics.html':'analisis_diario','monitoreo-vivo.html':'monitoreo_vivo','evaluacion.html':'evaluaciones'};
 const TUTOR_MODULES=['course_iso8583','pos','atm','constructor','wallet','ecommerce'];
 const TUTOR_SEED=[

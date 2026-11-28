@@ -97,7 +97,8 @@
         <span class="title-icon">▣</span>
         <div><h1>POS VIRTUAL</h1><p>Simulador de Terminal de Pago</p></div>
       </div>
-      <div class="top-actions">
+      <div class="top-actions" style="display:flex;gap:8px;align-items:center">
+        <span data-osc-videos="pos"></span>
         <a class="btn-switch-link" href="switch.html" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px;border:1px solid #2f6f9f;background:#0d2a44;color:#e6f2fb;border-radius:10px;padding:8px 14px;font-weight:700">🏦 Switch del Adquirente</a>
       </div>
     </header>
@@ -426,7 +427,7 @@
 <script src="js/link-hth.js?v=4.0.0-rc1.55"></script>
 <script src="js/testlab-core.js?v=4.0.0-rc1.55"></script>
 <script src="js/testlab-mode.js?v=4.0.0-rc1.54"></script>
-<script src="js/app.js?v=4.0.0-rc1.56"></script><script src="js/pos-validations.js?v=4.0.0-rc1.27"></script>
+<script src="js/app.js?v=4.0.0-rc1.56"></script><script src="js/osc-videos.js?v=4.0.0-rc1.62"></script><script src="js/pos-validations.js?v=4.0.0-rc1.27"></script>
 <script>document.addEventListener('DOMContentLoaded',()=>{document.querySelectorAll('.pos-scenario-mini button').forEach((b,i)=>b.onclick=()=>{document.querySelectorAll('.pos-scenario-mini button').forEach(x=>x.classList.remove('active'));b.classList.add('active');const original=document.querySelectorAll('#scenarioGrid button')[i];if(original)original.click()});const log=document.getElementById('posTechEvents');const status=document.getElementById('flowResponse');if(log&&status)new MutationObserver(()=>{const d=document.createElement('div');d.textContent=new Date().toLocaleTimeString('es-AR')+' · '+status.textContent;log.prepend(d);while(log.children.length>8)log.lastChild.remove()}).observe(status,{childList:true,subtree:true,characterData:true})});</script>
 <script src="js/permissions.js"></script>
 

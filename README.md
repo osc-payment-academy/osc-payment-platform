@@ -1,4 +1,8 @@
-# OSC Payment Academy — v4.0.0-rc.1.61
+# OSC Payment Academy — v4.0.0-rc.1.62
+
+POS: botón «🎬 Videos del POS» con 4 videos en lista (pantalla del POS, crédito con chip, crédito con chip rechazada, QR). Ver RELEASE_NOTES_v4.0.0-rc.1.62.md.
+
+## v4.0.0-rc.1.61
 
 Videos de ayuda: bienvenida con el video "Recorrido de la plataforma" en el primer ingreso y botón permanente en el banner del Dashboard. Ver RELEASE_NOTES_v4.0.0-rc.1.61.md.
 

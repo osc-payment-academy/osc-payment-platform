@@ -1,0 +1,28 @@
+OSC Payment Academy · v4.0.0-rc.1.62 · Videos del POS
+=====================================================
+
+El incremental es ACUMULATIVO sobre rc.1.60: incluye rc.1.61 (bienvenida del Dashboard) y rc.1.62.
+Si ya instalaste rc.1.61, copiarlo igual: pisa los mismos archivos.
+
+ARCHIVOS DEL INCREMENTAL
+  NUEVOS
+    public/js/osc-videos.js
+    public/media/videos/  (plataforma, pos-pantalla, pos-credito-chip, pos-credito-chip-rechazada, pos-qr: .mp4 y -poster.jpg)
+    MIGRATION_v4.0.0-rc.1.61_VIDEOS.sql
+  MODIFICADOS
+    src/index.js, public/index.html, public/pos.html, README.md, package.json
+
+PASOS
+1) Copiar los archivos respetando las carpetas.
+2) (Opcional, solo si no instalaste rc.1.61) Crear la tabla en D1; si no, se crea sola en el primer uso.
+     npx wrangler d1 execute osc-academy --remote --file=MIGRATION_v4.0.0-rc.1.61_VIDEOS.sql
+3) npx wrangler deploy
+
+PRUEBA RÁPIDA EN PRODUCCIÓN
+  - Abrir el POS: arriba a la derecha aparece «🎬 Videos del POS 4».
+  - Abrir la lista, reproducir el 1, adelantar hasta el final: tiene que arrancar el 2.
+  - Cerrar y volver a abrir: el 1 aparece con «✓ visto».
+  - En incógnito, https://oscpaymentacademy.com/media/videos/pos-qr.mp4 → 401.
+
+VUELTA ATRÁS
+  Restaurar public/pos.html de la versión anterior y volver a desplegar (el botón desaparece del POS).
