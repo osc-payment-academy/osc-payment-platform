@@ -1,0 +1,24 @@
+OSC Payment Academy · v4.0.0-rc.1.63 · Fundamentos y Arquitectura
+=================================================================
+
+Sobre rc.1.62 (ya subida). Paquete chico (~1 MB): se sube en una sola tanda.
+
+SUBIR A GITHUB (Upload files)
+  Descomprimir el zip y arrastrar a GitHub las carpetas «public» y «src» y los archivos sueltos
+  (README.md, package.json, MIGRATION_…sql, RELEASE_NOTES_…md, INSTRUCCIONES_…txt). Commit changes.
+
+DESPUÉS DEL DEPLOY: HABILITAR EL MÓDULO
+  Las consultoras y ediciones existentes lo tienen APAGADO.
+  - Panel OSC → consultora (por ejemplo, Banco Bolivariano) → marcar «🏙️ Fundamentos y Arquitectura» → Guardar.
+  - Ediciones de curso: Alumnos → módulos de la edición → «Fundamentos y Arquitectura».
+  - El administrador OSC lo ve siempre.
+
+(Opcional) Crear la tabla de progreso en D1; si no, se crea sola en el primer uso:
+  npx wrangler d1 execute osc-academy --remote --file=MIGRATION_v4.0.0-rc.1.63_FUNDAMENTOS.sql
+
+PRUEBA RÁPIDA
+  - Menú → Aprendizaje → «Fundamentos y Arquitectura»: se ve la Ciudad de Pagos.
+  - Abrir 1.1, Reproducir: los edificios se iluminan y el paquete viaja.
+  - «Ver en 2D» cambia el modo; la lección sigue igual.
+  - Terminar la autoevaluación: el contador sube a «1 de 34».
+  - Con un alumno de una consultora sin el módulo: no aparece en el menú y la URL muestra «Módulo no disponible».

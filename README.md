@@ -1,4 +1,8 @@
-# OSC Payment Academy — v4.0.0-rc.1.62
+# OSC Payment Academy — v4.0.0-rc.1.63
+
+Nuevo módulo «Fundamentos y Arquitectura» (Aprendizaje): Ciudad de Pagos en 3D con 17 lecciones animadas (Bloques 1 y 4), modo 2D automático, autoevaluación y progreso por alumno. Ver RELEASE_NOTES_v4.0.0-rc.1.63.md.
+
+## v4.0.0-rc.1.62
 
 POS: botón «🎬 Videos del POS» con 4 videos en lista (pantalla del POS, crédito con chip, crédito con chip rechazada, QR). Ver RELEASE_NOTES_v4.0.0-rc.1.62.md.
 

@@ -18,7 +18,8 @@ const readBody = async request => { try { return await request.json(); } catch {
 // rc.1.22 · Módulos habilitables (por edición de curso y por consultora).
 //   ebook · banco_simulado (Clientes, Pasivas, Solicitudes, Cuenta del Cliente) · switch_adquirente (Switch + Compensación Visa/Mastercard + Mastercard ISO)
 //   parser = Parser ISO8583 + Parser Guiado.
-const LEARNING_MODULES=['course_iso8583','ebook','banco_simulado','constructor','pos','atm','wallet','ecommerce','switch_adquirente','switch_emisor','parser'];
+const LEARNING_MODULES=['course_iso8583','ebook','banco_simulado','constructor','pos','atm','wallet','ecommerce','switch_adquirente','switch_emisor','parser','fundamentos'];
+// rc.1.63 · fundamentos = Fundamentos y Arquitectura (escenas 3D). Consultoras y ediciones existentes: queda apagado hasta habilitarlo.
 const DAY1_MODULES=['course_iso8583','pos','parser','constructor'];
 // Módulos que antes de rc.1.22 estaban siempre visibles: en las ediciones se siembran habilitados para no cambiar nada sin aviso.
 const DEFAULT_ON_MODULES=['ebook','banco_simulado','switch_adquirente'];
@@ -30,7 +31,7 @@ const PAGE_MODULES={
   'clientes.html':'banco_simulado','pasivas.html':'banco_simulado','solicitudes.html':'banco_simulado','cuenta_cliente.html':'banco_simulado',
   'constructor.html':'constructor','pos.html':'pos','atm.html':'atm','wallet.html':'wallet','ecommerce.html':'ecommerce',
   'switch.html':'switch_adquirente','compensacion.html':'switch_adquirente','compensacion_mastercard.html':'switch_adquirente','mastercard_iso.html':'switch_adquirente',
-  'switch_emisor.html':'switch_emisor','parser.html':'parser','parser_guiado.html':'parser'
+  'switch_emisor.html':'switch_emisor','parser.html':'parser','parser_guiado.html':'parser','fundamentos.html':'fundamentos'
 };
 const MODULE_DAY={course_iso8583:1,pos:1,parser:1,constructor:1,atm:2,ecommerce:3,wallet:4,switch_emisor:5};
 // Solo administración (rc.1.22): Documentación Técnica (los alumnos llegan a los PDF desde la manito) e Investigación.
@@ -442,6 +443,25 @@ async function ensureBankCardSchema(env){
 const luhnCheckDigit=base=>{let sum=0,alt=true;for(let i=base.length-1;i>=0;i--){let n=Number(base[i]);if(alt){n*=2;if(n>9)n-=9}sum+=n;alt=!alt}return String((10-(sum%10))%10)};
 const maskCard=pan=>`${pan.slice(0,6)}******${pan.slice(-4)}`;
 async function api(request,env,path){
+  // rc.1.63 · Fundamentos y Arquitectura: progreso por lección (vista / mejor resultado de la autoevaluación).
+  if(path==='/api/fundamentos/progress'&&(request.method==='GET'||request.method==='POST')){
+    const auth=await requireUser(request,env); if(auth.error)return auth.error;
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS user_fundamentos_progress (user_id TEXT NOT NULL,lesson_id TEXT NOT NULL,viewed_at TEXT,quiz_score INTEGER,quiz_at TEXT,updated_at TEXT NOT NULL,PRIMARY KEY(user_id,lesson_id),FOREIGN KEY(user_id) REFERENCES users(id))`).run();
+    if(request.method==='GET'){
+      const rows=(await env.DB.prepare('SELECT lesson_id,viewed_at,quiz_score FROM user_fundamentos_progress WHERE user_id=?').bind(auth.user.id).all()).results||[];
+      const lessons={};rows.forEach(r=>{lessons[r.lesson_id]={viewed:!!r.viewed_at,score:r.quiz_score==null?null:Number(r.quiz_score)}});
+      return json({lessons},200,{'cache-control':'no-store'});
+    }
+    const b=await readBody(request),lesson=String(b.lesson||''),action=String(b.action||''),score=Math.max(0,Math.min(20,Number(b.score)||0));
+    if(!/^[1-4]\.(10|[1-9])$/.test(lesson)||!['viewed','quiz'].includes(action))return json({error:'INVALID_PROGRESS'},400);
+    const ts=now();
+    await env.DB.prepare(`INSERT INTO user_fundamentos_progress(user_id,lesson_id,viewed_at,quiz_score,quiz_at,updated_at) VALUES(?,?,?,?,?,?)
+      ON CONFLICT(user_id,lesson_id) DO UPDATE SET viewed_at=COALESCE(viewed_at,excluded.viewed_at),
+      quiz_score=CASE WHEN excluded.quiz_score IS NULL THEN quiz_score WHEN quiz_score IS NULL OR excluded.quiz_score>quiz_score THEN excluded.quiz_score ELSE quiz_score END,
+      quiz_at=COALESCE(excluded.quiz_at,quiz_at),updated_at=excluded.updated_at`)
+      .bind(auth.user.id,lesson,ts,action==='quiz'?score:null,action==='quiz'?ts:null,ts).run();
+    return json({ok:true});
+  }
   // rc.1.61 · Videos de ayuda: estado de la bienvenida por usuario (D1, no localStorage).
   if(path==='/api/videos/state'&&request.method==='GET'){
     const auth=await requireUser(request,env); if(auth.error)return auth.error;
@@ -1564,7 +1584,7 @@ function moduleBlockedPage(title,message,status=403){
   const esc=v=>String(v).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]);
   return new Response(`<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(title)} · OSC Payment Academy</title><link rel="icon" type="image/svg+xml" href="/favicon.svg"></head><body style="margin:0;min-height:100vh;display:grid;place-items:center;background:#06111d;color:#f5f8fc;font-family:Inter,Segoe UI,Arial,sans-serif;padding:16px"><main style="max-width:560px;text-align:center;border:1px solid #1d405c;border-radius:16px;padding:36px;background:#0a1928"><div style="font-size:42px">🔒</div><h1 style="font-size:24px">${esc(title)}</h1><p style="color:#9cb2c6;line-height:1.55">${esc(message)}</p><a href="/" style="display:inline-block;margin-top:14px;padding:11px 18px;border-radius:9px;background:#0875dc;color:white;text-decoration:none">← Volver a la plataforma</a></main></body></html>`,{status,headers:{'content-type':'text/html; charset=utf-8','cache-control':'no-store'}});
 }
-const MODULE_LABELS={course_iso8583:'Curso Interactivo',ebook:'eBook ISO 8583',banco_simulado:'Banco simulado',constructor:'Constructor ISO8583',pos:'POS Virtual',atm:'ATM Virtual',wallet:'Wallet / Tokenización',ecommerce:'E-Commerce / 3DS',switch_adquirente:'Switch del Adquirente',switch_emisor:'Switch Emisor',parser:'Parser ISO8583'};
+const MODULE_LABELS={fundamentos:'Fundamentos y Arquitectura',course_iso8583:'Curso Interactivo',ebook:'eBook ISO 8583',banco_simulado:'Banco simulado',constructor:'Constructor ISO8583',pos:'POS Virtual',atm:'ATM Virtual',wallet:'Wallet / Tokenización',ecommerce:'E-Commerce / 3DS',switch_adquirente:'Switch del Adquirente',switch_emisor:'Switch Emisor',parser:'Parser ISO8583'};
 
 export default {async fetch(request,env,ctx){
   const url=new URL(request.url),path=url.pathname;

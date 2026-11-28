@@ -10,6 +10,7 @@
     { section: "Aprendizaje" },
     { href: "curso_interactivo.html", icon: "🎓", label: "Curso Interactivo", key: "course_iso8583", day: 1 },
     { href: "ebook.html", icon: "📖", label: "eBook ISO 8583", key: "ebook", version: "4.0.0-rc1.12" },
+    { href: "fundamentos.html", icon: "🏙️", label: "Fundamentos y Arquitectura", key: "fundamentos" },
     { href: "evaluacion.html", icon: "📝", label: "Evaluaciones", assess: true },
     // rc.1.38 · Menú agrupado por recorrido: operar → mensajes → back office → banco simulado.
     { section: "Operar transacciones" },

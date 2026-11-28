@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OSC Payment Academy · Fundamentos y Arquitectura</title>
+<style>
+:root{--bg:#06111d;--panel:#0b1827;--line:#173149;--text:#f5f8fc;--muted:#9dafc2;--blue:#2f83ff;--green:#18d17e;--amber:#f7b51c;--red:#ff667d}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,Segoe UI,Arial,sans-serif}
+.shell{display:grid;grid-template-columns:235px 1fr;min-height:100vh}.side{padding:20px 14px;background:#071522;border-right:1px solid var(--line)}
+.brand{font-weight:800;font-size:18px;margin-bottom:20px}.brand span{color:#38a7ff}
+.main{padding:18px 22px;min-width:0}
+.top{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap;margin-bottom:12px}.top h1{margin:0;font-size:1.35rem}.top p{color:var(--muted);margin:4px 0 0;font-size:.85rem}
+.top .actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.pill{font-size:.75rem;color:#c0cedc;border:1px solid var(--line);border-radius:99px;padding:6px 10px}
+button{font:inherit;cursor:pointer}.tbtn{background:#123d62;color:#fff;border:1px solid #2d699b;border-radius:8px;padding:8px 12px}
+.crumb{font-size:.8rem;color:var(--muted);margin:0 0 8px}.link{background:none;border:0;color:#7cc0ff;padding:0;text-decoration:underline}
+.work{display:grid;grid-template-columns:1fr 380px;gap:14px;height:calc(100vh - 128px);min-height:520px}
+.stagebox{position:relative;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#06111d;min-height:360px}
+#stage{position:absolute;inset:0;touch-action:none}#stage canvas{display:block}
+.fx-labels{position:absolute;inset:0;pointer-events:none}
+.fx-lbl{position:absolute;left:0;top:0;pointer-events:auto;cursor:pointer;background:#0b1827e6;border:1px solid #2a4a6b;border-radius:8px;padding:3px 7px;font-size:11px;line-height:1.25;text-align:center;white-space:nowrap;max-width:220px;transition:opacity .2s}
+.fx-lbl b{font-weight:700}.fx-lbl i{display:none;font-style:normal;color:#ffd36b;font-size:10.5px;white-space:normal}.fx-lbl.tagged i{display:block}
+.fx-lbl.dim{opacity:.35}.fx-lbl.on{border-color:#2f83ff;box-shadow:0 0 0 2px #2f83ff55}
+#overlay{position:absolute;left:14px;top:14px;max-width:min(560px,calc(100% - 28px));max-height:calc(100% - 28px);overflow:auto;background:#081625f2;border:1px solid #2a5fa8;border-radius:12px;padding:12px 14px;font-size:.8rem;box-shadow:0 18px 50px #0009}
+#overlay h3{margin:0 0 8px;font-size:.95rem}#overlay table{border-collapse:collapse;width:100%}#overlay th,#overlay td{border-bottom:1px solid #1d3a57;padding:5px 7px;text-align:left;vertical-align:top}#overlay th{color:#9fd0ff;font-weight:600}
+#overlay ol,#overlay ul{margin:0;padding-left:18px;line-height:1.6}
+.bm{display:grid;grid-template-columns:repeat(16,1fr);gap:3px}.bm span{font-size:9px;text-align:center;border:1px solid #1d3a57;border-radius:3px;padding:3px 0;color:#58708a}.bm span.on{background:#18d17e33;border-color:#18d17e;color:#d6ffe9}
+.ov-x{position:absolute;right:8px;top:6px;background:none;border:0;color:#9dafc2;font-size:14px}
+#clock{position:absolute;right:14px;top:14px;background:#081625f2;border:1px solid #2a5fa8;border-radius:99px;padding:6px 12px;font-size:.8rem;font-weight:700}
+#ficha{position:absolute;right:14px;bottom:14px;max-width:300px;background:#081625f2;border:1px solid #2a5fa8;border-radius:12px;padding:10px 26px 10px 12px;font-size:.8rem}#ficha p{margin:4px 0 0;color:#c0cedc}
+#modeNote{position:absolute;left:14px;bottom:14px;background:#2b2209f2;border:1px solid #7a5b12;border-radius:10px;padding:7px 10px;font-size:.75rem;max-width:420px}
+.hint{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);font-size:.7rem;color:#6f879e;pointer-events:none}
+#side{border:1px solid var(--line);border-radius:14px;background:var(--panel);overflow:auto}
+.sec{padding:12px 14px;border-bottom:1px solid var(--line)}.sec:last-child{border-bottom:0}.sec h2{margin:0 0 4px;font-size:1.05rem}.sec h3{margin:0 0 8px;font-size:.9rem}
+.muted{color:var(--muted)}.small{font-size:.75rem}.eyebrow{font-size:.68rem;letter-spacing:.06em;text-transform:uppercase;color:#7cc0ff;margin-bottom:4px}
+.sec p{margin:4px 0;font-size:.82rem;line-height:1.45}
+.bn{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:6px;background:#2f83ff33;color:#9fd0ff;margin-right:8px;font-size:.75rem}
+.lessons{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:5px}
+.les{width:100%;display:grid;grid-template-columns:18px 30px 1fr;gap:6px;align-items:start;text-align:left;background:#0d1f33;border:1px solid #173149;border-radius:8px;color:var(--text);padding:7px 8px;font-size:.78rem}
+.les:hover:not([disabled]){border-color:#2f6f9f}.les[disabled]{opacity:.5;cursor:default}.les .num{color:#7cc0ff;font-weight:700}.les small{display:block;color:#7f97ad;font-size:.68rem}
+.les .st{font-weight:700}.les.eval .st{color:var(--green)}.les.seen .st{color:var(--amber)}
+.ctrl .btns,.quiz .btns{display:flex;gap:6px;flex-wrap:wrap}.ctrl button,.quiz button,.opts button,#after button{background:#123d62;color:#fff;border:1px solid #2d699b;border-radius:8px;padding:8px 12px}
+button.primary{background:#1764bd;border-color:#2f83ff}.wide{width:100%}
+.chk{display:inline-flex;align-items:center;gap:6px;font-size:.78rem;color:#c0cedc;margin:8px 12px 0 0}.chk select{background:#0d1f33;color:#fff;border:1px solid #2d699b;border-radius:6px;padding:3px}
+.narr{background:#0a1d31}.stepno{font-size:.7rem;color:#7cc0ff;font-weight:700}.narr p{font-size:.9rem;min-height:3.6em}
+.steps{margin:0;padding-left:20px;font-size:.75rem}.steps li{margin:2px 0}.steps button{background:none;border:0;color:#9dafc2;text-align:left;padding:2px 0}.steps button.on{color:#fff;font-weight:700}.steps button.done{color:#6fb79a}
+details summary{cursor:pointer;font-weight:700;font-size:.88rem}.dec{margin:8px 0 0;padding-left:18px;font-size:.8rem;line-height:1.5}
+.velo{display:block;padding:8px 10px;border:1px solid #2f6f9f;border-radius:8px;color:#e6f2fb;text-decoration:none;margin:6px 0;font-size:.8rem;background:#0d2a44}
+.warn{color:#f0d36b}.q{font-weight:700;font-size:.9rem}.opts{display:flex;flex-direction:column;gap:6px;margin:8px 0}.opts button{text-align:left;font-size:.8rem}#after button{font-size:.82rem}
+.opts button.ok{border-color:var(--green);background:#0f3a29}.opts button.ko{border-color:var(--red);background:#3a1520}.good{color:var(--green);font-weight:700}.bad{color:#ff9fb0;font-weight:700}
+@media(max-width:1000px){.shell{grid-template-columns:1fr}.side{display:none}.work{grid-template-columns:1fr;height:auto}.stagebox{height:58vh}#side{max-height:none}}
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside class="side"><div class="brand"><span>OSC</span> PAYMENT ACADEMY</div></aside>
+  <main class="main">
+    <header class="top">
+      <div><h1>🏙️ Fundamentos y Arquitectura</h1><p>Ecosistema, emisor, adquirente y seguridad de medios de pago, en escenas animadas.</p></div>
+      <div class="actions"><span class="pill" id="progLabel">—</span><button class="tbtn" id="modeBtn">Ver en 2D</button></div>
+    </header>
+    <div class="crumb" id="crumb">Ciudad de Pagos</div>
+    <div class="work">
+      <div class="stagebox">
+        <div id="stage"></div>
+        <div id="overlay" hidden></div>
+        <div id="clock" hidden></div>
+        <div id="ficha" hidden></div>
+        <div id="modeNote" hidden></div>
+        <div class="hint">Arrastrá para girar · rueda para acercar · tocá un edificio para ver su ficha</div>
+      </div>
+      <aside id="side" aria-live="polite"></aside>
+    </div>
+  </main>
+</div>
+<script src="js/network-access.js?v=4.0.0-rc1.26"></script>
+<script src="js/navigation.js?v=4.0.0-rc1.63"></script>
+<script type="module" src="js/fundamentos/app.js?v=4.0.0-rc1.63"></script>
+</body>
+</html>
